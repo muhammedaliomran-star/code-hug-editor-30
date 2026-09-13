@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { type StaffRole } from "@/lib/staff";
 
 export type AuditActionType =
@@ -55,92 +56,23 @@ export interface AuditLogEntry {
   ipAddress?: string;
 }
 
-const STORAGE_KEY_AUDIT = "segilly_audit_logs_v1";
-
-const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
-  {
-    id: "log-init-1",
-    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
-    action: "SHIFT_OPEN",
-    module: "staff",
-    severity: "info",
-    staffId: "staff-admin-main",
-    staffName: "المدير العام (المالك)",
-    staffRole: "admin",
-    branchName: "الفرع الرئيسي",
-    title: "فتح وردية عمل جديدة",
-    details: "تم بدء وردية جديدة برصيد افتتاحي 500 ج.م في الدرج",
-  },
-  {
-    id: "log-init-2",
-    timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
-    action: "INVOICE_CREATE",
-    module: "invoices",
-    severity: "info",
-    staffId: "staff-cashier-1",
-    staffName: "أحمد كاشير (نقطة البيع)",
-    staffRole: "cashier",
-    branchName: "الفرع الرئيسي",
-    entityId: "inv-001",
-    entityName: "فاتورة #0001",
-    title: "إصدار فاتورة بيع جديدة",
-    details: "إصدار فاتورة نقدية بقيمة 1,250 ج.م للعميل محمد أحمد",
-  },
-  {
-    id: "log-init-3",
-    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    action: "DISCOUNT_APPLIED",
-    module: "discounts",
-    severity: "warning",
-    staffId: "staff-cashier-1",
-    staffName: "أحمد كاشير (نقطة البيع)",
-    staffRole: "cashier",
-    branchName: "الفرع الرئيسي",
-    title: "تطبيق كود خصم ترويجي",
-    details: "تم تطبيق كود خصم WELCOME10 بنسبة 10% (قيمة الخصم: 125 ج.م)",
-  },
-  {
-    id: "log-init-4",
-    timestamp: new Date(Date.now() - 3600000).toISOString(),
-    action: "STOCK_UPDATE",
-    module: "inventory",
-    severity: "warning",
-    staffId: "staff-mgr-1",
-    staffName: "محمود المشرف",
-    staffRole: "manager",
-    branchName: "الفرع الرئيسي",
-    entityName: "شاحن أصلي Type-C",
-    title: "تعديل كمية مخزون يدوي",
-    details: "تعديل رصيد المخزن بعد الجرد الفعلي من 40 إلى 38 قطعة",
-    oldValue: 40,
-    newValue: 38,
-  },
-];
-
-function loadAuditLogs(): AuditLogEntry[] {
-  if (typeof window === "undefined") return INITIAL_AUDIT_LOGS;
+function getUserId(): string | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_AUDIT);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(INITIAL_AUDIT_LOGS));
-      return INITIAL_AUDIT_LOGS;
-    }
-    return JSON.parse(raw);
-  } catch (e) {
-    console.error("Failed to load audit logs", e);
-    return INITIAL_AUDIT_LOGS;
+    const session = supabase.auth.getSession();
+    // Sync fallback - return null if we can't get user
+    return null;
+  } catch {
+    return null;
   }
 }
 
-function saveAuditLogs(logs: AuditLogEntry[]) {
-  if (typeof window === "undefined") return;
+async function getUserIdAsync(): Promise<string | null> {
   try {
-    // Keep last 1500 logs to optimize storage
-    const trimmed = logs.slice(0, 1500);
-    localStorage.setItem(STORAGE_KEY_AUDIT, JSON.stringify(trimmed));
-    window.dispatchEvent(new Event("segilly_audit_updated"));
-  } catch (e) {
-    console.error("Failed to save audit logs", e);
+    const { data } = await supabase.auth.getUser();
+    return data.user?.id ?? null;
+  } catch {
+    return null;
   }
 }
 
@@ -171,9 +103,17 @@ export function getActiveStaffSnapshot(): { staffId: string; staffName: string; 
 
 /**
  * Global helper to record any system or user activity
+ * Saves to Supabase database with localStorage fallback for offline
  */
-export function recordAuditLog(entry: Partial<AuditLogEntry> & { action: AuditActionType; module: AuditModule; title: string }) {
+export async function recordAuditLog(entry: Partial<AuditLogEntry> & { action: AuditActionType; module: AuditModule; title: string }) {
   const staff = getActiveStaffSnapshot();
+  const userId = await getUserIdAsync();
+
+  if (!userId) {
+    console.warn("Audit log skipped: no authenticated user");
+    return null;
+  }
+
   const newLog: AuditLogEntry = {
     id: `audit-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     timestamp: new Date().toISOString(),
@@ -185,35 +125,131 @@ export function recordAuditLog(entry: Partial<AuditLogEntry> & { action: AuditAc
     ...entry,
   };
 
-  const current = loadAuditLogs();
-  const next = [newLog, ...current];
-  saveAuditLogs(next);
-  return newLog;
+  try {
+    const { error } = await supabase.from("audit_logs").insert({
+      id: newLog.id,
+      user_id: userId,
+      action: newLog.action,
+      module: newLog.module,
+      severity: newLog.severity,
+      staff_id: newLog.staffId || null,
+      staff_name: newLog.staffName,
+      staff_role: newLog.staffRole,
+      branch_name: newLog.branchName || null,
+      entity_id: newLog.entityId || null,
+      entity_name: newLog.entityName || null,
+      title: newLog.title,
+      details: newLog.details || null,
+      old_value: newLog.oldValue != null ? String(newLog.oldValue) : null,
+      new_value: newLog.newValue != null ? String(newLog.newValue) : null,
+      ip_address: newLog.ipAddress || null,
+      created_at: newLog.timestamp,
+    });
+
+    if (error) {
+      console.error("Failed to save audit log to Supabase:", error);
+      // Fallback to localStorage for offline
+      saveToLocalStorageFallback(newLog);
+    }
+
+    window.dispatchEvent(new Event("segilly_audit_updated"));
+    return newLog;
+  } catch (e) {
+    console.error("Audit log error:", e);
+    saveToLocalStorageFallback(newLog);
+    return newLog;
+  }
+}
+
+function saveToLocalStorageFallback(log: AuditLogEntry) {
+  if (typeof window === "undefined") return;
+  try {
+    const key = "segilly_audit_offline_queue_v1";
+    const raw = localStorage.getItem(key);
+    const queue: AuditLogEntry[] = raw ? JSON.parse(raw) : [];
+    queue.push(log);
+    localStorage.setItem(key, JSON.stringify(queue.slice(-200)));
+  } catch {
+    // silent
+  }
+}
+
+async function fetchAuditLogsFromDB(): Promise<AuditLogEntry[]> {
+  try {
+    const { data, error } = await supabase
+      .from("audit_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(1500);
+
+    if (error) {
+      console.error("Failed to fetch audit logs:", error);
+      return [];
+    }
+
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      timestamp: row.created_at,
+      action: row.action as AuditActionType,
+      module: row.module as AuditModule,
+      severity: row.severity as AuditSeverity,
+      staffId: row.staff_id || undefined,
+      staffName: row.staff_name || "",
+      staffRole: (row.staff_role as StaffRole | "system") || "system",
+      branchName: row.branch_name || undefined,
+      entityId: row.entity_id || undefined,
+      entityName: row.entity_name || undefined,
+      title: row.title || "",
+      details: row.details || undefined,
+      oldValue: row.old_value || undefined,
+      newValue: row.new_value || undefined,
+      ipAddress: row.ip_address || undefined,
+    }));
+  } catch (e) {
+    console.error("Failed to fetch audit logs:", e);
+    return [];
+  }
 }
 
 export function useAuditLogs() {
-  const [logs, setLogs] = useState<AuditLogEntry[]>(loadAuditLogs);
+  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const reload = useCallback(() => {
-    setLogs(loadAuditLogs());
+  const loadLogs = useCallback(async () => {
+    setLoading(true);
+    const dbLogs = await fetchAuditLogsFromDB();
+    setLogs(dbLogs);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    window.addEventListener("segilly_audit_updated", reload);
-    window.addEventListener("storage", reload);
-    return () => {
-      window.removeEventListener("segilly_audit_updated", reload);
-      window.removeEventListener("storage", reload);
-    };
-  }, [reload]);
+    loadLogs();
+  }, [loadLogs]);
 
-  const clearLogs = useCallback(() => {
-    saveAuditLogs([]);
+  useEffect(() => {
+    const handler = () => loadLogs();
+    window.addEventListener("segilly_audit_updated", handler);
+    return () => window.removeEventListener("segilly_audit_updated", handler);
+  }, [loadLogs]);
+
+  const reload = useCallback(() => {
+    loadLogs();
+  }, [loadLogs]);
+
+  const clearLogs = useCallback(async () => {
+    try {
+      const userId = await getUserIdAsync();
+      if (userId) {
+        await supabase.from("audit_logs").delete().eq("user_id", userId);
+      }
+    } catch (e) {
+      console.error("Failed to clear audit logs:", e);
+    }
     setLogs([]);
   }, []);
 
-  const addLog = useCallback((entry: Omit<AuditLogEntry, "id" | "timestamp">) => {
-    return recordAuditLog(entry);
+  const addLog = useCallback(async (entry: Omit<AuditLogEntry, "id" | "timestamp">) => {
+    return await recordAuditLog(entry);
   }, []);
 
   // Stats calculation
@@ -238,6 +274,7 @@ export function useAuditLogs() {
   return {
     logs,
     stats,
+    loading,
     addLog,
     clearLogs,
     reload,
