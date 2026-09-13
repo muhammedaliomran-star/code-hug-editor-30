@@ -84,7 +84,7 @@ export function useTeam() {
     if (!user) { setMembers([]); setInvites([]); setLoading(false); return; }
     setLoading(true);
     const [{ data: rows }, { data: inviteRows }] = await Promise.all([
-      supabase.rpc("team_directory"),
+      (supabase.rpc as any)("team_directory") as Promise<{ data: any[] | null }>,
       supabase.from("team_invites").select("id, email, role, status, expires_at, created_at").order("created_at", { ascending: false }),
     ]);
     setMembers(
