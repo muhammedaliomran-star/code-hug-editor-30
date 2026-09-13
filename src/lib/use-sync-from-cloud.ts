@@ -40,6 +40,13 @@ export function useSyncFromCloud() {
           pullDiscounts.pullDiscountsFromCloud().catch(() => {}),
           pullBranch.pullBranchDataFromCloud().catch(() => {}),
         ]);
+
+        // Re-sync offline audit queue
+        try {
+          const auditMod = await import("@/lib/audit");
+          await auditMod.syncOfflineAuditQueue();
+        } catch {
+          // ignore
       } catch (e) {
         console.error("[CloudSync] pull failed:", e);
       }

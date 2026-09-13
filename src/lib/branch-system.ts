@@ -254,6 +254,8 @@ export function setBranchStockAbsolute(
     });
   }
   saveBranchStockList(allStock);
+  const updated = allStock.find((s) => s.branchId === branchId && s.stockItemId === stockItemId);
+  if (updated) cloud((m) => m.pushBranchStock(updated));
 }
 
 /**

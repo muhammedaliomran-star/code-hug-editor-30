@@ -520,6 +520,8 @@ export function useDiscounts() {
         return updated;
       });
       saveStorage(STORAGE_KEY_COUPONS, next);
+      const updated = next.find((c) => c.id === id);
+      if (updated) cloud((m) => m.pushCoupon(updated));
       return next;
     });
   }, []);
@@ -528,6 +530,8 @@ export function useDiscounts() {
     setCoupons((prev) => {
       const next = prev.map((c) => (c.id === id ? { ...c, active: !c.active } : c));
       saveStorage(STORAGE_KEY_COUPONS, next);
+      const updated = next.find((c) => c.id === id);
+      if (updated) cloud((m) => m.pushCoupon(updated));
       return next;
     });
   }, []);
@@ -538,6 +542,7 @@ export function useDiscounts() {
       saveStorage(STORAGE_KEY_COUPONS, next);
       return next;
     });
+    cloud((m) => m.removeCoupon(id));
   }, []);
 
   const recordCouponUsage = useCallback((code: string) => {
@@ -551,6 +556,8 @@ export function useDiscounts() {
         return c;
       });
       saveStorage(STORAGE_KEY_COUPONS, next);
+      const updated = next.find((c) => c.code.toUpperCase() === clean);
+      if (updated) cloud((m) => m.pushCoupon(updated));
       return next;
     });
   }, []);
@@ -574,6 +581,8 @@ export function useDiscounts() {
     setQtyOffers((prev) => {
       const next = prev.map((o) => (o.id === id ? { ...o, ...patch } : o));
       saveStorage(STORAGE_KEY_QTY_OFFERS, next);
+      const updated = next.find((o) => o.id === id);
+      if (updated) cloud((m) => m.pushQtyOffer(updated));
       return next;
     });
   }, []);
@@ -584,6 +593,7 @@ export function useDiscounts() {
       saveStorage(STORAGE_KEY_QTY_OFFERS, next);
       return next;
     });
+    cloud((m) => m.removeQtyOffer(id));
   }, []);
 
   // Bundles CRUD
@@ -605,6 +615,8 @@ export function useDiscounts() {
     setBundles((prev) => {
       const next = prev.map((b) => (b.id === id ? { ...b, ...patch } : b));
       saveStorage(STORAGE_KEY_BUNDLES, next);
+      const updated = next.find((b) => b.id === id);
+      if (updated) cloud((m) => m.pushBundle(updated));
       return next;
     });
   }, []);
@@ -615,6 +627,7 @@ export function useDiscounts() {
       saveStorage(STORAGE_KEY_BUNDLES, next);
       return next;
     });
+    cloud((m) => m.removeBundle(id));
   }, []);
 
   // Config updates
@@ -665,6 +678,8 @@ export function useDiscounts() {
         saveStorage(STORAGE_KEY_COUPONS, next);
         return next;
       });
+
+      cloud((m) => m.pushCoupon(newCoupon));
 
       return newCoupon;
     },

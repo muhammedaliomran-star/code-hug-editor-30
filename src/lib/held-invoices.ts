@@ -78,6 +78,7 @@ export function removeHeldInvoice(id: string) {
   } catch (e) {
     console.error("Error removing held invoice", e);
   }
+  cloud((m) => m.removeHeldInvoice(id));
 }
 
 export function clearAllHeldInvoices() {

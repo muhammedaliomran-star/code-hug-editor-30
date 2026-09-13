@@ -174,6 +174,61 @@ function saveToLocalStorageFallback(log: AuditLogEntry) {
   }
 }
 
+/**
+ * Re-sync offline audit queue back to Supabase when online
+ */
+export async function syncOfflineAuditQueue(): Promise<number> {
+  if (typeof window === "undefined") return 0;
+  const key = "segilly_audit_offline_queue_v1";
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return 0;
+    const queue: AuditLogEntry[] = JSON.parse(raw);
+    if (queue.length === 0) return 0;
+
+    const userId = await getUserIdAsync();
+    if (!userId) return 0;
+
+    let synced = 0;
+    const failed: AuditLogEntry[] = [];
+
+    for (const log of queue) {
+      try {
+        const { error } = await supabase.from("audit_logs").upsert({
+          id: log.id,
+          user_id: userId,
+          action: log.action,
+          module: log.module,
+          severity: log.severity,
+          staff_id: log.staffId || null,
+          staff_name: log.staffName,
+          staff_role: log.staffRole,
+          branch_name: log.branchName || null,
+          entity_id: log.entityId || null,
+          entity_name: log.entityName || null,
+          title: log.title,
+          details: log.details || null,
+          old_value: log.oldValue != null ? String(log.oldValue) : null,
+          new_value: log.newValue != null ? String(log.newValue) : null,
+          ip_address: log.ipAddress || null,
+          created_at: log.timestamp,
+        }, { onConflict: "id" });
+
+        if (!error) synced++;
+        else failed.push(log);
+      } catch {
+        failed.push(log);
+      }
+    }
+
+    // Keep only failed items in queue
+    localStorage.setItem(key, JSON.stringify(failed.slice(-200)));
+    return synced;
+  } catch {
+    return 0;
+  }
+}
+
 async function fetchAuditLogsFromDB(): Promise<AuditLogEntry[]> {
   try {
     const { data, error } = await supabase

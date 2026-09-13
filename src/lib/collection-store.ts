@@ -68,6 +68,7 @@ export function removePromise(invoiceId: string) {
     delete current[invoiceId];
     localStorage.setItem(PROMISES_KEY, JSON.stringify(current));
     notify();
+    cloud((m) => m.removePromise(invoiceId));
   } catch (e) {
     console.error("Failed to remove promise", e);
   }
