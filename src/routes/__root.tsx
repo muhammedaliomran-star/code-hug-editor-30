@@ -18,6 +18,7 @@ import { QuickActionsFab } from "@/components/QuickActionsFab";
 import { AmbientBackground } from "@/components/AmbientBackground";
 import { useAuth } from "@/lib/store";
 import { useHydrated } from "@/lib/hydrated";
+import { useSyncFromCloud } from "@/lib/use-sync-from-cloud";
 import { ArabicNumerals } from "@/lib/arabic-digits";
 
 function NotFoundComponent() {
@@ -175,6 +176,7 @@ function FabIfAuthed() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const hydrated = useHydrated();
+  useSyncFromCloud();
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
