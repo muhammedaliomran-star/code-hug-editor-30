@@ -32,6 +32,14 @@ export interface HeldInvoice {
 
 const STORAGE_KEY = "segilly_held_invoices_v1";
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/held-invoices-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/held-invoices-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("HeldInvoices cloud sync failed:", e));
+}
+
 export function getHeldInvoices(): HeldInvoice[] {
   if (typeof window === "undefined") return [];
   try {
@@ -57,6 +65,7 @@ export function saveHeldInvoice(held: Omit<HeldInvoice, "id" | "createdAt">): He
   } catch (e) {
     console.error("Error saving held invoice", e);
   }
+  cloud((m) => m.pushHeldInvoice(newItem));
   return newItem;
 }
 

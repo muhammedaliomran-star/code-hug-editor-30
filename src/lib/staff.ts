@@ -131,6 +131,14 @@ const STORAGE_KEY_SHIFTS = "segilly_shifts_records_v1";
 const STORAGE_KEY_ACTIVE_STAFF_ID = "segilly_active_staff_id_v1";
 const STORAGE_KEY_ATTENDANCE = "segilly_staff_attendance_v1";
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/staff-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/staff-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("Staff cloud sync failed:", e));
+}
+
 const DEFAULT_STAFF: StaffMember[] = [
   {
     id: "staff-admin-main",
@@ -369,6 +377,7 @@ export function useStaffAndShifts() {
       saveStorage(STORAGE_KEY_STAFF, next);
       return next;
     });
+    cloud((m) => m.pushStaffMember(newStaff));
     return newStaff;
   }, []);
 
@@ -376,6 +385,8 @@ export function useStaffAndShifts() {
     setStaffList((prev) => {
       const next = prev.map((s) => (s.id === id ? { ...s, ...patch } : s));
       saveStorage(STORAGE_KEY_STAFF, next);
+      const updated = next.find((s) => s.id === id);
+      if (updated) cloud((m) => m.pushStaffMember(updated));
       return next;
     });
   }, []);
@@ -386,6 +397,7 @@ export function useStaffAndShifts() {
       saveStorage(STORAGE_KEY_STAFF, next);
       return next;
     });
+    cloud((m) => m.removeStaffMember(id));
   }, []);
 
   // CLOCK IN / CLOCK OUT ACTIONS
@@ -416,6 +428,8 @@ export function useStaffAndShifts() {
         saveStorage(STORAGE_KEY_ATTENDANCE, next);
         return next;
       });
+
+      cloud((m) => m.pushAttendance(newRecord));
 
       return newRecord;
     },
@@ -453,6 +467,8 @@ export function useStaffAndShifts() {
         saveStorage(STORAGE_KEY_ATTENDANCE, next);
         return next;
       });
+
+      cloud((m) => m.pushAttendance(updatedRecord));
 
       return updatedRecord;
     },
@@ -500,6 +516,8 @@ export function useStaffAndShifts() {
         return next;
       });
 
+      cloud((m) => m.pushShift(newShift));
+
       return newShift;
     },
     [currentOpenShift, currentStaff, shifts.length]
@@ -538,6 +556,8 @@ export function useStaffAndShifts() {
         saveStorage(STORAGE_KEY_SHIFTS, next);
         return next;
       });
+
+      cloud((m) => m.pushShift(closedRecord));
 
       return closedRecord;
     },

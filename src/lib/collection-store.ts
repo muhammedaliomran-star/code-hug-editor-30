@@ -34,6 +34,14 @@ function notify() {
   listeners.forEach((l) => l());
 }
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/collection-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/collection-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("Collection cloud sync failed:", e));
+}
+
 export function getPromises(): Record<string, PromiseToPay> {
   try {
     return JSON.parse(localStorage.getItem(PROMISES_KEY) || "{}");
@@ -48,6 +56,7 @@ export function savePromise(p: PromiseToPay) {
     current[p.invoiceId] = p;
     localStorage.setItem(PROMISES_KEY, JSON.stringify(current));
     notify();
+    cloud((m) => m.pushPromise(p));
   } catch (e) {
     console.error("Failed to save promise", e);
   }
@@ -87,7 +96,7 @@ export function addCallLog(log: Omit<CollectionCallLog, "id" | "date">) {
 
     // If it has a promise, also update promise map
     if (log.outcome === "promise" && log.promisedDate && log.promisedAmount) {
-      savePromise({
+      const promise: PromiseToPay = {
         invoiceId: log.invoiceId,
         customerId: log.customerId,
         promisedDate: log.promisedDate,
@@ -95,10 +104,12 @@ export function addCallLog(log: Omit<CollectionCallLog, "id" | "date">) {
         note: log.notes,
         createdAt: Date.now(),
         status: "pending",
-      });
+      };
+      savePromise(promise);
     }
 
     notify();
+    cloud((m) => m.pushCallLog(newEntry));
   } catch (e) {
     console.error("Failed to add call log", e);
   }

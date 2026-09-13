@@ -133,6 +133,14 @@ const STORAGE_KEYS = {
   BRANCH_PROFILES: "segilly_branch_profiles_v1",
 };
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/branch-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/branch-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("Branch cloud sync failed:", e));
+}
+
 function readStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -209,6 +217,8 @@ export function updateBranchStockQuantity(
     });
   }
   saveBranchStockList(allStock);
+  const updated = allStock.find((s) => s.branchId === branchId && s.stockItemId === stockItemId);
+  if (updated) cloud((m) => m.pushBranchStock(updated));
 }
 
 /**
@@ -348,6 +358,7 @@ export function createBranchTransfer(params: {
 
   transfers.unshift(newTransfer);
   saveBranchTransfers(transfers);
+  cloud((m) => m.pushBranchTransfer(newTransfer));
   return newTransfer;
 }
 
@@ -369,6 +380,7 @@ export function dispatchBranchTransfer(transferId: string, dispatchedBy = "ال�
   transfer.dispatchedAt = new Date().toISOString();
 
   saveBranchTransfers(transfers);
+  cloud((m) => m.pushBranchTransfer(transfer));
   return true;
 }
 
@@ -414,6 +426,7 @@ export function receiveBranchTransfer(params: {
   transfer.receivedAt = new Date().toISOString();
 
   saveBranchTransfers(transfers);
+  cloud((m) => m.pushBranchTransfer(transfer));
   return true;
 }
 
@@ -436,6 +449,7 @@ export function cancelBranchTransfer(transferId: string): boolean {
   transfer.cancelledAt = new Date().toISOString();
 
   saveBranchTransfers(transfers);
+  cloud((m) => m.pushBranchTransfer(transfer));
   return true;
 }
 
@@ -670,6 +684,7 @@ export function addBranchRemittance(remittance: Omit<BranchRemittance, "id" | "c
   };
   list.unshift(created);
   saveBranchRemittances(list);
+  cloud((m) => m.pushBranchRemittance(created));
   return created;
 }
 
@@ -716,6 +731,7 @@ export function closeBranchShift(params: {
 
   shifts.unshift(newShift);
   saveBranchShifts(shifts);
+  cloud((m) => m.pushBranchShift(newShift));
   return newShift;
 }
 

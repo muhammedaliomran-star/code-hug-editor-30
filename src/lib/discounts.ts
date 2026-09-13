@@ -59,6 +59,14 @@ const STORAGE_KEY_BUNDLES = "segilly_bundles_v1";
 const STORAGE_KEY_LOYALTY = "segilly_loyalty_config_v1";
 const STORAGE_KEY_MARGIN_GUARD = "segilly_margin_guard_v1";
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/discounts-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/discounts-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("Discounts cloud sync failed:", e));
+}
+
 const DEFAULT_COUPONS: PromoCoupon[] = [
   {
     id: "coupon-welcome10",
@@ -499,6 +507,7 @@ export function useDiscounts() {
       saveStorage(STORAGE_KEY_COUPONS, next);
       return next;
     });
+    cloud((m) => m.pushCoupon(newCoupon));
     return newCoupon;
   }, []);
 
@@ -557,6 +566,7 @@ export function useDiscounts() {
       saveStorage(STORAGE_KEY_QTY_OFFERS, next);
       return next;
     });
+    cloud((m) => m.pushQtyOffer(newOffer));
     return newOffer;
   }, []);
 
@@ -587,6 +597,7 @@ export function useDiscounts() {
       saveStorage(STORAGE_KEY_BUNDLES, next);
       return next;
     });
+    cloud((m) => m.pushBundle(newBundle));
     return newBundle;
   }, []);
 
@@ -611,6 +622,7 @@ export function useDiscounts() {
     setLoyaltyConfig((prev) => {
       const next = { ...prev, ...patch };
       saveStorage(STORAGE_KEY_LOYALTY, next);
+      cloud((m) => m.pushLoyaltyConfig(next));
       return next;
     });
   }, []);

@@ -54,6 +54,14 @@ function notifyShifts() {
   shiftListeners.forEach((l) => l());
 }
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/staff-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/staff-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("Shift cloud sync failed:", e));
+}
+
 export function loadAllShifts(): CashShift[] {
   if (typeof localStorage === "undefined") return [];
   try {
@@ -136,6 +144,7 @@ export function openNewShift(params: {
 
   setActiveShift(newShift);
   saveAllShifts([newShift, ...all]);
+  cloud((m) => m.pushCashShift(newShift));
   return newShift;
 }
 
@@ -303,6 +312,7 @@ export function closeActiveShift(params: {
   const updatedAll = all.map((s) => (s.id === closedShift.id ? closedShift : s));
   saveAllShifts(updatedAll);
   setActiveShift(null);
+  cloud((m) => m.pushCashShift(closedShift));
 
   return closedShift;
 }

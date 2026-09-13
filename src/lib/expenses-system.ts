@@ -108,6 +108,14 @@ const STORAGE_KEYS = {
   RECURRING_AUTORUN: "segilly_recurring_autorun_date_v1",
 };
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/expenses-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/expenses-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("Expenses cloud sync failed:", e));
+}
+
 function readStorage<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
@@ -182,6 +190,7 @@ export function saveExpenseMetaLocal(expenseId: string, meta: ExpenseMeta): void
   const map = readStorage<Record<string, ExpenseMeta>>(STORAGE_KEYS.EXPENSE_META_MAP, {});
   map[expenseId] = { ...(map[expenseId] || {}), ...meta };
   writeStorage(STORAGE_KEYS.EXPENSE_META_MAP, map);
+  cloud((m) => m.pushExpenseMeta(expenseId, map[expenseId]));
 }
 
 // ==================== 3-ب. سجل سندات الصرف المتسلسلة الرسمية ====================
@@ -242,6 +251,7 @@ export function getAllExpenseCategories(): CustomExpenseCategory[] {
 
 export function saveExpenseCategories(cats: CustomExpenseCategory[]): void {
   writeStorage(STORAGE_KEYS.CUSTOM_CATEGORIES, cats);
+  cloud((m) => m.pushCustomCategories(cats));
 }
 
 export function addExpenseCategory(cat: Omit<CustomExpenseCategory, "id" | "isSystem">): CustomExpenseCategory {
@@ -320,6 +330,9 @@ export function getRecurringExpenses(): RecurringExpense[] {
 
 export function saveRecurringExpenses(list: RecurringExpense[]): void {
   writeStorage(STORAGE_KEYS.RECURRING_EXPENSES, list);
+  for (const item of list) {
+    cloud((m) => m.pushRecurringExpense(item));
+  }
 }
 
 export function computeNextDueDate(frequency: RecurringExpense["frequency"], dayOfMonth = 1, fromDateStr?: string): string {
@@ -541,6 +554,9 @@ export function getCategoryBudgets(): CategoryBudget[] {
 
 export function saveCategoryBudgets(list: CategoryBudget[]): void {
   writeStorage(STORAGE_KEYS.CATEGORY_BUDGETS, list);
+  for (const budget of list) {
+    cloud((m) => m.pushCategoryBudget(budget));
+  }
 }
 
 export function budgetKey(b: Pick<CategoryBudget, "category" | "branchId" | "costCenter">): string {

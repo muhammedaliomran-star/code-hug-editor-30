@@ -49,6 +49,14 @@ function write(list: CashierShift[]) {
   }
 }
 
+// ==================== مزامنة سحابية (fire-and-forget) ====================
+function cloud(fn: (m: typeof import("@/lib/staff-sync")) => Promise<unknown>): void {
+  if (typeof window === "undefined") return;
+  import("@/lib/staff-sync")
+    .then((m) => fn(m))
+    .catch((e) => console.error("CashierShift cloud sync failed:", e));
+}
+
 export function getAllShifts(): CashierShift[] {
   return read().sort(
     (a, b) => new Date(b.openedAt).getTime() - new Date(a.openedAt).getTime(),
@@ -74,6 +82,7 @@ export function startShift(openingCash: number, cashierName: string): CashierShi
     notes: null,
   };
   write([shift, ...all]);
+  cloud((m) => m.pushCashierShift(shift));
   return shift;
 }
 
@@ -162,5 +171,6 @@ export function closeShift(
   };
   all[idx] = closed;
   write(all);
+  cloud((m) => m.pushCashierShift(closed));
   return closed;
 }
