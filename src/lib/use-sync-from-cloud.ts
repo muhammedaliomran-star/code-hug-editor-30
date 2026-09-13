@@ -47,6 +47,7 @@ export function useSyncFromCloud() {
           await auditMod.syncOfflineAuditQueue();
         } catch {
           // ignore
+        }
       } catch (e) {
         console.error("[CloudSync] pull failed:", e);
       }

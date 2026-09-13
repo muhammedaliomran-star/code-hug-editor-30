@@ -168,7 +168,7 @@ export async function pullStaffFromCloud(): Promise<boolean> {
       active: r.is_active,
       commissionRatePct: Number(r.commission_pct || 0),
       baseSalary: Number(r.base_salary || 0),
-      permissions: r.permissions || staffMod.ROLE_DEFAULT_PERMISSIONS[r.role || "cashier"],
+      permissions: r.permissions || (staffMod.ROLE_DEFAULT_PERMISSIONS as any)[r.role || "cashier"],
       notes: r.notes,
       createdAt: r.created_at,
     }));
