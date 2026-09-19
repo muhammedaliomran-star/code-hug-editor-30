@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { BezelCard } from "@/components/BezelCard";
 import { useDB, fmt, db } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   runComprehensiveReconciliation,
   executeReconciliationFix,
@@ -91,11 +92,16 @@ export default function Reconciliation() {
     try {
       setLoadingMovements(true);
       const { data: rows, error } = await (supabase.from as any)("stock_movements").select("stock_item_id,quantity");
-      if (!error && rows) {
+      if (error) {
+        console.error("[stock_movements] Load error:", error.message);
+        toast.error("فشل تحميل حركات المخزون", { description: error.message });
+        return;
+      }
+      if (rows) {
         setMovements(rows.map((r: any) => ({ stock_item_id: r.stock_item_id, quantity: Number(r.quantity ?? 0) })));
       }
-    } catch {
-      // Stock movements table may be optional
+    } catch (e) {
+      console.error("[stock_movements] Unexpected error:", e);
     } finally {
       setLoadingMovements(false);
     }

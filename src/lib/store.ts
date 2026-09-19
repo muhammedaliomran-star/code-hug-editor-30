@@ -1,6 +1,7 @@
 import type { ColorPalette } from "./theme";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export type { ColorPalette };
 export type NumeralsFormat = "latn" | "arab";
@@ -364,11 +365,13 @@ let cache: {
 
 let loading = true;
 let loaded = false;
+let lastFetchErrors: string[] = [];
 
 function notify() { listeners.forEach((l) => l()); }
 
 async function fetchAll() {
   loading = true;
+  lastFetchErrors = [];
   notify();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -397,6 +400,24 @@ async function fetchAll() {
     (supabase.from as any)("shipping_zones").select("*").order("name"),
     (supabase.from as any)("shipments").select("*").order("created_at", { ascending: false }),
   ]);
+
+  // Collect errors from failed queries
+  const tableNames = ["customers", "invoices", "payments", "expenses", "invoice_items", "suppliers", "purchases", "purchase_items", "supplier_payments", "stock_items", "warehouse_items", "return_records", "return_items", "branches", "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments"];
+  const results = [c, i, p, e, ii, s, pu, pi, sp, st, wh, rr, ri, br, pv, sc, sz, sh];
+  const failedTables: string[] = [];
+  results.forEach((r, idx) => {
+    if (r.error) {
+      failedTables.push(`${tableNames[idx]}: ${r.error.message}`);
+    }
+  });
+
+  if (failedTables.length > 0) {
+    lastFetchErrors = failedTables;
+    console.error("[fetchAll] Failed tables:", failedTables);
+    toast.error(`فشل تحميل البيانات: ${failedTables.length} جدول`, {
+      description: failedTables.slice(0, 3).join(", ") + (failedTables.length > 3 ? "..." : ""),
+    });
+  }
 
   cache = {
     customers: (c.data ?? []).map((r: any) => ({
@@ -533,6 +554,7 @@ export function useDB(): DBState {
     ...cache, 
     loading, 
     refresh,
+    fetchErrors: lastFetchErrors,
     carriers: cache.carriers,
     zones: cache.zones,
     shipments: cache.shipments,
