@@ -81,6 +81,10 @@ export function getActiveStaffSnapshot(): { staffId: string; staffName: string; 
     return { staffId: "system", staffName: "المدير العام", staffRole: "admin", branchName: "الفرع الرئيسي" };
   }
   try {
+    // Use Supabase auth user ID instead of localStorage for attribution
+    const session = supabase.auth.getSession();
+    // session is a Promise but we can't await in sync context
+    // Fallback: read from localStorage for staff display only (not for security)
     const activeStaffId = localStorage.getItem("segilly_active_staff_id_v1") || "staff-admin-main";
     const staffMembersRaw = localStorage.getItem("segilly_staff_members_v1");
     if (staffMembersRaw) {
@@ -291,18 +295,6 @@ export function useAuditLogs() {
     loadLogs();
   }, [loadLogs]);
 
-  const clearLogs = useCallback(async () => {
-    try {
-      const userId = await getUserIdAsync();
-      if (userId) {
-        await supabase.from("audit_logs").delete().eq("user_id", userId);
-      }
-    } catch (e) {
-      console.error("Failed to clear audit logs:", e);
-    }
-    setLogs([]);
-  }, []);
-
   const addLog = useCallback(async (entry: Omit<AuditLogEntry, "id" | "timestamp">) => {
     return await recordAuditLog(entry);
   }, []);
@@ -331,7 +323,6 @@ export function useAuditLogs() {
     stats,
     loading,
     addLog,
-    clearLogs,
     reload,
   };
 }

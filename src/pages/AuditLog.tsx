@@ -42,16 +42,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -62,9 +52,7 @@ import {
   Filter,
   FileSpreadsheet,
   FileText,
-  Trash2,
   Calendar,
-  AlertTriangle,
   CheckCircle2,
   Clock,
   User,
@@ -80,7 +68,7 @@ import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 
 export default function AuditLog() {
   const { privacy } = usePrivacy();
-  const { logs, stats, clearLogs } = useAuditLogs();
+  const { logs, stats } = useAuditLogs();
   const { staffList } = useStaffAndShifts();
 
   const [search, setSearch] = useState("");
@@ -89,7 +77,6 @@ export default function AuditLog() {
   const [selectedStaff, setSelectedStaff] = useState<string>("all");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [viewLog, setViewLog] = useState<AuditLogEntry | null>(null);
-  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
@@ -206,14 +193,6 @@ export default function AuditLog() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-
-              <ActionButton
-                tone="surface"
-                onClick={() => setConfirmClearOpen(true)}
-                icon={<Trash2 className="h-4 w-4 text-rose-500" />}
-              >
-                تفريغ السجل
-              </ActionButton>
             </>
           }
         />
@@ -518,32 +497,6 @@ export default function AuditLog() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Clear Logs Confirm */}
-        <AlertDialog open={confirmClearOpen} onOpenChange={setConfirmClearOpen}>
-          <AlertDialogContent dir="rtl" className="text-right">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-base font-bold text-rose-600 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" /> تأكيد تفريغ سجل التدقيق
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-xs">
-                هل أنت متأكد من مسح وتفريغ سجل الحركات بالكامل؟ لا يمكن التراجع عن هذه الخطوة، وتُستخدم فقط في بداية السنوات المالية الجديدة.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="gap-2">
-              <AlertDialogCancel className="rounded-xl text-xs">إلغاء</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => {
-                  clearLogs();
-                  toast.success("تم تفريغ سجل الحركات بنجاح");
-                }}
-                className="bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold"
-              >
-                تأكيد التفريغ
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </PageTransition>
     </AppShell>
   );
