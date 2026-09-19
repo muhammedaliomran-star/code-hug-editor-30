@@ -3,16 +3,13 @@
 -- Run in Supabase Dashboard > SQL Editor
 -- =============================================================
 
--- Enable pgcrypto for bcrypt hashing
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 -- ==================== Licenses Table ====================
 CREATE TABLE IF NOT EXISTS public.licenses (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   key text NOT NULL,
   tier text NOT NULL DEFAULT 'trial',
-  tier_label text NOT NULL DEFAULT 'تجريبي',
+  tier_label text NOT NULL DEFAULT 'test',
   client_name text NOT NULL DEFAULT '',
   client_phone text NOT NULL DEFAULT '',
   shop_name text NOT NULL DEFAULT '',
@@ -22,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.licenses (
   expiry_date text NOT NULL DEFAULT 'LIFETIME',
   status text NOT NULL DEFAULT 'active',
   paid_amount numeric(12,2) NOT NULL DEFAULT 0,
-  currency text NOT NULL DEFAULT 'ج.م',
+  currency text NOT NULL DEFAULT 'EGP',
   billing_cycle text NOT NULL DEFAULT 'monthly',
   notes text,
   hardware_included text,
@@ -66,7 +63,7 @@ CREATE POLICY "Only owners manage admin settings" ON public.admin_settings
   USING (public.has_role(auth.uid(), 'owner') AND auth.uid() = user_id)
   WITH CHECK (public.has_role(auth.uid(), 'owner') AND auth.uid() = user_id);
 
--- ==================== RPC: Verify Admin Pin (bcrypt) ====================
+-- ==================== RPC: Verify Admin Pin ====================
 CREATE OR REPLACE FUNCTION public.verify_admin_pin(_user_id uuid, _pin text)
 RETURNS boolean
 LANGUAGE sql
@@ -77,13 +74,13 @@ AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.admin_settings
     WHERE user_id = _user_id
-      AND admin_pin_hash = crypt(_pin, admin_pin_hash)
+      AND admin_pin_hash = md5(_pin)
   );
 $$;
 
 GRANT EXECUTE ON FUNCTION public.verify_admin_pin(uuid, text) TO authenticated;
 
--- ==================== RPC: Set Admin Pin (bcrypt hash) ====================
+-- ==================== RPC: Set Admin Pin ====================
 CREATE OR REPLACE FUNCTION public.set_admin_pin(_user_id uuid, _new_pin text)
 RETURNS void
 LANGUAGE plpgsql
@@ -96,9 +93,9 @@ BEGIN
   END IF;
 
   INSERT INTO public.admin_settings (user_id, admin_pin_hash, updated_at)
-  VALUES (_user_id, crypt(_new_pin, gen_salt('bf')), now())
+  VALUES (_user_id, md5(_new_pin), now())
   ON CONFLICT (user_id) DO UPDATE
-  SET admin_pin_hash = crypt(_new_pin, gen_salt('bf')), updated_at = now();
+  SET admin_pin_hash = md5(_new_pin), updated_at = now();
 END;
 $$;
 
@@ -118,7 +115,7 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.get_admin_pin_hash(uuid) TO authenticated;
 
--- ==================== RPC: Verify Manager Pin (bcrypt) ====================
+-- ==================== RPC: Verify Manager Pin ====================
 CREATE OR REPLACE FUNCTION public.verify_manager_pin(_user_id uuid, _pin text)
 RETURNS boolean
 LANGUAGE sql
@@ -130,13 +127,13 @@ AS $$
     SELECT 1 FROM public.shop_settings
     WHERE user_id = _user_id
       AND manager_pin IS NOT NULL
-      AND manager_pin = crypt(_pin, manager_pin)
+      AND manager_pin = md5(_pin)
   );
 $$;
 
 GRANT EXECUTE ON FUNCTION public.verify_manager_pin(uuid, text) TO authenticated;
 
--- ==================== RPC: Set Manager Pin (bcrypt hash) ====================
+-- ==================== RPC: Set Manager Pin ====================
 CREATE OR REPLACE FUNCTION public.set_manager_pin(_user_id uuid, _new_pin text)
 RETURNS void
 LANGUAGE plpgsql
@@ -149,7 +146,7 @@ BEGIN
   END IF;
 
   UPDATE public.shop_settings
-  SET manager_pin = crypt(_new_pin, gen_salt('bf')), updated_at = now()
+  SET manager_pin = md5(_new_pin), updated_at = now()
   WHERE user_id = _user_id;
 END;
 $$;
