@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { getShopSettings, type ShopSettings } from "./store";
 
 const CASHIER_MODE_KEY = "segilly:cashier_mode_active";
-const DEFAULT_MANAGER_PIN = "1234";
 
 const listeners = new Set<() => void>();
 
@@ -24,14 +24,42 @@ export function setCashierMode(active: boolean): void {
 
 export const setCashierModeActive = setCashierMode;
 
-export function getManagerPin(shop?: Partial<ShopSettings>): string {
-  const settings = shop || getShopSettings();
-  return (settings.managerPin || DEFAULT_MANAGER_PIN).trim();
+export function getManagerPin(_shop?: Partial<ShopSettings>): string {
+  // Manager PIN is now server-verified via RPC — this function is kept for
+  // legacy callers but should not be used for security decisions.
+  return "";
+}
+
+export async function verifyManagerPinAsync(pin: string): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase.rpc("verify_manager_pin", {
+      _user_id: user.id,
+      _pin: pin.trim(),
+    });
+
+    if (error) {
+      console.error("verify_manager_pin RPC failed:", error);
+      // Fallback: local check (for offline mode)
+      const shop = getShopSettings();
+      const correct = (shop.managerPin || "1234").trim();
+      return pin.trim() === correct;
+    }
+
+    return data === true;
+  } catch (e) {
+    console.error("Manager PIN verification error:", e);
+    return false;
+  }
 }
 
 export function verifyManagerPin(pin: string, shop?: Partial<ShopSettings>): boolean {
-  const correct = getManagerPin(shop);
-  return pin.trim() === correct.trim();
+  // Synchronous fallback for legacy callers — checks localStorage
+  const settings = shop || getShopSettings();
+  const correct = (settings.managerPin || "1234").trim();
+  return pin.trim() === correct;
 }
 
 export function shouldRequireManagerPinForDiscount(
@@ -65,18 +93,22 @@ export function useSecurity() {
   }, []);
 
   const toggleCashierMode = useCallback(
-    (targetState?: boolean, pin?: string): { success: boolean; error?: string } => {
+    async (targetState?: boolean, pin?: string): Promise<{ success: boolean; error?: string }> => {
       const next = targetState !== undefined ? targetState : !isCashierMode;
       // If exiting cashier mode (going back to manager mode), require PIN
       if (!next && isCashierMode) {
-        if (!pin || !verifyManagerPin(pin, shop)) {
+        if (!pin) {
+          return { success: false, error: "الرقم السري للمدير مطلوب" };
+        }
+        const valid = await verifyManagerPinAsync(pin);
+        if (!valid) {
           return { success: false, error: "الرقم السري للمدير غير صحيح" };
         }
       }
       setCashierMode(next);
       return { success: true };
     },
-    [isCashierMode, shop],
+    [isCashierMode],
   );
 
   const hideCostAndProfits = shouldHideCostAndProfits(shop, isCashierMode);
@@ -93,7 +125,8 @@ export function useSecurity() {
     maxAllowedDiscountPct,
     requiresPinForDelete,
     requiresPinForAnalytics,
-    verifyPin: (pin: string) => verifyManagerPin(pin, shop),
+    verifyPin: (pin: string) => verifyManagerPin(pin),
+    verifyPinAsync: (pin: string) => verifyManagerPinAsync(pin),
   };
 }
 

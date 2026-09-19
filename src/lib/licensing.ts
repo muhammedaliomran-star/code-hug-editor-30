@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { exportToExcel } from "@/lib/excel-helper";
 import { openPdfDocument, esc } from "@/lib/pdf-doc";
 
@@ -78,7 +79,6 @@ export interface LicenseRecord {
 
 const STORAGE_KEY_CURRENT_LICENSE = "segilly_active_license_v1";
 const STORAGE_KEY_ADMIN_LICENSES = "segilly_admin_all_licenses_v1";
-const STORAGE_KEY_ADMIN_PIN = "segilly_super_admin_pin_v1";
 const STORAGE_KEY_ADMIN_GLOBAL_LOGS = "segilly_admin_global_audit_logs_v1";
 
 export const DEFAULT_MODULES: Record<LicenseTier, ModulePermissions> = {
@@ -360,6 +360,111 @@ export function saveAdminLicenses(licenses: LicenseRecord[]): void {
 }
 
 /**
+ * Cloud: Fetch all licenses from Supabase for the current owner
+ */
+export async function fetchLicensesFromCloud(): Promise<LicenseRecord[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return getAdminLicenses();
+
+    const { data, error } = await supabase
+      .from("licenses")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("fetchLicensesFromCloud error:", error);
+      return getAdminLicenses();
+    }
+
+    const records: LicenseRecord[] = (data || []).map((row: any) => ({
+      id: row.id,
+      key: row.key,
+      tier: row.tier,
+      tierLabel: row.tier_label,
+      clientName: row.client_name,
+      clientPhone: row.client_phone,
+      shopName: row.shop_name,
+      shopAddress: row.shop_address || undefined,
+      taxNumber: row.tax_number || undefined,
+      issueDate: row.issue_date,
+      expiryDate: row.expiry_date,
+      status: row.status,
+      paidAmount: row.paid_amount,
+      currency: row.currency,
+      billingCycle: row.billing_cycle,
+      notes: row.notes || undefined,
+      hardwareIncluded: row.hardware_included || undefined,
+      hardwareItems: row.hardware_items || undefined,
+      taxRatePercent: row.tax_rate_percent || undefined,
+      modules: row.modules || {},
+      installments: row.installments || undefined,
+      supportLogs: row.support_logs || [],
+      lastActiveDate: row.last_active_date || undefined,
+      deviceFingerprint: row.device_fingerprint || undefined,
+    }));
+
+    if (records.length > 0) {
+      localStorage.setItem(STORAGE_KEY_ADMIN_LICENSES, JSON.stringify(records));
+    }
+
+    return records;
+  } catch (e) {
+    console.error("fetchLicensesFromCloud error:", e);
+    return getAdminLicenses();
+  }
+}
+
+/**
+ * Cloud: Push all licenses to Supabase (upsert by id)
+ */
+export async function pushLicensesToCloud(licenses: LicenseRecord[]): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const rows = licenses.map((lic) => ({
+      id: lic.id,
+      user_id: user.id,
+      key: lic.key,
+      tier: lic.tier,
+      tier_label: lic.tierLabel,
+      client_name: lic.clientName,
+      client_phone: lic.clientPhone,
+      shop_name: lic.shopName,
+      shop_address: lic.shopAddress || null,
+      tax_number: lic.taxNumber || null,
+      issue_date: lic.issueDate,
+      expiry_date: lic.expiryDate,
+      status: lic.status,
+      paid_amount: lic.paidAmount,
+      currency: lic.currency,
+      billing_cycle: lic.billingCycle,
+      notes: lic.notes || null,
+      hardware_included: lic.hardwareIncluded || null,
+      hardware_items: lic.hardwareItems || null,
+      tax_rate_percent: lic.taxRatePercent || null,
+      modules: lic.modules || {},
+      installments: lic.installments || null,
+      support_logs: lic.supportLogs || [],
+      last_active_date: lic.lastActiveDate || null,
+      device_fingerprint: lic.deviceFingerprint || null,
+    }));
+
+    const { error } = await supabase.from("licenses").upsert(rows, {
+      onConflict: "id",
+    });
+
+    if (error) {
+      console.error("pushLicensesToCloud error:", error);
+    }
+  } catch (e) {
+    console.error("pushLicensesToCloud error:", e);
+  }
+}
+
+/**
  * Get currently active license for this store instance
  */
 export function getCurrentLicense(): LicenseRecord {
@@ -462,14 +567,45 @@ export function activateLicenseKey(
 }
 
 /**
- * Super Admin Pin Helper
+ * Super Admin Pin Helper — now backed by Supabase
  */
-export function getSuperAdminPin(): string {
-  return localStorage.getItem(STORAGE_KEY_ADMIN_PIN) || "9999";
+export async function verifySuperAdminPin(pin: string): Promise<boolean> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await supabase.rpc("verify_admin_pin", {
+      _user_id: user.id,
+      _pin: pin.trim(),
+    });
+
+    if (error) {
+      console.error("verify_admin_pin RPC failed:", error);
+      return false;
+    }
+
+    return data === true;
+  } catch (e) {
+    console.error("Admin PIN verification error:", e);
+    return false;
+  }
 }
 
-export function setSuperAdminPin(newPin: string): void {
-  localStorage.setItem(STORAGE_KEY_ADMIN_PIN, newPin);
+export async function setSuperAdminPin(newPin: string): Promise<void> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { error } = await supabase.rpc("set_admin_pin", {
+      _user_id: user.id,
+      _new_pin: newPin.trim(),
+    });
+
+    if (error) throw error;
+  } catch (e) {
+    console.error("set_admin_pin RPC failed:", e);
+    throw e;
+  }
 }
 
 /**

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
@@ -74,8 +74,10 @@ import {
 import {
   getAdminLicenses,
   saveAdminLicenses,
+  fetchLicensesFromCloud,
+  pushLicensesToCloud,
   generateLicenseKey,
-  getSuperAdminPin,
+  verifySuperAdminPin,
   setSuperAdminPin,
   calculateDaysRemaining,
   generateLicenseWhatsAppMessage,
@@ -152,15 +154,32 @@ export default function AdminLicensesPage() {
   const [paymentReceipt, setPaymentReceipt] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
 
-  // Refresh data from storage
-  const reloadData = () => {
-    setLicenses(getAdminLicenses());
+  // Pull licenses from cloud on mount
+  useEffect(() => {
+    fetchLicensesFromCloud().then(setLicenses);
+  }, []);
+
+  // Refresh data from storage + cloud
+  const reloadData = async () => {
+    const cloudLicenses = await fetchLicensesFromCloud();
+    setLicenses(cloudLicenses);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  // Save + push to cloud (fire-and-forget)
+  const saveLicenses = (updated: LicenseRecord[]) => {
+    setLicenses(updated);
+    saveAdminLicenses(updated);
+    pushLicensesToCloud(updated);
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPin = getSuperAdminPin();
-    if (pin.trim() === correctPin || pin.trim() === "1234" || pin.trim() === "9999") {
+    if (!pin.trim()) {
+      toast.error("أدخل الرقم السري");
+      return;
+    }
+    const valid = await verifySuperAdminPin(pin.trim());
+    if (valid) {
       setIsAuthenticated(true);
       toast.success("مرحباً بك في لوحة تحكم السوبر أدمن وإدارة المنظومة");
     } else {
@@ -169,16 +188,20 @@ export default function AdminLicensesPage() {
     }
   };
 
-  const handleChangePin = (e: React.FormEvent) => {
+  const handleChangePin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPin.trim() || newPin.length < 4) {
       toast.error("يجب أن يتكون الرقم السري من 4 أرقام على الأقل");
       return;
     }
-    setSuperAdminPin(newPin.trim());
-    toast.success("تم تحديث الرقم السري للمشرف العام بنجاح!");
-    setChangePinOpen(false);
-    setNewPin("");
+    try {
+      await setSuperAdminPin(newPin.trim());
+      toast.success("تم تحديث الرقم السري للمشرف العام بنجاح!");
+      setChangePinOpen(false);
+      setNewPin("");
+    } catch {
+      toast.error("فشل تحديث الرقم السري. حاول مجدداً.");
+    }
   };
 
   const handleTierChange = (tier: LicenseTier) => {
@@ -299,7 +322,7 @@ export default function AdminLicensesPage() {
 
     const updated = [initialRecord, ...licenses];
     setLicenses(updated);
-    saveAdminLicenses(updated);
+    saveLicenses(updated);
     setGeneratedResult(initialRecord);
     toast.success("تم إنشاء وتوثيق الترخيص بنجاح!");
   };
@@ -323,7 +346,7 @@ export default function AdminLicensesPage() {
 
     const updatedAll = licenses.map((l) => (l.id === selectedLicense.id ? updatedLic : l));
     setLicenses(updatedAll);
-    saveAdminLicenses(updatedAll);
+    saveLicenses(updatedAll);
     setSelectedLicense(updatedLic);
     setNewLogNote("");
     toast.success("تمت إضافة الملاحظة لسجل العميل");
@@ -374,7 +397,7 @@ export default function AdminLicensesPage() {
 
     const updatedAll = licenses.map((l) => (l.id === selectedLicense.id ? updatedLic : l));
     setLicenses(updatedAll);
-    saveAdminLicenses(updatedAll);
+    saveLicenses(updatedAll);
     setSelectedLicense(updatedLic);
     setPaymentModalOpen(false);
     setPaymentAmount("");
@@ -387,7 +410,7 @@ export default function AdminLicensesPage() {
   const handleUpdateStatus = (licId: string, newStatus: LicenseStatus) => {
     const updated = licenses.map((l) => (l.id === licId ? { ...l, status: newStatus } : l));
     setLicenses(updated);
-    saveAdminLicenses(updated);
+    saveLicenses(updated);
     if (selectedLicense?.id === licId) {
       setSelectedLicense({ ...selectedLicense, status: newStatus });
     }
@@ -423,7 +446,7 @@ export default function AdminLicensesPage() {
 
     const updated = licenses.map((l) => (l.id === lic.id ? updatedLic : l));
     setLicenses(updated);
-    saveAdminLicenses(updated);
+    saveLicenses(updated);
     if (selectedLicense?.id === lic.id) setSelectedLicense(updatedLic);
     toast.success(`تم تمديد الاشتراك بنجاح حتى ${newExpiry}`);
   };
@@ -433,7 +456,7 @@ export default function AdminLicensesPage() {
     if (confirm("هل أنت متأكد من حذف هذا الترخيص نهائياً من سجلات الإدارة؟")) {
       const updated = licenses.filter((l) => l.id !== licId);
       setLicenses(updated);
-      saveAdminLicenses(updated);
+      saveLicenses(updated);
       setManageModalOpen(false);
       toast.success("تم حذف الترخيص");
     }
@@ -461,7 +484,7 @@ export default function AdminLicensesPage() {
         const parsed = JSON.parse(event.target?.result as string);
         if (Array.isArray(parsed)) {
           setLicenses(parsed);
-          saveAdminLicenses(parsed);
+          saveLicenses(parsed);
           toast.success(`تم استيراد ${parsed.length} ترخيص بنجاح واستعادة قاعدة البيانات!`);
         } else {
           toast.error("ملف النسخة الاحتياطية غير صالح");
@@ -595,7 +618,7 @@ export default function AdminLicensesPage() {
                     <KeyRound className="w-4 h-4 text-muted-foreground absolute left-4 top-4" />
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    (الرقم السري الافتراضي: <strong>9999</strong> أو <strong>1234</strong>)
+                    أدخل الرقم السري للمشرف العام
                   </p>
                 </div>
 
@@ -1619,7 +1642,7 @@ export default function AdminLicensesPage() {
                               l.id === selectedLicense.id ? updatedLic : l
                             );
                             setLicenses(updatedAll);
-                            saveAdminLicenses(updatedAll);
+                            saveLicenses(updatedAll);
                             setSelectedLicense(updatedLic);
                             toast.success(`تم تحديث صلاحية (${mod.label})`);
                           }}

@@ -913,9 +913,9 @@ function BillingTab({ form, set }: TabProps) {
                 type="password"
                 inputMode="numeric"
                 maxLength={8}
-                value={form.managerPin ?? "1234"}
+                value={form.managerPin ?? ""}
                 onChange={(e) => set("managerPin", e.target.value)}
-                placeholder="1234"
+                placeholder="••••"
                 className="h-11 rounded-2xl bg-foreground/[0.03] border-foreground/10 focus:bg-background transition-all font-mono font-bold text-center tracking-widest"
               />
             </Field>

@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import OwnerCockpit from "@/pages/OwnerCockpit";
-import { requireAuth } from "@/lib/route-guards";
+import { requireOwner } from "@/lib/route-guards";
 
 export const Route = createFileRoute("/owner")({
   ssr: false,
-  beforeLoad: requireAuth,
+  beforeLoad: requireOwner,
   component: OwnerCockpit,
   head: () => ({
     meta: [

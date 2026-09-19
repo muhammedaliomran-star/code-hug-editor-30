@@ -10,8 +10,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, ShieldAlert, KeyRound } from "lucide-react";
-import { verifyManagerPin } from "@/lib/security";
+import { Lock, ShieldAlert, KeyRound, Loader2 } from "lucide-react";
+import { verifyManagerPinAsync } from "@/lib/security";
 import { toast } from "sonner";
 
 interface ManagerPinModalProps {
@@ -31,17 +31,27 @@ export function ManagerPinModal({
 }: ManagerPinModalProps) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (verifyManagerPin(pin)) {
-      setError(false);
-      setPin("");
-      onOpenChange(false);
-      onSuccess();
-    } else {
+    setLoading(true);
+    try {
+      const valid = await verifyManagerPinAsync(pin);
+      if (valid) {
+        setError(false);
+        setPin("");
+        onOpenChange(false);
+        onSuccess();
+      } else {
+        setError(true);
+        toast.error("الرقم السري للمدير غير صحيح!");
+      }
+    } catch {
       setError(true);
-      toast.error("الرقم السري للمدير غير صحيح!");
+      toast.error("فشل التحقق من الرقم السري");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -68,7 +78,7 @@ export function ManagerPinModal({
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-2">
             <Label className="text-xs font-bold text-muted-foreground block text-center">
-              أدخل الرقم السري للمدير (الافتراضي: 1234)
+              أدخل الرقم السري للمدير
             </Label>
             <div className="relative max-w-[220px] mx-auto">
               <Input
@@ -104,7 +114,8 @@ export function ManagerPinModal({
             >
               إلغاء
             </Button>
-            <Button type="submit" className="flex-1 gap-1.5">
+            <Button type="submit" className="flex-1 gap-1.5" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               تأكيد وتجاوز
             </Button>
           </DialogFooter>

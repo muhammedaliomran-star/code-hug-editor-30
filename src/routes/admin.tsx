@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import AdminLicenses from "@/pages/AdminLicenses";
-import { requireAuth } from "@/lib/route-guards";
+import { requireOwner } from "@/lib/route-guards";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
-  beforeLoad: requireAuth,
+  beforeLoad: requireOwner,
   component: AdminLicenses,
   head: () => ({
     meta: [
