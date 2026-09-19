@@ -42,10 +42,7 @@ export async function verifyManagerPinAsync(pin: string): Promise<boolean> {
 
     if (error) {
       console.error("verify_manager_pin RPC failed:", error);
-      // Fallback: local check (for offline mode)
-      const shop = getShopSettings();
-      const correct = (shop.managerPin || "1234").trim();
-      return pin.trim() === correct;
+      return false;
     }
 
     return data === true;
@@ -55,11 +52,11 @@ export async function verifyManagerPinAsync(pin: string): Promise<boolean> {
   }
 }
 
-export function verifyManagerPin(pin: string, shop?: Partial<ShopSettings>): boolean {
-  // Synchronous fallback for legacy callers — checks localStorage
-  const settings = shop || getShopSettings();
-  const correct = (settings.managerPin || "1234").trim();
-  return pin.trim() === correct;
+export function verifyManagerPin(pin: string, _shop?: Partial<ShopSettings>): boolean {
+  // DEPRECATED: synchronous fallback kept for backward compatibility only.
+  // All security-critical paths MUST use verifyManagerPinAsync().
+  // This always returns false — callers must migrate to async.
+  return false;
 }
 
 export function shouldRequireManagerPinForDiscount(
@@ -125,7 +122,7 @@ export function useSecurity() {
     maxAllowedDiscountPct,
     requiresPinForDelete,
     requiresPinForAnalytics,
-    verifyPin: (pin: string) => verifyManagerPin(pin),
+    verifyPin: async (pin: string) => verifyManagerPinAsync(pin),
     verifyPinAsync: (pin: string) => verifyManagerPinAsync(pin),
   };
 }

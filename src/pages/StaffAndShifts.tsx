@@ -180,7 +180,7 @@ export default function StaffAndShifts() {
     setStaffName("");
     setStaffPhone("");
     handleRoleChange("cashier");
-    setStaffPin("0000");
+    setStaffPin("");
     setStaffBranch("الفرع الرئيسي");
     setStaffCommissionRate("2");
     setStaffBaseSalary("4500");
