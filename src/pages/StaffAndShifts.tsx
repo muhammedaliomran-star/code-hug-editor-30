@@ -129,7 +129,7 @@ export default function StaffAndShifts() {
   const [staffName, setStaffName] = useState("");
   const [staffPhone, setStaffPhone] = useState("");
   const [staffRole, setStaffRole] = useState<StaffRole>("cashier");
-  const [staffPin, setStaffPin] = useState("0000");
+  const [staffPin, setStaffPin] = useState("");
   const [staffBranch, setStaffBranch] = useState("الفرع الرئيسي");
   const [staffCommissionRate, setStaffCommissionRate] = useState("2");
   const [staffBaseSalary, setStaffBaseSalary] = useState("4000");
@@ -1389,7 +1389,7 @@ export default function StaffAndShifts() {
                       maxLength={6}
                       value={staffPin}
                       onChange={(e) => setStaffPin(e.target.value)}
-                      placeholder="0000"
+                      placeholder="••••"
                       className="h-9 font-mono"
                     />
                   </div>
