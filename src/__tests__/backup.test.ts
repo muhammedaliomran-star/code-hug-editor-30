@@ -10,7 +10,6 @@ beforeEach(() => {
   });
 });
 
-import { beforeEach } from "vitest";
 
 function validBackup(overrides: Partial<BackupPayload> = {}): BackupPayload {
   return {
