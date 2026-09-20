@@ -1,5 +1,7 @@
 import type { Customer, Invoice } from "@/lib/store";
 
+export type { Customer, Invoice };
+
 export const EG_PHONE_RE = /^01[0125]\d{8}$/;
 
 /**

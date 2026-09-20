@@ -207,7 +207,7 @@ describe("getUnifiedCashLedger", () => {
     const ledger = getUnifiedCashLedger([], [], [
       { id: "e1", amount: 100, category: "rent", expenseDate: "2026-01-01", notes: null, createdAt: "2026-01-01" } as Expense,
       { id: "e2", amount: 200, category: "rent", expenseDate: "2026-01-15", notes: null, createdAt: "2026-01-15" } as Expense,
-    ], []);
+    ], [], []);
     expect(new Date(ledger[0].date).getTime()).toBeGreaterThanOrEqual(new Date(ledger[1].date).getTime());
   });
 

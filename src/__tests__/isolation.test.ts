@@ -15,8 +15,7 @@ import { describe, it, expect } from "vitest";
  * - admin_settings requires has_role('owner')
  */
 
-describe("User Data Isolation — user_id scoping pattern", () => {
-  /**
+/**
    * Every table that stores user data must:
    * 1. Include user_id in writes (inserts/upserts)
    * 2. Filter by user_id in reads (selects)
@@ -96,6 +95,7 @@ describe("User Data Isolation — user_id scoping pattern", () => {
     "storefront_notifications",
   ];
 
+describe("User Data Isolation — user_id scoping pattern", () => {
   it("documents all user-scoped tables have user_id column requirement", () => {
     expect(USER_SCOPED_TABLES.length).toBeGreaterThanOrEqual(40);
   });

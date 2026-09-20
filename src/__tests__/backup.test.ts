@@ -10,16 +10,15 @@ beforeEach(() => {
   });
 });
 
-import { beforeEach } from "vitest";
 
-function validBackup(overrides: Partial<BackupPayload> = {}): BackupPayload {
+function validBackup(overrides: Partial<Omit<BackupPayload, "version">> & { version?: number } = {}): BackupPayload {
   return {
     app: "segilly",
     version: 2,
     exportedAt: "2026-06-15T00:00:00.000Z",
     tables: { customers: [{ id: "c1", name: "محمد" }], invoices: [] },
     ...overrides,
-  };
+  } as BackupPayload;
 }
 
 describe("validateBackupJson", () => {

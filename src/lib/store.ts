@@ -2,7 +2,49 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Re-export types from @/types for backward compatibility
+// Import types locally (needed inside this module) and re-export for backward compatibility
+import type {
+  ColorPalette,
+  NumeralsFormat,
+  AutoBackupFrequency,
+  CustomerStatus,
+  CustomerType,
+  Branch,
+  PaymentVoucher,
+  Customer,
+  InvoiceStatus,
+  Invoice,
+  Payment,
+  InvoiceItem,
+  ExpenseCategory,
+  ShipmentCarrier,
+  ShippingZone,
+  ShipmentStatus,
+  ShipmentCollectionStatus,
+  Shipment,
+  Expense,
+  Supplier,
+  PurchasePaymentType,
+  Purchase,
+  PurchaseItem,
+  SupplierPayment,
+  ReturnRecord,
+  ReturnItem,
+  WarehouseSeason,
+  WarehouseItem,
+  ProductVariant,
+  SplitPaymentDetail,
+  StockItem,
+  StockHistoryEntry,
+  AuthProvider,
+  AuthIdentity,
+  Profile,
+  ThemeMode,
+  PrintPaper,
+  ShopSettings,
+  DBState,
+} from "@/types";
+
 export type {
   ColorPalette,
   NumeralsFormat,
