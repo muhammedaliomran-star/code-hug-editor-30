@@ -95,6 +95,7 @@ import { describe, it, expect } from "vitest";
     "storefront_notifications",
   ];
 
+describe("User Data Isolation — user_id scoping pattern", () => {
   it("documents all user-scoped tables have user_id column requirement", () => {
     expect(USER_SCOPED_TABLES.length).toBeGreaterThanOrEqual(40);
   });
