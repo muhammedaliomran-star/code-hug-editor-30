@@ -4,7 +4,9 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
-import { StockProductPicker, type ProductRow } from "@/pages/Invoices";
+import { StockProductPicker } from "@/components/invoices";
+import type { ProductRow } from "@/types";
+
 import {
   useDB,
   db,
