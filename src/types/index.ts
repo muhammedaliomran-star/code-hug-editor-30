@@ -3,6 +3,16 @@ import type { ColorPalette } from "@/lib/theme";
 export type { ColorPalette };
 
 // Re-export types from constants (single source of truth, avoids circular deps)
+import type {
+  ExpenseCategory,
+  WarehouseSeason,
+  NumeralsFormat,
+  AutoBackupFrequency,
+  ThemeMode,
+  PrintPaper,
+  ShopSettings,
+} from "./constants";
+
 export type {
   ExpenseCategory,
   WarehouseSeason,
