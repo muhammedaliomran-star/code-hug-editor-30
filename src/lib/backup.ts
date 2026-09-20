@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 /** Tables owned by the signed-in user, in dependency order (parents first). */
 const TABLES = [
+  // Core business
   "customers",
   "suppliers",
   "invoices",
@@ -16,9 +17,13 @@ const TABLES = [
   "shop_settings",
   "branches",
   "payment_vouchers",
+  // Shipping
   "shipping_carriers",
   "shipping_zones",
   "shipments",
+  "carrier_settlements",
+  "delivery_attempts",
+  // Storefront
   "storefronts",
   "storefront_categories",
   "storefront_products",
@@ -31,14 +36,60 @@ const TABLES = [
   "stock_reservations",
   "store_order_events",
   "storefront_notifications",
+  // Accounting & stock
   "stock_movements",
   "audit_events",
+  "audit_logs",
   "return_records",
   "return_items",
+  "invoice_installments",
+  // Sync tables
+  "treasury_accounts",
+  "treasury_manual_transactions",
+  "treasury_transfers",
+  "treasury_denomination_audits",
+  "staff_members",
+  "staff_attendance",
+  "shifts",
+  "collection_promises",
+  "collection_call_logs",
+  "held_invoices",
+  "expense_metadata",
+  "recurring_expenses",
+  "category_budgets",
+  "expense_settings",
+  "promo_coupons",
+  "qty_offers",
+  "bundles",
+  "loyalty_config",
+  "licenses",
+  "admin_settings",
 ] as const;
 
 /** Child rows must go before their parents when deleting. */
 const DELETE_ORDER = [
+  "admin_settings",
+  "licenses",
+  "loyalty_config",
+  "bundles",
+  "qty_offers",
+  "promo_coupons",
+  "expense_settings",
+  "category_budgets",
+  "recurring_expenses",
+  "expense_metadata",
+  "held_invoices",
+  "collection_call_logs",
+  "collection_promises",
+  "shifts",
+  "staff_attendance",
+  "staff_members",
+  "treasury_denomination_audits",
+  "treasury_transfers",
+  "treasury_manual_transactions",
+  "treasury_accounts",
+  "invoice_installments",
+  "audit_logs",
   "audit_events",
   "storefront_notifications",
   "store_order_events",
@@ -52,6 +103,8 @@ const DELETE_ORDER = [
   "storefront_products",
   "storefront_categories",
   "storefronts",
+  "delivery_attempts",
+  "carrier_settlements",
   "shipments",
   "shipping_zones",
   "shipping_carriers",
@@ -60,15 +113,16 @@ const DELETE_ORDER = [
   "return_records",
   "payment_vouchers",
   "branches",
-  "payments",
-  "invoice_items",
-  "invoices",
+  "shop_settings",
+  "expenses",
+  "supplier_payments",
   "purchase_items",
   "purchases",
-  "supplier_payments",
   "stock_adjustments",
   "stock_items",
-  "expenses",
+  "invoice_items",
+  "invoices",
+  "payments",
   "customers",
   "suppliers",
 ] as const;
@@ -77,7 +131,15 @@ const USER_SCOPED_TABLES = new Set([
   "customers", "suppliers", "invoices", "invoice_items", "payments", "purchases", "purchase_items",
   "supplier_payments", "stock_items", "stock_adjustments", "expenses", "shop_settings", "branches",
   "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments", "stock_movements",
-  "audit_events", "return_records", "return_items",
+  "audit_events", "audit_logs", "return_records", "return_items", "invoice_installments",
+  "carrier_settlements", "delivery_attempts",
+  // Sync tables
+  "treasury_accounts", "treasury_manual_transactions", "treasury_transfers", "treasury_denomination_audits",
+  "staff_members", "staff_attendance", "shifts",
+  "collection_promises", "collection_call_logs", "held_invoices",
+  "expense_metadata", "recurring_expenses", "category_budgets", "expense_settings",
+  "promo_coupons", "qty_offers", "bundles", "loyalty_config",
+  "licenses", "admin_settings",
 ]);
 
 export type BackupPayload = {
@@ -228,4 +290,90 @@ export async function resetCustomerOpeningBalances() {
   const userId = await currentUserId();
   const { error } = await (supabase.from as any)("customers").update({ opening_balance: 0 }).eq("user_id", userId);
   if (error) throw error;
+}
+
+// ==================== Backup Validation ====================
+
+export type BackupValidationResult = {
+  valid: boolean;
+  error?: string;
+  tableCount?: number;
+  totalRows?: number;
+};
+
+/** Validates a JSON backup payload without restoring it. */
+export function validateBackupJson(value: unknown): BackupValidationResult {
+  if (!value || typeof value !== "object") {
+    return { valid: false, error: "الملف فارغ أو ليس كائناً" };
+  }
+  const payload = value as Record<string, unknown>;
+
+  if (payload.app !== "segilly") {
+    return { valid: false, error: "الملف ليس نسخة احتياطية سِجلّي" };
+  }
+  if (![1, 2].includes(Number(payload.version))) {
+    return { valid: false, error: "إصدار النسخة غير مدعوم" };
+  }
+  if (!payload.tables || typeof payload.tables !== "object") {
+    return { valid: false, error: "بيانات الجداول ناقصة" };
+  }
+  if (!payload.exportedAt || typeof payload.exportedAt !== "string") {
+    return { valid: false, error: "تاريخ التصدير غير موجود" };
+  }
+
+  const tables = payload.tables as Record<string, unknown[]>;
+  const tableNames = Object.keys(tables);
+  let totalRows = 0;
+  for (const name of tableNames) {
+    if (!Array.isArray(tables[name])) {
+      return { valid: false, error: `الجدول "${name}" بياناته غير صالحة` };
+    }
+    totalRows += tables[name].length;
+  }
+
+  return { valid: true, tableCount: tableNames.length, totalRows };
+}
+
+// ==================== Auto Backup Executor ====================
+
+const AUTO_BACKUP_KEY = "segilly_last_auto_backup_v1";
+
+/** Checks if auto-backup is due and returns true if so. */
+export function isAutoBackupDue(frequency: "weekly" | "monthly" | "off"): boolean {
+  if (frequency === "off") return false;
+  const lastRun = localStorage.getItem(AUTO_BACKUP_KEY);
+  if (!lastRun) return true;
+
+  const last = new Date(lastRun).getTime();
+  const now = Date.now();
+  const diffMs = now - last;
+
+  if (frequency === "weekly" && diffMs >= 7 * 24 * 60 * 60 * 1000) return true;
+  if (frequency === "monthly" && diffMs >= 30 * 24 * 60 * 60 * 1000) return true;
+  return false;
+}
+
+/** Marks auto-backup as completed. */
+export function markAutoBackupDone(): void {
+  localStorage.setItem(AUTO_BACKUP_KEY, new Date().toISOString());
+}
+
+/** Executes auto-backup if due. Returns the backup payload or null. */
+export async function executeAutoBackup(
+  frequency: "weekly" | "monthly" | "off",
+): Promise<BackupPayload | null> {
+  if (!isAutoBackupDue(frequency)) return null;
+  try {
+    const backup = await buildBackup();
+    downloadBlob(
+      JSON.stringify(backup, null, 2),
+      `segilly-backup-${stamp()}.json`,
+      "application/json",
+    );
+    markAutoBackupDone();
+    return backup;
+  } catch (e) {
+    console.error("Auto-backup failed:", e);
+    return null;
+  }
 }

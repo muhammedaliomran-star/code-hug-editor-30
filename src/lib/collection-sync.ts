@@ -3,6 +3,8 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { withRetry } from "@/lib/retry";
+import { enqueueOffline } from "@/lib/offline-queue";
 import type { PromiseToPay, CollectionCallLog } from "@/lib/collection-store";
 
 const table = (name: string) => (supabase.from as any)(name);
@@ -19,38 +21,21 @@ async function uid(): Promise<string | null> {
 export async function pushPromise(p: PromiseToPay): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("collection_promises").upsert({
-    id: p.invoiceId,
-    user_id,
-    invoice_id: p.invoiceId,
-    customer_id: p.customerId,
-    promised_date: p.promisedDate,
-    promised_amount: p.promisedAmount,
-    note: p.note || null,
-    status: p.status || "pending",
-  });
+  const payload = { id: p.invoiceId, user_id, invoice_id: p.invoiceId, customer_id: p.customerId, promised_date: p.promisedDate, promised_amount: p.promisedAmount, note: p.note || null, status: p.status || "pending" };
+  try { await withRetry(() => table("collection_promises").upsert(payload)); } catch { enqueueOffline({ tableName: "collection_promises", operation: "upsert", payload }); }
 }
 
 export async function removePromise(invoiceId: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("collection_promises").delete().eq("user_id", user_id).eq("invoice_id", invoiceId);
+  try { await withRetry(() => table("collection_promises").delete().eq("user_id", user_id).eq("invoice_id", invoiceId)); } catch { enqueueOffline({ tableName: "collection_promises", operation: "delete", payload: { invoice_id: invoiceId, user_id } }); }
 }
 
 export async function pushCallLog(log: CollectionCallLog): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("collection_call_logs").upsert({
-    id: log.id,
-    user_id,
-    invoice_id: log.invoiceId,
-    customer_id: log.customerId,
-    outcome: log.outcome,
-    outcome_label: log.outcomeLabel,
-    notes: log.notes || null,
-    promised_date: log.promisedDate || null,
-    promised_amount: log.promisedAmount || null,
-  });
+  const payload = { id: log.id, user_id, invoice_id: log.invoiceId, customer_id: log.customerId, outcome: log.outcome, outcome_label: log.outcomeLabel, notes: log.notes || null, promised_date: log.promisedDate || null, promised_amount: log.promisedAmount || null };
+  try { await withRetry(() => table("collection_call_logs").upsert(payload)); } catch { enqueueOffline({ tableName: "collection_call_logs", operation: "upsert", payload }); }
 }
 
 export async function pullCollectionFromCloud(): Promise<boolean> {

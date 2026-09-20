@@ -3,6 +3,8 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { withRetry } from "@/lib/retry";
+import { enqueueOffline } from "@/lib/offline-queue";
 import type { BranchStockItem, BranchTransfer, BranchShift, BranchRemittance } from "@/lib/branch-system";
 
 const table = (name: string) => (supabase.from as any)(name);
@@ -21,76 +23,29 @@ async function uid(): Promise<string | null> {
 export async function pushBranchStock(item: BranchStockItem): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("branch_stock").upsert({
-    id: item.id,
-    user_id,
-    branch_id: item.branchId,
-    stock_item_id: item.stockItemId,
-    quantity: item.quantity,
-    min_stock: item.minStock,
-    max_stock: item.maxStock || null,
-    shelf_location: item.shelfLocation || null,
-  });
+  const payload = { id: item.id, user_id, branch_id: item.branchId, stock_item_id: item.stockItemId, quantity: item.quantity, min_stock: item.minStock, max_stock: item.maxStock || null, shelf_location: item.shelfLocation || null };
+  try { await withRetry(() => table("branch_stock").upsert(payload)); } catch { enqueueOffline({ tableName: "branch_stock", operation: "upsert", payload }); }
 }
 
 export async function pushBranchTransfer(transfer: BranchTransfer): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("branch_transfers").upsert({
-    id: transfer.id,
-    user_id,
-    transfer_number: transfer.transferNumber,
-    from_branch_id: transfer.fromBranchId,
-    to_branch_id: transfer.toBranchId,
-    status: transfer.status,
-    items: transfer.items,
-    notes: transfer.notes || null,
-    driver_name: transfer.driverName || null,
-    driver_phone: transfer.driverPhone || null,
-    vehicle_number: transfer.vehicleNumber || null,
-    created_by: transfer.createdBy,
-    dispatched_by: transfer.dispatchedBy || null,
-    received_by: transfer.receivedBy || null,
-    dispatched_at: transfer.dispatchedAt || null,
-    received_at: transfer.receivedAt || null,
-  });
+  const payload = { id: transfer.id, user_id, transfer_number: transfer.transferNumber, from_branch_id: transfer.fromBranchId, to_branch_id: transfer.toBranchId, status: transfer.status, items: transfer.items, notes: transfer.notes || null, driver_name: transfer.driverName || null, driver_phone: transfer.driverPhone || null, vehicle_number: transfer.vehicleNumber || null, created_by: transfer.createdBy, dispatched_by: transfer.dispatchedBy || null, received_by: transfer.receivedBy || null, dispatched_at: transfer.dispatchedAt || null, received_at: transfer.receivedAt || null };
+  try { await withRetry(() => table("branch_transfers").upsert(payload)); } catch { enqueueOffline({ tableName: "branch_transfers", operation: "upsert", payload }); }
 }
 
 export async function pushBranchShift(shift: BranchShift): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("shifts").upsert({
-    id: shift.id,
-    user_id,
-    shift_number: 0,
-    cashier_name: shift.cashierName,
-    opened_at: shift.openedAt,
-    closed_at: shift.closedAt || null,
-    opening_balance: shift.openingBalance,
-    expected_cash: shift.expectedCash,
-    actual_cash: shift.actualCash,
-    cash_sales: shift.systemCashSales,
-    installment_sales: shift.systemInstallmentsCash,
-    expenses: shift.systemExpenses,
-    variance: shift.variance,
-    status: shift.status,
-    notes: shift.notes || null,
-  });
+  const payload = { id: shift.id, user_id, shift_number: 0, cashier_name: shift.cashierName, opened_at: shift.openedAt, closed_at: shift.closedAt || null, opening_balance: shift.openingBalance, expected_cash: shift.expectedCash, actual_cash: shift.actualCash, cash_sales: shift.systemCashSales, installment_sales: shift.systemInstallmentsCash, expenses: shift.systemExpenses, variance: shift.variance, status: shift.status, notes: shift.notes || null };
+  try { await withRetry(() => table("shifts").upsert(payload)); } catch { enqueueOffline({ tableName: "shifts", operation: "upsert", payload }); }
 }
 
 export async function pushBranchRemittance(remittance: BranchRemittance): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_transactions").upsert({
-    id: remittance.id,
-    user_id,
-    from_account_id: remittance.branchId,
-    to_account_id: remittance.destinationName,
-    amount: remittance.amount,
-    type: "remittance",
-    status: remittance.status,
-    notes: remittance.notes || null,
-  });
+  const payload = { id: remittance.id, user_id, from_account_id: remittance.branchId, to_account_id: remittance.destinationName, amount: remittance.amount, type: "remittance", status: remittance.status, notes: remittance.notes || null };
+  try { await withRetry(() => table("treasury_transactions").upsert(payload)); } catch { enqueueOffline({ tableName: "treasury_transactions", operation: "upsert", payload }); }
 }
 
 /* ==================== Pull Functions ==================== */

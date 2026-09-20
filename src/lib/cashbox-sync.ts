@@ -5,6 +5,8 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { withRetry } from "@/lib/retry";
+import { enqueueOffline } from "@/lib/offline-queue";
 import type {
   TreasuryAccount,
   InternalTransfer,
@@ -131,43 +133,71 @@ const rowToAudit = (r: any): CashDenominationAudit => ({
 export async function pushAccount(acc: TreasuryAccount): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_accounts").upsert(accountToRow(acc, user_id));
+  try {
+    await withRetry(() => table("treasury_accounts").upsert(accountToRow(acc, user_id)));
+  } catch {
+    enqueueOffline({ tableName: "treasury_accounts", operation: "upsert", payload: accountToRow(acc, user_id) });
+  }
 }
 
 export async function removeAccount(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_accounts").delete().eq("user_id", user_id).eq("id", id);
+  try {
+    await withRetry(() => table("treasury_accounts").delete().eq("user_id", user_id).eq("id", id));
+  } catch {
+    enqueueOffline({ tableName: "treasury_accounts", operation: "delete", payload: { id, user_id } });
+  }
 }
 
 export async function pushManualTransaction(tx: ManualCashTransaction): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_transactions").upsert(manualToRow(tx, user_id));
+  try {
+    await withRetry(() => table("treasury_transactions").upsert(manualToRow(tx, user_id)));
+  } catch {
+    enqueueOffline({ tableName: "treasury_transactions", operation: "upsert", payload: manualToRow(tx, user_id) });
+  }
 }
 
 export async function removeManualTransaction(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_transactions").delete().eq("user_id", user_id).eq("id", id);
+  try {
+    await withRetry(() => table("treasury_transactions").delete().eq("user_id", user_id).eq("id", id));
+  } catch {
+    enqueueOffline({ tableName: "treasury_transactions", operation: "delete", payload: { id, user_id } });
+  }
 }
 
 export async function pushTransfer(tr: InternalTransfer): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_transactions").upsert(transferToRow(tr, user_id));
+  try {
+    await withRetry(() => table("treasury_transactions").upsert(transferToRow(tr, user_id)));
+  } catch {
+    enqueueOffline({ tableName: "treasury_transactions", operation: "upsert", payload: transferToRow(tr, user_id) });
+  }
 }
 
 export async function removeTransfer(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_transactions").delete().eq("user_id", user_id).eq("id", id);
+  try {
+    await withRetry(() => table("treasury_transactions").delete().eq("user_id", user_id).eq("id", id));
+  } catch {
+    enqueueOffline({ tableName: "treasury_transactions", operation: "delete", payload: { id, user_id } });
+  }
 }
 
 export async function pushAudit(audit: CashDenominationAudit): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("treasury_denomination_audits").upsert(auditToRow(audit, user_id));
+  try {
+    await withRetry(() => table("treasury_denomination_audits").upsert(auditToRow(audit, user_id)));
+  } catch {
+    enqueueOffline({ tableName: "treasury_denomination_audits", operation: "upsert", payload: auditToRow(audit, user_id) });
+  }
 }
 
 /* ==================== Pull (سحب من السحابة) ==================== */

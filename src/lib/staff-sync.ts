@@ -3,6 +3,8 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { withRetry } from "@/lib/retry";
+import { enqueueOffline } from "@/lib/offline-queue";
 import type { StaffMember, AttendanceRecord, ShiftRecord } from "@/lib/staff";
 import type { CashShift } from "@/lib/shifts";
 import type { CashierShift } from "@/lib/cashier-shifts";
@@ -23,26 +25,14 @@ async function uid(): Promise<string | null> {
 export async function pushStaffMember(member: StaffMember): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("staff_members").upsert({
-    id: member.id,
-    user_id,
-    name: member.name,
-    phone: member.phone,
-    role: member.role,
-    pin_code: member.pinCode || null,
-    branch_name: member.branchName || null,
-    is_active: member.active,
-    commission_pct: member.commissionRatePct || 0,
-    base_salary: member.baseSalary || 0,
-    permissions: member.permissions,
-    notes: member.notes || null,
-  });
+  const payload = { id: member.id, user_id, name: member.name, phone: member.phone, role: member.role, pin_code: member.pinCode || null, branch_name: member.branchName || null, is_active: member.active, commission_pct: member.commissionRatePct || 0, base_salary: member.baseSalary || 0, permissions: member.permissions, notes: member.notes || null };
+  try { await withRetry(() => table("staff_members").upsert(payload)); } catch { enqueueOffline({ tableName: "staff_members", operation: "upsert", payload }); }
 }
 
 export async function removeStaffMember(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("staff_members").delete().eq("user_id", user_id).eq("id", id);
+  try { await withRetry(() => table("staff_members").delete().eq("user_id", user_id).eq("id", id)); } catch { enqueueOffline({ tableName: "staff_members", operation: "delete", payload: { id, user_id } }); }
 }
 
 /* ==================== Shift Records (staff.ts) ==================== */
@@ -50,25 +40,8 @@ export async function removeStaffMember(id: string): Promise<void> {
 export async function pushShift(shift: ShiftRecord): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("shifts").upsert({
-    id: shift.id,
-    user_id,
-    shift_number: shift.shiftNumber,
-    cashier_name: shift.staffName,
-    opened_at: shift.openedAt,
-    closed_at: shift.closedAt || null,
-    opening_balance: shift.openingFloat,
-    expected_cash: shift.expectedClosingCash,
-    actual_cash: shift.actualClosingCash,
-    cash_sales: shift.totalCashSales,
-    electronic_sales: shift.totalCardSales,
-    installment_sales: shift.totalInstallmentSales,
-    expenses: shift.totalExpensesAmount,
-    returns: shift.totalRefundsAmount,
-    variance: shift.cashVariance,
-    status: shift.status,
-    notes: shift.closeNotes || null,
-  });
+  const payload = { id: shift.id, user_id, shift_number: shift.shiftNumber, cashier_name: shift.staffName, opened_at: shift.openedAt, closed_at: shift.closedAt || null, opening_balance: shift.openingFloat, expected_cash: shift.expectedClosingCash, actual_cash: shift.actualClosingCash, cash_sales: shift.totalCashSales, electronic_sales: shift.totalCardSales, installment_sales: shift.totalInstallmentSales, expenses: shift.totalExpensesAmount, returns: shift.totalRefundsAmount, variance: shift.cashVariance, status: shift.status, notes: shift.closeNotes || null };
+  try { await withRetry(() => table("shifts").upsert(payload)); } catch { enqueueOffline({ tableName: "shifts", operation: "upsert", payload }); }
 }
 
 /* ==================== Attendance Records ==================== */
@@ -76,19 +49,8 @@ export async function pushShift(shift: ShiftRecord): Promise<void> {
 export async function pushAttendance(record: AttendanceRecord): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("staff_attendance").upsert({
-    id: record.id,
-    user_id,
-    staff_id: record.staffId,
-    staff_name: record.staffName,
-    branch_name: record.branchName,
-    date: record.date,
-    clock_in: record.clockIn,
-    clock_out: record.clockOut || null,
-    total_hours: record.totalHours || 0,
-    notes: record.notes || null,
-    status: record.status,
-  });
+  const payload = { id: record.id, user_id, staff_id: record.staffId, staff_name: record.staffName, branch_name: record.branchName, date: record.date, clock_in: record.clockIn, clock_out: record.clockOut || null, total_hours: record.totalHours || 0, notes: record.notes || null, status: record.status };
+  try { await withRetry(() => table("staff_attendance").upsert(payload)); } catch { enqueueOffline({ tableName: "staff_attendance", operation: "upsert", payload }); }
 }
 
 /* ==================== Shifts (shifts.ts) ==================== */
@@ -96,26 +58,8 @@ export async function pushAttendance(record: AttendanceRecord): Promise<void> {
 export async function pushCashShift(shift: CashShift): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("shifts").upsert({
-    id: shift.id,
-    user_id,
-    shift_number: shift.shiftNumber,
-    cashier_name: shift.cashierName,
-    opened_at: shift.openedAt,
-    closed_at: shift.closedAt || null,
-    opening_balance: shift.openingBalance,
-    expected_cash: shift.expectedCash,
-    actual_cash: shift.closingCashCount,
-    cash_sales: shift.totalCashSales,
-    electronic_sales: shift.totalElectronicSales,
-    installment_sales: shift.totalInstallmentCash,
-    expenses: shift.totalExpenses,
-    purchases: shift.totalPurchases,
-    returns: shift.totalReturns,
-    variance: shift.variance,
-    status: shift.status,
-    notes: shift.notes || null,
-  });
+  const payload = { id: shift.id, user_id, shift_number: shift.shiftNumber, cashier_name: shift.cashierName, opened_at: shift.openedAt, closed_at: shift.closedAt || null, opening_balance: shift.openingBalance, expected_cash: shift.expectedCash, actual_cash: shift.closingCashCount, cash_sales: shift.totalCashSales, electronic_sales: shift.totalElectronicSales, installment_sales: shift.totalInstallmentCash, expenses: shift.totalExpenses, purchases: shift.totalPurchases, returns: shift.totalReturns, variance: shift.variance, status: shift.status, notes: shift.notes || null };
+  try { await withRetry(() => table("shifts").upsert(payload)); } catch { enqueueOffline({ tableName: "shifts", operation: "upsert", payload }); }
 }
 
 /* ==================== CashierShifts (cashier-shifts.ts) ==================== */
@@ -123,23 +67,8 @@ export async function pushCashShift(shift: CashShift): Promise<void> {
 export async function pushCashierShift(shift: CashierShift): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("shifts").upsert({
-    id: shift.id,
-    user_id,
-    shift_number: 0,
-    cashier_name: shift.cashierName,
-    opened_at: shift.openedAt,
-    closed_at: shift.closedAt || null,
-    opening_balance: shift.openingCash,
-    expected_cash: shift.expectedCash,
-    actual_cash: shift.actualCash,
-    cash_sales: shift.summary?.cashSales || 0,
-    installment_sales: shift.summary?.installmentDownPayments || 0,
-    expenses: shift.summary?.cashExpenses || 0,
-    variance: shift.difference,
-    status: shift.status,
-    notes: shift.notes || null,
-  });
+  const payload = { id: shift.id, user_id, shift_number: 0, cashier_name: shift.cashierName, opened_at: shift.openedAt, closed_at: shift.closedAt || null, opening_balance: shift.openingCash, expected_cash: shift.expectedCash, actual_cash: shift.actualCash, cash_sales: shift.summary?.cashSales || 0, installment_sales: shift.summary?.installmentDownPayments || 0, expenses: shift.summary?.cashExpenses || 0, variance: shift.difference, status: shift.status, notes: shift.notes || null };
+  try { await withRetry(() => table("shifts").upsert(payload)); } catch { enqueueOffline({ tableName: "shifts", operation: "upsert", payload }); }
 }
 
 /* ==================== Pull ==================== */

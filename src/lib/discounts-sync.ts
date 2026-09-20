@@ -3,6 +3,8 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { withRetry } from "@/lib/retry";
+import { enqueueOffline } from "@/lib/offline-queue";
 import type { PromoCoupon, QuantityTierOffer, BundleComboOffer, LoyaltyConfig } from "@/lib/discounts";
 
 const table = (name: string) => (supabase.from as any)(name);
@@ -21,82 +23,47 @@ async function uid(): Promise<string | null> {
 export async function pushCoupon(coupon: PromoCoupon): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("promo_coupons").upsert({
-    id: coupon.id,
-    user_id,
-    code: coupon.code,
-    title: coupon.title,
-    discount_type: coupon.discountType,
-    discount_value: coupon.discountValue,
-    min_order_value: coupon.minOrderValue,
-    max_usage: coupon.maxUsage,
-    used_count: coupon.usedCount,
-    starts_at: coupon.startsAt,
-    ends_at: coupon.endsAt,
-    active: coupon.active,
-    customer_eligibility: coupon.customerEligibility,
-    notes: coupon.notes || null,
-    is_loyalty_reward: coupon.isLoyaltyReward || false,
-    customer_id: coupon.customerId || null,
-  });
+  const payload = { id: coupon.id, user_id, code: coupon.code, title: coupon.title, discount_type: coupon.discountType, discount_value: coupon.discountValue, min_order_value: coupon.minOrderValue, max_usage: coupon.maxUsage, used_count: coupon.usedCount, starts_at: coupon.startsAt, ends_at: coupon.endsAt, active: coupon.active, customer_eligibility: coupon.customerEligibility, notes: coupon.notes || null, is_loyalty_reward: coupon.isLoyaltyReward || false, customer_id: coupon.customerId || null };
+  try { await withRetry(() => table("promo_coupons").upsert(payload)); } catch { enqueueOffline({ tableName: "promo_coupons", operation: "upsert", payload }); }
 }
 
 export async function removeCoupon(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("promo_coupons").delete().eq("user_id", user_id).eq("id", id);
+  try { await withRetry(() => table("promo_coupons").delete().eq("user_id", user_id).eq("id", id)); } catch { enqueueOffline({ tableName: "promo_coupons", operation: "delete", payload: { id, user_id } }); }
 }
 
 export async function pushQtyOffer(offer: QuantityTierOffer): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("qty_offers").upsert({
-    id: offer.id,
-    user_id,
-    title: offer.title,
-    min_quantity: offer.minQuantity,
-    discount_percentage: offer.discountPercentage,
-    active: offer.active,
-    notes: offer.notes || null,
-  }, { onConflict: "id" });
+  const payload = { id: offer.id, user_id, title: offer.title, min_quantity: offer.minQuantity, discount_percentage: offer.discountPercentage, active: offer.active, notes: offer.notes || null };
+  try { await withRetry(() => table("qty_offers").upsert(payload, { onConflict: "id" })); } catch { enqueueOffline({ tableName: "qty_offers", operation: "upsert", payload }); }
 }
 
 export async function removeQtyOffer(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("qty_offers").delete().eq("user_id", user_id).eq("id", id);
+  try { await withRetry(() => table("qty_offers").delete().eq("user_id", user_id).eq("id", id)); } catch { enqueueOffline({ tableName: "qty_offers", operation: "delete", payload: { id, user_id } }); }
 }
 
 export async function pushBundle(bundle: BundleComboOffer): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("bundles").upsert({
-    id: bundle.id,
-    user_id,
-    title: bundle.title,
-    item_keywords: bundle.itemKeywords,
-    discount_amount: bundle.discountAmount,
-    active: bundle.active,
-    notes: bundle.notes || null,
-  }, { onConflict: "id" });
+  const payload = { id: bundle.id, user_id, title: bundle.title, item_keywords: bundle.itemKeywords, discount_amount: bundle.discountAmount, active: bundle.active, notes: bundle.notes || null };
+  try { await withRetry(() => table("bundles").upsert(payload, { onConflict: "id" })); } catch { enqueueOffline({ tableName: "bundles", operation: "upsert", payload }); }
 }
 
 export async function removeBundle(id: string): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("bundles").delete().eq("user_id", user_id).eq("id", id);
+  try { await withRetry(() => table("bundles").delete().eq("user_id", user_id).eq("id", id)); } catch { enqueueOffline({ tableName: "bundles", operation: "delete", payload: { id, user_id } }); }
 }
 
 export async function pushLoyaltyConfig(config: LoyaltyConfig): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  await table("loyalty_config").upsert({
-    user_id,
-    points_per_100_egp: config.pointsPer100Egp,
-    point_value_egp: config.pointValueEgp,
-    min_points_to_redeem: config.minPointsToRedeem,
-    enabled: config.enabled,
-  }, { onConflict: "user_id" });
+  const payload = { user_id, points_per_100_egp: config.pointsPer100Egp, point_value_egp: config.pointValueEgp, min_points_to_redeem: config.minPointsToRedeem, enabled: config.enabled };
+  try { await withRetry(() => table("loyalty_config").upsert(payload, { onConflict: "user_id" })); } catch { enqueueOffline({ tableName: "loyalty_config", operation: "upsert", payload }); }
 }
 
 /* ==================== Pull Function ==================== */
