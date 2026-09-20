@@ -15,8 +15,7 @@ import { describe, it, expect } from "vitest";
  * - admin_settings requires has_role('owner')
  */
 
-describe("User Data Isolation — user_id scoping pattern", () => {
-  /**
+/**
    * Every table that stores user data must:
    * 1. Include user_id in writes (inserts/upserts)
    * 2. Filter by user_id in reads (selects)
