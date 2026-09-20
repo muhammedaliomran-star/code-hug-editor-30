@@ -5,36 +5,26 @@ import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
 
 import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from "xlsx";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
-import { StarRating } from "@/components/StarRating";
-import { StatusBadge } from "@/components/StatusBadge";
-import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { CustomerImportDialog } from "@/components/CustomerImportDialog";
 import { QuickPayCustomerDialog } from "@/components/QuickPayCustomerDialog";
 import { CustomerCardModal } from "@/components/CustomerCardModal";
 import { getCustomerCode } from "@/lib/customer-utils";
-import { isoToDDMMYYYY, ddmmyyyyToIso } from "@/lib/date-utils";
+import { isoToDDMMYYYY } from "@/lib/date-utils";
 import {
   useDB,
   db,
   fmt,
   aiScript,
-  daysLate,
   type Customer,
-  type CustomerStatus,
-  type CustomerType,
-  type Invoice,
 } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   Select,
@@ -43,15 +33,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,62 +45,47 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerClose,
-} from "@/components/ui/drawer";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
   Plus,
   Search,
-  MessageCircle,
-  Pencil,
-  Trash2,
-  Sparkles,
-  Star,
-  Info,
-  User,
   Eye,
   EyeOff,
   FileDown,
   FileSpreadsheet,
   Upload,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown,
   AlertTriangle,
-  History,
-  Share2,
-  Wallet,
-  Printer,
-  ShoppingBag,
-  Receipt,
-  CreditCard,
   Banknote,
   QrCode,
   CalendarClock,
   Lock,
+  MessageCircle,
+  Pencil,
+  Trash2,
+  Info,
 } from "lucide-react";
-import type { Payment } from "@/lib/store";
-import { toArabicDigits } from "@/lib/arabic-digits";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 import { usePrivacy } from "@/lib/privacy";
+import { StarRating } from "@/components/StarRating";
+import { StatusBadge } from "@/components/StatusBadge";
+import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 
 // Extracted components
-import { QuickAddInvoice } from "@/components/customers/QuickAddInvoiceDialog";
-import { QuickAddPayment } from "@/components/customers/QuickAddPaymentDialog";
-import { CustomerEditInvoiceDialog } from "@/components/customers/CustomerEditInvoiceDialog";
-import { EditPaymentDialog } from "@/components/customers/EditPaymentDialog";
-import { DeleteTimelineEntry } from "@/components/customers/DeleteTimelineEntry";
 import { CustomerDialog } from "@/components/customers/CustomerDialog";
+import { PaymentHistoryDialog } from "@/components/customers/PaymentHistoryDialog";
+import { AiScriptDialog } from "@/components/customers/AiScriptDialog";
+import { CustomerViewDrawer } from "@/components/customers/CustomerViewDrawer";
+import {
+  SortChip,
+  customerMetrics,
+  WhatsAppIcon,
+  escapeHtml,
+  type SortKey,
+  type SortDir,
+  type FilterTab,
+} from "@/components/customers/customer-helpers";
 
 export default function Page() {
   return (
@@ -130,16 +96,6 @@ export default function Page() {
     </AppShell>
   );
 }
-
-type FilterTab =
-  | "all"
-  | "installment"
-  | "dueToday"
-  | "overdue"
-  | "cash"
-  | "frozen"
-  | "bajah"
-  | "settled";
 
 const FILTERS: { value: FilterTab; label: string; activeCls: string }[] = [
   {
@@ -183,71 +139,6 @@ const FILTERS: { value: FilterTab; label: string; activeCls: string }[] = [
     activeCls: "bg-foreground text-background shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
   },
 ];
-
-function SortChip({
-  label,
-  active,
-  dir,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  dir: SortDir;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] transition-[transform,color,background-color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97]",
-        active
-          ? "bg-foreground text-background ring-1 ring-border"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {label}
-      {active ? (
-        dir === "asc" ? (
-          <ArrowUp className="h-3 w-3" />
-        ) : (
-          <ArrowDown className="h-3 w-3" />
-        )
-      ) : (
-        <ArrowUpDown className="h-3 w-3 opacity-50" />
-      )}
-    </button>
-  );
-}
-
-function customerMetrics(invoices: Invoice[], c: Customer) {
-  const mine = invoices.filter((i) => i.customerId === c.id);
-  const totalCharged = mine.reduce((s, i) => s + i.total, 0) + (c.openingBalance || 0);
-  const totalPaid = mine.reduce((s, i) => s + i.paid, 0);
-  const balance = totalCharged - totalPaid;
-  const worstLate = Math.max(0, ...mine.map(daysLate));
-  const paidPct =
-    totalCharged > 0 ? Math.min(100, Math.round((totalPaid / totalCharged) * 100)) : 0;
-  return { balance, worstLate, paidPct, totalCharged, totalPaid };
-}
-
-function WhatsAppIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M20.52 3.48A11.86 11.86 0 0012.06 0C5.5 0 .17 5.33.17 11.9c0 2.1.55 4.14 1.6 5.95L0 24l6.32-1.65a11.9 11.9 0 005.74 1.46h.01c6.55 0 11.88-5.33 11.88-11.9 0-3.18-1.24-6.16-3.43-8.43zM12.07 21.8h-.01a9.9 9.9 0 01-5.05-1.38l-.36-.21-3.75.98 1-3.65-.24-.38a9.86 9.86 0 01-1.51-5.26c0-5.46 4.45-9.9 9.92-9.9 2.65 0 5.14 1.03 7.01 2.91a9.84 9.84 0 012.9 7c0 5.47-4.44 9.89-9.91 9.89zm5.43-7.4c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.39-1.47-.88-.78-1.48-1.75-1.65-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51l-.57-.01c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.62.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35z" />
-    </svg>
-  );
-}
-
-type SortKey = "name" | "balance";
-type SortDir = "asc" | "desc";
-
-function escapeHtml(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
-}
 
 function CustomersPage() {
   const data = useDB();
@@ -1008,513 +899,30 @@ function CustomersPage() {
         )}
       </Reveal>
 
-      <Dialog open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 justify-end">
-              سجل المدفوعات
-              <History className="w-5 h-5 text-primary" />
-            </DialogTitle>
-            <DialogDescription className="text-right">
-              {historyFor ? `كل عمليات السداد المسجلة للعميل ${historyFor.name}` : ""}
-            </DialogDescription>
-          </DialogHeader>
-          {historyFor &&
-            (() => {
-              const myInvoiceIds = new Set(
-                data.invoices.filter((i) => i.customerId === historyFor.id).map((i) => i.id),
-              );
-              const payments = data.payments
-                .filter((p) => myInvoiceIds.has(p.invoiceId))
-                .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
-              const total = payments.reduce((s, p) => s + p.amount, 0);
-              const m = customerMetrics(data.invoices, historyFor);
-              return (
-                <div className="space-y-3 text-right">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="rounded-2xl hairline bg-foreground/[0.035] p-2.5">
-                      <div className="text-[11px] text-muted-foreground">عدد العمليات</div>
-                      <div className="font-bold text-lg">{payments.length}</div>
-                    </div>
-                    <div className="rounded-2xl hairline bg-success/10 p-2.5">
-                      <div className="text-[11px] text-muted-foreground">إجمالي المسدد</div>
-                      <div
-                        className={cn("font-bold text-lg text-success", privacy && "privacy-blur")}
-                      >
-                        {fmt(total)} ج.م
-                      </div>
-                    </div>
-                    <div className="rounded-2xl hairline bg-danger/10 p-2.5">
-                      <div className="text-[11px] text-muted-foreground">المتبقي</div>
-                      <div
-                        className={cn(
-                          "font-bold text-lg",
-                          m.balance > 0 ? "text-danger" : "text-success",
-                          privacy && "privacy-blur",
-                        )}
-                      >
-                        {fmt(m.balance)} ج.م
-                      </div>
-                    </div>
-                  </div>
-                  <ScrollArea className="max-h-[50vh] rounded-2xl hairline">
-                    {payments.length === 0 ? (
-                      <div className="text-sm text-muted-foreground text-center py-10">
-                        لا توجد مدفوعات مسجلة بعد
-                      </div>
-                    ) : (
-                      <table className="w-full text-sm">
-                        <thead className="bg-foreground/[0.04] text-muted-foreground sticky top-0">
-                          <tr>
-                            <th className="text-right p-2.5 font-medium">#</th>
-                            <th className="text-right p-2.5 font-medium">التاريخ</th>
-                            <th className="text-right p-2.5 font-medium">الوقت</th>
-                            <th className="text-right p-2.5 font-medium">المبلغ</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {payments.map((p, i) => {
-                            const d = new Date(p.paidAt);
-                            return (
-                              <tr
-                                key={p.id}
-                                className="border-t border-[var(--hairline)] hover:bg-foreground/[0.035]"
-                              >
-                                <td className="p-2.5 text-muted-foreground">
-                                  {payments.length - i}
-                                </td>
-                                <td className="p-2.5" dir="ltr">
-                                  {d.toLocaleDateString("en-US", {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                  })}
-                                </td>
-                                <td className="p-2.5 text-muted-foreground" dir="ltr">
-                                  {d.toLocaleTimeString("en-US", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
-                                </td>
-                                <td
-                                  className={cn(
-                                    "p-2.5 font-bold text-success",
-                                    privacy && "privacy-blur",
-                                  )}
-                                >
-                                  + {fmt(p.amount)} ج.م
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    )}
-                  </ScrollArea>
-                </div>
-              );
-            })()}
-          <DialogFooter>
-            <Button variant="outline" className="w-full" onClick={() => setHistoryFor(null)}>
-              إغلاق
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PaymentHistoryDialog
+        customer={historyFor}
+        open={!!historyFor}
+        onOpenChange={(o) => !o && setHistoryFor(null)}
+        invoices={data.invoices}
+        payments={data.payments}
+        privacy={privacy}
+      />
 
-      <Dialog open={!!scriptFor} onOpenChange={(o) => !o && setScriptFor(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 justify-end">
-              المساعد الذكي
-              <Sparkles className="w-5 h-5 text-primary" />
-            </DialogTitle>
-            <DialogDescription className="text-right">
-              رسالة مقترحة بناءً على حالة العميل ومدة التأخر.
-            </DialogDescription>
-          </DialogHeader>
-          {scriptFor &&
-            (() => {
-              const m = customerMetrics(data.invoices, scriptFor);
-              const msg = aiScript(scriptFor, m.balance, m.worstLate);
-              const tone =
-                m.worstLate <= 0
-                  ? { label: "ودود", cls: "bg-success/15 text-success border-success/30" }
-                  : m.worstLate < 7
-                    ? { label: "تذكير لطيف", cls: "bg-success/15 text-success border-success/30" }
-                    : m.worstLate <= 30
-                      ? {
-                          label: "متابعة جادة",
-                          cls: "bg-warning/15 text-warning border-warning/30",
-                        }
-                      : { label: "إنذار حازم", cls: "bg-danger/15 text-danger border-danger/30" };
-              return (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-end gap-2 flex-wrap">
-                    {m.worstLate > 0 && (
-                      <Badge className="bg-danger text-danger-foreground border-0">
-                        متأخر {m.worstLate} يوم
-                      </Badge>
-                    )}
-                    <Badge variant="outline" className={tone.cls}>
-                      نبرة: {tone.label}
-                    </Badge>
-                  </div>
-                  <div className="rounded-2xl border-2 border-primary/30 bg-primary/5 p-4 text-right leading-loose">
-                    {msg}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      className="flex-1 gap-2"
-                      onClick={() => {
-                        navigator.clipboard.writeText(toArabicDigits(msg));
-                        toast.success("تم النسخ");
-                      }}
-                    >
-                      نسخ النص
-                    </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1 gap-2"
-                      onClick={() => {
-                        const phone = scriptFor.phone.replace(/^0/, "20");
-                        window.open(
-                          `https://wa.me/${phone}?text=${encodeURIComponent(toArabicDigits(msg))}`,
-                          "_blank",
-                        );
-                      }}
-                    >
-                      إرسال واتساب
-                    </Button>
-                  </div>
-                </div>
-              );
-            })()}
-        </DialogContent>
-      </Dialog>
+      <AiScriptDialog
+        customer={scriptFor}
+        open={!!scriptFor}
+        onOpenChange={(o) => !o && setScriptFor(null)}
+        invoices={data.invoices}
+      />
 
-      <Drawer open={!!viewFor} onOpenChange={(o) => !o && setViewFor(null)} direction="right">
-        <DrawerContent className="ml-auto h-full w-full max-w-md rounded-none">
-          {viewFor &&
-            (() => {
-              const m = customerMetrics(data.invoices, viewFor);
-              const myInvoices = data.invoices
-                .filter((i) => i.customerId === viewFor.id)
-                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-              const myPayments = data.payments
-                .filter((p) => myInvoices.some((i) => i.id === p.invoiceId))
-                .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
-              const initials = viewFor.name
-                .trim()
-                .split(/\s+/)
-                .slice(0, 2)
-                .map((s) => s[0])
-                .join("");
-              return (
-                <>
-                  <DrawerHeader className="border-b border-[var(--hairline)]">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 hairline">
-                        <AvatarFallback className="bg-primary/15 text-primary font-bold">
-                          {initials || <User className="w-5 h-5" />}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="text-right flex-1">
-                        <DrawerTitle className="text-lg">{viewFor.name}</DrawerTitle>
-                        <DrawerDescription dir="ltr" className="text-right">
-                          {viewFor.phone}
-                        </DrawerDescription>
-                      </div>
-                    </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="gap-1.5 col-span-2"
-                        onClick={() =>
-                          exportStatementPDF(viewFor!, m, myInvoices, myPayments, false)
-                        }
-                      >
-                        <FileDown className="w-4 h-4" />
-                        كشف حساب تاريخي (PDF)
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5"
-                        onClick={() =>
-                          exportStatementPDF(viewFor!, m, myInvoices, myPayments, true)
-                        }
-                        aria-label="طباعة"
-                      >
-                        <Printer className="w-4 h-4" />
-                        طباعة
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="col-span-3 gap-2 border-success/40 text-success hover:bg-success/10"
-                        onClick={() => shareStatement(viewFor!, m, myInvoices, myPayments)}
-                      >
-                        <Share2 className="w-4 h-4" />
-                        مشاركة عبر واتساب
-                      </Button>
-                    </div>
-                  </DrawerHeader>
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 text-right">
-                    {/* Summary */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="rounded-2xl hairline bg-foreground/[0.035] p-3">
-                        <div className="text-[11px] text-muted-foreground">المتبقي</div>
-                        <div
-                          className={cn(
-                            "font-bold text-lg",
-                            m.balance > 0 ? "text-danger" : "text-success",
-                            privacy && "privacy-blur",
-                          )}
-                        >
-                          {fmt(m.balance)} ج.م
-                        </div>
-                      </div>
-                      <div className="rounded-2xl hairline bg-foreground/[0.035] p-3">
-                        <div className="text-[11px] text-muted-foreground">إجمالي المعاملات</div>
-                        <div className={cn("font-bold text-lg", privacy && "privacy-blur")}>
-                          {fmt(m.totalCharged)} ج.م
-                        </div>
-                      </div>
-                      <div className="rounded-2xl hairline bg-foreground/[0.035] p-3">
-                        <div className="text-[11px] text-muted-foreground">المسدد</div>
-                        <div
-                          className={cn(
-                            "font-bold text-lg text-success",
-                            privacy && "privacy-blur",
-                          )}
-                        >
-                          {fmt(m.totalPaid)} ج.م
-                        </div>
-                      </div>
-                      <div className="rounded-2xl hairline bg-foreground/[0.035] p-3">
-                        <div className="text-[11px] text-muted-foreground">أقصى تأخير</div>
-                        <div
-                          className={cn(
-                            "font-bold text-lg",
-                            m.worstLate > 30 ? "text-danger" : "text-foreground",
-                          )}
-                        >
-                          {m.worstLate > 0 ? `${m.worstLate} يوم` : "—"}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="rounded-2xl hairline p-3 space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">العنوان</span>
-                        <span className="font-medium">{viewFor.address || "—"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">تاريخ الانضمام</span>
-                        <span className="font-medium" dir="ltr">
-                          {isoToDDMMYYYY(viewFor.joiningDate)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">سقف المديونية</span>
-                        <span className={cn("font-medium", privacy && "privacy-blur")}>
-                          {viewFor.creditLimit > 0 ? `${fmt(viewFor.creditLimit)} ج.م` : "بدون حد"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">يوم القسط</span>
-                        <span className="font-medium">يوم {viewFor.dueDay} من الشهر</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">نوع العميل</span>
-                        <CustomerTypeBadge type={viewFor.customerType} />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">الحالة</span>
-                        <StatusBadge status={viewFor.status} />
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">التقييم</span>
-                        <StarRating value={viewFor.rating} />
-                      </div>
-                      {viewFor.frozen && (
-                        <Badge
-                          variant="outline"
-                          className="bg-warning/15 text-warning border-warning/30"
-                        >
-                          حساب مجمّد
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Unified Transaction Timeline */}
-                    <div>
-                      <h3 className="font-bold mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <QuickAddInvoice
-                            customerId={viewFor.id}
-                            blocked={viewFor.frozen || viewFor.status === "defaulter"}
-                          />
-                          <QuickAddPayment invoices={myInvoices} />
-                        </div>
-                        <span className="flex items-center gap-2">
-                          <History className="w-4 h-4 text-primary" />
-                          سجل الحركات الكامل
-                        </span>
-                      </h3>
-                      {(() => {
-                        const timeline = buildTimeline(viewFor, myInvoices, myPayments);
-                        if (timeline.length === 0) {
-                          return (
-                            <div className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-2xl">
-                              لا توجد حركات منذ تاريخ الانضمام
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="relative space-y-2 pr-4 border-r-2 border-border/60">
-                            {timeline.map((t) => {
-                              const isPurchase = t.kind === "purchase";
-                              const isOpening = t.kind === "opening";
-                              const entityId =
-                                t.id.startsWith("inv-") || t.id.startsWith("down-")
-                                  ? t.id.replace(/^(inv|down)-/, "")
-                                  : t.id.startsWith("pay-")
-                                    ? t.id.replace(/^pay-/, "")
-                                    : null;
-                              const editableInvoice =
-                                (t.id.startsWith("inv-") || t.id.startsWith("down-")) && entityId
-                                  ? myInvoices.find((i) => i.id === entityId)
-                                  : null;
-                              const editablePayment =
-                                t.id.startsWith("pay-") && entityId
-                                  ? myPayments.find((p) => p.id === entityId)
-                                  : null;
-                              const canEdit = !!editableInvoice || !!editablePayment;
-                              return (
-                                <div
-                                  key={t.id}
-                                  className="relative animate-[fade-in_0.3s_ease-out_both]"
-                                >
-                                  <span
-                                    className={cn(
-                                      "absolute -right-[22px] top-2 h-3.5 w-3.5 rounded-full border-2 border-background",
-                                      isPurchase
-                                        ? "bg-danger"
-                                        : isOpening
-                                          ? "bg-warning"
-                                          : "bg-success",
-                                    )}
-                                  />
-                                  <div
-                                    className={cn(
-                                      "rounded-2xl border p-2.5 text-sm",
-                                      isPurchase
-                                        ? "border-danger/30 bg-danger/5"
-                                        : isOpening
-                                          ? "border-warning/30 bg-warning/5"
-                                          : "border-success/30 bg-success/5",
-                                    )}
-                                  >
-                                    <div className="flex items-center justify-between gap-2 mb-1">
-                                      <Badge
-                                        variant="outline"
-                                        className={cn(
-                                          "gap-1 text-[10px] font-bold",
-                                          isPurchase
-                                            ? "bg-danger/15 text-danger border-danger/40"
-                                            : isOpening
-                                              ? "bg-warning/15 text-warning border-warning/40"
-                                              : "bg-success/15 text-success border-success/40",
-                                        )}
-                                      >
-                                        {isPurchase ? (
-                                          <ShoppingBag className="w-3 h-3" />
-                                        ) : isOpening ? (
-                                          <AlertTriangle className="w-3 h-3" />
-                                        ) : (
-                                          <Receipt className="w-3 h-3" />
-                                        )}
-                                        {isPurchase ? "مشترى" : isOpening ? "رصيد افتتاحي" : "سداد"}
-                                      </Badge>
-                                      <div className="flex items-center gap-1">
-                                        {canEdit && (
-                                          <>
-                                            {editableInvoice && (
-                                              <CustomerEditInvoiceDialog invoice={editableInvoice} />
-                                            )}
-                                            {editablePayment && (
-                                              <EditPaymentDialog
-                                                payment={editablePayment}
-                                                invoices={myInvoices}
-                                              />
-                                            )}
-                                            <DeleteTimelineEntry
-                                              kind={editableInvoice ? "invoice" : "payment"}
-                                              id={(editableInvoice ?? editablePayment)!.id}
-                                            />
-                                          </>
-                                        )}
-                                        <span
-                                          className="text-[11px] text-muted-foreground mr-1"
-                                          dir="ltr"
-                                        >
-                                          {isoToDDMMYYYY(t.date.slice(0, 10))}
-                                        </span>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="text-xs text-muted-foreground flex-1">
-                                        {t.description}
-                                      </div>
-                                      <div
-                                        className={cn(
-                                          "font-bold whitespace-nowrap",
-                                          isPurchase || isOpening ? "text-danger" : "text-success",
-                                          privacy && "privacy-blur",
-                                        )}
-                                      >
-                                        {isPurchase || isOpening ? "+" : "−"} {fmt(t.amount)} ج.م
-                                      </div>
-                                    </div>
-                                    <div className="mt-1.5 pt-1.5 border-t border-[var(--hairline)] flex justify-between text-[11px]">
-                                      <span className="text-muted-foreground">الرصيد المتبقي:</span>
-                                      <span
-                                        className={cn(
-                                          "font-bold tabular-nums",
-                                          t.runningBalance > 0 ? "text-danger" : "text-success",
-                                          privacy && "privacy-blur",
-                                        )}
-                                      >
-                                        {fmt(t.runningBalance)} ج.م
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                  <DrawerFooter className="border-t border-[var(--hairline)]">
-                    <DrawerClose asChild>
-                      <Button variant="outline" className="w-full">
-                        إغلاق
-                      </Button>
-                    </DrawerClose>
-                  </DrawerFooter>
-                </>
-              );
-            })()}
-        </DrawerContent>
-      </Drawer>
+      <CustomerViewDrawer
+        customer={viewFor}
+        open={!!viewFor}
+        onOpenChange={(o) => !o && setViewFor(null)}
+        invoices={data.invoices}
+        payments={data.payments}
+        privacy={privacy}
+      />
 
       {/* نافذة استيراد العملاء من Excel */}
       <CustomerImportDialog
@@ -1541,206 +949,5 @@ function CustomersPage() {
       />
     </>
   );
-}
-
-type TimelineEntry = {
-  id: string;
-  date: string; // ISO datetime
-  kind: "opening" | "purchase" | "payment";
-  description: string;
-  amount: number;
-  runningBalance: number;
-};
-
-function buildTimeline(c: Customer, invoices: Invoice[], payments: Payment[]): TimelineEntry[] {
-  type Raw = {
-    id: string;
-    date: string;
-    kind: TimelineEntry["kind"];
-    description: string;
-    amount: number;
-  };
-  const raw: Raw[] = [];
-
-  if (c.openingBalance && c.openingBalance > 0) {
-    raw.push({
-      id: `opening-${c.id}`,
-      date: `${c.joiningDate}T00:00:00`,
-      kind: "opening",
-      description: "رصيد افتتاحي عند الانضمام",
-      amount: c.openingBalance,
-    });
-  }
-  for (const inv of invoices) {
-    raw.push({
-      id: `inv-${inv.id}`,
-      date: inv.createdAt,
-      kind: "purchase",
-      description: inv.notes?.trim()
-        ? inv.notes
-        : `فاتورة بتاريخ استحقاق ${isoToDDMMYYYY(inv.firstDueDate)}`,
-      amount: inv.total,
-    });
-    if (inv.downPayment > 0) {
-      raw.push({
-        id: `down-${inv.id}`,
-        date: inv.createdAt,
-        kind: "payment",
-        description: `مقدم على فاتورة (${(inv.notes || "").trim() || "بدون وصف"})`,
-        amount: inv.downPayment,
-      });
-    }
-  }
-  for (const p of payments) {
-    const inv = invoices.find((i) => i.id === p.invoiceId);
-    raw.push({
-      id: `pay-${p.id}`,
-      date: p.paidAt,
-      kind: "payment",
-      description: `سداد على فاتورة ${inv?.notes ? `«${inv.notes}»` : `#${p.invoiceId.slice(0, 6)}`}`,
-      amount: p.amount,
-    });
-  }
-
-  raw.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  let bal = 0;
-  const ascending: TimelineEntry[] = raw.map((r) => {
-    bal += r.kind === "payment" ? -r.amount : r.amount;
-    return { ...r, runningBalance: bal };
-  });
-  return ascending.reverse();
-}
-
-function escapeHtml2(s: string): string {
-  return s.replace(
-    /[&<>"']/g,
-    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
-  );
-}
-
-function exportStatementPDF(
-  c: Customer,
-  m: { balance: number; totalCharged: number; totalPaid: number; worstLate: number },
-  invoices: Invoice[],
-  payments: Payment[],
-  autoPrint: boolean,
-) {
-  const timelineDesc = buildTimeline(c, invoices, payments);
-  const timeline = [...timelineDesc].reverse(); // chronological for the report
-  const today = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  const joining = isoToDDMMYYYY(c.joiningDate);
-
-  const rows = timeline
-    .map((t, i) => {
-      const isPay = t.kind === "payment";
-      const typeLabel =
-        t.kind === "purchase" ? "مشترى" : t.kind === "opening" ? "رصيد افتتاحي" : "سداد";
-      return `
-      <tr>
-        <td>${i + 1}</td>
-        <td dir="ltr">${escapeHtml2(isoToDDMMYYYY(t.date.slice(0, 10)))}</td>
-        <td><span class="tag ${t.kind}">${typeLabel}</span></td>
-        <td>${escapeHtml2(t.description)}</td>
-        <td class="num ${isPay ? "pay" : "buy"}">${isPay ? "−" : "+"} ${fmt(t.amount)}</td>
-        <td class="num ${t.runningBalance > 0 ? "due" : "ok"}">${fmt(t.runningBalance)}</td>
-      </tr>`;
-    })
-    .join("");
-
-  const body = `
-<div class="info">
-  <div class="box"><b>اسم العميل</b> ${escapeHtml2(c.name)}</div>
-  <div class="box"><b>رقم الهاتف</b> <span dir="ltr">${escapeHtml2(c.phone)}</span></div>
-  <div class="box"><b>العنوان</b> ${escapeHtml2(c.address || "—")}</div>
-  <div class="box"><b>تاريخ الانضمام</b> <span dir="ltr">${escapeHtml2(joining)}</span></div>
-</div>
-<h2 class="sec">حركة الحساب</h2>
-<div class="t-wrap"><table>
-  <thead><tr>
-    <th>م</th><th>التاريخ</th><th>نوع الحركة</th><th>البيان</th><th class="num">المبلغ (ج.م)</th><th class="num">الرصيد المتبقي (ج.م)</th>
-  </tr></thead>
-  <tbody>${rows || `<tr><td colspan="6" class="empty">لا توجد حركات منذ تاريخ الانضمام</td></tr>`}</tbody>
-  <tfoot><tr>
-    <td colspan="4">الرصيد النهائي المستحق على العميل</td>
-    <td class="num" colspan="2">${fmt(m.balance)} ج.م</td>
-  </tr></tfoot>
-</table></div>
-<div class="total-bar"><span>الرصيد المستحق حالياً</span><span class="v">${fmt(m.balance)} ج.م</span></div>
-<div class="sig"><div>توقيع المسؤول</div><div>توقيع العميل</div><div>الختم الرسمي</div></div>`;
-
-  const html = pdfDocument({
-    docTitle: `كشف حساب — ${escapeHtml2(c.name)} — سِجلّي`,
-    badge: "مستند رسمي",
-    title: "كشف حساب تاريخي للعميل",
-    lede: `يشمل كل الحركات منذ ${escapeHtml2(joining)}.`,
-    brandSub: "نظام إدارة العملاء والأقساط — كشف حساب رسمي",
-    meta: [
-      { label: "تاريخ الإصدار", value: today },
-      { label: "رقم الكشف", value: `SG-${c.id.slice(0, 8).toUpperCase()}` },
-    ],
-    kpis: [
-      { label: "عدد الحركات", value: String(timeline.length) },
-      { label: "إجمالي المستحق", value: `${fmt(m.totalCharged)} ج.م`, tone: "danger" },
-      { label: "إجمالي المسدد", value: `${fmt(m.totalPaid)} ج.م`, tone: "brand" },
-      {
-        label: "الرصيد المتبقي",
-        value: `${fmt(m.balance)} ج.م`,
-        tone: m.balance > 0 ? "danger" : "brand",
-      },
-    ],
-    body,
-    page: "A4",
-  });
-
-  if (!openPdfDocument(html, { autoPrint, features: "width=1000,height=800" })) {
-    toast.error("الرجاء السماح بفتح النوافذ المنبثقة لتصدير PDF");
-    return;
-  }
-  toast.success(autoPrint ? "جاري تجهيز الطباعة..." : "تم تجهيز كشف الحساب التاريخي");
-}
-
-function shareStatement(
-  c: Customer,
-  m: { balance: number; totalCharged: number; totalPaid: number; worstLate: number },
-  invoices: Invoice[],
-  payments: { id: string; invoiceId: string; amount: number; paidAt: string }[],
-) {
-  const lines: string[] = [];
-  lines.push(`📋 كشف حساب — ${c.name}`);
-  lines.push(`📞 ${c.phone}`);
-  lines.push(`📅 ${new Date().toLocaleDateString("en-US")}`);
-  lines.push("―――――――――――――");
-  lines.push(`💰 إجمالي المعاملات: ${fmt(m.totalCharged)} ج.م`);
-  lines.push(`✅ إجمالي المسدد: ${fmt(m.totalPaid)} ج.م`);
-  lines.push(`🔴 المتبقي: ${fmt(m.balance)} ج.م`);
-  if (m.worstLate > 0) lines.push(`⏰ أقصى تأخير: ${m.worstLate} يوم`);
-  lines.push("");
-  if (invoices.length) {
-    lines.push("🧾 الفواتير:");
-    invoices.forEach((inv, i) => {
-      const rem = inv.total - inv.paid;
-      lines.push(
-        `${i + 1}) ${fmt(inv.total)} ج.م — متبقي ${fmt(rem)} — استحقاق ${inv.firstDueDate}`,
-      );
-    });
-    lines.push("");
-  }
-  if (payments.length) {
-    lines.push("💵 آخر المدفوعات:");
-    payments.slice(0, 5).forEach((p) => {
-      lines.push(`• ${fmt(p.amount)} ج.م — ${new Date(p.paidAt).toLocaleDateString("en-US")}`);
-    });
-  }
-  lines.push("");
-  lines.push("— سِجلّي");
-  const text = lines.join("\n");
-  const phone = c.phone.replace(/^0/, "20");
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(toArabicDigits(text))}`, "_blank");
-  toast.success("جاري فتح واتساب لمشاركة الكشف");
 }
 
