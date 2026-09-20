@@ -33,7 +33,25 @@ export type ShipmentStatus = "pending" | "processing" | "shipped" | "delivered" 
 export type ShipmentCollectionStatus = "uncollected" | "collected" | "settled";
 export type AuthProvider = "google" | "email" | "unknown";
 
+// ─── Invoice form row ─────────────────────────────────────
+
+export type ProductRow = {
+  id: string;
+  name: string;
+  cost: string;
+  price: string;
+  stockId?: string;
+  variantId?: string;
+  size?: string;
+  quantity: string;
+  discount?: string;
+  taxPct?: string;
+  serialNumbers?: string;
+  notes?: string;
+};
+
 // ─── Interfaces ───────────────────────────────────────────
+
 
 export interface Branch {
   id: string;

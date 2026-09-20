@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import { db, fmt, addManualTransaction, type Invoice, type ProductRow } from "@/lib/store";
-import { getTreasuryAccounts } from "@/lib/cashbox-system";
+import { db, fmt, type Invoice } from "@/lib/store";
+import { getTreasuryAccounts, addManualTransaction } from "@/lib/cashbox-system";
+
 import { useDB } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { Wallet } from "lucide-react";

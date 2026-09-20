@@ -1001,17 +1001,5 @@ function printReceipt(
 }
 
 
-export type ProductRow = {
-  id: string;
-  name: string;
-  cost: string;
-  price: string;
-  stockId?: string;
-  variantId?: string;
-  size?: string;
-  quantity: string;
-  discount?: string;
-  taxPct?: string;
-  serialNumbers?: string;
-  notes?: string;
-};
+export type { ProductRow } from "@/types";
+

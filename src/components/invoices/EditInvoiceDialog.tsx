@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
-import { db, fmt, useDB, type Invoice, type ProductRow } from "@/lib/store";
+import { db, fmt, useDB, type Invoice } from "@/lib/store";
+import type { ProductRow } from "@/types";
+
 import { usePrivacy } from "@/lib/privacy";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
