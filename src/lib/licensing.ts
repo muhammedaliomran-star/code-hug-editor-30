@@ -443,7 +443,7 @@ export async function pushLicensesToCloud(licenses: LicenseRecord[]): Promise<vo
       billing_cycle: lic.billingCycle,
       notes: lic.notes || null,
       hardware_included: lic.hardwareIncluded || null,
-      hardware_items: lic.hardwareItems || null,
+      hardware_items: (lic.hardwareItems || null) as unknown as never,
       tax_rate_percent: lic.taxRatePercent || null,
       modules: lic.modules || {},
       installments: lic.installments || null,

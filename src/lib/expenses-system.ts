@@ -436,7 +436,7 @@ export function checkRecurringStatus(r: RecurringExpense): {
 }
 
 /** حساب تاريخ الاستحقاق التالي بعد تنفيذ دفعة من قالب دوري */
-export function advanceDueDate(item: RecurringExpense, fromDate = new Date()): string {
+export function advanceDueDate(item: Pick<RecurringExpense, "frequency"> & Partial<Pick<RecurringExpense, "dayOfMonth">>, fromDate = new Date()): string {
   const next = new Date(fromDate);
   if (item.frequency === "monthly") {
     next.setMonth(next.getMonth() + 1);
