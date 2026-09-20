@@ -1,7 +1,8 @@
 import { useBranches } from "./context";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { fmt, calculateBranchProfitability, calculateBranchStockValuation } from "@/lib/store";
+import { fmt } from "@/lib/store";
+import { calculateBranchProfitability, calculateBranchStockValuation } from "@/lib/branch-system";
 import { Award } from "lucide-react";
 import {
   BarChart,

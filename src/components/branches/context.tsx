@@ -38,6 +38,7 @@ import {
   linkExpenseToBranch,
   saveBranchProfile,
   getBranchProfile,
+  type BranchProfile,
 } from "@/lib/branch-system";
 
 export interface BranchesContextValue {
@@ -69,7 +70,7 @@ export interface BranchesContextValue {
   setIsBranchDialogOpen: (open: boolean) => void;
   editingBranch: Branch | null;
   setEditingBranch: (branch: Branch | null) => void;
-  editingBranchProfile: Record<string, string>;
+  editingBranchProfile: BranchProfile;
   handleSaveBranch: (e: React.FormEvent<HTMLFormElement>) => void;
 
   // Transfer state

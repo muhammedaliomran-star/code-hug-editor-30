@@ -1,7 +1,8 @@
 import { useBranches } from "./context";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { fmt, calculateBranchStockValuation } from "@/lib/store";
+import { fmt } from "@/lib/store";
+import { calculateBranchStockValuation } from "@/lib/branch-system";
 import { GitBranch, MapPin, Phone, User, Plus, Pencil, Trash2, Boxes, Wallet, Check, Building2 } from "lucide-react";
 import { setActiveBranchId } from "@/lib/branch-system";
 import { toast } from "sonner";

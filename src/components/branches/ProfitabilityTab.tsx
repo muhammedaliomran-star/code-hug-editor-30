@@ -1,7 +1,7 @@
 import { useBranches } from "./context";
 import { cn } from "@/lib/utils";
-import { fmt, calculateBranchProfitability } from "@/lib/store";
-import { getExpensesForBranch } from "@/lib/branch-system";
+import { fmt } from "@/lib/store";
+import { getExpensesForBranch, calculateBranchProfitability } from "@/lib/branch-system";
 
 export default function ProfitabilityTab() {
   const { activeBranch, invoices, expenses, cur } = useBranches();
