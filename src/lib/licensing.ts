@@ -452,7 +452,7 @@ export async function pushLicensesToCloud(licenses: LicenseRecord[]): Promise<vo
       device_fingerprint: lic.deviceFingerprint || null,
     }));
 
-    const { error } = await supabase.from("licenses").upsert(rows, {
+    const { error } = await supabase.from("licenses").upsert(rows as never[], {
       onConflict: "id",
     });
 
