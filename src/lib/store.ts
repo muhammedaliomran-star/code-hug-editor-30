@@ -45,8 +45,8 @@ export type {
   DBState,
 } from "@/types";
 
-// Re-export constants from @/types for backward compatibility
-export {
+// Import locally (needed inside this module) and re-export for backward compatibility
+import {
   DEFAULT_EXPENSE_CATEGORIES_LIST,
   PRODUCT_TYPES,
   WAREHOUSE_SEASONS,
@@ -55,6 +55,16 @@ export {
   LOW_STOCK_THRESHOLD,
   EMPTY_SHOP_SETTINGS,
 } from "@/types/constants";
+
+export {
+  DEFAULT_EXPENSE_CATEGORIES_LIST,
+  PRODUCT_TYPES,
+  WAREHOUSE_SEASONS,
+  WAREHOUSE_CATEGORIES,
+  EXPENSE_CATEGORIES,
+  LOW_STOCK_THRESHOLD,
+  EMPTY_SHOP_SETTINGS,
+};
 
 
 const listeners = new Set<() => void>();
