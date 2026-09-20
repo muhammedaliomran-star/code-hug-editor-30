@@ -38,6 +38,7 @@ import {
   linkExpenseToBranch,
   saveBranchProfile,
   getBranchProfile,
+  type BranchProfile,
 } from "@/lib/branch-system";
 
 export interface BranchesContextValue {
