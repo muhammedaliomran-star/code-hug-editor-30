@@ -1,345 +1,60 @@
-import type { ColorPalette } from "./theme";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export type { ColorPalette };
-export type NumeralsFormat = "latn" | "arab";
-export type AutoBackupFrequency = "weekly" | "monthly" | "off";
-export const DEFAULT_EXPENSE_CATEGORIES_LIST = ["rent", "electricity", "salaries", "transport", "other"];
+// Re-export types from @/types for backward compatibility
+export type {
+  ColorPalette,
+  NumeralsFormat,
+  AutoBackupFrequency,
+  CustomerStatus,
+  CustomerType,
+  Branch,
+  PaymentVoucher,
+  Customer,
+  InvoiceStatus,
+  Invoice,
+  Payment,
+  InvoiceItem,
+  ExpenseCategory,
+  ShipmentCarrier,
+  ShippingZone,
+  ShipmentStatus,
+  ShipmentCollectionStatus,
+  Shipment,
+  Expense,
+  Supplier,
+  PurchasePaymentType,
+  Purchase,
+  PurchaseItem,
+  SupplierPayment,
+  ReturnRecord,
+  ReturnItem,
+  WarehouseSeason,
+  WarehouseItem,
+  ProductVariant,
+  SplitPaymentDetail,
+  StockItem,
+  StockHistoryEntry,
+  AuthProvider,
+  AuthIdentity,
+  Profile,
+  ThemeMode,
+  PrintPaper,
+  ShopSettings,
+  DBState,
+} from "@/types";
 
-export type CustomerStatus = "committed" | "neutral" | "defaulter";
-export type CustomerType = "installment" | "cash";
-
-export interface Branch {
-  id: string;
-  name: string;
-  location: string | null;
-  phone: string | null;
-  managerName: string | null;
-  isMain: boolean;
-  createdAt: string;
-}
-
-export interface PaymentVoucher {
-  id: string;
-  customerId: string | null;
-  supplierId: string | null;
-  amount: number;
-  type: "receipt" | "payment";
-  paymentMethod: string;
-  description: string | null;
-  voucherDate: string;
-  partyName?: string;
-  partyPhone?: string;
-  createdAt: string;
-}
-
-export interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  rating: number;
-  status: CustomerStatus;
-  customerType: CustomerType;
-  notes: string | null;
-  frozen: boolean;
-  address: string | null;
-  joiningDate: string;
-  creditLimit: number;
-  dueDay: number;
-  openingBalance: number;
-  nationalId?: string;
-  createdAt: string;
-}
-
-export type InvoiceStatus = "paid" | "pending" | "cancelled";
-
-export interface Invoice {
-  id: string;
-  customerId: string;
-  total: number;
-  downPayment: number;
-  monthlyInstallment: number;
-  firstDueDate: string;
-  paid: number;
-  notes: string | null;
-  createdAt: string;
-  discountPct?: number;
-  discountAmount?: number;
-  taxPct?: number;
-  taxAmount?: number;
-  status?: InvoiceStatus;
-  invoiceNumber?: string;
-  date?: string;
-  receiptToken?: string;
-}
-
-export interface Payment {
-  id: string;
-  invoiceId: string;
-  amount: number;
-  paidAt: string;
-}
-
-export interface InvoiceItem {
-  id: string;
-  invoiceId: string;
-  name: string;
-  cost: number;
-  price: number;
-  quantity: number;
-  discountPct: number;
-  discountAmount: number;
-  taxPct: number;
-  taxAmount: number;
-  lineTotal: number;
-  serialNumbers: string[];
-  createdAt: string;
-}
-
-export type ExpenseCategory = "rent" | "electricity" | "salaries" | "transport" | "other";
-
-export interface ShipmentCarrier {
-  id: string;
-  name: string;
-  contactPerson: string | null;
-  phone: string | null;
-  email: string | null;
-  baseCost: number;
-  active: boolean;
-  createdAt: string;
-}
-
-export interface ShippingZone {
-  id: string;
-  name: string;
-  carrierId: string;
-  deliveryCost: number;
-  estimatedDays: number;
-  createdAt: string;
-}
-
-export type ShipmentStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'returned' | 'cancelled';
-export type ShipmentCollectionStatus = 'uncollected' | 'collected' | 'settled';
-
-export interface Shipment {
-  id: string;
-  invoiceId: string | null;
-  carrierId: string | null;
-  zoneId: string | null;
-  trackingNumber: string | null;
-  status: ShipmentStatus;
-  recipientName: string | null;
-  recipientPhone: string | null;
-  deliveryAddress: string | null;
-  actualDeliveryDate: string | null;
-  processingAt: string | null;
-  shippedAt: string | null;
-  deliveredAt: string | null;
-  returnedAt: string | null;
-  statusUpdatedBy: string | null;
-  shippingCost: number;
-  codAmount: number;
-  collectionStatus: ShipmentCollectionStatus;
-  collectedAt: string | null;
-  settledAt: string | null;
-  weightKg: number;
-  pieces: number;
-  expectedDeliveryDate: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
-
-export interface Expense {
-  id: string;
-  amount: number;
-  category: ExpenseCategory;
-  expenseDate: string;
-  notes: string | null;
-  createdAt: string;
-}
-
-
-export interface Supplier {
-  id: string;
-  name: string;
-  contact: string;
-  notes: string | null;
-  openingBalance: number;
-  nationalId?: string;
-  createdAt: string;
-}
-
-export type PurchasePaymentType = "cash" | "credit";
-
-export interface Purchase {
-  id: string;
-  supplierId: string;
-  total: number;
-  paymentType: PurchasePaymentType;
-  purchaseDate: string;
-  notes: string | null;
-  createdAt: string;
-}
-
-export interface PurchaseItem {
-  id: string;
-  purchaseId: string;
-  name: string;
-  unitCost: number;
-  quantity: number;
-  createdAt: string;
-}
-
-export interface SupplierPayment {
-  id: string;
-  supplierId: string;
-  amount: number;
-  paidAt: string;
-}
-
-export interface ReturnRecord {
-  id: string;
-  invoiceId: string | null;
-  type: "sale" | "supplier";
-  totalAmount: number;
-  reason: string | null;
-  notes: string | null;
-  createdAt: string;
-}
-
-export interface ReturnItem {
-  id: string;
-  returnId: string;
-  name: string;
-  unitPrice: number;
-  quantity: number;
-  createdAt: string;
-}
-
-export type WarehouseSeason = "summer" | "winter" | "all";
-
-export interface WarehouseItem {
-  id: string;
-  name: string;
-  quantity: number;
-  unitCost: number;
-  salePrice: number;
-  season: WarehouseSeason;
-  category: string;
-  notes: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export const PRODUCT_TYPES = [
-  "أخرى / غير محدد",
-  "ملابس",
-  "أحذية",
-  "إلكترونيات",
-  "أدوات منزلية",
-  "مستحضرات",
-  "قطع غيار",
-  "أغذية",
-] as const;
-
-export interface ProductVariant {
-  id: string;
-  name?: string;
-  size?: string | null;
-  color?: string | null;
-  barcode?: string | null;
-  quantity?: number;
-  salePrice?: number;
-  lastUnitCost?: number;
-  costPrice?: number;
-}
-
-export interface SplitPaymentDetail {
-  cash: number;
-  electronic: number;
-  method?: string;
-  reference?: string;
-}
-
-export interface StockItem {
-  id: string;
-  name: string;
-  quantity: number;
-  lastUnitCost: number;
-  salePrice: number;
-  barcode: string | null;
-  size: string | null;
-  itemType: string | null;
-  minStock: number;
-  createdAt: string;
-  updatedAt: string;
-  variants?: ProductVariant[];
-  lowStockAlert?: number;
-  season?: string | null;
-  category?: string | null;
-  notes?: string | null;
-}
-
-export interface DBState {
-
-  customers: Customer[];
-  invoices: Invoice[];
-  payments: Payment[];
-  expenses: Expense[];
-  invoiceItems: InvoiceItem[];
-  suppliers: Supplier[];
-  purchases: Purchase[];
-  purchaseItems: PurchaseItem[];
-  supplierPayments: SupplierPayment[];
-  stockItems: StockItem[];
-  warehouseItems: WarehouseItem[];
-  returns: ReturnRecord[];
-  returnItems: ReturnItem[];
-  branches: Branch[];
-  paymentVouchers: PaymentVoucher[];
-  carriers: ShipmentCarrier[];
-  zones: ShippingZone[];
-  shipments: Shipment[];
-
-  loading: boolean;
-  addBranch: (b: Omit<Branch, "id" | "createdAt">) => Promise<{ id: string } | null>;
-  updateBranch: (id: string, patch: Partial<Branch>) => Promise<void>;
-  removeBranch: (id: string) => Promise<void>;
-  addPaymentVoucher: (v: Omit<PaymentVoucher, "id" | "createdAt">) => Promise<void>;
-  removePaymentVoucher: (id: string) => Promise<void>;
-  
-  // Purchases management
-  addPurchase: (p: Omit<Purchase, "id" | "createdAt" | "user_id"> & { items: Omit<PurchaseItem, "id" | "purchase_id" | "user_id">[] }) => Promise<void>;
-  removePurchase: (id: string) => Promise<void>;
-  
-  // Reports
-  getFinancialReport: (start: Date, end: Date) => Promise<{
-    sales: number;
-    purchases: number;
-    expenses: number;
-    grossProfit: number;
-    netProfit: number;
-    tax: number;
-    returns: number;
-  }>;
-  
-  refresh: () => Promise<void>;
-  
-  // Shipping
-  addCarrier: (c: Omit<ShipmentCarrier, "id" | "createdAt">) => Promise<void>;
-  updateCarrier: (id: string, patch: Partial<ShipmentCarrier>) => Promise<void>;
-  addZone: (z: Omit<ShippingZone, "id" | "createdAt">) => Promise<void>;
-  updateZone: (id: string, patch: Partial<ShippingZone>) => Promise<void>;
-  removeZone: (id: string) => Promise<void>;
-  addShipment: (s: Omit<Shipment, "id" | "createdAt">) => Promise<void>;
-  updateShipment: (id: string, patch: Partial<Shipment>) => Promise<void>;
-  updateShipmentStatus: (id: string, status: ShipmentStatus, reason?: string) => Promise<void>;
-  settleCarrierCollections: (carrierId: string) => Promise<number>;
-
-}
+// Re-export constants from @/types for backward compatibility
+export {
+  DEFAULT_EXPENSE_CATEGORIES_LIST,
+  PRODUCT_TYPES,
+  WAREHOUSE_SEASONS,
+  WAREHOUSE_CATEGORIES,
+  EXPENSE_CATEGORIES,
+  LOW_STOCK_THRESHOLD,
+  EMPTY_SHOP_SETTINGS,
+} from "@/types/constants";
 
 
 const listeners = new Set<() => void>();
@@ -1413,31 +1128,6 @@ export const db = {
   },
 };
 
-
-
-
-export const WAREHOUSE_SEASONS: { value: WarehouseSeason; label: string }[] = [
-  { value: "all", label: "عام / مستمر" },
-  { value: "summer", label: "صيفي" },
-  { value: "winter", label: "شتوي" },
-];
-
-export const WAREHOUSE_CATEGORIES: { value: string; label: string }[] = [
-  { value: "clothes", label: "ملابس" },
-  { value: "shoes", label: "أحذية" },
-  { value: "fabrics", label: "أقمشة" },
-  { value: "accessories", label: "إكسسوارات" },
-  { value: "other", label: "أخرى / غير محدد" },
-];
-
-export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
-  { value: "rent", label: "إيجار" },
-  { value: "electricity", label: "كهرباء" },
-  { value: "salaries", label: "رواتب" },
-  { value: "transport", label: "نقل" },
-  { value: "other", label: "أخرى" },
-];
-
 export function expenseCategoryLabel(c: ExpenseCategory): string {
   return EXPENSE_CATEGORIES.find((x) => x.value === c)?.label ?? c;
 }
@@ -1513,8 +1203,6 @@ export function invoiceNumber(invoices: Invoice[], invoiceId: string, prefix = s
   return p ? `${p}-${serial}` : `#${serial}`;
 }
 
-export const LOW_STOCK_THRESHOLD = 5;
-
 /** Threshold actually in use (from shop settings, falling back to the default). */
 export function lowStockThreshold() {
   return shopCache?.lowStockThreshold ?? LOW_STOCK_THRESHOLD;
@@ -1524,21 +1212,10 @@ export function lowStockCount(items: StockItem[], threshold = lowStockThreshold(
   return items.filter((it) => it.quantity < threshold).length;
 }
 
-
 export function findStockByBarcode(items: StockItem[], code: string): StockItem | undefined {
   const c = code.trim();
   if (!c) return undefined;
   return items.find((it) => (it.barcode ?? "").trim() === c);
-}
-
-export interface StockHistoryEntry {
-  id: string;
-  date: string;
-  type: "purchase" | "sale" | "adjustment";
-  qty: number; // positive = added, negative = removed
-  reason?: string;
-  notes?: string | null;
-  ref?: string;
 }
 
 export async function fetchStockHistory(stockItemId: string, name: string): Promise<StockHistoryEntry[]> {
@@ -1580,25 +1257,6 @@ export function aiScript(c: Customer, balance: number, lateDays: number): string
     return `يا أستاذ ${c.name}، بقالك ${lateDays} يوم متأخر على القسط. محتاجين نشرفنا في المحل لتحديث الحساب. المتبقي: ${fmt(balance)} ج.م.`;
   const months = Math.max(1, Math.floor(lateDays / 30));
   return `يا أستاذ ${c.name}، الحساب متوقف تماماً وبقالنا ${months} شهر من غير سداد. لازم الحساب يتقفل لتجنب الإجراءات القانونية. المتبقي: ${fmt(balance)} ج.م.`;
-}
-
-// ---------- Auth identity ----------
-export type AuthProvider = "google" | "email" | "unknown";
-
-export interface AuthIdentity {
-  id: string;
-  email?: string;
-  /** Name from the identity provider (Google `full_name`/`name`), if any. */
-  metaName: string | null;
-  /** Avatar from the identity provider (Google `avatar_url`/`picture`), if any. */
-  metaAvatar: string | null;
-  provider: AuthProvider;
-  /** All linked providers — a user can have both google and a password. */
-  providers: string[];
-  hasPassword: boolean;
-  emailConfirmed: boolean;
-  createdAt: string | null;
-  lastSignInAt: string | null;
 }
 
 function toIdentity(u: {
@@ -1673,13 +1331,6 @@ export function useAuth() {
   return { user, ready };
 }
 
-// ---------- Profile (اسم العرض والصورة) ----------
-export interface Profile {
-  displayName: string;
-  avatarUrl: string | null;
-  phone: string;
-}
-
 const emptyProfile: Profile = { displayName: "", avatarUrl: null, phone: "" };
 
 export function useProfile() {
@@ -1724,89 +1375,6 @@ export function useProfile() {
   return { profile, label, avatar, loading: loading || !authReady, save, reload: load, user, authReady };
 }
 
-
-// ---------- Shop settings (بيانات المحل) ----------
-export type ThemeMode = "dark" | "light" | "system";
-export type PrintPaper = "a4" | "thermal";
-
-export interface ShopSettings {
-  shopName: string;
-  phone: string;
-  address: string;
-  logoUrl: string | null;
-  footerNote: string;
-  currency: string;
-  taxNumber: string;
-  whatsapp: string;
-  lowStockThreshold: number;
-  defaultInstallmentMonths: number;
-  defaultDueDay: number;
-  invoicePrefix: string;
-  printPaper: PrintPaper;
-  theme: ThemeMode;
-  reminderDaysBefore: number;
-  alertsEnabled: boolean;
-  colorPalette: ColorPalette;
-  numeralsFormat: NumeralsFormat;
-  autoBackupFrequency: AutoBackupFrequency;
-  commercialRegister: string;
-  email: string;
-  website: string;
-  enableVat: boolean;
-  defaultVatRate: number;
-  warrantyPolicy: string;
-  autoPrintOnSave: boolean;
-  thermalShowBarcode: boolean;
-  thermalShowHeader: boolean;
-  customExpenseCategories: string[];
-  whatsappReminderTemplate: string;
-  whatsappPaymentThankYouTemplate: string;
-  criticalOverdueDays: number;
-  audioAlertsEnabled: boolean;
-  managerPin?: string;
-  maxDiscountWithoutPin?: number;
-  hideCostAndProfitsFromCashier?: boolean;
-  preventInvoiceDeletionWithoutPin?: boolean;
-  preventViewingTotalAnalyticsWithoutPin?: boolean;
-  thermalPaperWidth?: "58mm" | "80mm" | string;
-  openCashDrawerOnPrint?: boolean;
-}
-
-export const EMPTY_SHOP_SETTINGS: ShopSettings = {
-  shopName: "",
-  phone: "",
-  address: "",
-  logoUrl: null,
-  footerNote: "",
-  currency: "ج.م",
-  taxNumber: "",
-  whatsapp: "",
-  lowStockThreshold: 5,
-  defaultInstallmentMonths: 6,
-  defaultDueDay: 1,
-  invoicePrefix: "",
-  printPaper: "a4",
-  theme: "dark",
-  reminderDaysBefore: 3,
-  alertsEnabled: true,
-  colorPalette: "emerald",
-  numeralsFormat: "latn",
-  autoBackupFrequency: "weekly",
-  commercialRegister: "",
-  email: "",
-  website: "",
-  enableVat: false,
-  defaultVatRate: 14,
-  warrantyPolicy: "",
-  autoPrintOnSave: true,
-  thermalShowBarcode: true,
-  thermalShowHeader: true,
-  customExpenseCategories: DEFAULT_EXPENSE_CATEGORIES_LIST,
-  whatsappReminderTemplate: "",
-  whatsappPaymentThankYouTemplate: "",
-  criticalOverdueDays: 15,
-  audioAlertsEnabled: true,
-};
 
 let shopCache: ShopSettings | null = null;
 const shopListeners = new Set<() => void>();
