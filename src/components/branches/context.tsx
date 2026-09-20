@@ -69,7 +69,7 @@ export interface BranchesContextValue {
   setIsBranchDialogOpen: (open: boolean) => void;
   editingBranch: Branch | null;
   setEditingBranch: (branch: Branch | null) => void;
-  editingBranchProfile: Record<string, string>;
+  editingBranchProfile: BranchProfile;
   handleSaveBranch: (e: React.FormEvent<HTMLFormElement>) => void;
 
   // Transfer state
