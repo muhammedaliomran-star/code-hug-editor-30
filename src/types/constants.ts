@@ -1,4 +1,54 @@
-import type { ExpenseCategory, WarehouseSeason, ShopSettings } from "./index";
+import type { ColorPalette } from "@/lib/theme";
+
+export type ExpenseCategory = "rent" | "electricity" | "salaries" | "transport" | "other";
+export type WarehouseSeason = "summer" | "winter" | "all";
+export type NumeralsFormat = "latn" | "arab";
+export type AutoBackupFrequency = "weekly" | "monthly" | "off";
+export type ThemeMode = "dark" | "light" | "system";
+export type PrintPaper = "a4" | "thermal";
+
+export interface ShopSettings {
+  shopName: string;
+  phone: string;
+  address: string;
+  logoUrl: string | null;
+  footerNote: string;
+  currency: string;
+  taxNumber: string;
+  whatsapp: string;
+  lowStockThreshold: number;
+  defaultInstallmentMonths: number;
+  defaultDueDay: number;
+  invoicePrefix: string;
+  printPaper: PrintPaper;
+  theme: ThemeMode;
+  reminderDaysBefore: number;
+  alertsEnabled: boolean;
+  colorPalette: ColorPalette;
+  numeralsFormat: NumeralsFormat;
+  autoBackupFrequency: AutoBackupFrequency;
+  commercialRegister: string;
+  email: string;
+  website: string;
+  enableVat: boolean;
+  defaultVatRate: number;
+  warrantyPolicy: string;
+  autoPrintOnSave: boolean;
+  thermalShowBarcode: boolean;
+  thermalShowHeader: boolean;
+  customExpenseCategories: string[];
+  whatsappReminderTemplate: string;
+  whatsappPaymentThankYouTemplate: string;
+  criticalOverdueDays: number;
+  audioAlertsEnabled: boolean;
+  managerPin?: string;
+  maxDiscountWithoutPin?: number;
+  hideCostAndProfitsFromCashier?: boolean;
+  preventInvoiceDeletionWithoutPin?: boolean;
+  preventViewingTotalAnalyticsWithoutPin?: boolean;
+  thermalPaperWidth?: "58mm" | "80mm" | string;
+  openCashDrawerOnPrint?: boolean;
+}
 
 export const DEFAULT_EXPENSE_CATEGORIES_LIST = ["rent", "electricity", "salaries", "transport", "other"];
 

@@ -2,20 +2,25 @@ import type { ColorPalette } from "@/lib/theme";
 
 export type { ColorPalette };
 
+// Re-export types from constants (single source of truth, avoids circular deps)
+export type {
+  ExpenseCategory,
+  WarehouseSeason,
+  NumeralsFormat,
+  AutoBackupFrequency,
+  ThemeMode,
+  PrintPaper,
+  ShopSettings,
+} from "./constants";
+
 // ─── Core Types ───────────────────────────────────────────
 
-export type NumeralsFormat = "latn" | "arab";
-export type AutoBackupFrequency = "weekly" | "monthly" | "off";
 export type CustomerStatus = "committed" | "neutral" | "defaulter";
 export type CustomerType = "installment" | "cash";
 export type InvoiceStatus = "paid" | "pending" | "cancelled";
-export type ExpenseCategory = "rent" | "electricity" | "salaries" | "transport" | "other";
 export type PurchasePaymentType = "cash" | "credit";
-export type WarehouseSeason = "summer" | "winter" | "all";
 export type ShipmentStatus = "pending" | "processing" | "shipped" | "delivered" | "returned" | "cancelled";
 export type ShipmentCollectionStatus = "uncollected" | "collected" | "settled";
-export type ThemeMode = "dark" | "light" | "system";
-export type PrintPaper = "a4" | "thermal";
 export type AuthProvider = "google" | "email" | "unknown";
 
 // ─── Interfaces ───────────────────────────────────────────
@@ -295,49 +300,6 @@ export interface Profile {
   displayName: string;
   avatarUrl: string | null;
   phone: string;
-}
-
-export interface ShopSettings {
-  shopName: string;
-  phone: string;
-  address: string;
-  logoUrl: string | null;
-  footerNote: string;
-  currency: string;
-  taxNumber: string;
-  whatsapp: string;
-  lowStockThreshold: number;
-  defaultInstallmentMonths: number;
-  defaultDueDay: number;
-  invoicePrefix: string;
-  printPaper: PrintPaper;
-  theme: ThemeMode;
-  reminderDaysBefore: number;
-  alertsEnabled: boolean;
-  colorPalette: ColorPalette;
-  numeralsFormat: NumeralsFormat;
-  autoBackupFrequency: AutoBackupFrequency;
-  commercialRegister: string;
-  email: string;
-  website: string;
-  enableVat: boolean;
-  defaultVatRate: number;
-  warrantyPolicy: string;
-  autoPrintOnSave: boolean;
-  thermalShowBarcode: boolean;
-  thermalShowHeader: boolean;
-  customExpenseCategories: string[];
-  whatsappReminderTemplate: string;
-  whatsappPaymentThankYouTemplate: string;
-  criticalOverdueDays: number;
-  audioAlertsEnabled: boolean;
-  managerPin?: string;
-  maxDiscountWithoutPin?: number;
-  hideCostAndProfitsFromCashier?: boolean;
-  preventInvoiceDeletionWithoutPin?: boolean;
-  preventViewingTotalAnalyticsWithoutPin?: boolean;
-  thermalPaperWidth?: "58mm" | "80mm" | string;
-  openCashDrawerOnPrint?: boolean;
 }
 
 // ─── DBState ──────────────────────────────────────────────
