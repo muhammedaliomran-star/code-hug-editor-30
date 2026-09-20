@@ -446,7 +446,7 @@ export async function pushLicensesToCloud(licenses: LicenseRecord[]): Promise<vo
       hardware_items: (lic.hardwareItems || null) as unknown as never,
       tax_rate_percent: lic.taxRatePercent || null,
       modules: lic.modules || {},
-      installments: lic.installments || null,
+      installments: (lic.installments || null) as unknown as never,
       support_logs: lic.supportLogs || [],
       last_active_date: lic.lastActiveDate || null,
       device_fingerprint: lic.deviceFingerprint || null,
