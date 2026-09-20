@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { fmt, calculateBranchStockValuation, getProductStockInBranch } from "@/lib/store";
-import { setBranchStockAbsolute } from "@/lib/branch-system";
+import { fmt } from "@/lib/store";
+import { setBranchStockAbsolute, calculateBranchStockValuation, getProductStockInBranch } from "@/lib/branch-system";
 import { toast } from "sonner";
 import { Search, ArrowLeftRight, AlertTriangle } from "lucide-react";
 
