@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_settings: {
+        Row: {
+          admin_pin_hash: string
+          created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_pin_hash: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_pin_hash?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_events: {
         Row: {
           actor_user_id: string | null
@@ -845,6 +866,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      licenses: {
+        Row: {
+          billing_cycle: string
+          client_name: string
+          client_phone: string
+          created_at: string
+          currency: string
+          device_fingerprint: string | null
+          expiry_date: string
+          hardware_included: string | null
+          hardware_items: Json | null
+          id: string
+          installments: Json | null
+          issue_date: string
+          key: string
+          last_active_date: string | null
+          modules: Json
+          notes: string | null
+          paid_amount: number
+          shop_address: string | null
+          shop_name: string
+          status: string
+          support_logs: Json | null
+          tax_number: string | null
+          tax_rate_percent: number | null
+          tier: string
+          tier_label: string
+          user_id: string
+        }
+        Insert: {
+          billing_cycle?: string
+          client_name?: string
+          client_phone?: string
+          created_at?: string
+          currency?: string
+          device_fingerprint?: string | null
+          expiry_date?: string
+          hardware_included?: string | null
+          hardware_items?: Json | null
+          id?: string
+          installments?: Json | null
+          issue_date?: string
+          key: string
+          last_active_date?: string | null
+          modules?: Json
+          notes?: string | null
+          paid_amount?: number
+          shop_address?: string | null
+          shop_name?: string
+          status?: string
+          support_logs?: Json | null
+          tax_number?: string | null
+          tax_rate_percent?: number | null
+          tier?: string
+          tier_label?: string
+          user_id: string
+        }
+        Update: {
+          billing_cycle?: string
+          client_name?: string
+          client_phone?: string
+          created_at?: string
+          currency?: string
+          device_fingerprint?: string | null
+          expiry_date?: string
+          hardware_included?: string | null
+          hardware_items?: Json | null
+          id?: string
+          installments?: Json | null
+          issue_date?: string
+          key?: string
+          last_active_date?: string | null
+          modules?: Json
+          notes?: string | null
+          paid_amount?: number
+          shop_address?: string | null
+          shop_name?: string
+          status?: string
+          support_logs?: Json | null
+          tax_number?: string | null
+          tax_rate_percent?: number | null
+          tier?: string
+          tier_label?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       loyalty_config: {
         Row: {
@@ -3220,6 +3328,7 @@ export type Database = {
         Returns: undefined
       }
       expire_storefront_reservations: { Args: never; Returns: number }
+      get_admin_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_public_order_status: {
         Args: { p_customer_phone: string; p_public_number: string }
         Returns: Json
@@ -3305,6 +3414,14 @@ export type Database = {
       }
       reverse_storefront_sale_return: {
         Args: { p_return_id: string }
+        Returns: undefined
+      }
+      set_admin_pin: {
+        Args: { _new_pin: string; _user_id: string }
+        Returns: undefined
+      }
+      set_manager_pin: {
+        Args: { _new_pin: string; _user_id: string }
         Returns: undefined
       }
       settle_carrier_collections: {
@@ -3411,6 +3528,14 @@ export type Database = {
       validate_storefront_coupon: {
         Args: { p_code: string; p_storefront_id: string; p_subtotal: number }
         Returns: Json
+      }
+      verify_admin_pin: {
+        Args: { _pin: string; _user_id: string }
+        Returns: boolean
+      }
+      verify_manager_pin: {
+        Args: { _pin: string; _user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
