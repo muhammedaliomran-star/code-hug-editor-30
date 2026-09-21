@@ -1,37 +1,10 @@
--- Add updated_at column to all core business tables for conflict resolution and sync.
--- Tables that already have updated_at are skipped via IF NOT EXISTS.
+-- Final migration: updated_at + indexes + triggers for all core tables
 
--- Helper: auto-update updated_at on row modification
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$;
+-- 1. Add updated_at columns (skip tables that already have it)
+ALTER TABLE public.branches ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
+ALTER TABLE public.payment_vouchers ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
 
--- Core business tables
-ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.invoices ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.invoice_items ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.payments ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.expenses ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.suppliers ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.purchases ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.purchase_items ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.supplier_payments ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.stock_items ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.return_records ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.return_items ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-
--- Shipping tables
-ALTER TABLE public.shipping_carriers ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.shipping_zones ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-ALTER TABLE public.shipments ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now();
-
--- Indexes for sync queries (WHERE updated_at > last_sync)
+-- 2. Indexes for sync queries
 CREATE INDEX IF NOT EXISTS idx_customers_updated_at ON public.customers (updated_at);
 CREATE INDEX IF NOT EXISTS idx_invoices_updated_at ON public.invoices (updated_at);
 CREATE INDEX IF NOT EXISTS idx_payments_updated_at ON public.payments (updated_at);
@@ -43,26 +16,21 @@ CREATE INDEX IF NOT EXISTS idx_shipments_updated_at ON public.shipments (updated
 CREATE INDEX IF NOT EXISTS idx_branches_updated_at ON public.branches (updated_at);
 CREATE INDEX IF NOT EXISTS idx_payment_vouchers_updated_at ON public.payment_vouchers (updated_at);
 
--- Triggers: auto-set updated_at on UPDATE (skip tables that already have the trigger)
-DO $$
-DECLARE
-  tbl text;
-  tables text[] := ARRAY[
-    'customers', 'invoices', 'invoice_items', 'payments', 'expenses',
-    'suppliers', 'purchases', 'purchase_items', 'supplier_payments',
-    'stock_items', 'return_records', 'return_items',
-    'shipping_carriers', 'shipping_zones', 'shipments'
-  ];
-BEGIN
-  FOREACH tbl IN ARRAY tables LOOP
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_trigger WHERE tgname = 'set_updated_at_' || tbl
-    ) THEN
-      EXECUTE format(
-        'CREATE TRIGGER set_updated_at_%s BEFORE UPDATE ON public.%s FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column()',
-        tbl, tbl
-      );
-    END IF;
-  END LOOP;
-END
-$$;
+-- 3. Triggers (one per table)
+CREATE TRIGGER set_updated_at_customers BEFORE UPDATE ON public.customers FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_invoices BEFORE UPDATE ON public.invoices FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_invoice_items BEFORE UPDATE ON public.invoice_items FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_payments BEFORE UPDATE ON public.payments FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_expenses BEFORE UPDATE ON public.expenses FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_suppliers BEFORE UPDATE ON public.suppliers FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_purchases BEFORE UPDATE ON public.purchases FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_purchase_items BEFORE UPDATE ON public.purchase_items FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_supplier_payments BEFORE UPDATE ON public.supplier_payments FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_stock_items BEFORE UPDATE ON public.stock_items FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_return_records BEFORE UPDATE ON public.return_records FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_return_items BEFORE UPDATE ON public.return_items FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_shipping_carriers BEFORE UPDATE ON public.shipping_carriers FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_shipping_zones BEFORE UPDATE ON public.shipping_zones FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_shipments BEFORE UPDATE ON public.shipments FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_branches BEFORE UPDATE ON public.branches FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
+CREATE TRIGGER set_updated_at_payment_vouchers BEFORE UPDATE ON public.payment_vouchers FOR EACH ROW EXECUTE FUNCTION public.sync_set_updated_at();
