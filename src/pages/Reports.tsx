@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { ChartEmpty } from "@/components/ChartEmpty";
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -50,11 +51,14 @@ function escapeHtml(s: string): string {
 }
 
 function ReportsPage() {
-  const { customers, invoices, invoiceItems, payments, expenses, purchases, returns, stockItems } = useDB();
+  const { customers, invoices, invoiceItems, payments, expenses, purchases, returns, stockItems, loading } = useDB();
   const { settings } = useShopSettings();
   const { privacy, toggle } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "";
   const [range, setRange] = useState<Range>("6");
+  const [isExporting, setIsExporting] = useState(false);
+
+  if (loading) return <PageLoadingSkeleton type="cards" />;
 
   const months = useMemo(() => {
     const n = Number(range);
@@ -180,6 +184,7 @@ function ReportsPage() {
   }, [expenses, from]);
 
   const exportExcel = async () => {
+    setIsExporting(true);
     try {
       const XLSX = await import("xlsx");
       const wb = XLSX.utils.book_new();
@@ -201,6 +206,8 @@ function ReportsPage() {
       toast.success("تم تصدير ملف Excel");
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "تعذر التصدير");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -257,16 +264,16 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
+                <Button variant="outline" size="sm" disabled={isExporting} className="gap-1.5">
                   <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">تصدير</span>
+                  <span className="hidden sm:inline">{isExporting ? "جاري التصدير..." : "تصدير"}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={exportExcel} className="gap-2">
+                <DropdownMenuItem onClick={exportExcel} disabled={isExporting} className="gap-2">
                   <FileSpreadsheet className="w-4 h-4 text-muted-foreground" /> Excel (.xlsx)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={exportPDF} className="gap-2">
+                <DropdownMenuItem onClick={exportPDF} disabled={isExporting} className="gap-2">
                   <FileText className="w-4 h-4 text-muted-foreground" /> PDF مطبوع
                 </DropdownMenuItem>
               </DropdownMenuContent>

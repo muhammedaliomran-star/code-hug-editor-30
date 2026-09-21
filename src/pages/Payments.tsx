@@ -23,6 +23,7 @@ export default function PaymentsPage() {
   const location = useLocation();
   const { paymentVouchers, customers, suppliers, addPaymentVoucher, removePaymentVoucher, loading } = useDB();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "receipt" | "payment">("all");
   const [dateFilter, setDateFilter] = useState<{ from: string; to: string }>({
@@ -83,12 +84,15 @@ export default function PaymentsPage() {
       supplierId: type === "payment" ? partyId : null,
     };
 
+    setIsSaving(true);
     try {
       await addPaymentVoucher(data);
       toast.success("تم تسجيل السند بنجاح");
       setIsDialogOpen(false);
     } catch (error) {
-      toast.error("حدث خطأ أثناء التسجيل");
+      toast.error(error instanceof Error ? error.message : "حدث خطأ أثناء التسجيل");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -254,8 +258,14 @@ export default function PaymentsPage() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
-                        onClick={() => {
-                          if (confirm("هل أنت متأكد من حذف هذا السند؟")) removePaymentVoucher(voucher.id);
+                        onClick={async () => {
+                          if (!confirm("هل أنت متأكد من حذف هذا السند؟")) return;
+                          try {
+                            await removePaymentVoucher(voucher.id);
+                            toast.success("تم حذف السند بنجاح");
+                          } catch (error) {
+                            toast.error(error instanceof Error ? error.message : "حدث خطأ أثناء الحذف");
+                          }
                         }}
                         className="h-10 w-10 rounded-full text-danger hover:bg-danger/10 opacity-0 group-hover:opacity-100 transition-opacity"
                       >
@@ -387,8 +397,8 @@ export default function PaymentsPage() {
             </div>
 
             <div className="flex gap-3 pt-2">
-              <Button type="submit" className="flex-1 h-12 rounded-2xl font-black text-lg shadow-sm bg-primary text-black transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-[1.02] active:scale-[0.98]">
-                تسجيل السند
+              <Button type="submit" disabled={isSaving} className="flex-1 h-12 rounded-2xl font-black text-lg shadow-sm bg-primary text-black transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-[1.02] active:scale-[0.98]">
+                {isSaving ? "جاري التسجيل..." : "تسجيل السند"}
               </Button>
               <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-12 px-6 rounded-2xl border-foreground/10 hover:bg-foreground/5 transition-[background-color,border-color,color,box-shadow,transform,opacity]">
                 إلغاء
