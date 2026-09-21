@@ -410,7 +410,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     0,
   );
 
-  const money = (n: number) => (privacy ? "•••••" : ${fmt(n)} ج.م);
+  const money = (n: number) => (privacy ? "•••••" : `${fmt(n)} ج.م`);
   const plain = (n: number) => (privacy ? "•••" : fmt(n));
 
   const activeCustomers = data.customers.filter((c) => !c.frozen).length;
@@ -420,11 +420,11 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     const keys: string[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      keys.push(${d.getFullYear()}-);
+      keys.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
     }
     const idxOf = (iso: string) => {
       const d = new Date(iso);
-      return keys.indexOf(${d.getFullYear()}-);
+      return keys.indexOf(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
     };
     const zero = () => keys.map(() => 0);
 
@@ -563,19 +563,19 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const key = ${d.getFullYear()}-;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const label = d.toLocaleDateString("en-US", { month: "short" });
       months.push({ key, label, total: 0, forecast: null });
     }
     for (const p of data.payments) {
       const d = new Date(p.paidAt);
-      const key = ${d.getFullYear()}-;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const slot = months.find((mm) => mm.key === key);
       if (slot) slot.total = (slot.total ?? 0) + p.amount;
     }
 
     const next = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-    const nextKey = ${next.getFullYear()}-;
+    const nextKey = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
     let expected = 0;
     for (const inv of data.invoices) {
       const remaining = inv.total - inv.paid;
@@ -676,44 +676,44 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
         out.push({
           text:
             diff > 0
-              ? التحصيلات ارتفعت % مقارنة بالأسبوع السابق
-              : التحصيلات انخفضت % مقارنة بالأسبوع السابق,
+              ? `التحصيلات ارتفعت ${Math.abs(diff).toFixed(1)}% مقارنة بالأسبوع السابق`
+              : `التحصيلات انخفضت ${Math.abs(diff).toFixed(1)}% مقارنة بالأسبوع السابق`,
           tone: diff > 0 ? "success" : "warning",
         });
       }
     } else if (thisWeek > 0) {
-      out.push({ text: تم تحصيل  ج.م خلال آخر 7 أيام, tone: "success" });
+      out.push({ text: `تم تحصيل ${fmt(thisWeek)} ج.م خلال آخر 7 أيام`, tone: "success" });
     }
 
     if (inventoryStats.lowStockCount > 0 || inventoryStats.outOfStockCount > 0) {
       out.push({
-        text: المخزون:  صنف نفد رصيده بالكامل، و  صنف قارب على النفاد,
+        text: `المخزون: ${inventoryStats.outOfStockCount} صنف نفد رصيده بالكامل، و${inventoryStats.lowStockCount} صنف قارب على النفاد`,
         tone: "warning",
       });
     }
 
     if (shippingStats.unsettledCount > 0) {
       out.push({
-        text: شحن COD: يوجد  شحنة مسلّمة بإجمالي  ج.م تنتظر التوريد للخزينة,
+        text: `شحن COD: يوجد ${shippingStats.unsettledCount} شحنة مسلّمة بإجمالي ${fmt(shippingStats.pendingCodAmount)} ج.م تنتظر التوريد للخزينة`,
         tone: "info",
       });
     }
 
     if (reconciliationSummary.healthScore < 90) {
       out.push({
-        text: الرقابة المالية: مؤشر الصحة % — يوجد  ملاحظة تدقيقية تحتاج مراجعة,
+        text: `الرقابة المالية: مؤشر الصحة ${reconciliationSummary.healthScore}% — يوجد ${reconciliationSummary.criticalCount + reconciliationSummary.warningCount} ملاحظة تدقيقية تحتاج مراجعة`,
         tone: reconciliationSummary.healthScore < 75 ? "danger" : "warning",
       });
     }
 
     const dueTodayCount = dueToday.length;
     if (dueTodayCount > 0) {
-      out.push({ text: ${dueTodayCount} فاتورة تستحق التحصيل اليوم حسب الموعد المحدد, tone: "warning" });
+      out.push({ text: `${dueTodayCount} فاتورة تستحق التحصيل اليوم حسب الموعد المحدد`, tone: "warning" });
     }
 
     const defaulters = data.customers.filter((c) => c.status === "defaulter").length;
     if (defaulters > 0) {
-      out.push({ text: يوجد  عميل في حالة تعثر — راجع قائمة المتابعة والتحصيل, tone: "danger" });
+      out.push({ text: `يوجد ${defaulters} عميل في حالة تعثر — راجع قائمة المتابعة والتحصيل`, tone: "danger" });
     }
 
     if (out.length === 0) {

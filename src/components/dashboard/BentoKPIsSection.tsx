@@ -73,8 +73,8 @@ export function BentoKPIsSection() {
             series={monthBuckets.cashPurchases}
             sub={
               inventoryStats.lowStockCount > 0 || inventoryStats.outOfStockCount > 0
-                ? ${inventoryStats.outOfStockCount} نافد +  حرج
-                : ${inventoryStats.totalUnits} قطعة إجمالي الرصيد
+                ? `${inventoryStats.outOfStockCount} نافد + ${inventoryStats.lowStockCount} حرج`
+                : `${inventoryStats.totalUnits} قطعة إجمالي الرصيد`
             }
           />
         </Reveal>
@@ -82,21 +82,25 @@ export function BentoKPIsSection() {
         <Reveal className="h-full" delay={210}>
           <MetricCard
             className="h-full"
-            label={صافي الأرباح ()}
+            label={`صافي الأرباح (${rangeLabel})`}
             value={netProfit}
             format={money}
             masked={privacy}
             tone={netProfit > 0 ? "positive" : netProfit < 0 ? "danger" : "neutral"}
             icon={PiggyBank}
             series={monthBuckets.profitTrend}
-            sub={incompleteCostCount > 0 ? ${incompleteCostCount} فاتورة بيانات تكلفتها غير مكتملة : أرباح  − مصروفات }
+            sub={
+              incompleteCostCount > 0
+                ? `${incompleteCostCount} فاتورة بيانات تكلفتها غير مكتملة`
+                : `أرباح ${fmt(grossProfit)} − مصروفات ${fmt(expensesTotal)}`
+            }
           />
         </Reveal>
 
         <Reveal className="h-full" delay={245}>
           <MetricCard
             className="h-full"
-            label={التحصيلات ()}
+            label={`التحصيلات (${rangeLabel})`}
             value={rangeCollected}
             format={money}
             masked={privacy}
@@ -117,7 +121,7 @@ export function BentoKPIsSection() {
             tone={totalSupplierDebt > 0 ? "danger" : "neutral"}
             icon={Truck}
             series={monthBuckets.supplierTrend}
-            sub={${data.suppliers.length} مورد مسجل}
+            sub={`${data.suppliers.length} مورد مسجل`}
           />
         </Reveal>
       </div>

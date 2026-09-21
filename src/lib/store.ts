@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateCache } from "./db";
 
 // Re-export types for backward compatibility
 import type {
