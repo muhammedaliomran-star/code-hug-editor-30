@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { saveCacheToIDB, loadCacheFromIDB } from "@/lib/db-cache";
 
 import type {
   Customer,
@@ -60,6 +61,27 @@ let loaded = false;
 let lastFetchErrors: string[] = [];
 
 function notify() { listeners.forEach((l) => l()); }
+
+/**
+ * Hydrate the in-memory cache from IndexedDB.
+ * This runs before fetchAll() so the user sees data immediately,
+ * even if offline. fetchAll() then runs in the background to refresh.
+ */
+export async function hydrateFromIDB() {
+  if (loaded) return;
+  try {
+    const cached = await loadCacheFromIDB();
+    if (!cached) return;
+    // Strip savedAt before assigning to cache
+    const { savedAt: _, ...state } = cached;
+    cache = state;
+    loading = false;
+    loaded = true;
+    notify();
+  } catch (e) {
+    console.warn("[db] hydrateFromIDB failed:", e);
+  }
+}
 
 async function fetchAll() {
   loading = true;
@@ -230,6 +252,8 @@ async function fetchAll() {
   loading = false;
   loaded = true;
   notify();
+  // Persist to IndexedDB so the app works offline after reload
+  saveCacheToIDB(cache).catch(() => {});
 }
 
 export async function invalidateCache() {
@@ -1050,7 +1074,14 @@ export function useDB(): DBState {
   useEffect(() => {
     const l = () => setTick((t) => t + 1);
     listeners.add(l);
-    if (!loaded) fetchAll();
+    if (!loaded) {
+      // Hydrate from IndexedDB first (fast, offline-ready), then fetch fresh data
+      hydrateFromIDB().then(() => {
+        if (!loaded) fetchAll();
+      }).catch(() => {
+        if (!loaded) fetchAll();
+      });
+    }
     return () => { listeners.delete(l); };
   }, []);
   return { 
