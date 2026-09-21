@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 // are refreshed by the Supabase CLI after it is applied.
 const storefrontDb = supabase as any;
 
-export type OrderType = "cash_on_delivery" | "installment_request";
+export type OrderType = "cash_on_delivery" | "installment_request" | "online_payment";
 export type StoreOrderStatus = "submitted" | "under_review" | "needs_info" | "accepted" | "invoiced" | "shipped" | "delivered" | "rejected" | "cancelled" | "expired";
+export type PaymentStatus = "unpaid" | "pending" | "paid" | "failed" | "refunded";
+export type PaymentMethod = "card" | "wallet" | "apple_pay" | "google_pay";
 
 export interface Storefront {
   id: string;
@@ -90,6 +92,8 @@ export interface StoreOrder {
   total: number;
   invoice_id: string | null;
   return_id: string | null;
+  payment_status: PaymentStatus;
+  paymob_order_id: string | null;
   created_at: string;
   reservation_expires_at: string | null;
   store_order_items?: StoreOrderItem[];
@@ -157,7 +161,7 @@ export async function upsertStorefrontProduct(product: Omit<StorefrontProduct, "
 export async function getMyStoreOrders(storefrontId: string) {
   const { data, error } = await storefrontDb.from("store_orders").select("*, store_order_items(*) ").eq("storefront_id", storefrontId).order("created_at", { ascending: false });
   if (error) throw error;
-  return (data ?? []).map((order: any) => ({ ...order, subtotal: asNumber(order.subtotal), shipping_fee: asNumber(order.shipping_fee), total: asNumber(order.total), store_order_items: (order.store_order_items ?? []).map((item: any) => ({ ...item, unit_price: asNumber(item.unit_price), line_total: asNumber(item.line_total) })) })) as StoreOrder[];
+  return (data ?? []).map((order: any) => ({ ...order, subtotal: asNumber(order.subtotal), shipping_fee: asNumber(order.shipping_fee), total: asNumber(order.total), payment_status: order.payment_status ?? "unpaid", paymob_order_id: order.paymob_order_id ?? null, store_order_items: (order.store_order_items ?? []).map((item: any) => ({ ...item, unit_price: asNumber(item.unit_price), line_total: asNumber(item.line_total) })) })) as StoreOrder[];
 }
 
 export async function acceptStoreOrder(orderId: string) {
@@ -334,4 +338,74 @@ export async function markStorefrontNotificationRead(id: string) {
 
 export function storefrontSlug(value: string) {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 48);
+}
+
+// ──────────────────────────────────────────────────────────────
+// Paymob Payment Gateway
+// ──────────────────────────────────────────────────────────────
+
+export interface StorefrontPaymentConfig {
+  secret_key: string | null;
+  public_key: string | null;
+  hmac_secret: string | null;
+  integration_id_card: number | null;
+  integration_id_wallet: number | null;
+  enabled: boolean;
+}
+
+export interface StorefrontPayment {
+  id: string;
+  order_id: string;
+  storefront_id: string;
+  paymob_intention_id: string | null;
+  paymob_transaction_id: string | null;
+  amount_cents: number;
+  currency: string;
+  payment_method: string | null;
+  status: "pending" | "success" | "failed" | "refunded" | "voided";
+  hmac_payload: Record<string, unknown> | null;
+  paymob_response: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getPaymentConfig(): Promise<StorefrontPaymentConfig | null> {
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  if (userError || !userData.user) return null;
+  const { data, error } = await storefrontDb.rpc("get_storefront_payment_config", { p_owner_id: userData.user.id });
+  if (error) throw error;
+  if (!data || Object.keys(data).length === 0) return null;
+  return data as StorefrontPaymentConfig;
+}
+
+export async function savePaymentConfig(config: { secretKey: string; publicKey: string; hmacSecret: string; integrationIdCard: number; integrationIdWallet?: number }) {
+  const { data, error } = await storefrontDb.rpc("save_storefront_payment_config", {
+    p_secret_key: config.secretKey,
+    p_public_key: config.publicKey,
+    p_hmac_secret: config.hmacSecret,
+    p_integration_id_card: config.integrationIdCard,
+    p_integration_id_wallet: config.integrationIdWallet ?? null,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function isOnlinePaymentEnabled(storefrontId: string): Promise<boolean> {
+  const { data, error } = await storefrontDb.rpc("is_online_payment_enabled", { p_storefront_id: storefrontId });
+  if (error) throw error;
+  return data === true;
+}
+
+export async function createPaymobIntention(orderId: string, amountCents: number, customerName: string, customerPhone: string, items: Array<{ name: string; amount: number }>) {
+  const { data, error } = await supabase.functions.invoke("paymob-create-intention", {
+    body: { order_id: orderId, amount_cents: amountCents, currency: "EGP", customer_name: customerName, customer_phone: customerPhone, items },
+  });
+  if (error) throw error;
+  return data as { client_secret: string; checkout_url: string; intention_id: string };
+}
+
+export async function getOrderPayments(orderId: string): Promise<StorefrontPayment[]> {
+  const { data, error } = await storefrontDb.from("storefront_payments").select("*").eq("order_id", orderId).order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as StorefrontPayment[];
 }
