@@ -28,6 +28,8 @@ import { printShipmentLabel, printShipmentLabels, printCarrierManifest } from "@
 import { calculateShippingCost, expectedDeliveryDate, shipmentSla } from "@/lib/shipping-pricing";
 import { usePrivacy } from "@/lib/privacy";
 import { DeliveryAttemptsPanel } from "@/components/shipping/DeliveryAttemptsPanel";
+import { NotificationPrompt } from "@/components/NotificationPrompt";
+import { notifyLateShipments } from "@/lib/notifications";
 import { trackUrlFor } from "@/lib/whatsapp-templates";
 import { renderShipmentOutForDelivery, waLink } from "@/lib/whatsapp-templates";
 import { FastBarcodeScanner } from "@/components/shipping/FastBarcodeScanner";
@@ -109,6 +111,9 @@ export default function Shipping() {
     void refreshShippingNotifications().catch((error: unknown) => {
       toast.error(error instanceof Error ? error.message : "تعذر تحديث تنبيهات الشحن");
     });
+    // Send push notification for late shipments
+    const lateCount = shipments.filter((s) => slaOf(s).state === "late").length;
+    notifyLateShipments(lateCount);
   }, [shipments]);
 
   const [isAddCarrierOpen, setIsAddCarrierOpen] = useState(false);
@@ -541,6 +546,7 @@ export default function Shipping() {
           icon={<Truck className="h-7 w-7" />}
           action={
             <div className="flex flex-wrap gap-2">
+              <NotificationPrompt />
               <Button
                 variant="outline"
                 className="gap-1.5 font-bold border-primary/30 text-primary hover:bg-primary/10"

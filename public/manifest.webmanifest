@@ -2,6 +2,7 @@
   "name": "سِجلّي — إدارة محلك",
   "short_name": "سِجلّي",
   "description": "فواتير وأقساط ومخزون وموردين ومصروفات وتقارير — كل حاجة في مكان واحد.",
+  "id": "/",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "/",
@@ -10,6 +11,42 @@
   "orientation": "portrait",
   "background_color": "#0b0f14",
   "theme_color": "#0b0f14",
+  "categories": ["business", "finance", "productivity"],
+  "screenshots": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "لوحة التحكم الرئيسية"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "فاتورة جديدة",
+      "short_name": "فاتورة",
+      "url": "/invoices/new",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "العملاء",
+      "short_name": "عملاء",
+      "url": "/customers",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "المخزون",
+      "short_name": "مخزون",
+      "url": "/inventory",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "المصروفات",
+      "short_name": "مصروفات",
+      "url": "/expenses",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
