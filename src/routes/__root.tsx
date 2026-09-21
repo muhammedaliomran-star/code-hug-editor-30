@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Outlet,
   Link,
@@ -20,6 +21,9 @@ import { useAuth } from "@/lib/store";
 import { useHydrated } from "@/lib/hydrated";
 import { useSyncFromCloud } from "@/lib/use-sync-from-cloud";
 import { ArabicNumerals } from "@/lib/arabic-digits";
+import { registerSW } from "virtual:pwa-register";
+
+
 
 function NotFoundComponent() {
   return (
@@ -177,6 +181,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const hydrated = useHydrated();
   useSyncFromCloud();
+
+  useEffect(() => {
+    registerSW({ immediate: true });
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
