@@ -1,4 +1,4 @@
-import { Wallet, Boxes, ShieldCheck, Truck, AlertCircle, Store } from "lucide-react";
+import { Wallet, Boxes, ShieldCheck, Truck, AlertCircle } from "lucide-react";
 import { daysLate } from "@/lib/store";
 import { Reveal } from "@/components/Reveal";
 import { BezelCard } from "@/components/BezelCard";
@@ -14,8 +14,6 @@ export function QuickLinksSection() {
     reconciliationSummary,
     shippingStats,
     data,
-    storefrontError,
-    storefront,
   } = useDashboard();
 
   return (
@@ -54,12 +52,6 @@ export function QuickLinksSection() {
               title="التنبيهات والأقساط"
               sub={`${data.invoices.filter((i) => daysLate(i) > 0 && i.paid < i.total).length} فاتورة متأخرة`}
               tone="danger"
-            />
-            <QuickLink
-              to="/storefront"
-              icon={<Store className="h-4 w-4 text-primary" />}
-              title="المتجر الإلكتروني"
-              sub={storefrontError ? "تعذر تحميل حالة المتجر" : storefront ? `${storefront.name} (نشط)` : "إنشاء متجر للبيع أونلاين"}
             />
           </div>
         </BezelCard>

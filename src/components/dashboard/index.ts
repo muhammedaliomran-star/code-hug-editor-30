@@ -1,7 +1,6 @@
 export { DashboardProvider, useDashboard } from "./context";
 export type { DashboardContextValue } from "./context";
 export { QuickActionsSection } from "./QuickActionsSection";
-export { StorefrontBarSection } from "./StorefrontBarSection";
 export { BentoKPIsSection } from "./BentoKPIsSection";
 export { SecondaryKPIsSection } from "./SecondaryKPIsSection";
 export { TopProductsSection } from "./TopProductsSection";

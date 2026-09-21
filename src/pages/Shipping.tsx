@@ -92,13 +92,6 @@ export default function Shipping() {
     if (search.q || search.invoice) setSearchQuery(search.q ?? search.invoice ?? "");
   }, [search.q, search.invoice]);
 
-  useEffect(() => {
-    void (async () => {
-      const { data } = await (supabase.from as any)("store_orders").select("invoice_id,public_number").not("invoice_id", "is", null);
-      setOrderNumbers(Object.fromEntries((data ?? []).map((row: { invoice_id: string; public_number: string }) => [row.invoice_id, row.public_number])));
-    })();
-  }, []);
-
   const refreshShippingNotifications = async () => {
     const { error: syncError } = await supabase.rpc("sync_late_shipment_notifications");
     if (syncError) throw syncError;

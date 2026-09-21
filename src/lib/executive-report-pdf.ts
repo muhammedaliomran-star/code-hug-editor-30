@@ -31,9 +31,6 @@ export interface ExecutiveReportData {
   // Audit
   healthScore: number;
   auditFindingsCount: number;
-  // Storefront
-  storefrontOrdersCount?: number;
-  storefrontNewRevenue?: number;
   // Lists
   topProducts: Array<{ name: string; quantity: number; revenue: number; profit: number }>;
   dueTodayList: Array<{ customerName: string; phone?: string; amount: number; isLate: boolean }>;

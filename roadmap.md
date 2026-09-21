@@ -21,5 +21,4 @@
 - [ ] Correct unsettled COD semantics
 - [ ] Open quick-operation forms directly
 - [ ] Surface range collections as a KPI
-- [ ] Distinguish storefront missing vs load failure
 - [ ] Preserve custom section order when new sections are introduced

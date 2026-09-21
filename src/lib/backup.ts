@@ -23,19 +23,6 @@ const TABLES = [
   "shipments",
   "carrier_settlements",
   "delivery_attempts",
-  // Storefront
-  "storefronts",
-  "storefront_categories",
-  "storefront_products",
-  "storefront_coupons",
-  "storefront_domains",
-  "storefront_feature_flags",
-  "storefront_analytics_events",
-  "store_orders",
-  "store_order_items",
-  "stock_reservations",
-  "store_order_events",
-  "storefront_notifications",
   // Accounting & stock
   "stock_movements",
   "audit_events",
@@ -91,18 +78,6 @@ const DELETE_ORDER = [
   "invoice_installments",
   "audit_logs",
   "audit_events",
-  "storefront_notifications",
-  "store_order_events",
-  "stock_reservations",
-  "store_order_items",
-  "store_orders",
-  "storefront_analytics_events",
-  "storefront_feature_flags",
-  "storefront_domains",
-  "storefront_coupons",
-  "storefront_products",
-  "storefront_categories",
-  "storefronts",
   "delivery_attempts",
   "carrier_settlements",
   "shipments",
@@ -167,15 +142,9 @@ async function ownedIds(table: string, column: string, value: string | string[])
 export async function buildBackup(): Promise<BackupPayload> {
   const userId = await currentUserId();
   const tables: Record<string, unknown[]> = {};
-  const storefrontIds = await ownedIds("storefronts", "owner_id", userId);
-  const orderIds = storefrontIds.length ? await ownedIds("store_orders", "storefront_id", storefrontIds) : [];
   for (const t of TABLES) {
     let query: any = (supabase as any).from(t).select("*");
     if (USER_SCOPED_TABLES.has(t)) query = query.eq("user_id", userId);
-    else if (t === "storefronts") query = query.eq("owner_id", userId);
-    else if (t === "storefront_categories" || t === "storefront_products" || t === "storefront_coupons" || t === "storefront_domains" || t === "storefront_feature_flags" || t === "storefront_analytics_events") query = storefrontIds.length ? query.in("storefront_id", storefrontIds) : query.eq("id", "00000000-0000-0000-0000-000000000000");
-    else if (t === "store_orders") query = storefrontIds.length ? query.in("storefront_id", storefrontIds) : query.eq("id", "00000000-0000-0000-0000-000000000000");
-    else if (t === "store_order_items" || t === "store_order_events" || t === "stock_reservations" || t === "storefront_notifications") query = orderIds.length ? query.in("order_id", orderIds) : query.eq("id", "00000000-0000-0000-0000-000000000000");
     const { data, error } = await query;
     if (error) throw error;
     tables[t] = data ?? [];
@@ -201,7 +170,6 @@ export async function restoreJsonBackup(value: unknown): Promise<RestoreReport> 
       if (!source || typeof source !== "object") { report.skipped++; continue; }
       const row = { ...(source as Record<string, unknown>) };
       if ("user_id" in row) row.user_id = userId;
-      if (table === "storefronts") row.owner_id = userId;
       delete row.created_at;
       delete row.updated_at;
       const { error } = await (supabase.from as any)(table).upsert(row, { onConflict: "id", ignoreDuplicates: true });
@@ -245,16 +213,10 @@ export async function downloadExcelBackup() {
 export async function dataCounts(): Promise<Record<string, number>> {
   const userId = await currentUserId();
   const out: Record<string, number> = {};
-  const storefrontIds = await ownedIds("storefronts", "owner_id", userId);
-  const orderIds = storefrontIds.length ? await ownedIds("store_orders", "storefront_id", storefrontIds) : [];
   await Promise.all(
     DELETE_ORDER.map(async (t) => {
       let query: any = (supabase as any).from(t).select("id", { count: "exact", head: true });
       if (USER_SCOPED_TABLES.has(t)) query = query.eq("user_id", userId);
-      else if (t === "storefronts") query = query.eq("owner_id", userId);
-      else if (t === "store_orders") query = storefrontIds.length ? query.in("storefront_id", storefrontIds) : query.eq("id", "00000000-0000-0000-0000-000000000000");
-      else if (["storefront_categories", "storefront_products", "storefront_coupons", "storefront_domains", "storefront_feature_flags", "storefront_analytics_events"].includes(t)) query = storefrontIds.length ? query.in("storefront_id", storefrontIds) : query.eq("id", "00000000-0000-0000-0000-000000000000");
-      else if (["store_order_items", "store_order_events", "stock_reservations", "storefront_notifications"].includes(t)) query = orderIds.length ? query.in("order_id", orderIds) : query.eq("id", "00000000-0000-0000-0000-000000000000");
       else query = query.eq("id", "00000000-0000-0000-0000-000000000000");
       const { count } = await query;
       out[t] = count ?? 0;

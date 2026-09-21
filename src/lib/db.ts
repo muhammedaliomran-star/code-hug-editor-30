@@ -922,13 +922,6 @@ export const db = {
     await fetchAll();
   },
   async removeReturn(id: string) {
-    const { data: storefrontOrder } = await (supabase.from as any)("store_orders").select("id").eq("return_id", id).maybeSingle();
-    if (storefrontOrder) {
-      const { error: reverseError } = await (supabase as any).rpc("reverse_storefront_sale_return", { p_return_id: id });
-      if (reverseError) throw reverseError;
-      await fetchAll();
-      return;
-    }
     const { error } = await supabase.from("return_records").delete().eq("id", id);
     if (error) throw error;
     await fetchAll();
@@ -1023,14 +1016,14 @@ export const db = {
     await fetchAll();
   },
   async updateShipmentStatus(id: string, status: ShipmentStatus, reason?: string) {
-    const { error } = await (supabase as any).rpc("update_storefront_shipment_status", { p_shipment_id: id, p_status: status, p_reason: reason?.trim() || null });
+    const { error } = await supabase.from("shipments").update({ status, notes: reason?.trim() || null }).eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
   async bulkShipmentStatus(ids: string[], status: ShipmentStatus, reason?: string) {
     let ok = 0; const errors: string[] = [];
     for (const id of ids) {
-      const { error } = await (supabase as any).rpc("update_storefront_shipment_status", { p_shipment_id: id, p_status: status, p_reason: reason?.trim() || null });
+      const { error } = await supabase.from("shipments").update({ status, notes: reason?.trim() || null }).eq("id", id);
       if (error) errors.push(error.message); else ok += 1;
     }
     await fetchAll();

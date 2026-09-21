@@ -77,40 +77,13 @@ import { describe, it, expect } from "vitest";
     "audit_events",
   ];
 
-  const OWNER_SCOPED_TABLES = [
-    "storefronts",
-  ];
-
-  const STOREFRONT_CHILD_TABLES = [
-    "storefront_categories",
-    "storefront_products",
-    "storefront_coupons",
-    "storefront_domains",
-    "storefront_feature_flags",
-    "storefront_analytics_events",
-    "store_orders",
-    "store_order_items",
-    "stock_reservations",
-    "store_order_events",
-    "storefront_notifications",
-  ];
-
 describe("User Data Isolation — user_id scoping pattern", () => {
   it("documents all user-scoped tables have user_id column requirement", () => {
     expect(USER_SCOPED_TABLES.length).toBeGreaterThanOrEqual(40);
   });
 
-  it("documents all owner-scoped tables", () => {
-    expect(OWNER_SCOPED_TABLES).toContain("storefronts");
-  });
-
-  it("documents all storefront child tables", () => {
-    expect(STOREFRONT_CHILD_TABLES.length).toBeGreaterThanOrEqual(10);
-  });
-
-  it("total documented tables >= 45", () => {
-    const total = USER_SCOPED_TABLES.length + OWNER_SCOPED_TABLES.length + STOREFRONT_CHILD_TABLES.length;
-    expect(total).toBeGreaterThanOrEqual(45);
+  it("total documented tables >= 40", () => {
+    expect(USER_SCOPED_TABLES.length).toBeGreaterThanOrEqual(40);
   });
 });
 
@@ -125,10 +98,6 @@ describe("Backup includes all user-scoped tables", () => {
     "stock_adjustments", "expenses", "shop_settings", "branches",
     "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments",
     "carrier_settlements", "delivery_attempts",
-    "storefronts", "storefront_categories", "storefront_products",
-    "storefront_coupons", "storefront_domains", "storefront_feature_flags",
-    "storefront_analytics_events", "store_orders", "store_order_items",
-    "stock_reservations", "store_order_events", "storefront_notifications",
     "stock_movements", "audit_events", "audit_logs", "return_records",
     "return_items", "invoice_installments",
     // Sync tables
@@ -144,23 +113,9 @@ describe("Backup includes all user-scoped tables", () => {
     const missing = USER_SCOPED_TABLES.filter((t) => !BACKUP_TABLES.includes(t));
     expect(missing).toEqual([]);
   });
-
-  it("backup covers all owner-scoped tables", () => {
-    const missing = OWNER_SCOPED_TABLES.filter((t) => !BACKUP_TABLES.includes(t));
-    expect(missing).toEqual([]);
-  });
-
-  it("backup covers all storefront child tables", () => {
-    const missing = STOREFRONT_CHILD_TABLES.filter((t) => !BACKUP_TABLES.includes(t));
-    expect(missing).toEqual([]);
-  });
 });
 
 describe("Sync modules pass user_id", () => {
-  /**
-   * This documents that every sync module calls uid() before writes.
-   * The actual verification is structural (code review), not runtime.
-   */
   const SYNC_MODULES = [
     "cashbox-sync.ts",
     "expenses-sync.ts",
@@ -176,8 +131,6 @@ describe("Sync modules pass user_id", () => {
   });
 
   it("all sync modules use withRetry pattern", () => {
-    // This is verified by the actual imports in the files
-    // (structural test documented for completeness)
     expect(SYNC_MODULES.every((m) => m.endsWith("-sync.ts"))).toBe(true);
   });
 });

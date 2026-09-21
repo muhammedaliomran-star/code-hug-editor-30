@@ -10,7 +10,6 @@ export interface ModulePermissions {
   allowPos: boolean;
   allowInstallments: boolean;
   allowWarehouse: boolean;
-  allowStorefront: boolean;
   allowWhatsApp: boolean;
   allowMultiBranch: boolean;
   maxBranches: number;
@@ -86,7 +85,6 @@ export const DEFAULT_MODULES: Record<LicenseTier, ModulePermissions> = {
     allowPos: true,
     allowInstallments: true,
     allowWarehouse: true,
-    allowStorefront: true,
     allowWhatsApp: true,
     allowMultiBranch: true,
     maxBranches: 2,
@@ -97,7 +95,6 @@ export const DEFAULT_MODULES: Record<LicenseTier, ModulePermissions> = {
     allowPos: true,
     allowInstallments: false,
     allowWarehouse: true,
-    allowStorefront: false,
     allowWhatsApp: false,
     allowMultiBranch: false,
     maxBranches: 1,
@@ -108,7 +105,6 @@ export const DEFAULT_MODULES: Record<LicenseTier, ModulePermissions> = {
     allowPos: true,
     allowInstallments: true,
     allowWarehouse: true,
-    allowStorefront: true,
     allowWhatsApp: true,
     allowMultiBranch: true,
     maxBranches: 5,
@@ -119,7 +115,6 @@ export const DEFAULT_MODULES: Record<LicenseTier, ModulePermissions> = {
     allowPos: true,
     allowInstallments: true,
     allowWarehouse: true,
-    allowStorefront: true,
     allowWhatsApp: true,
     allowMultiBranch: true,
     maxBranches: 99,
@@ -130,7 +125,6 @@ export const DEFAULT_MODULES: Record<LicenseTier, ModulePermissions> = {
     allowPos: true,
     allowInstallments: true,
     allowWarehouse: true,
-    allowStorefront: false,
     allowWhatsApp: true,
     allowMultiBranch: false,
     maxBranches: 3,
@@ -788,7 +782,6 @@ export function printLicenseCertificate(lic: LicenseRecord): void {
             lic.modules.allowPos && "نقاط البيع السريعة",
             lic.modules.allowWarehouse && "إدارة المخازن والباركود",
             lic.modules.allowInstallments && "نظام الأقساط والديون",
-            lic.modules.allowStorefront && "المتجر الإلكتروني",
             lic.modules.allowWhatsApp && "واتساب الذكي",
           ]
             .filter(Boolean)

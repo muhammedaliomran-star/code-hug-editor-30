@@ -1622,7 +1622,6 @@ export default function AdminLicensesPage() {
                       { key: "allowPos", label: "نقاط البيع السريعة" },
                       { key: "allowWarehouse", label: "إدارة المخازن والباركود" },
                       { key: "allowInstallments", label: "نظام الأقساط والديون" },
-                      { key: "allowStorefront", label: "المتجر الإلكتروني المدمج" },
                       { key: "allowWhatsApp", label: "إرسال إيصالات واتساب" },
                       { key: "allowMultiBranch", label: "الربط متعدد الفروع" },
                     ].map((mod) => (

@@ -21,12 +21,6 @@ import { exportExecutiveReport } from "@/lib/executive-report-pdf";
 import {
   useDashboardLayout,
 } from "@/components/DashboardCustomization";
-import {
-  getMyStorefront,
-  getMyStoreOrders,
-  type Storefront,
-  type StoreOrder,
-} from "@/lib/storefront";
 import { EMERALD, WARNING, DANGER } from "./shared";
 import type { TimeRange, TopProductsSort } from "./shared";
 
@@ -47,12 +41,6 @@ export interface DashboardContextValue {
   toggleSection: ReturnType<typeof useDashboardLayout>["toggleSection"];
   moveSection: ReturnType<typeof useDashboardLayout>["moveSection"];
   resetToDefault: ReturnType<typeof useDashboardLayout>["resetToDefault"];
-
-  storefront: Storefront | null;
-  storeOrders: StoreOrder[];
-  storefrontLoading: boolean;
-  storefrontError: string | null;
-  setStorefrontLoadAttempt: React.Dispatch<React.SetStateAction<number>>;
 
   today: Date;
   rangeBounds: { start: Date; end: Date };
@@ -83,14 +71,6 @@ export interface DashboardContextValue {
   expensesTotal: number;
   cashPurchasesTotal: number;
   incompleteCostCount: number;
-  storefrontStats: {
-    totalOrders: number;
-    pendingOrders: number;
-    completedOrders: number;
-    storeRevenue: number;
-    todayOrdersCount: number;
-    todayRevenue: number;
-  };
   activeCustomers: number;
   frozenCustomers: number;
   monthBuckets: {
@@ -135,38 +115,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [topProductsSort, setTopProductsSort] = useState<TopProductsSort>("quantity");
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const { sections, isVisible, toggleSection, moveSection, resetToDefault } = useDashboardLayout();
-
-  const [storefront, setStorefront] = useState<Storefront | null>(null);
-  const [storeOrders, setStoreOrders] = useState<StoreOrder[]>([]);
-  const [storefrontLoading, setStorefrontLoading] = useState(false);
-  const [storefrontError, setStorefrontError] = useState<string | null>(null);
-  const [storefrontLoadAttempt, setStorefrontLoadAttempt] = useState(0);
-
-  useEffect(() => {
-    let mounted = true;
-    const loadStoreStats = async () => {
-      setStorefrontLoading(true);
-      setStorefrontError(null);
-      try {
-        const shop = await getMyStorefront();
-        if (!mounted) return;
-        setStorefront(shop);
-        if (shop) {
-          const orders = await getMyStoreOrders(shop.id);
-          if (mounted) setStoreOrders(orders);
-        }
-      } catch (error) {
-        console.error("تعذر تحميل بيانات المتجر", error);
-        if (mounted) setStorefrontError("تعذر تحميل بيانات المتجر الآن");
-      } finally {
-        if (mounted) setStorefrontLoading(false);
-      }
-    };
-    loadStoreStats();
-    return () => {
-      mounted = false;
-    };
-  }, [storefrontLoadAttempt]);
 
   const m = (s: string) => (privacy ? "•••••" : s);
 
@@ -365,32 +313,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       incompleteCostCount: incomplete.length,
     };
   }, [data.expenses, data.purchases, data.invoices, data.invoiceItems, data.returns, rangeBounds]);
-
-  const storefrontStats = useMemo(() => {
-    const totalOrders = storeOrders.length;
-    const pendingOrders = storeOrders.filter((o) => o.status === "submitted" || o.status === "under_review").length;
-    const completedOrders = storeOrders.filter((o) => o.status === "delivered" || o.status === "shipped").length;
-    const storeRevenue = storeOrders
-      .filter((o) => o.status !== "cancelled")
-      .reduce((sum, o) => sum + (o.total || 0), 0);
-
-    const todayOrders = storeOrders.filter((o) => {
-      const d = new Date(o.created_at);
-      return d.toDateString() === today.toDateString();
-    });
-    const todayRevenue = todayOrders
-      .filter((o) => o.status !== "cancelled")
-      .reduce((sum, o) => sum + (o.total || 0), 0);
-
-    return {
-      totalOrders,
-      pendingOrders,
-      completedOrders,
-      storeRevenue,
-      todayOrdersCount: todayOrders.length,
-      todayRevenue,
-    };
-  }, [storeOrders, today]);
 
   const rangeLabel = {
     today: "اليوم",
@@ -754,8 +676,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       unsettledShipmentsCount: shippingStats.unsettledCount,
       healthScore: reconciliationSummary.healthScore,
       auditFindingsCount: reconciliationSummary.criticalCount + reconciliationSummary.warningCount,
-      storefrontOrdersCount: storefrontStats.todayOrdersCount,
-      storefrontNewRevenue: storefrontStats.todayRevenue,
       topProducts: topProducts.map((p) => ({
         name: p.name,
         quantity: p.quantity,
@@ -792,11 +712,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     toggleSection,
     moveSection,
     resetToDefault,
-    storefront,
-    storeOrders,
-    storefrontLoading,
-    storefrontError,
-    setStorefrontLoadAttempt,
     today,
     rangeBounds,
     isInRange,
@@ -814,7 +729,6 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     expensesTotal,
     cashPurchasesTotal,
     incompleteCostCount,
-    storefrontStats,
     activeCustomers,
     frozenCustomers,
     monthBuckets,
