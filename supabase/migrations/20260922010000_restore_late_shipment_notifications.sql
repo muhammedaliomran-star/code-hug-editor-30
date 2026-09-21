@@ -62,14 +62,17 @@ grant execute on function public.sync_late_shipment_notifications() to service_r
 -- 2. Schedule pg_cron job: run every 15 minutes
 create extension if not exists pg_cron;
 
--- Remove old job if it exists
-if to_regnamespace('cron') is not null then
-  perform cron.unschedule(jobid) from cron.job where jobname = 'sync-late-shipment-notifications';
-end if;
+-- Remove old job if it exists, then schedule new one
+DO $$
+BEGIN
+  IF to_regnamespace('cron') IS NOT NULL THEN
+    PERFORM cron.unschedule(jobid) FROM cron.job WHERE jobname = 'sync-late-shipment-notifications';
+  END IF;
 
--- Schedule new job (runs as postgres superuser, SECURITY DEFINER handles auth)
-perform cron.schedule(
-  'sync-late-shipment-notifications',
-  '*/15 * * * *',
-  $cron$select public.sync_late_shipment_notifications();$cron$
-);
+  PERFORM cron.schedule(
+    'sync-late-shipment-notifications',
+    '*/15 * * * *',
+    $cron$select public.sync_late_shipment_notifications();$cron$
+  );
+END
+$$;
