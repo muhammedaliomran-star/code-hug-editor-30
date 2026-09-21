@@ -34,7 +34,6 @@ DROP FUNCTION IF EXISTS public.save_storefront_payment_config(text, text, text, 
 DROP FUNCTION IF EXISTS public.record_storefront_payment(uuid, text, text, integer, text, text, text, jsonb, jsonb);
 DROP FUNCTION IF EXISTS public.is_online_payment_enabled(uuid);
 DROP FUNCTION IF EXISTS public.guard_store_order_transition() CASCADE;
-DROP FUNCTION IF EXISTS public.sync_late_shipment_notifications();
 
 -- 3. Drop tables (children first, then parents)
 DROP TABLE IF EXISTS public.storefront_payments CASCADE;
