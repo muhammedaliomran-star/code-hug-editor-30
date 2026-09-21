@@ -4,6 +4,8 @@ import { PageTransition } from "@/components/PageTransition";
 import { Banknote, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft, Calendar, User, Truck, Receipt, Trash2, Wallet } from "lucide-react";
 import { useDB, PaymentVoucher } from "@/lib/store";
 import { Reveal } from "@/components/Reveal";
+import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -62,6 +64,8 @@ export default function PaymentsPage() {
     const payments = paymentVouchers.filter(v => v.type === "payment").reduce((s, v) => s + v.amount, 0);
     return { receipts, payments, balance: receipts - payments };
   }, [paymentVouchers]);
+
+  if (loading) return <PageLoadingSkeleton type="table" />;
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -185,7 +189,13 @@ export default function PaymentsPage() {
 
           {/* Vouchers List */}
           <div className="flex flex-col gap-3">
-            {filteredVouchers.map((voucher, idx) => {
+            {filteredVouchers.length === 0 ? (
+              <EmptyState
+                icon={Banknote}
+                title="لا توجد سندات دفع مطابقة."
+                hint="سجّل أول سند قبض أو صرف لبدء تتبع الحركة المالية."
+              />
+            ) : filteredVouchers.map((voucher, idx) => {
               const customer = customers.find(c => c.id === voucher.customerId);
               const supplier = suppliers.find(s => s.id === voucher.supplierId);
               const partyName = customer?.name || supplier?.name || "جهة غير محددة";

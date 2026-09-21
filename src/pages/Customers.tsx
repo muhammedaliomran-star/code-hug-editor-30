@@ -1,5 +1,6 @@
 import { BezelCard } from "@/components/BezelCard";
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Users } from "lucide-react";
 import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
@@ -234,6 +235,8 @@ function CustomersPage() {
       return a.c.name.localeCompare(b.c.name, "ar") * dir;
     });
   }, [enriched, q, filter, dueDayFilter, sortKey, sortDir, todayDay]);
+
+  if (data.loading) return <PageLoadingSkeleton type="table" />;
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));

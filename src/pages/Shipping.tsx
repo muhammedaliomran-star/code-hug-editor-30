@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { BezelCard } from "@/components/BezelCard";
+import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Reveal } from "@/components/Reveal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +81,7 @@ function allowedShipmentStatuses(status: ShipmentStatus): ShipmentStatus[] {
 const daysBetween = (a: string, b: string) => Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 
 export default function Shipping() {
-  const { shipments, carriers, zones, invoices, customers } = useDB();
+  const { shipments, carriers, zones, invoices, customers, loading } = useDB();
   const { settings: shopSettings } = useShopSettings();
   const search = useSearch({ strict: false }) as { q?: string; invoice?: string };
   const [searchQuery, setSearchQuery] = useState(search.q ?? search.invoice ?? "");
@@ -254,6 +256,8 @@ export default function Shipping() {
   const resetCarrierForm = () => { setCarrierName(""); setCarrierContact(""); setCarrierPhone(""); setCarrierBaseCost("0"); setEditCarrier(null); };
   const resetZoneForm = () => { setZoneName(""); setZoneCarrierId(""); setZoneCost("0"); setZoneDays("2"); setEditZone(null); };
   const resetShipmentForm = () => { setShipmentInvoiceId(""); setShipmentCarrierId(""); setShipmentZoneId(""); setShipmentTracking(""); setShipmentCost("0"); setShipmentCod("0"); setShipmentWeight("0"); setShipmentPieces("1"); };
+
+  if (loading) return <PageLoadingSkeleton type="table" />;
 
   const handleAddCarrier = async () => {
     if (!carrierName) return toast.error("يرجى إدخال اسم الشركة");
@@ -865,13 +869,11 @@ export default function Shipping() {
             <TabsContent value="shipments">
               <div className="grid gap-2 sm:gap-4">
                 {filteredShipments.length === 0 ? (
-                  <BezelCard className="flex flex-col items-center justify-center py-20 text-center">
-                    <div className="mb-4 rounded-full bg-muted p-6">
-                      <Truck className="h-12 w-12 text-muted-foreground/50" />
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground">لا توجد شحنات مطابقة</h3>
-                    <p className="mt-2 text-muted-foreground">جرّب تغيير الفلاتر أو أضف شحنة جديدة.</p>
-                  </BezelCard>
+                  <EmptyState
+                    icon={Truck}
+                    title="لا توجد شحنات مطابقة."
+                    hint="جرّب تغيير الفلاتر أو أضف شحنة جديدة."
+                  />
                 ) : (
                   filteredShipments.map((s, i) => (
                     <Reveal key={s.id} delay={Math.min(i, 8) * 0.05}>

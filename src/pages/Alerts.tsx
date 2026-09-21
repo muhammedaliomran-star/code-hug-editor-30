@@ -56,6 +56,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { usePrivacy } from "@/lib/privacy";
 import { motion, AnimatePresence } from "framer-motion";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
+import { EmptyState } from "@/components/EmptyState";
 import { AlertsKpiStrip } from "@/components/alerts/AlertsKpiStrip";
 import { PromiseModal } from "@/components/alerts/PromiseModal";
 import { SmartReminderModal } from "@/components/alerts/SmartReminderModal";
@@ -227,6 +229,8 @@ function AlertsPage() {
         return 0;
       });
   }, [allAlertItems, activeTab, searchQuery, sortOption]);
+
+  if (data.loading) return <PageLoadingSkeleton type="table" />;
 
   const payTarget = payInvId ? allAlertItems.find((x) => x.inv.id === payInvId) : null;
 

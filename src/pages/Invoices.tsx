@@ -37,6 +37,7 @@ import { InvoicePrintCustomizerDialog } from "@/components/InvoicePrintCustomize
 import { Plus, Search, Wallet, AlertTriangle, Printer, ShieldAlert, Eye, Pencil, Trash2, Bell, History, TrendingUp, CalendarDays, AlertCircle, MessageCircle, EyeOff, Download, FileSpreadsheet, FileText, X, ChevronsUpDown, Check, Package, ScanLine, Info, CreditCard, Receipt, Undo2, Copy, Share2, MoreVertical, Layers, CheckCircle2, Truck, CheckSquare, Square, GitBranch } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { TableSkeleton } from "@/components/LoadingSkeletons";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 
@@ -397,6 +398,8 @@ function InvoicesPage() {
       })
       .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
   }, [data, q, tab, dateFrom, dateTo, isAllBranches, activeBranchId, mainBranchId]);
+
+  if (data.loading) return <PageLoadingSkeleton type="table" />;
 
   const findCustomer = (id: string) => data.customers.find((c) => c.id === id);
 

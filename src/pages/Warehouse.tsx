@@ -6,6 +6,7 @@ import { Reveal } from "@/components/Reveal";
 import { BezelCard } from "@/components/BezelCard";
 import { MetricCard } from "@/components/MetricCard";
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";

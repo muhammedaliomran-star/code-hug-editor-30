@@ -3,6 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { BezelCard } from "@/components/BezelCard";
 import { useDB, fmt, db } from "@/lib/store";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
+import { EmptyState } from "@/components/EmptyState";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -185,6 +187,8 @@ export default function Reconciliation() {
       return true;
     });
   }, [summary.findings, activeCategory, selectedSeverity, onlyAutoFixable, searchQuery]);
+
+  if (data.loading) return <PageLoadingSkeleton type="table" />;
 
   // Execute single fix
   const handleSingleFix = async (finding: ReconciliationFinding) => {

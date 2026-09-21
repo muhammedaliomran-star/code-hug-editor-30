@@ -1,4 +1,5 @@
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { useEffect, useMemo, useState } from "react";
 import { useActiveBranch } from "@/hooks/use-active-branch";
 import { getProductStockInBranch, calculateBranchStockValuation } from "@/lib/branch-system";
@@ -198,6 +199,8 @@ function InventoryPage() {
       .filter((it) => (q ? it.name.includes(q) || (it.barcode ?? "").includes(q) : true))
       .sort((a, b) => branchQty(a.id, a.quantity) - branchQty(b.id, b.quantity));
   }, [data.stockItems, q, tab, isAllBranches, activeBranchId]);
+
+  if (data.loading) return <PageLoadingSkeleton type="table" />;
 
   const exportExcel = async () => {
     try {

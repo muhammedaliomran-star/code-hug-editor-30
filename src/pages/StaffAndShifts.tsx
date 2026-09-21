@@ -46,6 +46,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Users,
   ShieldCheck,
@@ -142,6 +144,8 @@ export default function StaffAndShifts() {
 
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
 
+  const { loading: dbLoading } = useDB();
+
   // Filtered shifts history
   const filteredShifts = useMemo(() => {
     return shifts.filter((s) => {
@@ -163,6 +167,8 @@ export default function StaffAndShifts() {
       );
     });
   }, [attendance, attendanceSearch]);
+
+  if (dbLoading) return <PageLoadingSkeleton type="table" />;
 
   const handleRoleChange = (role: StaffRole) => {
     setStaffRole(role);
@@ -911,7 +917,14 @@ export default function StaffAndShifts() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {staffList.map((st) => {
+                {staffList.length === 0 ? (
+                  <EmptyState
+                    icon={Users}
+                    title="لا يوجد موظفين مسجلين."
+                    hint="أضف أول موظف لتبدأ إدارة الورديات والعمولات."
+                    className="sm:col-span-2 lg:col-span-3"
+                  />
+                ) : staffList.map((st) => {
                   const isAdmin = st.role === "admin";
                   const isManager = st.role === "manager";
 

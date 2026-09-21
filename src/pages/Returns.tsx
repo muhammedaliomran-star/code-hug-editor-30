@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Plus, History, TrendingUp, X, Check, Trash2, Receipt, Package, Undo2, Search } from "lucide-react";
 import { CountUp } from "@/components/CountUp";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,6 +50,8 @@ function ReturnsPage() {
   const [newItem, setNewItem] = useState({ name: "", unitPrice: 0, quantity: 1 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  if (data.loading) return <PageLoadingSkeleton type="table" />;
 
   const handleAddReturn = async () => {
     if (items.length === 0) return;

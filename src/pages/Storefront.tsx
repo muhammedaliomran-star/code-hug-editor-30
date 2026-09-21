@@ -17,6 +17,8 @@ import { fmt } from "@/lib/store";
 import { generateInstallmentSchedule, roundCurrency } from "@/lib/financial-engine";
 import { toast } from "sonner";
 import { ExternalLink, Globe2, Loader2, PackageOpen, Save, ShoppingBag, Store, Settings2, BarChart3 } from "lucide-react";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
+import { EmptyState } from "@/components/EmptyState";
 
 const emptyForm = { slug: "", name: "", phone: "", whatsapp_phone: "", description: "", shipping_policy: "", is_published: false };
 const statusLabel: Record<string, string> = { submitted: "طلب جديد", under_review: "قيد المراجعة", needs_info: "محتاج بيانات", accepted: "تم القبول", invoiced: "اتحول لفاتورة", shipped: "اتشحن", delivered: "تم التسليم", rejected: "مرفوض", cancelled: "ملغي", expired: "انتهت المهلة" };

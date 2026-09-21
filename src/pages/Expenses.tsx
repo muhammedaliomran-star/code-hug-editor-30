@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
+import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { CountUp } from "@/components/CountUp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -106,7 +107,7 @@ export default function Page() {
 
 function ExpensesPage() {
   const location = useLocation();
-  const { expenses, branches } = useDB();
+  const { expenses, branches, loading } = useDB();
   const { settings: shopSettings } = useShopSettings();
   const { privacy, toggle } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
@@ -202,6 +203,8 @@ function ExpensesPage() {
       return true;
     });
   }, [expenses, search, filterCat, filterAccount, filterBranch, fromDate, toDate]);
+
+  if (loading) return <PageLoadingSkeleton type="table" />;
 
   const total = filtered.reduce((s, e) => s + e.amount, 0);
 
