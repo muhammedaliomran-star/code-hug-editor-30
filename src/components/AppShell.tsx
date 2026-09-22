@@ -14,40 +14,70 @@ import { useEffect, useMemo, useState } from "react";
 import { MoreHorizontal, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
+import { useCurrentLicense, type ModulePermissions } from "@/lib/licensing";
+import { useStaffAndShifts, type StaffPermissions, type StaffRole } from "@/lib/staff";
 
-const nav = [
+type NavItem = {
+  to: string;
+  label: string;
+  icon: typeof LayoutGrid;
+  alertKey?: true;
+  /** License module flag required to show this item */
+  licenseKey?: "allowPos" | "allowInstallments" | "allowWarehouse" | "allowMultiBranch";
+  /** Staff permission flag required to show this item */
+  staffPerm?: "canAccessReports" | "canAccessSettings";
+  /** Staff roles allowed to see this item (omitted = all roles) */
+  roles?: StaffRole[];
+};
+
+// Phase 2: each item declares its license/staff requirement.
+// Items without requirements are visible to everyone.
+const nav: NavItem[] = [
   { to: "/", label: "لوحة التحكم", icon: LayoutGrid },
-  { to: "/pos", label: "الكاشير (POS)", icon: ShoppingCart },
+  { to: "/pos", label: "الكاشير (POS)", icon: ShoppingCart, licenseKey: "allowPos" },
   { to: "/daily", label: "اليومية", icon: CalendarDays },
   { to: "/customers", label: "العملاء", icon: Users },
-  { to: "/invoices", label: "الفواتير", icon: FileText },
+  { to: "/invoices", label: "الفواتير", icon: FileText, licenseKey: "allowInstallments" },
   { to: "/discounts", label: "العروض والكوبونات", icon: Percent },
   { to: "/shipping", label: "الشحن", icon: Truck },
   { to: "/purchases", label: "المشتريات", icon: Truck },
   { to: "/suppliers", label: "الموردين", icon: Users },
 
-  { to: "/inventory", label: "المنتجات", icon: Package },
-  { to: "/warehouse", label: "المخزن", icon: Warehouse },
-  { to: "/branches", label: "الفروع", icon: GitBranch },
-  { to: "/staff", label: "فريق العمل والورديات", icon: UserCheck },
+  { to: "/inventory", label: "المنتجات", icon: Package, licenseKey: "allowWarehouse" },
+  { to: "/warehouse", label: "المخزن", icon: Warehouse, licenseKey: "allowWarehouse" },
+  { to: "/branches", label: "الفروع", icon: GitBranch, licenseKey: "allowMultiBranch" },
+  { to: "/staff", label: "فريق العمل والورديات", icon: UserCheck, roles: ["admin", "manager"] },
   { to: "/returns", label: "المرتجعات", icon: Undo2 },
   { to: "/cashbox", label: "الصندوق", icon: Wallet },
   { to: "/payments", label: "الدفعات", icon: Banknote },
   { to: "/expenses", label: "المصروفات", icon: Receipt },
   { to: "/alerts", label: "المنبه", icon: Bell, alertKey: true as const },
-  { to: "/reports", label: "التقارير", icon: BarChart3 },
+  { to: "/reports", label: "التقارير", icon: BarChart3, staffPerm: "canAccessReports" },
   { to: "/reconciliation", label: "المطابقة", icon: ClipboardCheck },
-  { to: "/audit", label: "سجل الرقابة والتدقيق", icon: ShieldCheck },
-  { to: "/settings", label: "الإعدادات", icon: Settings },
+  { to: "/audit", label: "سجل الرقابة والتدقيق", icon: ShieldCheck, roles: ["admin"] },
+  { to: "/settings", label: "الإعدادات", icon: Settings, staffPerm: "canAccessSettings" },
 ];
+
+function isNavVisible(
+  n: NavItem,
+  modules: ModulePermissions,
+  permissions: StaffPermissions,
+  role: StaffRole,
+): boolean {
+  if (n.licenseKey && modules[n.licenseKey] === false) return false;
+  if (n.staffPerm && permissions[n.staffPerm] !== true) return false;
+  if (n.roles && !n.roles.includes(role)) return false;
+  return true;
+}
 
 // Phase 1 (mobile): 5 core tabs on the bottom bar — the rest live in the "More" sheet.
 const MOBILE_TABS = ["/", "/pos", "/invoices", "/customers", "/shipping"];
 
-function MobileBottomBar({ pathname, overdueCount }: { pathname: string; overdueCount: number }) {
+function MobileBottomBar({ items, pathname, overdueCount }: { items: NavItem[]; pathname: string; overdueCount: number }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const tabs = nav.filter((n) => MOBILE_TABS.includes(n.to));
-  const moreActive = nav.some((n) => !MOBILE_TABS.includes(n.to) && (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  const tabs = items.filter((n) => MOBILE_TABS.includes(n.to));
+  const rest = items.filter((n) => !MOBILE_TABS.includes(n.to));
+  const moreActive = rest.some((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
   return (
     <>
       <div className="glass no-scrollbar fixed inset-x-3 bottom-3 z-40 flex overflow-x-auto rounded-[1.5rem] pb-[env(safe-area-inset-bottom)] md:hidden">
@@ -85,24 +115,25 @@ function MobileBottomBar({ pathname, overdueCount }: { pathname: string; overdue
           المزيد
         </button>
       </div>
-      <MobileMoreSheet open={moreOpen} onOpenChange={setMoreOpen} pathname={pathname} overdueCount={overdueCount} />
+      <MobileMoreSheet items={rest} open={moreOpen} onOpenChange={setMoreOpen} pathname={pathname} overdueCount={overdueCount} />
     </>
   );
 }
 
 function MobileMoreSheet({
+  items,
   open,
   onOpenChange,
   pathname,
   overdueCount,
 }: {
+  items: NavItem[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pathname: string;
   overdueCount: number;
 }) {
   const [query, setQuery] = useState("");
-  const items = useMemo(() => nav.filter((n) => !MOBILE_TABS.includes(n.to)), []);
   const filtered = useMemo(() => {
     const q = query.trim();
     if (!q) return items;
@@ -176,6 +207,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     ? dueOrOverdueCount(invoices, settings.reminderDaysBefore) +
       lowStockCount(stockItems, settings.lowStockThreshold)
     : 0;
+  // Phase 2: hide nav items the current license / staff role may not access.
+  const { license } = useCurrentLicense();
+  const { currentStaff } = useStaffAndShifts();
+  const visibleNav = useMemo(
+    () => nav.filter((n) => isNavVisible(n, license.modules, currentStaff.permissions, currentStaff.role)),
+    [license, currentStaff],
+  );
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate("/landing");
@@ -233,7 +271,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <nav className="stagger no-scrollbar -mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1">
-          {nav.map((n) => {
+          {visibleNav.map((n) => {
             const active = n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to);
             const Icon = n.icon;
             const showBadge = n.alertKey && overdueCount > 0;
@@ -279,7 +317,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile bottom nav: 5 core tabs + More sheet */}
-      <MobileBottomBar pathname={location.pathname} overdueCount={overdueCount} />
+      <MobileBottomBar items={visibleNav} pathname={location.pathname} overdueCount={overdueCount} />
 
       {/* علامة القمر — ظاهرة دايماً على الموبايل */}
       <div className="fixed left-3 top-3 z-40 md:hidden">
