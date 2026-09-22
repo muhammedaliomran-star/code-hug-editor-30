@@ -42,7 +42,8 @@ export interface ProfitMetrics {
  */
 export function roundCurrency(amount: number): number {
   if (isNaN(amount) || !isFinite(amount)) return 0;
-  return Math.round((amount + Number.EPSILON) * 100) / 100;
+  const sign = amount < 0 ? -1 : 1;
+  return (sign * Math.round((Math.abs(amount) + Number.EPSILON) * 100)) / 100;
 }
 
 /**

@@ -8,7 +8,7 @@ export const EG_PHONE_RE = /^01[0125]\d{8}$/;
  * توليد كود تعريفي فريد ومختصر للعميل للبحث السريع والفواتير
  */
 export function getCustomerCode(c: { id: string }): string {
-  if (!c.id) return "C-0000";
+  if (!c.id) return "C-00000";
   const hex = c.id.replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase();
   return `C-${hex.padStart(5, "0")}`;
 }
@@ -18,7 +18,8 @@ export function getCustomerCode(c: { id: string }): string {
  */
 export function isoToDDMMYYYY(iso: string): string {
   if (!iso) return "";
-  const [y, m, d] = iso.split("-");
+  if (!/^\d{4}-\d{1,2}-\d{1,2}/.test(iso)) return "";
+  const [y, m, d] = iso.slice(0, 10).split("-");
   if (!y || !m || !d) return "";
   return `${d}/${m}/${y}`;
 }

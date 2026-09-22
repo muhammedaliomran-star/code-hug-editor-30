@@ -166,7 +166,7 @@ export function runComprehensiveReconciliation(
     const invoiceTotal = Number(invoice.total || 0);
 
     // فرق تحصيل المبلغ المسدد
-    if (Math.abs(recordedPaid - expectedPaid) > 0.01) {
+    if (invoice.status !== "cancelled" && Math.abs(recordedPaid - expectedPaid) > 0.01) {
       const diff = Math.abs(recordedPaid - expectedPaid);
       findings.push({
         id: `inv-paid-mismatch-${invoice.id}`,
