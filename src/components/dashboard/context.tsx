@@ -4,6 +4,7 @@ import { usePrivacy } from "@/lib/privacy";
 import {
   useDB,
   daysLate,
+  isDueDay,
   fmt,
   customerBalance,
   expenseCategoryLabel,
@@ -63,6 +64,10 @@ export interface DashboardContextValue {
     activeCount: number;
     unsettledCount: number;
     pendingCodAmount: number;
+    collectedCount: number;
+    collectedCodAmount: number;
+    uncollectedCount: number;
+    uncollectedCodAmount: number;
   };
   reconciliationSummary: ReturnType<typeof runComprehensiveReconciliation>;
   topProducts: { name: string; quantity: number; revenue: number; profit: number }[];
@@ -223,12 +228,22 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     const deliveredUnsettled = data.shipments.filter(
       (s) => s.status === "delivered" && s.collectionStatus !== "settled"
     );
+    // Phase 1 (#18): split unsettled COD into cash collected in hand
+    // (courier/cashier) vs amounts still with the customer.
+    const collectedInHand = deliveredUnsettled.filter((s) => s.collectionStatus === "collected");
+    const stillWithCustomer = deliveredUnsettled.filter((s) => s.collectionStatus !== "collected");
     const pendingCodAmount = deliveredUnsettled.reduce((s, sh) => s + (sh.codAmount || 0), 0);
+    const collectedCodAmount = collectedInHand.reduce((s, sh) => s + (sh.codAmount || 0), 0);
+    const uncollectedCodAmount = stillWithCustomer.reduce((s, sh) => s + (sh.codAmount || 0), 0);
 
     return {
       activeCount: activeShipments.length,
       unsettledCount: deliveredUnsettled.length,
       pendingCodAmount: roundCurrency(pendingCodAmount),
+      collectedCount: collectedInHand.length,
+      collectedCodAmount: roundCurrency(collectedCodAmount),
+      uncollectedCount: stillWithCustomer.length,
+      uncollectedCodAmount: roundCurrency(uncollectedCodAmount),
     };
   }, [data.shipments]);
 
@@ -545,13 +560,12 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const hasStatusData = data.customers.length > 0;
 
   const dueToday = useMemo(() => {
-    const dom = today.getDate();
     return data.invoices
       .filter((i) => i.total > i.paid)
       .filter((i) => {
         const c = data.customers.find((cc) => cc.id === i.customerId);
         if (!c) return false;
-        return c.dueDay === dom && daysLate(i) === 0;
+        return isDueDay(c.dueDay, today) && daysLate(i) === 0;
       })
       .map((i) => {
         const c = data.customers.find((cc) => cc.id === i.customerId);

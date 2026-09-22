@@ -117,6 +117,7 @@ export {
   reminderDaysBefore,
   isDueSoonOrOverdue,
   daysUntilDue,
+  isDueDay,
   invoiceNumber,
   lowStockThreshold,
   lowStockCount,

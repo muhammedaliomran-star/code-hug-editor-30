@@ -70,6 +70,18 @@ export function daysUntilDue(inv: { firstDueDate: string }) {
   return Math.round((due.getTime() - today.getTime()) / 86400000);
 }
 
+/**
+ * Phase 1 (#18): single source of truth for "due day" matching.
+ * A customer's dueDay matches when it equals the calendar day of month.
+ * Use this everywhere instead of inline `dueDay === new Date().getDate()`.
+ */
+export function isDueDay(
+  dueDay: number | null | undefined,
+  ref: Date = new Date(),
+): boolean {
+  return typeof dueDay === "number" && dueDay === ref.getDate();
+}
+
 export function invoiceNumber(invoices: Invoice[], invoiceId: string, prefix = shopCache?.invoicePrefix ?? "") {
   const ordered = [...invoices].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),

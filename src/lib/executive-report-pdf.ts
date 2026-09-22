@@ -66,6 +66,11 @@ export function generateExecutiveReportPdf(data: ExecutiveReportData): string {
       value: `${fmt(data.inventoryCostValuation)} ج.م`,
       tone: "plain",
     },
+    {
+      label: "تقييم المخزون (بسعر البيع)",
+      value: `${fmt(data.inventorySaleValuation)} ج.م`,
+      tone: "plain",
+    },
   ];
 
   let body = "";

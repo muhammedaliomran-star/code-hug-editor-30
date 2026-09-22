@@ -136,6 +136,9 @@ function AlertsPage() {
         const activePromise = promises[inv.id] || null;
         const isSnoozed = !!(snoozes[inv.id] && snoozes[inv.id] > now);
 
+        // Phase 1 (#18): these buckets are lateness-based by design (daysLate),
+        // unlike the calendar due-day predicate isDueDay() used by the
+        // dashboard and customers page. "due_today" here = not late yet.
         let bracket: "due_today" | "minor" | "moderate" | "critical" = "due_today";
         if (late > 30) bracket = "critical";
         else if (late >= 16) bracket = "moderate";

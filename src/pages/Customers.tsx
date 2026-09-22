@@ -19,6 +19,7 @@ import {
   db,
   fmt,
   aiScript,
+  isDueDay,
   type Customer,
 } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -156,8 +157,6 @@ function CustomersPage() {
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
-  const todayDay = useMemo(() => new Date().getDate(), []);
-
   const enriched = useMemo(
     () => data.customers.map((c) => ({ c, m: customerMetrics(data.invoices, c) })),
     [data.customers, data.invoices],
@@ -179,11 +178,11 @@ function CustomersPage() {
       if (c.customerType === "cash") cash++;
       else {
         installment++;
-        if (c.dueDay === todayDay && m.balance > 0) dueToday++;
+        if (isDueDay(c.dueDay) && m.balance > 0) dueToday++;
       }
     }
     return { all: enriched.length, installment, cash, overdue, dueToday, bajah, frozen, settled };
-  }, [enriched, todayDay]);
+  }, [enriched]);
 
   const debtStats = useMemo(() => {
     const totalDebt = enriched.reduce((s, x) => s + Math.max(0, x.m.balance), 0);
@@ -206,7 +205,7 @@ function CustomersPage() {
     const filtered = enriched
       .filter(({ c, m }) => {
         if (filter === "installment") return c.customerType !== "cash";
-        if (filter === "dueToday") return c.customerType !== "cash" && c.dueDay === todayDay;
+        if (filter === "dueToday") return c.customerType !== "cash" && isDueDay(c.dueDay);
         if (filter === "cash") return c.customerType === "cash";
         if (filter === "overdue") return m.worstLate > 1;
         if (filter === "frozen") return !!c.frozen;
@@ -234,7 +233,7 @@ function CustomersPage() {
       if (sortKey === "balance") return (a.m.balance - b.m.balance) * dir;
       return a.c.name.localeCompare(b.c.name, "ar") * dir;
     });
-  }, [enriched, q, filter, dueDayFilter, sortKey, sortDir, todayDay]);
+  }, [enriched, q, filter, dueDayFilter, sortKey, sortDir]);
 
   if (data.loading) return <PageLoadingSkeleton type="table" />;
 

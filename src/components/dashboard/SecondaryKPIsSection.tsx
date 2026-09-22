@@ -51,6 +51,9 @@ export function SecondaryKPIsSection() {
               <div className="text-[11px] text-muted-foreground">
                 {shippingStats.unsettledCount} شحنة مسلّمة تنتظر التوريد للخزينة
               </div>
+              <div className="text-[11px] text-muted-foreground">
+                {shippingStats.collectedCount} محصّلة باليد ({money(shippingStats.collectedCodAmount)}) • {shippingStats.uncollectedCount} عند العملاء ({money(shippingStats.uncollectedCodAmount)})
+              </div>
             </div>
             <Link
               to="/shipping"
