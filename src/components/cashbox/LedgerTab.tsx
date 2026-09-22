@@ -32,6 +32,13 @@ export function LedgerTab() {
     refreshAll,
   } = useCashbox();
 
+  const handleDeleteManual = (id: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذه الحركة اليدوية؟")) return;
+    deleteManualTransaction(id.replace("man-", ""));
+    toast.success("تم حذف المعاملة اليدوية");
+    refreshAll();
+  };
+
   return (
     <div className="space-y-4">
       {/* Controls and filters */}
@@ -85,8 +92,81 @@ export function LedgerTab() {
         </div>
       </div>
 
-      {/* Transactions Ledger Table */}
-      <div className="rounded-2xl border border-foreground/10 bg-card overflow-hidden">
+      {/* Mobile cards (Phase 4) */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {filteredLedger.map((tx) => {
+          const isPositive = tx.type === "in";
+          const acc = accounts.find((a) => a.id === tx.accountId);
+          return (
+            <div key={tx.id} className="rounded-2xl border border-foreground/10 bg-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-foreground">{tx.title}</p>
+                  <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
+                    {new Date(tx.date).toLocaleDateString("ar-EG")} • {acc?.name || "الدرج الرئيسي"}
+                  </p>
+                </div>
+                <span
+                  className={cn(
+                    "whitespace-nowrap text-sm font-black tabular-nums",
+                    isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                  )}
+                >
+                  {isPositive ? "+" : "-"}{fmt(tx.amount)} {cur}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[10px] font-semibold",
+                      isPositive
+                        ? "border-emerald-500/20 text-emerald-600 bg-emerald-500/10"
+                        : "border-rose-500/20 text-rose-600 bg-rose-500/10"
+                    )}
+                  >
+                    {tx.category}
+                  </Badge>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    الرصيد: {fmt(tx.runningBalance || 0)} {cur}
+                  </span>
+                </div>
+                {tx.source === "manual" && (
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-xl text-primary hover:bg-primary/10"
+                      onClick={() => openEditManualTx(tx.id.replace("man-", ""))}
+                      title="تعديل الحركة اليدوية"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-10 w-10 rounded-xl text-danger hover:bg-danger/10"
+                      onClick={() => handleDeleteManual(tx.id)}
+                      title="حذف"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {filteredLedger.length === 0 && (
+          <p className="rounded-2xl border border-foreground/10 bg-card py-12 text-center text-xs text-muted-foreground">
+            لا توجد حركات مسجلة تطابق محددات البحث الحالية.
+          </p>
+        )}
+      </div>
+
+      {/* Transactions Ledger Table (desktop) */}
+      <div className="hidden rounded-2xl border border-foreground/10 bg-card overflow-hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead>
@@ -166,14 +246,7 @@ export function LedgerTab() {
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 rounded-lg text-danger hover:bg-danger/10"
-                            onClick={() => {
-                              if (confirm("هل أنت متأكد من حذف هذه الحركة اليدوية؟")) {
-                                const rawId = tx.id.replace("man-", "");
-                                deleteManualTransaction(rawId);
-                                toast.success("تم حذف المعاملة اليدوية");
-                                refreshAll();
-                              }
-                            }}
+                            onClick={() => handleDeleteManual(tx.id)}
                             title="حذف"
                           >
                             <Trash2 className="h-3.5 w-3.5" />

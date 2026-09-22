@@ -14,9 +14,16 @@ export function TransfersTab() {
     refreshAll,
   } = useCashbox();
 
+  const handleDeleteTransfer = (id: string) => {
+    if (!confirm("هل أنت متأكد من حذف هذا التحويل واسترداد الأرصدة؟")) return;
+    deleteInternalTransfer(id);
+    toast.success("تم حذف سجل التحويل");
+    refreshAll();
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 className="text-base font-bold">سجل التحويلات المالية الداخلية بين الخزن</h3>
           <p className="text-xs text-muted-foreground">
@@ -25,14 +32,56 @@ export function TransfersTab() {
         </div>
         <Button
           onClick={() => setIsTransferOpen(true)}
-          className="rounded-full px-5 text-xs font-bold gap-1.5 h-9"
+          className="h-11 justify-center gap-1.5 rounded-full px-5 text-xs font-bold sm:h-9"
         >
           <Plus className="h-4 w-4" />
           إجراء تحويل مالي جديد
         </Button>
       </div>
 
-      <div className="rounded-2xl border border-foreground/10 bg-card overflow-hidden">
+      {/* Mobile cards (Phase 4) */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {transfers.map((trf) => {
+          const fromAcc = accounts.find((a) => a.id === trf.fromAccountId);
+          const toAcc = accounts.find((a) => a.id === trf.toAccountId);
+          return (
+            <div key={trf.id} className="rounded-2xl border border-foreground/10 bg-card p-4">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-mono text-xs font-bold text-primary">{trf.transferNumber}</span>
+                <span className="whitespace-nowrap text-sm font-black tabular-nums">
+                  {fmt(trf.amount)} {cur}
+                </span>
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed">
+                من <span className="font-bold text-rose-600 dark:text-rose-400">{fromAcc?.name || "حساب محذوف"}</span>
+                {" إلى "}
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">{toAcc?.name || "حساب محذوف"}</span>
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
+                  {new Date(trf.date).toLocaleDateString("ar-EG")} • {trf.fee > 0 ? `${fmt(trf.fee)} ${cur}` : "بدون عمولة"} • {trf.notes || "تحويل سيولة دوري"}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 rounded-xl text-danger hover:bg-danger/10"
+                  onClick={() => handleDeleteTransfer(trf.id)}
+                  title="حذف التحويل"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+        {transfers.length === 0 && (
+          <p className="rounded-2xl border border-foreground/10 bg-card py-12 text-center text-xs text-muted-foreground">
+            لا توجد تحويلات داخلية مسجلة بعد.
+          </p>
+        )}
+      </div>
+
+      <div className="hidden rounded-2xl border border-foreground/10 bg-card overflow-hidden md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead>
@@ -82,13 +131,7 @@ export function TransfersTab() {
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 rounded-lg text-danger hover:bg-danger/10"
-                        onClick={() => {
-                          if (confirm("هل أنت متأكد من حذف هذا التحويل واسترداد الأرصدة؟")) {
-                            deleteInternalTransfer(trf.id);
-                            toast.success("تم حذف سجل التحويل");
-                            refreshAll();
-                          }
-                        }}
+                        onClick={() => handleDeleteTransfer(trf.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
