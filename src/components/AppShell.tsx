@@ -134,11 +134,47 @@ function MobileMoreSheet({
   overdueCount: number;
 }) {
   const [query, setQuery] = useState("");
-  const filtered = useMemo(() => {
-    const q = query.trim();
-    if (!q) return items;
-    return items.filter((n) => n.label.includes(q));
-  }, [items, query]);
+  const q = query.trim();
+  const filtered = useMemo(
+    () => (q ? items.filter((n) => n.label.includes(q)) : items),
+    [items, q],
+  );
+  // Phase 3: group rare/admin sections under headers (only when not searching).
+  const sections = useMemo(() => {
+    if (q) return [];
+    const by = (routes: string[]) => items.filter((n) => routes.includes(n.to));
+    return [
+      { key: "ops", title: "العمليات اليومية", rows: by(["/daily", "/discounts", "/purchases", "/suppliers", "/returns", "/cashbox", "/payments", "/expenses", "/alerts"]) },
+      { key: "stock", title: "المخزون والفروع", rows: by(["/inventory", "/warehouse", "/branches"]) },
+      { key: "admin", title: "الإدارة", rows: by(["/staff", "/reports", "/reconciliation", "/audit", "/settings"]) },
+    ].filter((s) => s.rows.length > 0);
+  }, [items, q]);
+  const renderRow = (n: NavItem) => {
+    const active = pathname.startsWith(n.to);
+    const Icon = n.icon;
+    const showBadge = n.alertKey && overdueCount > 0;
+    return (
+      <Link
+        key={n.to}
+        to={n.to}
+        onClick={() => onOpenChange(false)}
+        className={cn(
+          "flex items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm",
+          active ? "bg-primary font-semibold text-primary-foreground" : "text-foreground hover:bg-sidebar-accent/70",
+        )}
+      >
+        <span className="flex items-center gap-2">
+          {n.label}
+          {showBadge && (
+            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold leading-none text-danger-foreground">
+              {overdueCount}
+            </span>
+          )}
+        </span>
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </Link>
+    );
+  };
   return (
     <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setQuery(""); }}>
       <SheetContent side="bottom" className="max-h-[75vh] overflow-y-auto rounded-t-[1.5rem] px-4 pb-8 pt-4">
@@ -154,37 +190,25 @@ function MobileMoreSheet({
             className="pr-9"
           />
         </div>
-        <div className="flex flex-col gap-1">
-          {filtered.map((n) => {
-            const active = pathname.startsWith(n.to);
-            const Icon = n.icon;
-            const showBadge = n.alertKey && overdueCount > 0;
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                onClick={() => onOpenChange(false)}
-                className={cn(
-                  "flex items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm",
-                  active ? "bg-primary font-semibold text-primary-foreground" : "text-foreground hover:bg-sidebar-accent/70",
-                )}
-              >
-                <span className="flex items-center gap-2">
-                  {n.label}
-                  {showBadge && (
-                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold leading-none text-danger-foreground">
-                      {overdueCount}
-                    </span>
-                  )}
-                </span>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </Link>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">مفيش قسم بالاسم ده.</p>
-          )}
-        </div>
+        {q ? (
+          <div className="flex flex-col gap-1">
+            {filtered.map(renderRow)}
+            {filtered.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted-foreground">مفيش قسم بالاسم ده.</p>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {sections.map((s) => (
+              <div key={s.key}>
+                <p className="mb-1 px-4 text-[11px] font-bold text-muted-foreground">{s.title}</p>
+                <div className="flex flex-col gap-1">
+                  {s.rows.map(renderRow)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </SheetContent>
     </Sheet>
   );
