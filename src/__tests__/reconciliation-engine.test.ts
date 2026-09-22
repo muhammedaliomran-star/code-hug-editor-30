@@ -516,11 +516,12 @@ describe("runComprehensiveReconciliation", () => {
     const db = emptyDBState();
     // 1 critical (stock negative) + 1 warning (invoice overpaid) + 1 notice (low stock)
     db.stockItems = [
-      makeStockItem({ id: "stk-s1", quantity: -1, name: "سالب" }),
-      makeStockItem({ id: "stk-s2", quantity: 1, minStock: 10, name: "منخفض" }),
+      makeStockItem({ id: "stk-s1", quantity: -1, name: "سالب", barcode: "S1" }),
+      makeStockItem({ id: "stk-s2", quantity: 1, minStock: 10, name: "منخفض", barcode: "S2" }),
     ];
     db.customers = [makeCustomer({ id: "cust-s" })];
-    db.invoices = [makeInvoice({ id: "inv-s", total: 1000, paid: 2000 })];
+    db.invoices = [makeInvoice({ id: "inv-s", total: 1000, paid: 2000, status: "paid" })];
+    db.invoiceItems = [makeInvoiceItem({ invoiceId: "inv-s", lineTotal: 1000, price: 1000 })];
     db.payments = [];
     const result = runComprehensiveReconciliation(db);
     // critical (stock-negative-qty) = 7, warning (inv-overpaid) = 3, notice (stock-low) = 1
@@ -542,7 +543,8 @@ describe("runComprehensiveReconciliation", () => {
   it("health score caps at 100", () => {
     const db = emptyDBState();
     db.customers = [makeCustomer({ id: "cust-ok" })];
-    db.invoices = [makeInvoice({ id: "inv-ok", total: 10000, paid: 10000, downPayment: 0 })];
+    db.invoices = [makeInvoice({ id: "inv-ok", total: 10000, paid: 10000, downPayment: 0, status: "paid" })];
+    db.invoiceItems = [makeInvoiceItem({ invoiceId: "inv-ok", lineTotal: 10000, price: 10000 })];
     db.payments = [makePayment("inv-ok", 10000)];
     const result = runComprehensiveReconciliation(db);
     expect(result.healthScore).toBe(100);
