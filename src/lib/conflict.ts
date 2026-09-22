@@ -10,6 +10,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Dynamic table names can't be statically typed against the generated schema.
+const client = supabase as unknown as { from: (table: string) => any };
+
 export interface ConflictInfo {
   table: string;
   id: string;
