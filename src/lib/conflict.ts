@@ -10,6 +10,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Dynamic table names can't be statically typed against the generated schema.
+const client = supabase as unknown as { from: (table: string) => any };
+
 export interface ConflictInfo {
   table: string;
   id: string;
@@ -33,7 +36,7 @@ export async function detectConflict(
   expectedUpdatedAt: string
 ): Promise<string | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from(table)
       .select("updated_at")
       .eq("id", id)
@@ -67,7 +70,7 @@ export async function safeUpdate<T extends Record<string, unknown>>(
 
   if (serverTime) {
     // Fetch full server data for the conflict dialog
-    const { data: serverData } = await supabase
+    const { data: serverData } = await client
       .from(table)
       .select("*")
       .eq("id", id)
@@ -98,7 +101,7 @@ export async function safeUpdate<T extends Record<string, unknown>>(
   }
 
   // No conflict — proceed with update
-  const { error } = await supabase
+  const { error } = await client
     .from(table)
     .update(updates)
     .eq("id", id);
@@ -114,7 +117,7 @@ export async function safeInsert<T extends Record<string, unknown>>(
   table: string,
   data: T
 ): Promise<{ id: string | null; error?: string }> {
-  const { data: result, error } = await supabase
+  const { data: result, error } = await client
     .from(table)
     .insert(data)
     .select("id")

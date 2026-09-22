@@ -6,7 +6,7 @@ import { Reveal } from "@/components/Reveal";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDB, type ShipmentStatus } from "@/lib/store";
+import { db, useDB, type ShipmentStatus } from "@/lib/store";
 import { AlertTriangle, CheckCircle2, ChevronLeft, MessageCircle, Phone, RefreshCw, Search, ShieldAlert, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { renderRescuePending, waLink, trackUrlFor } from "@/lib/whatsapp-templates";
@@ -19,6 +19,7 @@ const ageInDays = (date: string) => Math.max(0, Math.floor((Date.now() - new Dat
 
 export default function RescueOrders() {
   const { shipments } = useDB();
+  const { settings } = useShopSettings();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "urgent" | "shipment">("all");
 
@@ -77,7 +78,7 @@ export default function RescueOrders() {
                     <p className="text-sm text-muted-foreground">{row.reason}</p>
                   </div>
                   <div className="flex gap-2">
-                    {row.phone && <Button size="sm" variant="outline" onClick={() => window.open(waLink(row.phone, renderRescuePending({ customerName: row.customer, publicNumber: row.number, address: row.address })), "_blank")} className="gap-1"><MessageCircle className="h-3 w-3" /> واتساب</Button>}
+                    {row.phone && <Button size="sm" variant="outline" onClick={() => window.open(waLink(row.phone, renderRescuePending({ shop: { shopName: settings.shopName }, customer: row.customer, phone: row.phone, number: row.number, statusLabel: labels[row.status] ?? row.status, reason: row.reason, ageDays: ageInDays(row.createdAt), address: row.address })), "_blank")} className="gap-1"><MessageCircle className="h-3 w-3" /> واتساب</Button>}
                     {row.shipmentId && row.status !== "shipped" && <Button size="sm" onClick={() => void markShipped(row.shipmentId!)} className="gap-1"><CheckCircle2 className="h-3 w-3" /> تم الشحن</Button>}
                   </div>
                 </div>
