@@ -38,9 +38,10 @@ import {
   resetCustomerOpeningBalances,
   dataCounts,
   restoreJsonBackup,
-  validateBackupJson,
+  validateBackupDeep,
   wipeAllData,
 } from "@/lib/backup";
+import { verifyManagerPinAsync } from "@/lib/security";
 import { recordAuditLog, type AuditActionType, type AuditSeverity } from "@/lib/audit";
 import { fmt, type AutoBackupFrequency } from "@/lib/store";
 import { TabProps, Section, Field } from "./shared";
@@ -74,6 +75,36 @@ export function DataTab({ form, set }: TabProps) {
     tableCount: number;
     totalRows: number;
   } | null>(null);
+
+  // Phase 2 (#15): manager-PIN re-auth, valid 10 minutes (session only)
+  const [pin, setPin] = useState("");
+  const REAUTH_TTL_MS = 10 * 60 * 1000;
+  const REAUTH_KEY = "segilly_backup_reauth_at";
+  const isReauthFresh = () => {
+    try {
+      return Date.now() - Number(sessionStorage.getItem(REAUTH_KEY) ?? 0) < REAUTH_TTL_MS;
+    } catch {
+      return false;
+    }
+  };
+  const ensureReauth = async (): Promise<boolean> => {
+    if (isReauthFresh()) return true;
+    if (!pin.trim()) {
+      toast.error("أدخل PIN المدير للمتابعة");
+      return false;
+    }
+    const ok = await verifyManagerPinAsync(pin);
+    if (!ok) {
+      toast.error("PIN المدير غير صحيح");
+      return false;
+    }
+    try {
+      sessionStorage.setItem(REAUTH_KEY, String(Date.now()));
+    } catch {
+      // ignore
+    }
+    return true;
+  };
 
   const load = useCallback(() => {
     dataCounts()
@@ -116,6 +147,8 @@ export function DataTab({ form, set }: TabProps) {
   // Phase 0 (#15): audited restore with explicit confirmation
   const confirmRestore = async () => {
     if (!restorePreview || busy !== null) return;
+    // Phase 2 (#15): fresh manager-PIN re-auth before writing
+    if (!(await ensureReauth())) return;
     setBusy("restore");
     try {
       const report = await restoreJsonBackup(restorePreview.payload);
@@ -130,7 +163,11 @@ export function DataTab({ form, set }: TabProps) {
           module: "settings",
           severity: "warning",
           title: "استرجاع نسخة احتياطية من ملف JSON",
-          details: `جداول: ${restorePreview.tableCount}، مسترجعة: ${report.inserted}، متخطاة: ${report.skipped}، فاشلة: ${report.failed.length}`,
+          details: `جداول: ${restorePreview.tableCount}، مسترجعة: ${report.inserted}، متخطاة: ${report.skipped}، فاشلة: ${report.failed.length}${
+            (restorePreview.payload as { exportedBy?: string | null })?.exportedBy
+              ? `، المصدّر الأصلي: ${(restorePreview.payload as { exportedBy?: string }).exportedBy}`
+              : ""
+          }`,
         });
       } catch {
         // best-effort
@@ -282,9 +319,16 @@ export function DataTab({ form, set }: TabProps) {
                 if (!file) return;
                 try {
                   const payload = JSON.parse(await file.text());
-                  const validation = validateBackupJson(payload);
+                  // Phase 2 (#15): deep structural dry run — unknown tables,
+                  // duplicate ids, broken relations, size caps
+                  const validation = validateBackupDeep(payload);
                   if (!validation.valid) {
-                    toast.error(validation.error ?? "ملف النسخة غير صالح");
+                    toast.error(validation.error ?? "ملف النسخة غير صالح", {
+                      description:
+                        validation.errors.length > 1
+                          ? `${validation.errors[1]}${validation.errors.length > 2 ? "…" : ""}`
+                          : undefined,
+                    });
                     return;
                   }
                   // Phase 0 (#15): preview first — actual restore happens after explicit confirmation
@@ -393,7 +437,15 @@ export function DataTab({ form, set }: TabProps) {
       </AlertDialog>
 
       {/* مودال تأكيد الاسترجاع (Phase 0 #15) */}
-      <AlertDialog open={restorePreview !== null} onOpenChange={(v) => !v && busy === null && setRestorePreview(null)}>
+      <AlertDialog
+        open={restorePreview !== null}
+        onOpenChange={(v) => {
+          if (!v && busy === null) {
+            setRestorePreview(null);
+            setPin("");
+          }
+        }}
+      >
         <AlertDialogContent dir="rtl" className="rounded-[2.5rem] p-6 max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-right text-lg font-black">
@@ -406,8 +458,20 @@ export function DataTab({ form, set }: TabProps) {
               <br />
               سيتم دمج البيانات في حسابك الحالي — البيانات الموجودة لن تُستبدل،
               ولن تُستورد أي بيانات ملكية من حساب آخر.
+              <br />
+              <br />
+              أدخل <strong className="text-foreground">PIN المدير</strong> للتأكيد
+              (صالح لمدة 10 دقائق).
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            placeholder="PIN المدير"
+            className="h-12 rounded-2xl bg-foreground/[0.03] text-center font-bold tracking-widest"
+          />
           <AlertDialogFooter className="mt-4 gap-2">
             <AlertDialogCancel className="rounded-xl font-bold" disabled={busy !== null}>
               إلغاء
@@ -424,7 +488,13 @@ export function DataTab({ form, set }: TabProps) {
       </AlertDialog>
 
       {/* مودال المسح الشامل */}
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(v) => {
+          setConfirmOpen(v);
+          if (!v) setPin("");
+        }}
+      >
         <AlertDialogContent
           dir="rtl"
           className="rounded-[2.5rem] border-danger/10 bg-card/95 backdrop-blur-2xl p-8 max-w-lg shadow-2xl"
@@ -437,7 +507,8 @@ export function DataTab({ form, set }: TabProps) {
               هذا الإجراء سيقوم بمسح كافة الفواتير، العملاء، الموردين، والمخزون بشكل نهائي لا رجعة فيه.
               <br />
               <br />
-              لتأكيد الحذف النهائي، يرجى كتابة كلمة <strong className="text-foreground">حذف</strong> في الحقل أدناه.
+              لتأكيد الحذف النهائي، يرجى كتابة كلمة <strong className="text-foreground">حذف</strong> في الحقل أدناه،
+              ثم إدخال <strong className="text-foreground">PIN المدير</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <Input
@@ -445,6 +516,14 @@ export function DataTab({ form, set }: TabProps) {
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="اكتب حذف هنا"
             className="h-12 rounded-2xl bg-foreground/[0.03] border-danger/20 focus:border-danger transition-all text-center font-bold"
+          />
+          <Input
+            type="password"
+            inputMode="numeric"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            placeholder="PIN المدير"
+            className="h-12 rounded-2xl bg-foreground/[0.03] border-danger/20 focus:border-danger transition-all text-center font-bold tracking-widest"
           />
           <AlertDialogFooter className="mt-6 gap-3 sm:justify-end">
             <AlertDialogCancel className="rounded-2xl border-none hover:bg-foreground/5 h-12 px-6 font-bold">
@@ -454,6 +533,8 @@ export function DataTab({ form, set }: TabProps) {
               disabled={confirmText.trim() !== "حذف" || busy !== null}
               className="rounded-2xl bg-danger h-12 px-8 font-black text-white transition-all hover:bg-danger/90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-danger/20"
               onClick={async () => {
+                // Phase 2 (#15): fresh manager-PIN re-auth before wiping
+                if (!(await ensureReauth())) return;
                 await run("wipe", wipeAllData, "تم حذف جميع بيانات النشاط بنجاح", {
                   action: "DATA_WIPE",
                   severity: "critical",

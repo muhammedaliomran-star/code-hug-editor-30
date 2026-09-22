@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 
 /**
  * Phase 1 (#15): server-side gate for backup restore / full wipe.
@@ -34,4 +35,48 @@ export const assertBackupAccess = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     await assertDataManager(supabase as never, userId);
     return { ok: true as const };
+  });
+
+const restoreSchema = z.object({
+  tables: z.record(z.string(), z.array(z.record(z.string(), z.unknown()))),
+  exportedBy: z.string().max(100).nullable().optional(),
+  dryRun: z.boolean().optional(),
+});
+
+export type ServerRestoreResult = {
+  ok: boolean;
+  tableCount?: number;
+  totalRows?: number;
+  inserted: number;
+  skipped: number;
+  failed: Array<{ table: string; error: string }>;
+};
+
+/**
+ * Phase 2 (#15): single-transaction restore.
+ * The SQL function gates, validates, then inserts — nothing is written
+ * unless the whole payload validates (dryRun previews without writing).
+ */
+export const restoreBackup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => restoreSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: result, error } = await (supabase as any).rpc("restore_backup", {
+      p_tables: data.tables,
+      p_exported_by: data.exportedBy ?? null,
+      p_dry_run: data.dryRun ?? false,
+    });
+    if (error) throw new Error(error.message);
+    return result as ServerRestoreResult;
+  });
+
+/** Phase 2 (#15): single-transaction wipe with per-table counts. */
+export const wipeUserData = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data: result, error } = await (supabase as any).rpc("wipe_user_data");
+    if (error) throw new Error(error.message);
+    return result as { ok: boolean; deleted: Record<string, number> };
   });

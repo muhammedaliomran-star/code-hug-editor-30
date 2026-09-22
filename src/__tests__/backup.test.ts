@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { validateBackupJson, isAutoBackupDue, type BackupPayload } from "@/lib/backup";
+import {
+  validateBackupJson,
+  validateBackupDeep,
+  remapBackupIds,
+  isAutoBackupDue,
+  type BackupPayload,
+} from "@/lib/backup";
 
 const LS: Record<string, string> = {};
 beforeEach(() => {
@@ -84,6 +90,91 @@ describe("validateBackupJson", () => {
     }));
     expect(result.totalRows).toBe(5);
     expect(result.tableCount).toBe(2);
+  });
+});
+
+describe("validateBackupDeep", () => {
+  const deep = (tables: Record<string, unknown[]>) => validateBackupDeep({
+    app: "segilly",
+    version: 2,
+    exportedAt: "2026-06-15T00:00:00.000Z",
+    tables,
+  });
+
+  it("accepts a clean payload with counts", () => {
+    const r = deep({
+      customers: [{ id: "c1", name: "أ" }],
+      invoices: [{ id: "i1", customer_id: "c1" }],
+      invoice_items: [{ id: "ii1", invoice_id: "i1" }],
+    });
+    expect(r.valid).toBe(true);
+    expect(r.tableCount).toBe(3);
+    expect(r.totalRows).toBe(3);
+    expect(r.errors).toEqual([]);
+  });
+
+  it("rejects unknown tables", () => {
+    const r = deep({ customers: [], evil_table: [{ id: "x" }] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.join(" ")).toContain("evil_table");
+  });
+
+  it("rejects rows without ids and duplicate ids", () => {
+    const r = deep({ customers: [{ name: "x" }, { id: "c1" }, { id: "c1" }] });
+    expect(r.valid).toBe(false);
+    expect(r.errors.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("rejects child rows pointing at missing parents", () => {
+    const r = deep({
+      customers: [{ id: "c1" }],
+      invoices: [{ id: "i1", customer_id: "ghost" }],
+    });
+    expect(r.valid).toBe(false);
+    expect(r.errors.join(" ")).toContain("invoices");
+  });
+
+  it("rejects oversized payloads", () => {
+    const rows = Array.from({ length: 20001 }, (_, i) => ({ id: `c${i}` }));
+    const r = deep({ customers: rows });
+    expect(r.valid).toBe(false);
+    expect(r.error).toContain("كبير");
+  });
+
+  it("provides first error as error for dialog compat", () => {
+    const r = validateBackupDeep(null);
+    expect(r.valid).toBe(false);
+    expect(typeof r.error).toBe("string");
+  });
+});
+
+describe("remapBackupIds", () => {
+  it("gives every row a fresh id and rewrites mapped foreign keys", () => {
+    const out = remapBackupIds({
+      customers: [{ id: "c1", name: "أ", user_id: "u1", created_at: "x" }],
+      invoices: [{ id: "i1", customer_id: "c1" }],
+      invoice_items: [{ id: "ii1", invoice_id: "i1" }],
+    });
+    const newCustomerId = out.customers[0].id as string;
+    expect(newCustomerId).not.toBe("c1");
+    expect(out.invoices[0].id).not.toBe("i1");
+    expect(out.invoices[0].customer_id).toBe(newCustomerId);
+    expect(out.invoice_items[0].invoice_id).toBe(out.invoices[0].id);
+    expect(out.customers[0].user_id).toBeUndefined();
+    expect(out.customers[0].created_at).toBeUndefined();
+  });
+
+  it("keeps unmapped references untouched", () => {
+    const out = remapBackupIds({
+      shipments: [{ id: "s1", tracking_number: "T1" }],
+    });
+    expect(out.shipments[0].id).not.toBe("s1");
+    expect(out.shipments[0].tracking_number).toBe("T1");
+  });
+
+  it("skips non-object rows", () => {
+    const out = remapBackupIds({ customers: [null, { id: "c1" }] as unknown[] });
+    expect(out.customers).toHaveLength(1);
   });
 });
 
