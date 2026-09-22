@@ -334,11 +334,11 @@ drop policy if exists "Merchants update storefront product images"
 drop policy if exists "Merchants delete storefront product images"
   on storage.objects;
 
-delete from storage.objects
-where bucket_id = 'storefront-product-images';
-
-delete from storage.buckets
-where id = 'storefront-product-images';
+-- NOTE: Supabase blocks direct DELETEs on storage.objects
+-- (storage.protect_delete). Dropping the 4 policies above is sufficient:
+-- with no SELECT policy, the orphaned objects become completely
+-- inaccessible. Delete the empty bucket itself from Dashboard >
+-- Storage UI if desired (the UI uses the Storage API).
 
 -- ==================== تحقق سريع (اختياري بعد التنفيذ) ====================
 -- select policyname from pg_policies where tablename = 'shipments';
