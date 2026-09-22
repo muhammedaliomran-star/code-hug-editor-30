@@ -12,6 +12,49 @@
 -- RPC functions that reference the base tables below — those are SKIPPED.
 -- =====================================================================
 
+-- Idempotency: this file may re-run on databases where it was already
+-- applied manually. Drop every policy/trigger it manages, then recreate.
+do $$
+declare
+  r record;
+begin
+  for r in
+    select * from (values
+      ('Users can view own roles', 'user_roles'),
+      ('Users manage own profile', 'profiles'),
+      ('Owners manage team invites', 'team_invites'),
+      ('Invited-by user can view own invites', 'team_invites'),
+      ('Users manage own customers', 'customers'),
+      ('Users manage own invoices', 'invoices'),
+      ('Users manage own invoice items', 'invoice_items'),
+      ('Users manage own payments', 'payments'),
+      ('Users manage own expenses', 'expenses'),
+      ('Users manage own suppliers', 'suppliers'),
+      ('Users manage own purchases', 'purchases'),
+      ('Users manage own purchase items', 'purchase_items'),
+      ('Users manage own supplier payments', 'supplier_payments'),
+      ('Users manage own stock items', 'stock_items'),
+      ('Users manage own stock adjustments', 'stock_adjustments'),
+      ('Users manage own warehouse items', 'warehouse_items'),
+      ('Users manage own shop settings', 'shop_settings'),
+      ('Public can read shop settings for receipts', 'shop_settings')
+    ) as v(pol, tbl)
+  loop
+    execute format('drop policy if exists %I on public.%I', r.pol, r.tbl);
+  end loop;
+  for r in
+    select * from (values
+      ('set_updated_at', 'profiles'),
+      ('set_updated_at', 'stock_items'),
+      ('set_updated_at', 'warehouse_items'),
+      ('set_updated_at', 'shop_settings')
+    ) as v(trg, tbl)
+  loop
+    execute format('drop trigger if exists %I on public.%I', r.trg, r.tbl);
+  end loop;
+end
+$$;
+
 -- ---------------------------------------------------------------------
 -- Shared trigger function for updated_at columns
 -- ---------------------------------------------------------------------
@@ -36,7 +79,7 @@ begin
 end
 $$;
 
-create table public.user_roles (
+create table if not exists public.user_roles (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   role public.app_role not null,
@@ -51,8 +94,9 @@ alter table public.user_roles enable row level security;
 
 create policy "Users can view own roles" on public.user_roles
   for select to authenticated using (auth.uid() = user_id);
-create policy "Users manage own roles" on public.user_roles
-  for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+-- NOTE (security review Phase 0): the former "Users manage own roles" FOR ALL
+-- policy was REMOVED — it let any user grant themselves 'owner'. First-owner
+-- bootstrap lives in 20260922040000_security_phase0_critical.sql.
 
 create or replace function public.has_role(_user_id uuid, _role public.app_role)
 returns boolean
@@ -73,7 +117,7 @@ grant execute on function public.has_role(uuid, public.app_role) to authenticate
 -- ---------------------------------------------------------------------
 -- profiles  (src/lib/store.ts useProfile/save — id = auth.uid())
 -- ---------------------------------------------------------------------
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key,
   display_name text not null default '',
   avatar_url text,
@@ -96,7 +140,7 @@ create trigger set_updated_at before update on public.profiles
 -- ---------------------------------------------------------------------
 -- team_invites  (src/lib/roles.ts, src/lib/team.functions.ts)
 -- ---------------------------------------------------------------------
-create table public.team_invites (
+create table if not exists public.team_invites (
   id uuid primary key default gen_random_uuid(),
   invited_by uuid not null,
   email text not null,
@@ -123,7 +167,7 @@ create policy "Invited-by user can view own invites" on public.team_invites
 -- ---------------------------------------------------------------------
 -- customers  (src/lib/store.ts Customer interface + queries)
 -- ---------------------------------------------------------------------
-create table public.customers (
+create table if not exists public.customers (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   name text not null,
@@ -155,7 +199,7 @@ create policy "Users manage own customers" on public.customers
 -- receipt_token/invoice_number added later via ALTER in existing migrations
 -- but we still declare defaults here in case those migrations run first/after)
 -- ---------------------------------------------------------------------
-create table public.invoices (
+create table if not exists public.invoices (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   customer_id uuid not null references public.customers(id) on delete restrict,
@@ -189,7 +233,7 @@ create policy "Users manage own invoices" on public.invoices
 -- ---------------------------------------------------------------------
 -- invoice_items  (src/lib/store.ts InvoiceItem interface + invoiceItemFinancials)
 -- ---------------------------------------------------------------------
-create table public.invoice_items (
+create table if not exists public.invoice_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   invoice_id uuid not null references public.invoices(id) on delete cascade,
@@ -217,7 +261,7 @@ create policy "Users manage own invoice items" on public.invoice_items
 -- ---------------------------------------------------------------------
 -- payments  (src/lib/store.ts Payment interface + recomputeInvoicePaid + record_invoice_payment RPC)
 -- ---------------------------------------------------------------------
-create table public.payments (
+create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   invoice_id uuid not null references public.invoices(id) on delete cascade,
@@ -236,7 +280,7 @@ create policy "Users manage own payments" on public.payments
 -- ---------------------------------------------------------------------
 -- expenses  (src/lib/store.ts Expense interface)
 -- ---------------------------------------------------------------------
-create table public.expenses (
+create table if not exists public.expenses (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   amount numeric(12,2) not null default 0,
@@ -257,7 +301,7 @@ create policy "Users manage own expenses" on public.expenses
 -- ---------------------------------------------------------------------
 -- suppliers  (src/lib/store.ts Supplier interface)
 -- ---------------------------------------------------------------------
-create table public.suppliers (
+create table if not exists public.suppliers (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   name text not null,
@@ -281,7 +325,7 @@ create policy "Users manage own suppliers" on public.suppliers
 -- record_purchase_with_inventory() RPC defined in
 -- 20260827140000_atomic_purchase_inventory.sql, which proves the exact columns)
 -- ---------------------------------------------------------------------
-create table public.purchases (
+create table if not exists public.purchases (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   supplier_id uuid not null references public.suppliers(id) on delete restrict,
@@ -304,7 +348,7 @@ create policy "Users manage own purchases" on public.purchases
 -- purchase_items  (src/lib/store.ts PurchaseItem interface;
 -- confirmed by record_purchase_with_inventory RPC)
 -- ---------------------------------------------------------------------
-create table public.purchase_items (
+create table if not exists public.purchase_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   purchase_id uuid not null references public.purchases(id) on delete cascade,
@@ -325,7 +369,7 @@ create policy "Users manage own purchase items" on public.purchase_items
 -- ---------------------------------------------------------------------
 -- supplier_payments  (src/lib/store.ts SupplierPayment interface)
 -- ---------------------------------------------------------------------
-create table public.supplier_payments (
+create table if not exists public.supplier_payments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   supplier_id uuid not null references public.suppliers(id) on delete cascade,
@@ -345,7 +389,7 @@ create policy "Users manage own supplier payments" on public.supplier_payments
 -- stock_items  (src/lib/store.ts StockItem interface + addStockItem/updateStockItem;
 -- referenced by FK from storefront_products, purchase_items(stock_item_id), etc.)
 -- ---------------------------------------------------------------------
-create table public.stock_items (
+create table if not exists public.stock_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   name text not null,
@@ -381,7 +425,7 @@ create trigger set_updated_at before update on public.stock_items
 -- confirmed by log_stock_adjustment_movement trigger in
 -- 20260827140000_atomic_purchase_inventory.sql)
 -- ---------------------------------------------------------------------
-create table public.stock_adjustments (
+create table if not exists public.stock_adjustments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   stock_item_id uuid not null references public.stock_items(id) on delete cascade,
@@ -402,7 +446,7 @@ create policy "Users manage own stock adjustments" on public.stock_adjustments
 -- ---------------------------------------------------------------------
 -- warehouse_items  (src/lib/store.ts WarehouseItem interface + Warehouse page)
 -- ---------------------------------------------------------------------
-create table public.warehouse_items (
+create table if not exists public.warehouse_items (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null,
   name text not null,
@@ -432,7 +476,7 @@ create trigger set_updated_at before update on public.warehouse_items
 -- read publicly for the printable receipt page via supabaseAdmin, so anon grant added
 -- for completeness though the app currently uses service_role for that path)
 -- ---------------------------------------------------------------------
-create table public.shop_settings (
+create table if not exists public.shop_settings (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null unique,
   shop_name text not null default '',
