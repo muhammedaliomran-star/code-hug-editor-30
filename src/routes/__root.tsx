@@ -115,7 +115,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "لوحة التحكم — سِجلّي" },
       { name: "description", content: "نظرة سريعة على المبيعات والتحصيلات والأرباح والمخزون في محلك." },
       { property: "og:title", content: "لوحة التحكم — سِجلّي" },
