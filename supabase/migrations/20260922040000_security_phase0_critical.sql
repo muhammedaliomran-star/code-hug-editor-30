@@ -1,4 +1,19 @@
 -- Phase 0 (security review): close critical gaps. SQL only, no app changes.
+-- Self-contained: defines its own trigger helper so a missing function
+-- can never abort the whole script (which would roll back the drops above).
+create or replace function public.sync_set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+revoke all on function public.sync_set_updated_at() from public;
+grant execute on function public.sync_set_updated_at() to authenticated;
+grant execute on function public.sync_set_updated_at() to service_role;
 --
 -- 1. shipments: drop the permissive MVP policy. RLS is permissive-OR:
 --    as long as "Allow authenticated full access to shipments" exists,
