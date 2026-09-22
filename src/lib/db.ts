@@ -11,6 +11,10 @@ type VoucherRow = TableRow<"payment_vouchers"> & {
   party_name?: string | null;
   party_phone?: string | null;
 };
+/** courier_token lands in generated types on next regen; read tolerantly meanwhile. */
+type CarrierRow = TableRow<"shipping_carriers"> & {
+  courier_token?: string | null;
+};
 import { saveCacheToIDB, loadCacheFromIDB } from "@/lib/db-cache";
 
 import type {
@@ -231,9 +235,10 @@ async function fetchAll() {
       paymentMethod: r.payment_method, description: r.description,
       voucherDate: r.voucher_date, createdAt: r.created_at, partyName: r.party_name, partyPhone: r.party_phone,
     })),
-    carriers: (sc.data ?? []).map((r: TableRow<"shipping_carriers">) => ({
+    carriers: (sc.data ?? []).map((r: CarrierRow) => ({
       id: r.id, name: r.name, contactPerson: r.contact_person, phone: r.phone,
-      email: r.email, baseCost: Number(r.base_cost ?? 0), active: r.active, createdAt: r.created_at,
+      email: r.email, baseCost: Number(r.base_cost ?? 0), active: r.active !== false, createdAt: r.created_at,
+      courierToken: r.courier_token ?? null,
     })),
     zones: (sz.data ?? []).map((r: TableRow<"shipping_zones">) => ({
       id: r.id, name: r.name, carrierId: r.carrier_id,

@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { db, Shipment, ShipmentCarrier, useDB } from "@/lib/store";
+import { db, Shipment, ShipmentCarrier, ShipmentStatus, useDB } from "@/lib/store";
+import { getPortalToken, useCourierBoard } from "@/lib/courier-token";
 import { waLink, renderShipmentOutForDelivery } from "@/lib/whatsapp-templates";
 import { toast } from "sonner";
 import {
@@ -27,7 +28,16 @@ import {
 } from "lucide-react";
 
 export default function DeliveryPortal() {
-  const { shipments, carriers, refresh } = useDB();
+  // Phase 2 (security review): ?token= switches to passwordless token mode.
+  const portalToken = getPortalToken();
+  const board = useCourierBoard(portalToken);
+  const { shipments: dbShipments, carriers: dbCarriers, refresh: dbRefresh } = useDB();
+  const shipments = portalToken && board.board ? board.board.shipments : dbShipments;
+  const carriers = portalToken ? (board.board ? [board.board.carrier] : []) : dbCarriers;
+  const refresh = async () => {
+    if (portalToken) await board.refresh();
+    else await dbRefresh();
+  };
   const [selectedCarrierId, setSelectedCarrierId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "delivered" | "failed">("all");
@@ -39,18 +49,15 @@ export default function DeliveryPortal() {
   const [failNotes, setFailNotes] = useState("");
   const [updating, setUpdating] = useState(false);
 
-  // Check URL query param for carrier
+  // Token mode locks to the token's carrier. The old ?carrier=<uuid>
+  // preselect was removed — it leaked customer data via UUID guessing.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const cId = params.get("carrier");
-      if (cId) {
-        setSelectedCarrierId(cId);
-      } else if (carriers.length > 0 && !selectedCarrierId) {
-        setSelectedCarrierId(carriers[0].id);
-      }
+    if (portalToken) {
+      if (board.board) setSelectedCarrierId(board.board.carrier.id);
+    } else if (carriers.length > 0 && !selectedCarrierId) {
+      setSelectedCarrierId(carriers[0].id);
     }
-  }, [carriers]);
+  }, [carriers, portalToken, board.board, selectedCarrierId]);
 
   const currentCarrier = useMemo(() => {
     return carriers.find((c) => c.id === selectedCarrierId) || carriers[0];
@@ -100,9 +107,14 @@ export default function DeliveryPortal() {
     };
   }, [shipments, currentCarrier]);
 
+  const updateStatus = async (id: string, status: "delivered" | "returned", reason?: string) => {
+    if (portalToken) await board.updateStatus(id, status, reason);
+    else await db.updateShipmentStatus(id, status as ShipmentStatus, reason);
+  };
+
   const handleMarkDelivered = async (shipment: Shipment) => {
     try {
-      await db.updateShipmentStatus(shipment.id, "delivered", "تم التسليم بنجاح عبر بوابة المندوب");
+      await updateStatus(shipment.id, "delivered", "تم التسليم بنجاح عبر بوابة المندوب");
       toast.success(`✅ تم تأكيد تسليم الشحنة وتحصيل ${shipment.codAmount || 0} ج.م`);
       await refresh();
     } catch (err: any) {
@@ -122,7 +134,7 @@ export default function DeliveryPortal() {
     setUpdating(true);
     try {
       const fullNote = `${failReason}${failNotes ? ` — ${failNotes}` : ""} (مسجل من المندوب)`;
-      await db.updateShipmentStatus(targetShipment.id, "returned", fullNote);
+      await updateStatus(targetShipment.id, "returned", fullNote);
       toast.info(`⚠️ تم تسجيل تعذر التسليم: ${failReason}`);
       setPostponeModalOpen(false);
       await refresh();
@@ -150,6 +162,20 @@ export default function DeliveryPortal() {
 أنا في طريقي إليك، هل العنوان (${s.deliveryAddress || "-"}) مناسب الآن؟`;
     window.open(waLink(s.recipientPhone, text, { arabicDigits: false }), "_blank");
   };
+
+  if (portalToken && !board.loading && (board.error || !board.board)) {
+    return (
+      <div className="min-h-screen bg-muted/20 p-6 flex items-center justify-center" dir="rtl">
+        <BezelCard className="p-8 text-center max-w-md">
+          <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-3" />
+          <h2 className="text-xl font-bold">رابط الدخول غير صالح</h2>
+          <p className="text-sm text-muted-foreground mt-2">
+            {board.error || "تعذر فتح لوحة المندوب بهذا الرابط."} اطلب رابطاً جديداً من إدارة المحل.
+          </p>
+        </BezelCard>
+      </div>
+    );
+  }
 
   if (!currentCarrier) {
     return (

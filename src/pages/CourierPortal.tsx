@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useDB, type Shipment, type ShipmentCarrier } from "@/lib/store";
+import { useDB, type Shipment, type ShipmentCarrier, type ShipmentStatus } from "@/lib/store";
+import { getPortalToken, useCourierBoard } from "@/lib/courier-token";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,7 +63,37 @@ const money = (val: number) =>
   new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 0 }).format(Math.round(val || 0));
 
 export default function CourierPortal() {
-  const { shipments, carriers, invoices, zones, updateShipmentStatus, refresh, loading } = useDB();
+  // Phase 2 (security review): ?token= switches to passwordless token mode.
+  // Token holders see ONLY their carrier's board via scoped RPCs — no session,
+  // no UUID enumeration. Without a token, the legacy session mode applies.
+  const portalToken = getPortalToken();
+  const board = useCourierBoard(portalToken);
+  const {
+    shipments: dbShipments,
+    carriers: dbCarriers,
+    invoices,
+    zones,
+    updateShipmentStatus: dbUpdateStatus,
+    refresh: dbRefresh,
+    loading: dbLoading,
+  } = useDB();
+  const shipments = portalToken && board.board ? board.board.shipments : dbShipments;
+  const carriers = portalToken ? (board.board ? [board.board.carrier] : []) : dbCarriers;
+  const updateShipmentStatus = async (id: string, status: ShipmentStatus, reason?: string) => {
+    if (portalToken) {
+      if (status !== "delivered" && status !== "returned") {
+        throw new Error("غير مسموح للمندوب بهذه الحالة");
+      }
+      await board.updateStatus(id, status, reason);
+    } else {
+      await dbUpdateStatus(id, status, reason);
+    }
+  };
+  const refresh = async () => {
+    if (portalToken) await board.refresh();
+    else await dbRefresh();
+  };
+  const loading = portalToken ? board.loading : dbLoading;
   const [selectedCarrierId, setSelectedCarrierId] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "delivered" | "returned">("active");
@@ -86,18 +117,14 @@ export default function CourierPortal() {
   const [whatsAppModalOpen, setWhatsAppModalOpen] = useState(false);
   const [whatsAppShipment, setWhatsAppShipment] = useState<Shipment | null>(null);
 
-  // Read query parameter for initial carrier selection
+  // Token mode: lock to the token's carrier. The old ?carrier=<uuid>
+  // preselect (incl. phone matching) was removed — it leaked one carrier's
+  // customer data to anyone guessing UUIDs.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const cId = params.get("carrier") || params.get("carrierId");
-    if (cId) {
-      const match = carriers.find((c) => c.id === cId || c.phone?.replace(/\D/g, "") === cId.replace(/\D/g, ""));
-      if (match) {
-        setSelectedCarrierId(match.id);
-      }
+    if (portalToken && board.board) {
+      setSelectedCarrierId(board.board.carrier.id);
     }
-  }, [carriers]);
+  }, [portalToken, board.board]);
 
   const activeCarrier = useMemo(() => {
     if (selectedCarrierId === "all") return null;
@@ -280,6 +307,22 @@ _تم الإنشاء عبر بوابة المندوب - سِجلّي_`;
     const link = generateWhatsAppLink(adminPhone, msg);
     window.open(link, "_blank", "noopener,noreferrer");
   };
+
+  if (portalToken && !board.loading && (board.error || !board.board)) {
+    return (
+      <main dir="rtl" className="min-h-screen bg-[#09110e] text-slate-100 flex items-center justify-center px-6">
+        <div className="w-full max-w-sm text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-500/15 text-rose-400">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <h1 className="text-lg font-black text-white">رابط الدخول غير صالح</h1>
+          <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            {board.error || "تعذر فتح لوحة المندوب بهذا الرابط."} اطلب رابطاً جديداً من إدارة المحل.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -683,8 +726,8 @@ _تم الإنشاء عبر بوابة المندوب - سِجلّي_`;
                     </div>
                   )}
 
-                  {/* Reset back to active if delivered or returned */}
-                  {(isDelivered || isFailed) && (
+                  {/* Reset back to active if delivered or returned (staff only — couriers can't reopen) */}
+                  {(isDelivered || isFailed) && !portalToken && (
                     <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
                       <span>تاريخ التحديث: {new Date(s.createdAt).toLocaleDateString("ar-EG")}</span>
                       <button

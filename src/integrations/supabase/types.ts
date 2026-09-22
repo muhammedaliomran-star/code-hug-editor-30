@@ -1659,6 +1659,7 @@ export type Database = {
           active: boolean | null
           base_cost: number | null
           contact_person: string | null
+          courier_token: string | null
           created_at: string | null
           email: string | null
           id: string
@@ -1670,6 +1671,7 @@ export type Database = {
           active?: boolean | null
           base_cost?: number | null
           contact_person?: string | null
+          courier_token?: string | null
           created_at?: string | null
           email?: string | null
           id?: string
@@ -1681,6 +1683,7 @@ export type Database = {
           active?: boolean | null
           base_cost?: number | null
           contact_person?: string | null
+          courier_token?: string | null
           created_at?: string | null
           email?: string | null
           id?: string

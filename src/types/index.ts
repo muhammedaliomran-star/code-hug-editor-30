@@ -147,6 +147,8 @@ export interface ShipmentCarrier {
   baseCost: number;
   active: boolean;
   createdAt: string;
+  /** Phase 2 (security review): per-carrier portal secret. Owner eyes only. */
+  courierToken?: string | null;
 }
 
 export interface ShippingZone {

@@ -4,7 +4,9 @@ import { useSearch, Link } from "@tanstack/react-router";
 import {
   Truck, Search, Plus, MapPin, Building2, PackageCheck, Clock, Pencil, Trash2, ExternalLink,
   ShieldAlert, CalendarDays, Printer, FileText, Wallet, BarChart3, MessageCircle, CheckCheck, AlertTriangle,
+  Link2, RefreshCw,
 } from "lucide-react";
+import { buildCourierLink, freshCourierToken } from "@/lib/courier-token";
 import { useDB, db, useShopSettings, ShipmentStatus, type Shipment, type ShipmentCarrier, type ShippingZone } from "@/lib/store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -83,7 +85,7 @@ function allowedShipmentStatuses(status: ShipmentStatus): ShipmentStatus[] {
 const daysBetween = (a: string, b: string) => Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 
 export default function Shipping() {
-  const { shipments, carriers, zones, invoices, customers, loading } = useDB();
+  const { shipments, carriers, zones, invoices, customers, loading, refresh } = useDB();
   const { settings: shopSettings } = useShopSettings();
   const search = useSearch({ strict: false }) as { q?: string; invoice?: string };
   const [searchQuery, setSearchQuery] = useState(search.q ?? search.invoice ?? "");
@@ -279,6 +281,42 @@ export default function Shipping() {
     setCarrierPhone(carrier.phone ?? "");
     setCarrierBaseCost(String(carrier.baseCost));
     setIsAddCarrierOpen(true);
+  };
+
+  // Phase 2 (security review): per-carrier portal link (?token=).
+  // The token is the credential — share it with the courier directly.
+  const rotatePortalToken = async (carrier: ShipmentCarrier) => {
+    try {
+      const token = freshCourierToken();
+      const { error } = await supabase
+        .from("shipping_carriers")
+        .update({ courier_token: token })
+        .eq("id", carrier.id);
+      if (error) throw error;
+      await refresh();
+      toast.success("تم إصدار رمز دخول جديد — الروابط القديمة توقفت");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "تعذر إصدار رمز جديد");
+    }
+  };
+
+  const copyPortalLink = async (carrier: ShipmentCarrier) => {
+    try {
+      let token = carrier.courierToken;
+      if (!token) {
+        token = freshCourierToken();
+        const { error } = await supabase
+          .from("shipping_carriers")
+          .update({ courier_token: token })
+          .eq("id", carrier.id);
+        if (error) throw error;
+        await refresh();
+      }
+      await navigator.clipboard.writeText(buildCourierLink(token));
+      toast.success("تم نسخ رابط بوابة المندوب — أرسله له مباشرة");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "تعذر نسخ الرابط");
+    }
   };
 
   const toggleCarrierActive = async (carrier: ShipmentCarrier) => {
@@ -1020,6 +1058,12 @@ export default function Shipping() {
                         </Button>
                         <Button variant="outline" size="sm" onClick={() => manifestFor(c)} title="مانيفست">
                           <Printer className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => void copyPortalLink(c)} title="نسخ رابط بوابة المندوب">
+                          <Link2 className="h-4 w-4" /> رابط المندوب
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => void rotatePortalToken(c)} title="إصدار رمز دخول جديد وإبطال القديم">
+                          <RefreshCw className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => void toggleCarrierActive(c)}>
                           {c.active ? "إيقاف" : "تفعيل"}
