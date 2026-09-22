@@ -10,7 +10,10 @@ import { UserChip } from "@/components/UserChip";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { BranchSwitcher } from "@/components/BranchSwitcher";
 import { applyTheme } from "@/lib/theme";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { MoreHorizontal, Search } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 
 const nav = [
   { to: "/", label: "لوحة التحكم", icon: LayoutGrid },
@@ -37,6 +40,124 @@ const nav = [
   { to: "/audit", label: "سجل الرقابة والتدقيق", icon: ShieldCheck },
   { to: "/settings", label: "الإعدادات", icon: Settings },
 ];
+
+// Phase 1 (mobile): 5 core tabs on the bottom bar — the rest live in the "More" sheet.
+const MOBILE_TABS = ["/", "/pos", "/invoices", "/customers", "/shipping"];
+
+function MobileBottomBar({ pathname, overdueCount }: { pathname: string; overdueCount: number }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const tabs = nav.filter((n) => MOBILE_TABS.includes(n.to));
+  const moreActive = nav.some((n) => !MOBILE_TABS.includes(n.to) && (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  return (
+    <>
+      <div className="glass no-scrollbar fixed inset-x-3 bottom-3 z-40 flex overflow-x-auto rounded-[1.5rem] pb-[env(safe-area-inset-bottom)] md:hidden">
+        {tabs.map((n) => {
+          const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
+          const Icon = n.icon;
+          const showBadge = n.alertKey && overdueCount > 0;
+          return (
+            <Link key={n.to} to={n.to} className={cn("press flex min-w-[60px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-[10px]", active ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}>
+              <span className="relative">
+                <Icon className="h-5 w-5" />
+                {showBadge && (
+                  <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-danger-foreground">
+                    {overdueCount}
+                  </span>
+                )}
+              </span>
+              {n.label}
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setMoreOpen(true)}
+          className={cn("press flex min-w-[60px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-[10px]", moreActive ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}
+        >
+          <span className="relative">
+            <MoreHorizontal className="h-5 w-5" />
+            {overdueCount > 0 && (
+              <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-danger-foreground">
+                {overdueCount}
+              </span>
+            )}
+          </span>
+          المزيد
+        </button>
+      </div>
+      <MobileMoreSheet open={moreOpen} onOpenChange={setMoreOpen} pathname={pathname} overdueCount={overdueCount} />
+    </>
+  );
+}
+
+function MobileMoreSheet({
+  open,
+  onOpenChange,
+  pathname,
+  overdueCount,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pathname: string;
+  overdueCount: number;
+}) {
+  const [query, setQuery] = useState("");
+  const items = useMemo(() => nav.filter((n) => !MOBILE_TABS.includes(n.to)), []);
+  const filtered = useMemo(() => {
+    const q = query.trim();
+    if (!q) return items;
+    return items.filter((n) => n.label.includes(q));
+  }, [items, query]);
+  return (
+    <Sheet open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setQuery(""); }}>
+      <SheetContent side="bottom" className="max-h-[75vh] overflow-y-auto rounded-t-[1.5rem] px-4 pb-8 pt-4">
+        <SheetHeader className="mb-3 text-right">
+          <SheetTitle>كل الأقسام</SheetTitle>
+        </SheetHeader>
+        <div className="relative mb-3">
+          <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="دوّر على قسم…"
+            className="pr-9"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          {filtered.map((n) => {
+            const active = pathname.startsWith(n.to);
+            const Icon = n.icon;
+            const showBadge = n.alertKey && overdueCount > 0;
+            return (
+              <Link
+                key={n.to}
+                to={n.to}
+                onClick={() => onOpenChange(false)}
+                className={cn(
+                  "flex items-center justify-between gap-2 rounded-2xl px-4 py-3 text-sm",
+                  active ? "bg-primary font-semibold text-primary-foreground" : "text-foreground hover:bg-sidebar-accent/70",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  {n.label}
+                  {showBadge && (
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold leading-none text-danger-foreground">
+                      {overdueCount}
+                    </span>
+                  )}
+                </span>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </Link>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="py-6 text-center text-sm text-muted-foreground">مفيش قسم بالاسم ده.</p>
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
+}
 
 function dueOrOverdueCount(
   invoices: Array<{ firstDueDate: string; paid: number; total: number }>,
@@ -157,27 +278,8 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      {/* Mobile top nav */}
-      <div className="glass no-scrollbar fixed inset-x-3 bottom-3 z-40 flex overflow-x-auto rounded-[1.5rem] md:hidden">
-        {nav.map((n) => {
-          const active = n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to);
-          const Icon = n.icon;
-          const showBadge = n.alertKey && overdueCount > 0;
-          return (
-            <Link key={n.to} to={n.to} className={cn("press flex min-w-[68px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-[11px]", active ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}>
-              <span className="relative">
-                <Icon className="w-5 h-5" />
-                {showBadge && (
-                  <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-danger text-danger-foreground text-[9px] font-bold leading-none">
-                    {overdueCount}
-                  </span>
-                )}
-              </span>
-              {n.label}
-            </Link>
-          );
-        })}
-      </div>
+      {/* Mobile bottom nav: 5 core tabs + More sheet */}
+      <MobileBottomBar pathname={location.pathname} overdueCount={overdueCount} />
 
       {/* علامة القمر — ظاهرة دايماً على الموبايل */}
       <div className="fixed left-3 top-3 z-40 md:hidden">
