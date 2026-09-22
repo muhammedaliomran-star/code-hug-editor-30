@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { assertBackupAccess } from "./backup.functions";
 
 /** Tables owned by the signed-in user, in dependency order (parents first). */
 const TABLES = [
@@ -130,6 +131,19 @@ async function currentUserId() {
   return user.id;
 }
 
+/**
+ * Phase 1 (#15): server-side owner/manager gate.
+ * Fail-closed: any gate failure blocks the destructive operation.
+ */
+async function requireBackupAccess(): Promise<void> {
+  try {
+    await assertBackupAccess();
+  } catch (e) {
+    if (e instanceof Error && /المالك أو المدير/.test(e.message)) throw e;
+    throw new Error("تعذر التحقق من صلاحية النسخ — حاول مرة تانية");
+  }
+}
+
 async function ownedIds(table: string, column: string, value: string | string[]) {
   const query = (supabase.from as any)(table).select("id");
   const scoped = Array.isArray(value) ? query.in(column, value) : query.eq(column, value);
@@ -156,6 +170,7 @@ export type RestoreReport = { inserted: number; skipped: number; failed: Array<{
 
 /** Validates and restores a JSON snapshot without allowing ownership to be imported. */
 export async function restoreJsonBackup(value: unknown): Promise<RestoreReport> {
+  await requireBackupAccess();
   const userId = await currentUserId();
   if (!value || typeof value !== "object") throw new Error("ملف النسخة غير صالح");
   const payload = value as Partial<BackupPayload>;
@@ -227,6 +242,7 @@ export async function dataCounts(): Promise<Record<string, number>> {
 
 /** Danger zone: deletes every business record for the signed-in user (settings kept). */
 export async function wipeAllData() {
+  await requireBackupAccess();
   const userId = await currentUserId();
   for (const t of DELETE_ORDER) {
     if (!USER_SCOPED_TABLES.has(t)) continue;

@@ -16,6 +16,7 @@ import { Settings as SettingsIcon, Save, Store, Receipt, Bell, Palette, ShieldCh
 import { toast } from "sonner";
 import { useNavigate } from "@/lib/router-compat";
 import { z } from "zod";
+import { useMyRole } from "@/lib/roles";
 import {
   ShopTab,
   BillingTab,
@@ -88,6 +89,9 @@ const shopSchema = z.object({
 
 function SettingsPage() {
   const { settings, loading } = useShopSettings();
+  // Phase 1 (#15): sellers don't see the backup/restore tab (server gate enforces)
+  const { role } = useMyRole();
+  const showDataTab = (role ?? "owner") !== "seller";
   const navigate = useNavigate();
   const [form, setForm] = useState<ShopSettings>(settings);
   const [busy, setBusy] = useState(false);
@@ -151,7 +155,8 @@ function SettingsPage() {
               { value: "team", label: "الفريق والصلاحيات", icon: Users },
               { value: "integrations", label: "المتجر والشحن", icon: ShoppingBag },
               { value: "account", label: "الحساب والأمان", icon: KeyRound },
-              { value: "data", label: "البيانات والنسخ", icon: Database },
+              // Phase 1 (#15): backup/restore UI is owner+manager only (server gate is the real enforcement)
+              ...(showDataTab ? [{ value: "data", label: "البيانات والنسخ", icon: Database }] : []),
             ].map((tab) => (
               <TabsTrigger
                 key={tab.value}
@@ -194,9 +199,11 @@ function SettingsPage() {
             }}
           />
         </TabsContent>
-        <TabsContent value="data">
-          <DataTab form={form} set={set} />
-        </TabsContent>
+        {showDataTab && (
+          <TabsContent value="data">
+            <DataTab form={form} set={set} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <div className="sticky bottom-4 mt-12 z-20 mx-auto max-w-2xl px-4">
