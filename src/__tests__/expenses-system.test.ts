@@ -283,7 +283,7 @@ describe("tafqeetArabic", () => {
   });
 
   it("uses custom currency name", () => {
-    const result = tafqeetArabic(100, "دولار", "سنت");
+    const result = tafqeetArabic(100.5, "دولار", "سنت");
     expect(result).toContain("دولار");
     expect(result).toContain("سنت");
   });

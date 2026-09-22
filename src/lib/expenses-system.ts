@@ -337,7 +337,6 @@ export function saveRecurringExpenses(list: RecurringExpense[]): void {
 
 export function computeNextDueDate(frequency: RecurringExpense["frequency"], dayOfMonth = 1, fromDateStr?: string): string {
   const base = fromDateStr ? new Date(fromDateStr) : new Date();
-  const now = new Date();
   
   if (frequency === "daily") {
     const next = new Date(base);

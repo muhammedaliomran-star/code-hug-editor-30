@@ -120,7 +120,7 @@ describe("tafqeetCurrency", () => {
   });
 
   it("uses custom currency", () => {
-    const result = tafqeetCurrency(100, "دولار", "سنت");
+    const result = tafqeetCurrency(100.5, "دولار", "سنت");
     expect(result).toContain("دولار");
     expect(result).toContain("سنت");
     expect(result).not.toContain("جنيه");
