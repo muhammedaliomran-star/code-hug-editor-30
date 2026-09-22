@@ -71,7 +71,7 @@ describe("calculateInvoiceFinancials", () => {
     expect(result.subtotal).toBe(10000);
     expect(result.discountPct).toBe(10);
     expect(result.discountAmount).toBe(1000);
-    expect(result.netTotal).toBe(10000);
+    expect(result.netTotal).toBe(9000);
   });
 
   it("applies fixed discount", () => {

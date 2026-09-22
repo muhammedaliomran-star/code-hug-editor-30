@@ -337,7 +337,6 @@ export function saveRecurringExpenses(list: RecurringExpense[]): void {
 
 export function computeNextDueDate(frequency: RecurringExpense["frequency"], dayOfMonth = 1, fromDateStr?: string): string {
   const base = fromDateStr ? new Date(fromDateStr) : new Date();
-  const now = new Date();
   
   if (frequency === "daily") {
     const next = new Date(base);
@@ -352,11 +351,11 @@ export function computeNextDueDate(frequency: RecurringExpense["frequency"], day
   }
   
   if (frequency === "monthly") {
-    let year = now.getFullYear();
-    let month = now.getMonth();
-    
+    let year = base.getFullYear();
+    let month = base.getMonth();
+
     // If target day of this month has already passed, schedule for next month
-    if (now.getDate() > dayOfMonth) {
+    if (base.getDate() > dayOfMonth) {
       month += 1;
       if (month > 11) {
         month = 0;

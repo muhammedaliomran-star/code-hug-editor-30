@@ -404,7 +404,7 @@ export function validateCouponCode(
     return { valid: false, discountAmount: 0, discountPct: 0, errorReason: "هذا الكود معطل حالياً" };
   }
   if (status.status === "expired") {
-    return { valid: false, discountAmount: 0, discountPct: 0, errorReason: "انتهت فترة صلاحية هذا الكود" };
+    return { valid: false, discountAmount: 0, discountPct: 0, errorReason: "انتهت فترة الصلاحية لهذا الكود" };
   }
   if (status.status === "exhausted") {
     return { valid: false, discountAmount: 0, discountPct: 0, errorReason: "تم استنفاد الحد الأقصى لمرات استخدام هذا الكود" };
