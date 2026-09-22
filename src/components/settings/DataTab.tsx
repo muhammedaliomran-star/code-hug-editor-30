@@ -38,8 +38,10 @@ import {
   resetCustomerOpeningBalances,
   dataCounts,
   restoreJsonBackup,
+  validateBackupJson,
   wipeAllData,
 } from "@/lib/backup";
+import { recordAuditLog, type AuditActionType, type AuditSeverity } from "@/lib/audit";
 import { fmt, type AutoBackupFrequency } from "@/lib/store";
 import { TabProps, Section, Field } from "./shared";
 const TABLE_LABELS: Record<string, string> = {
@@ -66,6 +68,13 @@ export function DataTab({ form, set }: TabProps) {
   // Selective resets confirmation state
   const [selectiveResetType, setSelectiveResetType] = useState<"stock" | "balances" | null>(null);
 
+  // Phase 0 (#15): restore preview — validated payload awaiting explicit confirmation
+  const [restorePreview, setRestorePreview] = useState<{
+    payload: unknown;
+    tableCount: number;
+    totalRows: number;
+  } | null>(null);
+
   const load = useCallback(() => {
     dataCounts()
       .then(setCounts)
@@ -74,15 +83,64 @@ export function DataTab({ form, set }: TabProps) {
 
   useEffect(load, [load]);
 
-  const run = async (key: string, fn: () => Promise<unknown>, ok: string) => {
+  const run = async (
+    key: string,
+    fn: () => Promise<unknown>,
+    ok: string,
+    audit?: { action: AuditActionType; title: string; severity?: AuditSeverity; details?: string },
+  ) => {
     setBusy(key);
     try {
       await fn();
       toast.success(ok);
+      if (audit) {
+        try {
+          await recordAuditLog({
+            action: audit.action,
+            module: "settings",
+            severity: audit.severity ?? "info",
+            title: audit.title,
+            details: audit.details,
+          });
+        } catch {
+          // Audit is best-effort — never block the user flow
+        }
+      }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "حصلت مشكلة");
     } finally {
       setBusy(null);
+    }
+  };
+
+  // Phase 0 (#15): audited restore with explicit confirmation
+  const confirmRestore = async () => {
+    if (!restorePreview || busy !== null) return;
+    setBusy("restore");
+    try {
+      const report = await restoreJsonBackup(restorePreview.payload);
+      toast.success(
+        `تم الاسترجاع: ${report.inserted} سجل، وتم تخطي ${report.skipped} سجل`,
+      );
+      if (report.failed.length > 0)
+        toast.error(`تعذر استرجاع ${report.failed.length} سجل`);
+      try {
+        await recordAuditLog({
+          action: "BACKUP_RESTORE",
+          module: "settings",
+          severity: "warning",
+          title: "استرجاع نسخة احتياطية من ملف JSON",
+          details: `جداول: ${restorePreview.tableCount}، مسترجعة: ${report.inserted}، متخطاة: ${report.skipped}، فاشلة: ${report.failed.length}`,
+        });
+      } catch {
+        // best-effort
+      }
+      load();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "تعذر استرجاع النسخة");
+    } finally {
+      setBusy(null);
+      setRestorePreview(null);
     }
   };
 
@@ -175,7 +233,12 @@ export function DataTab({ form, set }: TabProps) {
                 variant="secondary"
                 className="h-11 gap-2 rounded-2xl bg-foreground/5 hover:bg-foreground/10 border-none transition-all font-bold text-xs"
                 disabled={busy !== null}
-                onClick={() => run("json", downloadJsonBackup, "تم تنزيل النسخة الاحتياطية (JSON)")}
+                onClick={() =>
+                  run("json", downloadJsonBackup, "تم تنزيل النسخة الاحتياطية (JSON)", {
+                    action: "BACKUP_EXPORT",
+                    title: "تنزيل نسخة احتياطية كاملة (JSON)",
+                  })
+                }
               >
                 <FileJson className="w-4 h-4 opacity-70" /> نسخة كاملة JSON
               </Button>
@@ -183,7 +246,12 @@ export function DataTab({ form, set }: TabProps) {
                 variant="secondary"
                 className="h-11 gap-2 rounded-2xl bg-foreground/5 hover:bg-foreground/10 border-none transition-all font-bold text-xs"
                 disabled={busy !== null}
-                onClick={() => run("xlsx", downloadExcelBackup, "تم تنزيل ملف Excel الشامل")}
+                onClick={() =>
+                  run("xlsx", downloadExcelBackup, "تم تنزيل ملف Excel الشامل", {
+                    action: "BACKUP_EXPORT",
+                    title: "تنزيل ملف Excel مجمّع",
+                  })
+                }
               >
                 <FileSpreadsheet className="w-4 h-4 opacity-70 text-emerald-500" /> ملف Excel مجمّع
               </Button>
@@ -194,7 +262,10 @@ export function DataTab({ form, set }: TabProps) {
               className="h-11 gap-2 rounded-2xl border-emerald-500/20 bg-emerald-500/[0.04] hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-xs"
               disabled={busy !== null}
               onClick={() =>
-                run("audit", downloadAccountingAuditLog, "تم تنزيل كشف المراجعة المحاسبية باللغة العربية")
+                run("audit", downloadAccountingAuditLog, "تم تنزيل كشف المراجعة المحاسبية باللغة العربية", {
+                  action: "BACKUP_EXPORT",
+                  title: "تنزيل كشف المراجعة المحاسبية",
+                })
               }
             >
               <FileSpreadsheet className="w-4 h-4" /> كشف المراجعة المحاسبية الشامل (Arabic Audit Log)
@@ -210,15 +281,20 @@ export function DataTab({ form, set }: TabProps) {
                 event.target.value = "";
                 if (!file) return;
                 try {
-                  const report = await restoreJsonBackup(JSON.parse(await file.text()));
-                  toast.success(
-                    `تم الاسترجاع: ${report.inserted} سجل، وتم تخطي ${report.skipped} سجل`,
-                  );
-                  if (report.failed.length > 0)
-                    toast.error(`تعذر استرجاع ${report.failed.length} سجل`);
-                  load();
+                  const payload = JSON.parse(await file.text());
+                  const validation = validateBackupJson(payload);
+                  if (!validation.valid) {
+                    toast.error(validation.error ?? "ملف النسخة غير صالح");
+                    return;
+                  }
+                  // Phase 0 (#15): preview first — actual restore happens after explicit confirmation
+                  setRestorePreview({
+                    payload,
+                    tableCount: validation.tableCount ?? 0,
+                    totalRows: validation.totalRows ?? 0,
+                  });
                 } catch (error: unknown) {
-                  toast.error(error instanceof Error ? error.message : "تعذر استرجاع النسخة");
+                  toast.error(error instanceof Error ? error.message : "تعذر قراءة ملف النسخة");
                 }
               }}
             />
@@ -294,15 +370,54 @@ export function DataTab({ form, set }: TabProps) {
               className="rounded-xl bg-amber-500 text-black font-black"
               onClick={async () => {
                 if (selectiveResetType === "stock") {
-                  await run("reset-stock", resetInventoryStock, "تم تصفير كميات المخزون بنجاح");
+                  await run("reset-stock", resetInventoryStock, "تم تصفير كميات المخزون بنجاح", {
+                    action: "DATA_RESET",
+                    severity: "warning",
+                    title: "تصفير كميات المخزون لـ 0",
+                  });
                 } else if (selectiveResetType === "balances") {
-                  await run("reset-balances", resetCustomerOpeningBalances, "تم تصفير الأرصدة الافتتاحية");
+                  await run("reset-balances", resetCustomerOpeningBalances, "تم تصفير الأرصدة الافتتاحية", {
+                    action: "DATA_RESET",
+                    severity: "warning",
+                    title: "تصفير الأرصدة الافتتاحية للعملاء",
+                  });
                 }
                 setSelectiveResetType(null);
                 load();
               }}
             >
               تأكيد التصفير
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* مودال تأكيد الاسترجاع (Phase 0 #15) */}
+      <AlertDialog open={restorePreview !== null} onOpenChange={(v) => !v && busy === null && setRestorePreview(null)}>
+        <AlertDialogContent dir="rtl" className="rounded-[2.5rem] p-6 max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-right text-lg font-black">
+              تأكيد استرجاع النسخة الاحتياطية؟
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-right text-xs leading-relaxed text-muted-foreground">
+              الملف يحتوي على{" "}
+              <strong className="text-foreground">{restorePreview?.tableCount ?? 0} جدول</strong> و{" "}
+              <strong className="text-foreground">{restorePreview?.totalRows ?? 0} سجل</strong>.
+              <br />
+              سيتم دمج البيانات في حسابك الحالي — البيانات الموجودة لن تُستبدل،
+              ولن تُستورد أي بيانات ملكية من حساب آخر.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 gap-2">
+            <AlertDialogCancel className="rounded-xl font-bold" disabled={busy !== null}>
+              إلغاء
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-xl bg-primary font-black"
+              disabled={busy !== null}
+              onClick={confirmRestore}
+            >
+              {busy === "restore" ? "جاري الاسترجاع…" : "تأكيد الاسترجاع"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -339,7 +454,11 @@ export function DataTab({ form, set }: TabProps) {
               disabled={confirmText.trim() !== "حذف" || busy !== null}
               className="rounded-2xl bg-danger h-12 px-8 font-black text-white transition-all hover:bg-danger/90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-danger/20"
               onClick={async () => {
-                await run("wipe", wipeAllData, "تم حذف جميع بيانات النشاط بنجاح");
+                await run("wipe", wipeAllData, "تم حذف جميع بيانات النشاط بنجاح", {
+                  action: "DATA_WIPE",
+                  severity: "critical",
+                  title: "مسح كافة البيانات نهائياً (Factory Reset)",
+                });
                 setConfirmOpen(false);
                 load();
               }}

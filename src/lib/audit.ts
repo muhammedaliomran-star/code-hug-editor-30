@@ -22,7 +22,11 @@ export type AuditActionType =
   | "SHIFT_OPEN"
   | "SHIFT_CLOSE"
   | "SETTINGS_UPDATE"
-  | "PRICE_OVERRIDE";
+  | "PRICE_OVERRIDE"
+  | "BACKUP_EXPORT"
+  | "BACKUP_RESTORE"
+  | "DATA_WIPE"
+  | "DATA_RESET";
 
 export type AuditModule =
   | "invoices"
@@ -351,6 +355,10 @@ export const ACTION_TYPE_META: Record<
   SHIFT_CLOSE: { label: "إغلاق وردية وجرد الدرج", module: "staff", severity: "warning", iconName: "Lock" },
   SETTINGS_UPDATE: { label: "تعديل إعدادات النظام الحساسة", module: "settings", severity: "danger", iconName: "Sliders" },
   PRICE_OVERRIDE: { label: "تغيير سعر بيع مباشر في الكاشير", module: "invoices", severity: "danger", iconName: "AlertTriangle" },
+  BACKUP_EXPORT: { label: "تنزيل نسخة احتياطية", module: "settings", severity: "info", iconName: "Download" },
+  BACKUP_RESTORE: { label: "استرجاع نسخة احتياطية", module: "settings", severity: "warning", iconName: "Upload" },
+  DATA_WIPE: { label: "مسح كافة البيانات نهائياً", module: "settings", severity: "critical", iconName: "Trash2" },
+  DATA_RESET: { label: "تصفير انتقائي للبيانات", module: "settings", severity: "warning", iconName: "RotateCcw" },
 };
 
 export const MODULE_META: Record<AuditModule, { label: string; color: string }> = {
