@@ -66,7 +66,7 @@ export async function syncOfflinePayments(onSynced?: (count: number) => void): P
 
   for (const item of queue) {
     try {
-      const { error: payErr } = await (supabase as any).rpc("record_invoice_payment", {
+      const { error: payErr } = await supabase.rpc("record_invoice_payment", {
         p_invoice_id: item.invoiceId,
         p_amount: item.amount,
         p_payment_id: item.id,

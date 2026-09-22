@@ -460,7 +460,7 @@ function NewInvoicePage() {
 
       // Add Shipment if carrier selected
       if (shippingCarrierId && invData?.id) {
-        const { error: shipErr } = await (supabase.from as any)("shipments").insert({
+        const { error: shipErr } = await supabase.from("shipments").insert({
           user_id: await uid(),
           invoice_id: invData.id,
           carrier_id: shippingCarrierId,

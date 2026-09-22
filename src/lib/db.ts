@@ -108,11 +108,11 @@ async function fetchAll() {
     supabase.from("warehouse_items").select("*").order("name"),
     supabase.from("return_records").select("*").order("created_at", { ascending: false }),
     supabase.from("return_items").select("*").order("created_at"),
-    (supabase.from as any)("branches").select("*").order("name"),
-    (supabase.from as any)("payment_vouchers").select("*").order("voucher_date", { ascending: false }),
-    (supabase.from as any)("shipping_carriers").select("*").order("name"),
-    (supabase.from as any)("shipping_zones").select("*").order("name"),
-    (supabase.from as any)("shipments").select("*").order("created_at", { ascending: false }),
+    supabase.from("branches").select("*").order("name"),
+    supabase.from("payment_vouchers").select("*").order("voucher_date", { ascending: false }),
+    supabase.from("shipping_carriers").select("*").order("name"),
+    supabase.from("shipping_zones").select("*").order("name"),
+    supabase.from("shipments").select("*").order("created_at", { ascending: false }),
   ]);
 
   const tableNames = ["customers", "invoices", "payments", "expenses", "invoice_items", "suppliers", "purchases", "purchase_items", "supplier_payments", "stock_items", "warehouse_items", "return_records", "return_items", "branches", "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments"];
@@ -271,7 +271,7 @@ export async function uid() {
 
 async function recomputeInvoicePaid(invoiceId: string) {
   try {
-    const { error } = await (supabase as any).rpc("recalculate_invoice_paid", { p_invoice_id: invoiceId });
+    const { error } = await supabase.rpc("recalculate_invoice_paid", { p_invoice_id: invoiceId });
     if (!error) return;
   } catch {
     // Continue to fallback
@@ -486,7 +486,7 @@ export const db = {
 
   async addBranch(b: Omit<Branch, "id" | "createdAt">) {
     const user_id = await uid();
-    const { data, error } = await (supabase.from as any)("branches").insert({
+    const { data, error } = await supabase.from("branches").insert({
       user_id, name: b.name, location: b.location, phone: b.phone,
       manager_name: b.managerName, is_main: b.isMain
     }).select("id").single();
@@ -501,19 +501,19 @@ export const db = {
     if (patch.phone !== undefined) upd.phone = patch.phone;
     if (patch.managerName !== undefined) upd.manager_name = patch.managerName;
     if (patch.isMain !== undefined) upd.is_main = patch.isMain;
-    const { error } = await (supabase.from as any)("branches").update(upd).eq("id", id);
+    const { error } = await supabase.from("branches").update(upd).eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
   async removeBranch(id: string) {
-    const { error } = await (supabase.from as any)("branches").delete().eq("id", id);
+    const { error } = await supabase.from("branches").delete().eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
 
   async addPaymentVoucher(v: Omit<PaymentVoucher, "id" | "createdAt">) {
     const user_id = await uid();
-    const { error } = await (supabase.from as any)("payment_vouchers").insert({
+    const { error } = await supabase.from("payment_vouchers").insert({
       user_id, customer_id: v.customerId, supplier_id: v.supplierId,
       amount: v.amount, type: v.type, payment_method: v.paymentMethod,
       description: v.description, voucher_date: v.voucherDate
@@ -522,7 +522,7 @@ export const db = {
     await fetchAll();
   },
   async removePaymentVoucher(id: string) {
-    const { error } = await (supabase.from as any)("payment_vouchers").delete().eq("id", id);
+    const { error } = await supabase.from("payment_vouchers").delete().eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
@@ -575,17 +575,17 @@ export const db = {
     await fetchAll();
   },
   async updatePayment(id: string, amount: number) {
-    const { error } = await (supabase as any).rpc("update_invoice_payment", { p_payment_id: id, p_amount: amount });
+    const { error } = await supabase.rpc("update_invoice_payment", { p_payment_id: id, p_amount: amount });
     if (error) throw error;
     await fetchAll();
   },
   async removePayment(id: string) {
-    const { error } = await (supabase as any).rpc("delete_invoice_payment", { p_payment_id: id });
+    const { error } = await supabase.rpc("delete_invoice_payment", { p_payment_id: id });
     if (error) throw error;
     await fetchAll();
   },
   async recordPayment(invoiceId: string, amount: number) {
-    const { error } = await (supabase as any).rpc("record_invoice_payment", {
+    const { error } = await supabase.rpc("record_invoice_payment", {
       p_invoice_id: invoiceId,
       p_amount: amount,
       p_payment_id: crypto.randomUUID(),
@@ -654,7 +654,7 @@ export const db = {
     await fetchAll();
   },
   async removePurchase(id: string) {
-    const { error } = await (supabase as any).rpc("delete_purchase_with_inventory", { p_purchase_id: id });
+    const { error } = await supabase.rpc("delete_purchase_with_inventory", { p_purchase_id: id });
     if (error) throw error;
     await fetchAll();
   },
@@ -910,7 +910,7 @@ export const db = {
     items: Array<{ name: string; unitPrice: number; quantity: number }>;
   }) {
     if (r.type === "sale" && r.invoiceId) {
-      const { error } = await (supabase as any).rpc("create_sale_return", {
+      const { error } = await supabase.rpc("create_sale_return", {
         p_invoice_id: r.invoiceId,
         p_reason: r.reason?.trim() || "مرتجع بيع",
         p_items: r.items.map((item) => ({ name: item.name, unit_price: item.unitPrice, quantity: item.quantity })),
@@ -952,7 +952,7 @@ export const db = {
   },
   async addCarrier(c: Omit<ShipmentCarrier, "id" | "createdAt">) {
     const user_id = await uid();
-    const { error } = await (supabase.from as any)("shipping_carriers").insert({
+    const { error } = await supabase.from("shipping_carriers").insert({
       user_id, name: c.name, contact_person: c.contactPerson, phone: c.phone,
       email: c.email, base_cost: c.baseCost, active: c.active
     });
@@ -967,13 +967,13 @@ export const db = {
     if (patch.email !== undefined) upd.email = patch.email;
     if (patch.baseCost !== undefined) upd.base_cost = patch.baseCost;
     if (patch.active !== undefined) upd.active = patch.active;
-    const { error } = await (supabase.from as any)("shipping_carriers").update(upd).eq("id", id);
+    const { error } = await supabase.from("shipping_carriers").update(upd).eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
   async addZone(z: Omit<ShippingZone, "id" | "createdAt">) {
     const user_id = await uid();
-    const { error } = await (supabase.from as any)("shipping_zones").insert({
+    const { error } = await supabase.from("shipping_zones").insert({
       user_id, name: z.name, carrier_id: z.carrierId,
       delivery_cost: z.deliveryCost, estimated_days: z.estimatedDays,
     });
@@ -986,12 +986,12 @@ export const db = {
     if (patch.carrierId !== undefined) upd.carrier_id = patch.carrierId;
     if (patch.deliveryCost !== undefined) upd.delivery_cost = patch.deliveryCost;
     if (patch.estimatedDays !== undefined) upd.estimated_days = patch.estimatedDays;
-    const { error } = await (supabase.from as any)("shipping_zones").update(upd).eq("id", id);
+    const { error } = await supabase.from("shipping_zones").update(upd).eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
   async removeZone(id: string) {
-    const { error } = await (supabase.from as any)("shipping_zones").delete().eq("id", id);
+    const { error } = await supabase.from("shipping_zones").delete().eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
@@ -1012,7 +1012,7 @@ export const db = {
     if (s.pieces) moneyPatch.pieces = s.pieces;
     if (s.expectedDeliveryDate) moneyPatch.expected_delivery_date = s.expectedDeliveryDate;
     if (created?.id && Object.keys(moneyPatch).length) {
-      await (supabase.from as any)("shipments").update(moneyPatch).eq("id", created.id);
+      await supabase.from("shipments").update(moneyPatch).eq("id", created.id);
     }
     await fetchAll();
   },
@@ -1035,7 +1035,7 @@ export const db = {
     if (patch.expectedDeliveryDate !== undefined) upd.expected_delivery_date = patch.expectedDeliveryDate;
     if (patch.notes !== undefined) upd.notes = patch.notes;
     if (Object.keys(upd).length === 0) return;
-    const { error } = await (supabase.from as any)("shipments").update(upd).eq("id", id);
+    const { error } = await supabase.from("shipments").update(upd).eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
@@ -1054,12 +1054,12 @@ export const db = {
     return { ok, errors };
   },
   async bulkAssignCarrier(ids: string[], carrierId: string) {
-    const { error } = await (supabase.from as any)("shipments").update({ carrier_id: carrierId }).in("id", ids);
+    const { error } = await supabase.from("shipments").update({ carrier_id: carrierId }).in("id", ids);
     if (error) throw error;
     await fetchAll();
   },
   async settleCarrierCollections(carrierId: string) {
-    const { data, error } = await (supabase as any).rpc("settle_carrier_collections", { p_carrier_id: carrierId });
+    const { data, error } = await supabase.rpc("settle_carrier_collections", { p_carrier_id: carrierId });
     if (error) throw error;
     await fetchAll();
     return Number(data ?? 0);

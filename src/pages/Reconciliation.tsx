@@ -92,7 +92,7 @@ export default function Reconciliation() {
   const loadMovements = async () => {
     try {
       setLoadingMovements(true);
-      const { data: rows, error } = await (supabase.from as any)("stock_movements").select("stock_item_id,quantity");
+      const { data: rows, error } = await supabase.from("stock_movements").select("stock_item_id,quantity");
       if (error) {
         console.error("[stock_movements] Load error:", error.message);
         toast.error("فشل تحميل حركات المخزون", { description: error.message });

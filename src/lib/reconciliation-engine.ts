@@ -28,7 +28,7 @@ export async function saveAuditRun(
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
   if (!userId) return null;
-  const { data: row, error } = await (supabase.from as any)("reconciliation_audit_runs")
+  const { data: row, error } = await supabase.from("reconciliation_audit_runs")
     .insert({
       user_id: userId,
       health_score: summary.healthScore,
@@ -51,7 +51,7 @@ export async function saveAuditRun(
 }
 
 export async function getAuditRuns(limit = 30): Promise<AuditRunRecord[]> {
-  const { data: rows, error } = await (supabase.from as any)("reconciliation_audit_runs")
+  const { data: rows, error } = await supabase.from("reconciliation_audit_runs")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -60,7 +60,7 @@ export async function getAuditRuns(limit = 30): Promise<AuditRunRecord[]> {
 }
 
 export async function deleteAuditRun(id: string): Promise<void> {
-  await (supabase.from as any)("reconciliation_audit_runs").delete().eq("id", id);
+  await supabase.from("reconciliation_audit_runs").delete().eq("id", id);
 }
 
 function mapAuditRun(r: any): AuditRunRecord {
@@ -719,7 +719,7 @@ export async function executeReconciliationFix(finding: ReconciliationFinding): 
 
     if (finding.fixType === "settle_shipment") {
       const settledAt = new Date().toISOString();
-      const { error } = await (supabase.from as any)("shipments")
+      const { error } = await supabase.from("shipments")
         .update({ collection_status: "settled", settled_at: settledAt })
         .eq("id", finding.targetId);
       if (error) throw error;
@@ -776,7 +776,7 @@ export async function executeAutoFixAll(findings: ReconciliationFinding[]): Prom
         await db.updateInvoiceStatus(finding.targetId, "pending");
         successCount++;
       } else if (finding.fixType === "settle_shipment") {
-        await (supabase.from as any)("shipments")
+        await supabase.from("shipments")
           .update({ collection_status: "settled", settled_at: new Date().toISOString() })
           .eq("id", finding.targetId);
         successCount++;

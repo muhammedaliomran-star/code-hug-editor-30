@@ -168,7 +168,6 @@ export function LicenseTab() {
               { label: "نقاط البيع والكاشير السريع", ok: license.modules.allowPos },
               { label: "إدارة المخازن والباركود", ok: license.modules.allowWarehouse },
               { label: "نظام الأقساط والديون", ok: license.modules.allowInstallments },
-              { label: "المتجر الإلكتروني المدمج", ok: license.modules.allowStorefront },
               { label: "إرسال إيصالات واتساب", ok: license.modules.allowWhatsApp },
               { label: "الربط متعدد الفروع", ok: license.modules.allowMultiBranch },
             ].map((mod, idx) => (

@@ -57,7 +57,7 @@ const map = (r: Row): DeliveryAttempt => ({
 });
 
 export async function loadDeliveryAttempts(shipmentId?: string): Promise<DeliveryAttempt[]> {
-  let query = (supabase.from as any)("delivery_attempts").select("*").order("created_at", { ascending: false });
+  let query = supabase.from("delivery_attempts").select("*").order("created_at", { ascending: false });
   if (shipmentId) query = query.eq("shipment_id", shipmentId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
@@ -74,7 +74,7 @@ export async function addDeliveryAttempt(input: {
   notes?: string;
 }): Promise<DeliveryAttempt> {
   const { data: auth } = await supabase.auth.getUser();
-  const { data, error } = await (supabase.from as any)("delivery_attempts")
+  const { data, error } = await supabase.from("delivery_attempts")
     .insert({
       user_id: auth.user?.id,
       shipment_id: input.shipmentId,
@@ -92,6 +92,6 @@ export async function addDeliveryAttempt(input: {
 }
 
 export async function deleteDeliveryAttempt(id: string): Promise<void> {
-  const { error } = await (supabase.from as any)("delivery_attempts").delete().eq("id", id);
+  const { error } = await supabase.from("delivery_attempts").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }

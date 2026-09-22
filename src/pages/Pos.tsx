@@ -421,7 +421,7 @@ function PosPage() {
       const itemNotes = `${summary}${notes ? ` — ${notes}` : ""}`;
 
       // Insert Invoice
-      const { data: invData, error: invErr } = await (supabase.from as any)("invoices").insert({
+      const { data: invData, error: invErr } = await supabase.from("invoices").insert({
         user_id: await uid(),
         customer_id: targetCustId,
         total: total,
@@ -437,6 +437,7 @@ function PosPage() {
       }).select("id, user_id").single();
 
       if (invErr) throw invErr;
+      if (!invData) throw new Error("تعذر إنشاء الفاتورة");
 
       // ختم الفاتورة بالفرع النشط
       linkInvoiceToBranch(invData.id, resolveStampBranchId(data.branches));
@@ -531,7 +532,7 @@ function PosPage() {
       const isFullyPaid = split.credit === 0;
 
       // Insert Invoice
-      const { data: invData, error: invErr } = await (supabase.from as any)("invoices").insert({
+      const { data: invData, error: invErr } = await supabase.from("invoices").insert({
         user_id: await uid(),
         customer_id: targetCustId,
         total: total,
@@ -547,6 +548,7 @@ function PosPage() {
       }).select("id, user_id").single();
 
       if (invErr) throw invErr;
+      if (!invData) throw new Error("تعذر إنشاء الفاتورة");
 
       // ختم الفاتورة بالفرع النشط
       linkInvoiceToBranch(invData.id, resolveStampBranchId(data.branches));

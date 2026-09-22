@@ -43,7 +43,7 @@ function mapRow(row: SettlementRow): CarrierSettlementTransaction {
 
 /** تحميل كل حركات التوريد والتسوية من قاعدة البيانات (مش من المتصفح). */
 export async function loadCarrierTransactions(carrierId?: string): Promise<CarrierSettlementTransaction[]> {
-  let query = (supabase.from as any)("carrier_settlements").select("*").order("settled_on", { ascending: false });
+  let query = supabase.from("carrier_settlements").select("*").order("settled_on", { ascending: false });
   if (carrierId) query = query.eq("carrier_id", carrierId);
   const { data, error } = await query;
   if (error) throw new Error(error.message);
