@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import AddProduct from "@/pages/AddProduct";
 import { requireAuth } from "@/lib/route-guards";
 
-export const Route = createFileRoute("/inventory_/new")({
+export const Route = createFileRoute("/inventory/new")({
   ssr: false,
   beforeLoad: requireAuth,
   component: AddProduct,
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/inventory_/new")({
       { property: "og:title", content: "إضافة منتج جديد — سِجلّي" },
       { property: "og:description", content: "أضف منتجًا جديدًا بالتسعير والباركود وحساب الربح الفوري." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/inventory/new" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "إضافة منتج جديد — سِجلّي" },
       { name: "twitter:description", content: "أضف منتجًا جديدًا بالتسعير والباركود وحساب الربح الفوري." },

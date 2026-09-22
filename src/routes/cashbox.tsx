@@ -1,9 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { requireAuth } from '@/lib/route-guards';
+import { appRoute } from '@/lib/route-meta';
 import CashboxPage from '@/pages/Cashbox';
 
 export const Route = createFileRoute('/cashbox')({
-  ssr: false,
-  beforeLoad: requireAuth,
+  ...appRoute({
+    title: "الصندوق والخزينة",
+    description: "متابعة أرصدة الخزن والحركات والتحويلات الداخلية.",
+    path: "/cashbox",
+  }),
   component: CashboxPage,
 });

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import NewInvoice from "@/pages/NewInvoice";
 import { requireAuth } from "@/lib/route-guards";
 
-export const Route = createFileRoute("/invoices_/new")({
+export const Route = createFileRoute("/invoices/new")({
   ssr: false,
   beforeLoad: requireAuth,
   component: NewInvoice,
@@ -14,6 +14,7 @@ export const Route = createFileRoute("/invoices_/new")({
       { property: "og:title", content: "إنشاء فاتورة جديدة — سِجلّي" },
       { property: "og:description", content: "أنشئ فاتورة بيع نقدي أو أقساط بمساحة كاملة وملخص فوري للربح." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: "/invoices/new" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "إنشاء فاتورة جديدة — سِجلّي" },
       { name: "twitter:description", content: "أنشئ فاتورة بيع نقدي أو أقساط بمساحة كاملة وملخص فوري للربح." },

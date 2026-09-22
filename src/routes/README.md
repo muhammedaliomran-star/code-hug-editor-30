@@ -19,3 +19,28 @@ is `src/routes/__root.tsx`.
 | `__root.tsx` | app shell — wraps every page; preserve `<Outlet />` |
 
 `routeTree.gen.ts` is auto-generated. Don't edit it by hand.
+
+## Route template (#16)
+
+Authenticated app pages MUST use the shared template — never hand-write
+`ssr`/`beforeLoad`/`head`:
+
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { appRoute } from "@/lib/route-meta";
+import MyPage from "@/pages/MyPage";
+
+export const Route = createFileRoute("/mypage")({
+  ...appRoute({ title: "اسم الصفحة", description: "...", path: "/mypage" }),
+  component: MyPage,
+});
+```
+
+The template sets `ssr: false`, `beforeLoad: requireAuth`, and a complete
+head (title + description + `noindex, nofollow` + OpenGraph + Twitter +
+canonical). Keep the `_` character out of file names — it is a literal
+(`inventory.new.tsx`, never `inventory_.new.tsx`). One URL = one file;
+duplicates (`driver.tsx` vs `courier.tsx`) are deleted, not aliased.
+
+Public routes (landing, auth, legal, kiosks like `/courier`, `/receipt/$token`)
+keep custom heads and stay `noindex` unless the page is meant for search.

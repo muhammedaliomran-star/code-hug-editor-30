@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import BranchesPage from "@/pages/Branches";
-import { requireAuth } from "@/lib/route-guards";
+import { appRoute } from "@/lib/route-meta";
 
 export const Route = createFileRoute("/branches")({
-  ssr: false,
-  beforeLoad: requireAuth,
+  ...appRoute({
+    title: "الفروع",
+    description: "إدارة فروع المحل وبيانات كل فرع.",
+    path: "/branches",
+  }),
   component: BranchesPage,
 });
