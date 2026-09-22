@@ -76,6 +76,29 @@ create table if not exists public.shifts (
   updated_at timestamptz not null default now()
 );
 
+-- The table may already exist live without some columns (created
+-- out-of-band). Add every column the sync payloads use, idempotently —
+-- otherwise CREATE INDEX (updated_at) below fails and rolls back everything.
+alter table public.shifts add column if not exists user_id uuid;
+alter table public.shifts add column if not exists shift_number integer not null default 0;
+alter table public.shifts add column if not exists cashier_name text;
+alter table public.shifts add column if not exists opened_at timestamptz;
+alter table public.shifts add column if not exists closed_at timestamptz;
+alter table public.shifts add column if not exists opening_balance numeric not null default 0;
+alter table public.shifts add column if not exists expected_cash numeric not null default 0;
+alter table public.shifts add column if not exists actual_cash numeric not null default 0;
+alter table public.shifts add column if not exists cash_sales numeric not null default 0;
+alter table public.shifts add column if not exists electronic_sales numeric not null default 0;
+alter table public.shifts add column if not exists installment_sales numeric not null default 0;
+alter table public.shifts add column if not exists expenses numeric not null default 0;
+alter table public.shifts add column if not exists purchases numeric not null default 0;
+alter table public.shifts add column if not exists returns numeric not null default 0;
+alter table public.shifts add column if not exists variance numeric not null default 0;
+alter table public.shifts add column if not exists status text not null default 'open';
+alter table public.shifts add column if not exists notes text;
+alter table public.shifts add column if not exists created_at timestamptz not null default now();
+alter table public.shifts add column if not exists updated_at timestamptz not null default now();
+
 alter table public.shifts enable row level security;
 
 drop policy if exists "Users manage own shifts" on public.shifts;
