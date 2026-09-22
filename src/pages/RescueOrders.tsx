@@ -6,7 +6,7 @@ import { Reveal } from "@/components/Reveal";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useDB, type ShipmentStatus } from "@/lib/store";
+import { db, useDB, type ShipmentStatus } from "@/lib/store";
 import { AlertTriangle, CheckCircle2, ChevronLeft, MessageCircle, Phone, RefreshCw, Search, ShieldAlert, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { renderRescuePending, waLink, trackUrlFor } from "@/lib/whatsapp-templates";
@@ -19,6 +19,7 @@ const ageInDays = (date: string) => Math.max(0, Math.floor((Date.now() - new Dat
 
 export default function RescueOrders() {
   const { shipments } = useDB();
+  const { settings } = useShopSettings();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "urgent" | "shipment">("all");
 
