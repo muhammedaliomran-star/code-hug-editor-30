@@ -22,12 +22,10 @@ import { Route as CustomersRouteImport } from './routes/customers'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as DeliveryRouteImport } from './routes/delivery'
 import { Route as DiscountsRouteImport } from './routes/discounts'
-import { Route as DriverRouteImport } from './routes/driver'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as LandingRouteImport } from './routes/landing'
-import { Route as OrderTrackingRouteImport } from './routes/order-tracking'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as PaymentsRouteImport } from './routes/payments'
 import { Route as PosRouteImport } from './routes/pos'
@@ -39,28 +37,18 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReturnsRouteImport } from './routes/returns'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as StaffRouteImport } from './routes/staff'
-import { Route as StorefrontRouteImport } from './routes/storefront'
 import { Route as SuppliersRouteImport } from './routes/suppliers'
 import { Route as SupportRouteImport } from './routes/support'
 import { Route as TermsRouteImport } from './routes/terms'
-import { Route as TrackRouteImport } from './routes/track'
 import { Route as WarehouseRouteImport } from './routes/warehouse'
-import { Route as InventoryNewRouteImport } from './routes/inventory_.new'
-import { Route as InvoicesNewRouteImport } from './routes/invoices_.new'
+import { Route as InventoryNewRouteImport } from './routes/inventory.new'
+import { Route as InvoicesNewRouteImport } from './routes/invoices.new'
 import { Route as PurchasesIndexRouteImport } from './routes/purchases/index'
 import { Route as PurchasesNewRouteImport } from './routes/purchases/new'
 import { Route as ReceiptTokenRouteImport } from './routes/receipt.$token'
-import { Route as ReportsIndexRouteImport } from './routes/reports/index'
 import { Route as ShippingIndexRouteImport } from './routes/shipping.index'
-import { Route as ShippingCourierRouteImport } from './routes/shipping.courier'
 import { Route as ShippingDayRouteImport } from './routes/shipping.day'
 import { Route as ShippingRescueRouteImport } from './routes/shipping.rescue'
-import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
-import { Route as StorefrontAnalyticsRouteImport } from './routes/storefront.analytics'
-import { Route as StorefrontCatalogRouteImport } from './routes/storefront.catalog'
-import { Route as StorefrontOperationsRouteImport } from './routes/storefront.operations'
-import { Route as StorefrontSettingsRouteImport } from './routes/storefront.settings'
-import { Route as ShopSlugProductRouteImport } from './routes/shop.$slug.$product'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -127,11 +115,6 @@ const DiscountsRoute = DiscountsRouteImport.update({
   path: '/discounts',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DriverRoute = DriverRouteImport.update({
-  id: '/driver',
-  path: '/driver',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ExpensesRoute = ExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
@@ -150,11 +133,6 @@ const InvoicesRoute = InvoicesRouteImport.update({
 const LandingRoute = LandingRouteImport.update({
   id: '/landing',
   path: '/landing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OrderTrackingRoute = OrderTrackingRouteImport.update({
-  id: '/order-tracking',
-  path: '/order-tracking',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerRoute = OwnerRouteImport.update({
@@ -212,11 +190,6 @@ const StaffRoute = StaffRouteImport.update({
   path: '/staff',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StorefrontRoute = StorefrontRouteImport.update({
-  id: '/storefront',
-  path: '/storefront',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SuppliersRoute = SuppliersRouteImport.update({
   id: '/suppliers',
   path: '/suppliers',
@@ -232,25 +205,20 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TrackRoute = TrackRouteImport.update({
-  id: '/track',
-  path: '/track',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const WarehouseRoute = WarehouseRouteImport.update({
   id: '/warehouse',
   path: '/warehouse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InventoryNewRoute = InventoryNewRouteImport.update({
-  id: '/inventory_/new',
-  path: '/inventory/new',
-  getParentRoute: () => rootRouteImport,
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => InventoryRoute,
 } as any)
 const InvoicesNewRoute = InvoicesNewRouteImport.update({
-  id: '/invoices_/new',
-  path: '/invoices/new',
-  getParentRoute: () => rootRouteImport,
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => InvoicesRoute,
 } as any)
 const PurchasesIndexRoute = PurchasesIndexRouteImport.update({
   id: '/purchases/',
@@ -267,19 +235,9 @@ const ReceiptTokenRoute = ReceiptTokenRouteImport.update({
   path: '/receipt/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReportsIndexRoute = ReportsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ReportsRoute,
-} as any)
 const ShippingIndexRoute = ShippingIndexRouteImport.update({
   id: '/shipping/',
   path: '/shipping/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShippingCourierRoute = ShippingCourierRouteImport.update({
-  id: '/shipping/courier',
-  path: '/shipping/courier',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShippingDayRoute = ShippingDayRouteImport.update({
@@ -291,36 +249,6 @@ const ShippingRescueRoute = ShippingRescueRouteImport.update({
   id: '/shipping/rescue',
   path: '/shipping/rescue',
   getParentRoute: () => rootRouteImport,
-} as any)
-const ShopSlugRoute = ShopSlugRouteImport.update({
-  id: '/shop/$slug',
-  path: '/shop/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StorefrontAnalyticsRoute = StorefrontAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
-  getParentRoute: () => StorefrontRoute,
-} as any)
-const StorefrontCatalogRoute = StorefrontCatalogRouteImport.update({
-  id: '/catalog',
-  path: '/catalog',
-  getParentRoute: () => StorefrontRoute,
-} as any)
-const StorefrontOperationsRoute = StorefrontOperationsRouteImport.update({
-  id: '/operations',
-  path: '/operations',
-  getParentRoute: () => StorefrontRoute,
-} as any)
-const StorefrontSettingsRoute = StorefrontSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => StorefrontRoute,
-} as any)
-const ShopSlugProductRoute = ShopSlugProductRouteImport.update({
-  id: '/$product',
-  path: '/$product',
-  getParentRoute: () => ShopSlugRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -337,45 +265,33 @@ export interface FileRoutesByFullPath {
   '/daily': typeof DailyRoute
   '/delivery': typeof DeliveryRoute
   '/discounts': typeof DiscountsRoute
-  '/driver': typeof DriverRoute
   '/expenses': typeof ExpensesRoute
-  '/inventory': typeof InventoryRoute
-  '/invoices': typeof InvoicesRoute
+  '/inventory': typeof InventoryRouteWithChildren
+  '/invoices': typeof InvoicesRouteWithChildren
   '/landing': typeof LandingRoute
-  '/order-tracking': typeof OrderTrackingRoute
   '/owner': typeof OwnerRoute
   '/payments': typeof PaymentsRoute
   '/pos': typeof PosRoute
   '/pos-display': typeof PosDisplayRoute
   '/privacy': typeof PrivacyRoute
   '/reconciliation': typeof ReconciliationRoute
-  '/reports': typeof ReportsRouteWithChildren
+  '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/returns': typeof ReturnsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
-  '/storefront': typeof StorefrontRouteWithChildren
   '/suppliers': typeof SuppliersRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/track': typeof TrackRoute
   '/warehouse': typeof WarehouseRoute
   '/inventory/new': typeof InventoryNewRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/receipt/$token': typeof ReceiptTokenRoute
-  '/shipping/courier': typeof ShippingCourierRoute
   '/shipping/day': typeof ShippingDayRoute
   '/shipping/rescue': typeof ShippingRescueRoute
-  '/shop/$slug': typeof ShopSlugRouteWithChildren
-  '/storefront/analytics': typeof StorefrontAnalyticsRoute
-  '/storefront/catalog': typeof StorefrontCatalogRoute
-  '/storefront/operations': typeof StorefrontOperationsRoute
-  '/storefront/settings': typeof StorefrontSettingsRoute
   '/purchases/': typeof PurchasesIndexRoute
-  '/reports/': typeof ReportsIndexRoute
   '/shipping/': typeof ShippingIndexRoute
-  '/shop/$slug/$product': typeof ShopSlugProductRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -391,44 +307,33 @@ export interface FileRoutesByTo {
   '/daily': typeof DailyRoute
   '/delivery': typeof DeliveryRoute
   '/discounts': typeof DiscountsRoute
-  '/driver': typeof DriverRoute
   '/expenses': typeof ExpensesRoute
-  '/inventory': typeof InventoryRoute
-  '/invoices': typeof InvoicesRoute
+  '/inventory': typeof InventoryRouteWithChildren
+  '/invoices': typeof InvoicesRouteWithChildren
   '/landing': typeof LandingRoute
-  '/order-tracking': typeof OrderTrackingRoute
   '/owner': typeof OwnerRoute
   '/payments': typeof PaymentsRoute
   '/pos': typeof PosRoute
   '/pos-display': typeof PosDisplayRoute
   '/privacy': typeof PrivacyRoute
   '/reconciliation': typeof ReconciliationRoute
+  '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/returns': typeof ReturnsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
-  '/storefront': typeof StorefrontRouteWithChildren
   '/suppliers': typeof SuppliersRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/track': typeof TrackRoute
   '/warehouse': typeof WarehouseRoute
   '/inventory/new': typeof InventoryNewRoute
   '/invoices/new': typeof InvoicesNewRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/receipt/$token': typeof ReceiptTokenRoute
-  '/shipping/courier': typeof ShippingCourierRoute
   '/shipping/day': typeof ShippingDayRoute
   '/shipping/rescue': typeof ShippingRescueRoute
-  '/shop/$slug': typeof ShopSlugRouteWithChildren
-  '/storefront/analytics': typeof StorefrontAnalyticsRoute
-  '/storefront/catalog': typeof StorefrontCatalogRoute
-  '/storefront/operations': typeof StorefrontOperationsRoute
-  '/storefront/settings': typeof StorefrontSettingsRoute
   '/purchases': typeof PurchasesIndexRoute
-  '/reports': typeof ReportsIndexRoute
   '/shipping': typeof ShippingIndexRoute
-  '/shop/$slug/$product': typeof ShopSlugProductRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -445,45 +350,33 @@ export interface FileRoutesById {
   '/daily': typeof DailyRoute
   '/delivery': typeof DeliveryRoute
   '/discounts': typeof DiscountsRoute
-  '/driver': typeof DriverRoute
   '/expenses': typeof ExpensesRoute
-  '/inventory': typeof InventoryRoute
-  '/invoices': typeof InvoicesRoute
+  '/inventory': typeof InventoryRouteWithChildren
+  '/invoices': typeof InvoicesRouteWithChildren
   '/landing': typeof LandingRoute
-  '/order-tracking': typeof OrderTrackingRoute
   '/owner': typeof OwnerRoute
   '/payments': typeof PaymentsRoute
   '/pos': typeof PosRoute
   '/pos-display': typeof PosDisplayRoute
   '/privacy': typeof PrivacyRoute
   '/reconciliation': typeof ReconciliationRoute
-  '/reports': typeof ReportsRouteWithChildren
+  '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/returns': typeof ReturnsRoute
   '/settings': typeof SettingsRoute
   '/staff': typeof StaffRoute
-  '/storefront': typeof StorefrontRouteWithChildren
   '/suppliers': typeof SuppliersRoute
   '/support': typeof SupportRoute
   '/terms': typeof TermsRoute
-  '/track': typeof TrackRoute
   '/warehouse': typeof WarehouseRoute
-  '/inventory_/new': typeof InventoryNewRoute
-  '/invoices_/new': typeof InvoicesNewRoute
+  '/inventory/new': typeof InventoryNewRoute
+  '/invoices/new': typeof InvoicesNewRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/receipt/$token': typeof ReceiptTokenRoute
-  '/shipping/courier': typeof ShippingCourierRoute
   '/shipping/day': typeof ShippingDayRoute
   '/shipping/rescue': typeof ShippingRescueRoute
-  '/shop/$slug': typeof ShopSlugRouteWithChildren
-  '/storefront/analytics': typeof StorefrontAnalyticsRoute
-  '/storefront/catalog': typeof StorefrontCatalogRoute
-  '/storefront/operations': typeof StorefrontOperationsRoute
-  '/storefront/settings': typeof StorefrontSettingsRoute
   '/purchases/': typeof PurchasesIndexRoute
-  '/reports/': typeof ReportsIndexRoute
   '/shipping/': typeof ShippingIndexRoute
-  '/shop/$slug/$product': typeof ShopSlugProductRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -501,12 +394,10 @@ export interface FileRouteTypes {
     | '/daily'
     | '/delivery'
     | '/discounts'
-    | '/driver'
     | '/expenses'
     | '/inventory'
     | '/invoices'
     | '/landing'
-    | '/order-tracking'
     | '/owner'
     | '/payments'
     | '/pos'
@@ -518,28 +409,18 @@ export interface FileRouteTypes {
     | '/returns'
     | '/settings'
     | '/staff'
-    | '/storefront'
     | '/suppliers'
     | '/support'
     | '/terms'
-    | '/track'
     | '/warehouse'
     | '/inventory/new'
     | '/invoices/new'
     | '/purchases/new'
     | '/receipt/$token'
-    | '/shipping/courier'
     | '/shipping/day'
     | '/shipping/rescue'
-    | '/shop/$slug'
-    | '/storefront/analytics'
-    | '/storefront/catalog'
-    | '/storefront/operations'
-    | '/storefront/settings'
     | '/purchases/'
-    | '/reports/'
     | '/shipping/'
-    | '/shop/$slug/$product'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -555,44 +436,33 @@ export interface FileRouteTypes {
     | '/daily'
     | '/delivery'
     | '/discounts'
-    | '/driver'
     | '/expenses'
     | '/inventory'
     | '/invoices'
     | '/landing'
-    | '/order-tracking'
     | '/owner'
     | '/payments'
     | '/pos'
     | '/pos-display'
     | '/privacy'
     | '/reconciliation'
+    | '/reports'
     | '/reset-password'
     | '/returns'
     | '/settings'
     | '/staff'
-    | '/storefront'
     | '/suppliers'
     | '/support'
     | '/terms'
-    | '/track'
     | '/warehouse'
     | '/inventory/new'
     | '/invoices/new'
     | '/purchases/new'
     | '/receipt/$token'
-    | '/shipping/courier'
     | '/shipping/day'
     | '/shipping/rescue'
-    | '/shop/$slug'
-    | '/storefront/analytics'
-    | '/storefront/catalog'
-    | '/storefront/operations'
-    | '/storefront/settings'
     | '/purchases'
-    | '/reports'
     | '/shipping'
-    | '/shop/$slug/$product'
   id:
     | '__root__'
     | '/'
@@ -608,12 +478,10 @@ export interface FileRouteTypes {
     | '/daily'
     | '/delivery'
     | '/discounts'
-    | '/driver'
     | '/expenses'
     | '/inventory'
     | '/invoices'
     | '/landing'
-    | '/order-tracking'
     | '/owner'
     | '/payments'
     | '/pos'
@@ -625,28 +493,18 @@ export interface FileRouteTypes {
     | '/returns'
     | '/settings'
     | '/staff'
-    | '/storefront'
     | '/suppliers'
     | '/support'
     | '/terms'
-    | '/track'
     | '/warehouse'
-    | '/inventory_/new'
-    | '/invoices_/new'
+    | '/inventory/new'
+    | '/invoices/new'
     | '/purchases/new'
     | '/receipt/$token'
-    | '/shipping/courier'
     | '/shipping/day'
     | '/shipping/rescue'
-    | '/shop/$slug'
-    | '/storefront/analytics'
-    | '/storefront/catalog'
-    | '/storefront/operations'
-    | '/storefront/settings'
     | '/purchases/'
-    | '/reports/'
     | '/shipping/'
-    | '/shop/$slug/$product'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -663,37 +521,29 @@ export interface RootRouteChildren {
   DailyRoute: typeof DailyRoute
   DeliveryRoute: typeof DeliveryRoute
   DiscountsRoute: typeof DiscountsRoute
-  DriverRoute: typeof DriverRoute
   ExpensesRoute: typeof ExpensesRoute
-  InventoryRoute: typeof InventoryRoute
-  InvoicesRoute: typeof InvoicesRoute
+  InventoryRoute: typeof InventoryRouteWithChildren
+  InvoicesRoute: typeof InvoicesRouteWithChildren
   LandingRoute: typeof LandingRoute
-  OrderTrackingRoute: typeof OrderTrackingRoute
   OwnerRoute: typeof OwnerRoute
   PaymentsRoute: typeof PaymentsRoute
   PosRoute: typeof PosRoute
   PosDisplayRoute: typeof PosDisplayRoute
   PrivacyRoute: typeof PrivacyRoute
   ReconciliationRoute: typeof ReconciliationRoute
-  ReportsRoute: typeof ReportsRouteWithChildren
+  ReportsRoute: typeof ReportsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ReturnsRoute: typeof ReturnsRoute
   SettingsRoute: typeof SettingsRoute
   StaffRoute: typeof StaffRoute
-  StorefrontRoute: typeof StorefrontRouteWithChildren
   SuppliersRoute: typeof SuppliersRoute
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
-  TrackRoute: typeof TrackRoute
   WarehouseRoute: typeof WarehouseRoute
-  InventoryNewRoute: typeof InventoryNewRoute
-  InvoicesNewRoute: typeof InvoicesNewRoute
   PurchasesNewRoute: typeof PurchasesNewRoute
   ReceiptTokenRoute: typeof ReceiptTokenRoute
-  ShippingCourierRoute: typeof ShippingCourierRoute
   ShippingDayRoute: typeof ShippingDayRoute
   ShippingRescueRoute: typeof ShippingRescueRoute
-  ShopSlugRoute: typeof ShopSlugRouteWithChildren
   PurchasesIndexRoute: typeof PurchasesIndexRoute
   ShippingIndexRoute: typeof ShippingIndexRoute
 }
@@ -791,13 +641,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiscountsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/driver': {
-      id: '/driver'
-      path: '/driver'
-      fullPath: '/driver'
-      preLoaderRoute: typeof DriverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/expenses': {
       id: '/expenses'
       path: '/expenses'
@@ -824,13 +667,6 @@ declare module '@tanstack/react-router' {
       path: '/landing'
       fullPath: '/landing'
       preLoaderRoute: typeof LandingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/order-tracking': {
-      id: '/order-tracking'
-      path: '/order-tracking'
-      fullPath: '/order-tracking'
-      preLoaderRoute: typeof OrderTrackingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner': {
@@ -910,13 +746,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StaffRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/storefront': {
-      id: '/storefront'
-      path: '/storefront'
-      fullPath: '/storefront'
-      preLoaderRoute: typeof StorefrontRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/suppliers': {
       id: '/suppliers'
       path: '/suppliers'
@@ -938,13 +767,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/track': {
-      id: '/track'
-      path: '/track'
-      fullPath: '/track'
-      preLoaderRoute: typeof TrackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/warehouse': {
       id: '/warehouse'
       path: '/warehouse'
@@ -952,19 +774,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WarehouseRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/inventory_/new': {
-      id: '/inventory_/new'
-      path: '/inventory/new'
+    '/inventory/new': {
+      id: '/inventory/new'
+      path: '/new'
       fullPath: '/inventory/new'
       preLoaderRoute: typeof InventoryNewRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof InventoryRoute
     }
-    '/invoices_/new': {
-      id: '/invoices_/new'
-      path: '/invoices/new'
+    '/invoices/new': {
+      id: '/invoices/new'
+      path: '/new'
       fullPath: '/invoices/new'
       preLoaderRoute: typeof InvoicesNewRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof InvoicesRoute
     }
     '/purchases/': {
       id: '/purchases/'
@@ -987,25 +809,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReceiptTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reports/': {
-      id: '/reports/'
-      path: '/'
-      fullPath: '/reports/'
-      preLoaderRoute: typeof ReportsIndexRouteImport
-      parentRoute: typeof ReportsRoute
-    }
     '/shipping/': {
       id: '/shipping/'
       path: '/shipping'
       fullPath: '/shipping/'
       preLoaderRoute: typeof ShippingIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/shipping/courier': {
-      id: '/shipping/courier'
-      path: '/shipping/courier'
-      fullPath: '/shipping/courier'
-      preLoaderRoute: typeof ShippingCourierRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shipping/day': {
@@ -1022,90 +830,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShippingRescueRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/shop/$slug': {
-      id: '/shop/$slug'
-      path: '/shop/$slug'
-      fullPath: '/shop/$slug'
-      preLoaderRoute: typeof ShopSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/storefront/analytics': {
-      id: '/storefront/analytics'
-      path: '/analytics'
-      fullPath: '/storefront/analytics'
-      preLoaderRoute: typeof StorefrontAnalyticsRouteImport
-      parentRoute: typeof StorefrontRoute
-    }
-    '/storefront/catalog': {
-      id: '/storefront/catalog'
-      path: '/catalog'
-      fullPath: '/storefront/catalog'
-      preLoaderRoute: typeof StorefrontCatalogRouteImport
-      parentRoute: typeof StorefrontRoute
-    }
-    '/storefront/operations': {
-      id: '/storefront/operations'
-      path: '/operations'
-      fullPath: '/storefront/operations'
-      preLoaderRoute: typeof StorefrontOperationsRouteImport
-      parentRoute: typeof StorefrontRoute
-    }
-    '/storefront/settings': {
-      id: '/storefront/settings'
-      path: '/settings'
-      fullPath: '/storefront/settings'
-      preLoaderRoute: typeof StorefrontSettingsRouteImport
-      parentRoute: typeof StorefrontRoute
-    }
-    '/shop/$slug/$product': {
-      id: '/shop/$slug/$product'
-      path: '/$product'
-      fullPath: '/shop/$slug/$product'
-      preLoaderRoute: typeof ShopSlugProductRouteImport
-      parentRoute: typeof ShopSlugRoute
-    }
   }
 }
 
-interface ReportsRouteChildren {
-  ReportsIndexRoute: typeof ReportsIndexRoute
+interface InventoryRouteChildren {
+  InventoryNewRoute: typeof InventoryNewRoute
 }
 
-const ReportsRouteChildren: ReportsRouteChildren = {
-  ReportsIndexRoute: ReportsIndexRoute,
+const InventoryRouteChildren: InventoryRouteChildren = {
+  InventoryNewRoute: InventoryNewRoute,
 }
 
-const ReportsRouteWithChildren =
-  ReportsRoute._addFileChildren(ReportsRouteChildren)
-
-interface StorefrontRouteChildren {
-  StorefrontAnalyticsRoute: typeof StorefrontAnalyticsRoute
-  StorefrontCatalogRoute: typeof StorefrontCatalogRoute
-  StorefrontOperationsRoute: typeof StorefrontOperationsRoute
-  StorefrontSettingsRoute: typeof StorefrontSettingsRoute
-}
-
-const StorefrontRouteChildren: StorefrontRouteChildren = {
-  StorefrontAnalyticsRoute: StorefrontAnalyticsRoute,
-  StorefrontCatalogRoute: StorefrontCatalogRoute,
-  StorefrontOperationsRoute: StorefrontOperationsRoute,
-  StorefrontSettingsRoute: StorefrontSettingsRoute,
-}
-
-const StorefrontRouteWithChildren = StorefrontRoute._addFileChildren(
-  StorefrontRouteChildren,
+const InventoryRouteWithChildren = InventoryRoute._addFileChildren(
+  InventoryRouteChildren,
 )
 
-interface ShopSlugRouteChildren {
-  ShopSlugProductRoute: typeof ShopSlugProductRoute
+interface InvoicesRouteChildren {
+  InvoicesNewRoute: typeof InvoicesNewRoute
 }
 
-const ShopSlugRouteChildren: ShopSlugRouteChildren = {
-  ShopSlugProductRoute: ShopSlugProductRoute,
+const InvoicesRouteChildren: InvoicesRouteChildren = {
+  InvoicesNewRoute: InvoicesNewRoute,
 }
 
-const ShopSlugRouteWithChildren = ShopSlugRoute._addFileChildren(
-  ShopSlugRouteChildren,
+const InvoicesRouteWithChildren = InvoicesRoute._addFileChildren(
+  InvoicesRouteChildren,
 )
 
 const rootRouteChildren: RootRouteChildren = {
@@ -1122,37 +871,29 @@ const rootRouteChildren: RootRouteChildren = {
   DailyRoute: DailyRoute,
   DeliveryRoute: DeliveryRoute,
   DiscountsRoute: DiscountsRoute,
-  DriverRoute: DriverRoute,
   ExpensesRoute: ExpensesRoute,
-  InventoryRoute: InventoryRoute,
-  InvoicesRoute: InvoicesRoute,
+  InventoryRoute: InventoryRouteWithChildren,
+  InvoicesRoute: InvoicesRouteWithChildren,
   LandingRoute: LandingRoute,
-  OrderTrackingRoute: OrderTrackingRoute,
   OwnerRoute: OwnerRoute,
   PaymentsRoute: PaymentsRoute,
   PosRoute: PosRoute,
   PosDisplayRoute: PosDisplayRoute,
   PrivacyRoute: PrivacyRoute,
   ReconciliationRoute: ReconciliationRoute,
-  ReportsRoute: ReportsRouteWithChildren,
+  ReportsRoute: ReportsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ReturnsRoute: ReturnsRoute,
   SettingsRoute: SettingsRoute,
   StaffRoute: StaffRoute,
-  StorefrontRoute: StorefrontRouteWithChildren,
   SuppliersRoute: SuppliersRoute,
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
-  TrackRoute: TrackRoute,
   WarehouseRoute: WarehouseRoute,
-  InventoryNewRoute: InventoryNewRoute,
-  InvoicesNewRoute: InvoicesNewRoute,
   PurchasesNewRoute: PurchasesNewRoute,
   ReceiptTokenRoute: ReceiptTokenRoute,
-  ShippingCourierRoute: ShippingCourierRoute,
   ShippingDayRoute: ShippingDayRoute,
   ShippingRescueRoute: ShippingRescueRoute,
-  ShopSlugRoute: ShopSlugRouteWithChildren,
   PurchasesIndexRoute: PurchasesIndexRoute,
   ShippingIndexRoute: ShippingIndexRoute,
 }
