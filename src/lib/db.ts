@@ -1,6 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { toast } from "sonner";
+
+/** Phase 3 (#17): generated row type for fetchAll mappings. */
+type TableRow<T extends keyof Database["public"]["Tables"]> =
+  Database["public"]["Tables"][T]["Row"];
+/** payment_vouchers rows may carry legacy columns absent from generated types. */
+type VoucherRow = TableRow<"payment_vouchers"> & {
+  party_name?: string | null;
+  party_phone?: string | null;
+};
 import { saveCacheToIDB, loadCacheFromIDB } from "@/lib/db-cache";
 
 import type {
@@ -133,7 +143,7 @@ async function fetchAll() {
   }
 
   cache = {
-    customers: (c.data ?? []).map((r: any) => ({
+    customers: (c.data ?? []).map((r: TableRow<"customers">) => ({
       id: r.id, name: r.name, phone: r.phone, rating: r.rating,
       status: r.status as CustomerStatus, customerType: (r.customer_type ?? 'installment') as CustomerType,
       notes: r.notes, frozen: r.frozen,
@@ -142,7 +152,7 @@ async function fetchAll() {
       openingBalance: Number(r.opening_balance ?? 0), nationalId: r.national_id,
       createdAt: r.created_at,
     })),
-    invoices: (i.data ?? []).map((r: any) => ({
+    invoices: (i.data ?? []).map((r: TableRow<"invoices">) => ({
       id: r.id, customerId: r.customer_id, total: Number(r.total),
       downPayment: Number(r.down_payment), monthlyInstallment: Number(r.monthly_installment),
       firstDueDate: r.first_due_date, paid: Number(r.paid), notes: r.notes, createdAt: r.created_at,
@@ -151,14 +161,14 @@ async function fetchAll() {
       status: (r.status ?? "pending") as InvoiceStatus, invoiceNumber: r.invoice_number, date: r.date || r.created_at,
       receiptToken: r.receipt_token,
     })),
-    payments: (p.data ?? []).map((r: any) => ({
+    payments: (p.data ?? []).map((r: TableRow<"payments">) => ({
       id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount), paidAt: r.paid_at,
     })),
-    expenses: (e.data ?? []).map((r: any) => ({
+    expenses: (e.data ?? []).map((r: TableRow<"expenses">) => ({
       id: r.id, amount: Number(r.amount), category: r.category as ExpenseCategory,
       expenseDate: r.expense_date, notes: r.notes, createdAt: r.created_at,
     })),
-    invoiceItems: (ii.data ?? []).map((r: any) => ({
+    invoiceItems: (ii.data ?? []).map((r: TableRow<"invoice_items">) => ({
       id: r.id, invoiceId: r.invoice_id, name: r.name,
       cost: Number(r.cost ?? 0), price: Number(r.price ?? 0), quantity: Number(r.quantity ?? 1),
       discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0),
@@ -166,23 +176,23 @@ async function fetchAll() {
       lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))),
       serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [], createdAt: r.created_at,
     })),
-    suppliers: (s.data ?? []).map((r: any) => ({
+    suppliers: (s.data ?? []).map((r: TableRow<"suppliers">) => ({
       id: r.id, name: r.name, contact: r.contact ?? "", notes: r.notes,
       openingBalance: Number(r.opening_balance ?? 0), nationalId: r.national_id, createdAt: r.created_at,
     })),
-    purchases: (pu.data ?? []).map((r: any) => ({
+    purchases: (pu.data ?? []).map((r: TableRow<"purchases">) => ({
       id: r.id, supplierId: r.supplier_id, total: Number(r.total),
       paymentType: r.payment_type as PurchasePaymentType,
       purchaseDate: r.purchase_date, notes: r.notes, createdAt: r.created_at,
     })),
-    purchaseItems: (pi.data ?? []).map((r: any) => ({
+    purchaseItems: (pi.data ?? []).map((r: TableRow<"purchase_items">) => ({
       id: r.id, purchaseId: r.purchase_id, name: r.name,
       unitCost: Number(r.unit_cost ?? 0), quantity: Number(r.quantity ?? 1), createdAt: r.created_at,
     })),
-    supplierPayments: (sp.data ?? []).map((r: any) => ({
+    supplierPayments: (sp.data ?? []).map((r: TableRow<"supplier_payments">) => ({
       id: r.id, supplierId: r.supplier_id, amount: Number(r.amount), paidAt: r.paid_at,
     })),
-    stockItems: (st.data ?? []).map((r: any) => ({
+    stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
       id: r.id, name: r.name,
       quantity: Number(r.quantity ?? 0),
       lastUnitCost: Number(r.last_unit_cost ?? 0),
@@ -193,7 +203,7 @@ async function fetchAll() {
       minStock: Number(r.min_stock ?? 0),
       createdAt: r.created_at, updatedAt: r.updated_at,
     })),
-    warehouseItems: (wh.data ?? []).map((r: any) => ({
+    warehouseItems: (wh.data ?? []).map((r: TableRow<"warehouse_items">) => ({
       id: r.id, name: r.name,
       quantity: Number(r.quantity ?? 0),
       unitCost: Number(r.unit_cost ?? 0),
@@ -203,33 +213,33 @@ async function fetchAll() {
       notes: r.notes ?? null,
       createdAt: r.created_at, updatedAt: r.updated_at,
     })),
-    returns: (rr.data ?? []).map((r: any) => ({
+    returns: (rr.data ?? []).map((r: TableRow<"return_records">) => ({
       id: r.id, invoiceId: r.invoice_id, type: r.type as "sale" | "supplier",
       totalAmount: Number(r.total_amount), reason: r.reason, notes: r.notes, createdAt: r.created_at,
     })),
-    returnItems: (ri.data ?? []).map((r: any) => ({
+    returnItems: (ri.data ?? []).map((r: TableRow<"return_items">) => ({
       id: r.id, returnId: r.return_id, name: r.name,
       unitPrice: Number(r.unit_price), quantity: Number(r.quantity), createdAt: r.created_at,
     })),
-    branches: (br.data ?? []).map((r: any) => ({
+    branches: (br.data ?? []).map((r: TableRow<"branches">) => ({
       id: r.id, name: r.name, location: r.location, phone: r.phone,
       managerName: r.manager_name, isMain: r.is_main, createdAt: r.created_at,
     })),
-    paymentVouchers: (pv.data ?? []).map((r: any) => ({
+    paymentVouchers: (pv.data ?? []).map((r: VoucherRow) => ({
       id: r.id, customerId: r.customer_id, supplierId: r.supplier_id,
       amount: Number(r.amount), type: r.type as "receipt" | "payment",
       paymentMethod: r.payment_method, description: r.description,
       voucherDate: r.voucher_date, createdAt: r.created_at, partyName: r.party_name, partyPhone: r.party_phone,
     })),
-    carriers: (sc.data ?? []).map((r: any) => ({
+    carriers: (sc.data ?? []).map((r: TableRow<"shipping_carriers">) => ({
       id: r.id, name: r.name, contactPerson: r.contact_person, phone: r.phone,
       email: r.email, baseCost: Number(r.base_cost ?? 0), active: r.active, createdAt: r.created_at,
     })),
-    zones: (sz.data ?? []).map((r: any) => ({
+    zones: (sz.data ?? []).map((r: TableRow<"shipping_zones">) => ({
       id: r.id, name: r.name, carrierId: r.carrier_id,
       deliveryCost: Number(r.delivery_cost ?? 0), estimatedDays: r.estimated_days ?? 2, createdAt: r.created_at,
     })),
-    shipments: (sh.data ?? []).map((r: any) => ({
+    shipments: (sh.data ?? []).map((r: TableRow<"shipments">) => ({
       id: r.id, invoiceId: r.invoice_id, carrierId: r.carrier_id, zoneId: r.zone_id,
       trackingNumber: r.tracking_number, status: r.status as ShipmentStatus,
       recipientName: r.recipient_name, recipientPhone: r.recipient_phone,

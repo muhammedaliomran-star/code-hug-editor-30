@@ -1,0 +1,19 @@
+name: Typecheck & Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      # Phase 4 (#17): fail the pipeline on type errors so new `any`
+      # escapes and contract breaks are caught before deploy.
+      - run: bun run typecheck
+      - run: bun run test

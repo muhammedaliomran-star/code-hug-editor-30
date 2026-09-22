@@ -1,4 +1,24 @@
 import { openDB, type IDBPDatabase } from "idb";
+import type {
+  Customer,
+  Invoice,
+  Payment,
+  Expense,
+  InvoiceItem,
+  Supplier,
+  Purchase,
+  PurchaseItem,
+  SupplierPayment,
+  StockItem,
+  WarehouseItem,
+  ReturnRecord,
+  ReturnItem,
+  Branch,
+  PaymentVoucher,
+  ShipmentCarrier,
+  ShippingZone,
+  Shipment,
+} from "@/types";
 
 const DB_NAME = "segilly-cache";
 const DB_VERSION = 1;
@@ -21,24 +41,24 @@ function getDB() {
 }
 
 export interface CachedDBState {
-  customers: any[];
-  invoices: any[];
-  payments: any[];
-  expenses: any[];
-  invoiceItems: any[];
-  suppliers: any[];
-  purchases: any[];
-  purchaseItems: any[];
-  supplierPayments: any[];
-  stockItems: any[];
-  warehouseItems: any[];
-  returns: any[];
-  returnItems: any[];
-  branches: any[];
-  paymentVouchers: any[];
-  carriers: any[];
-  zones: any[];
-  shipments: any[];
+  customers: Customer[];
+  invoices: Invoice[];
+  payments: Payment[];
+  expenses: Expense[];
+  invoiceItems: InvoiceItem[];
+  suppliers: Supplier[];
+  purchases: Purchase[];
+  purchaseItems: PurchaseItem[];
+  supplierPayments: SupplierPayment[];
+  stockItems: StockItem[];
+  warehouseItems: WarehouseItem[];
+  returns: ReturnRecord[];
+  returnItems: ReturnItem[];
+  branches: Branch[];
+  paymentVouchers: PaymentVoucher[];
+  carriers: ShipmentCarrier[];
+  zones: ShippingZone[];
+  shipments: Shipment[];
   savedAt: number;
 }
 
