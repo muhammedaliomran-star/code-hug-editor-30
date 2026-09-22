@@ -58,7 +58,11 @@ async function pullTable(
   const lastSync = getLastSync(table);
   const now = new Date().toISOString();
 
-  let query = supabase
+  // Dynamic table names can't be statically typed against the generated schema.
+  const client = supabase as unknown as {
+    from: (t: string) => any;
+  };
+  let query = client
     .from(table)
     .select(config.select)
     .order(config.orderBy, { ascending: true });
@@ -73,8 +77,8 @@ async function pullTable(
   const { data, error } = await query;
   if (error || !data) return 0;
 
-  for (const record of data) {
-    onRecord(table, record as Record<string, unknown>);
+  for (const record of data as Record<string, unknown>[]) {
+    onRecord(table, record);
   }
 
   setLastSync(table, now);

@@ -11,6 +11,7 @@ export interface ModulePermissions {
   allowInstallments: boolean;
   allowWarehouse: boolean;
   allowWhatsApp: boolean;
+  allowStorefront?: boolean;
   allowMultiBranch: boolean;
   maxBranches: number;
   maxCashiers: number;

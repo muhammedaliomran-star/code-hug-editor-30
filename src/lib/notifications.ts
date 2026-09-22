@@ -57,7 +57,7 @@ export function sendNotification(title: string, body: string, options?: Notifica
         tag: options?.tag ?? "segilly-notification",
         renotify: true,
         ...options,
-      });
+      } as NotificationOptions);
     });
   } else if (Notification.permission === "granted") {
     new Notification(title, { body, icon: "/icon-192.png", dir: "rtl", lang: "ar" });

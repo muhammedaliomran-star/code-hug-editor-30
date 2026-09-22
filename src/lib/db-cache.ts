@@ -5,7 +5,7 @@ const DB_VERSION = 1;
 const STORE_NAME = "app-cache";
 const CACHE_KEY = "db-state";
 
-let dbPromise: IDBPDatabase | null = null;
+let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function getDB() {
   if (!dbPromise) {
