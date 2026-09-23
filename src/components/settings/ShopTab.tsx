@@ -43,7 +43,7 @@ export function ShopTab({ form, set }: TabProps) {
     }
     const cleanNumber = raw.startsWith("0") ? `2${raw}` : raw;
     const msg = encodeURIComponent(`مرحباً بك من متجر ${form.shopName || "سجلي"}`);
-    window.open(`https://wa.me/${cleanNumber}?text=${msg}`, "_blank");
+    window.open(`https://wa.me/${cleanNumber}?text=${msg}`, "_blank", "noopener,noreferrer");
   };
 
   return (

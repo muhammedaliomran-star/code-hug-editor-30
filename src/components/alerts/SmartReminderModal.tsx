@@ -138,7 +138,7 @@ export function SmartReminderModal({
     }
     const phone = customer.phone.replace(/\D/g, "").replace(/^0/, "20");
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(toArabicDigits(customText))}`;
-    window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

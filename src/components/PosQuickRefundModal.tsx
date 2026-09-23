@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useDB, db, fmt, useShopSettings } from "@/lib/store";
-import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
+import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -183,11 +183,11 @@ export function PosQuickRefundModal({
       title: "إيصال استرجاع بضاعة ونقدية",
       lede: `تم استرجاع البضاعة وتأكيد رد المبلغ من الخزينة بتاريخ ${format(new Date(), "dd/MM/yyyy hh:mm a")}`,
       meta: [
-        { label: "المحل", value: shop.shopName || "سِجلّي" },
-        { label: "رقم المرتجع", value: opts.refundId },
-        { label: "الفاتورة الأصلية", value: opts.invoiceId ? opts.invoiceId.slice(-8) : "مباشر" },
+        { label: "المحل", value: esc(shop.shopName || "سِجلّي") },
+        { label: "رقم المرتجع", value: esc(opts.refundId) },
+        { label: "الفاتورة الأصلية", value: opts.invoiceId ? esc(opts.invoiceId.slice(-8)) : "مباشر" },
         { label: "طريقة الرد", value: opts.refundType === "cash" ? "نقداً من الدرج (كاش)" : "حساب العميل" },
-        ...(opts.customerName ? [{ label: "العميل", value: opts.customerName }] : []),
+        ...(opts.customerName ? [{ label: "العميل", value: esc(opts.customerName) }] : []),
       ],
       body: `
         <div style="font-size: 13px; line-height: 1.6;">
@@ -205,7 +205,7 @@ export function PosQuickRefundModal({
                 .map(
                   (it) => `
                 <tr>
-                  <td style="padding: 8px; border: 1px solid #e4e4e7;">${it.name}</td>
+                  <td style="padding: 8px; border: 1px solid #e4e4e7;">${esc(it.name)}</td>
                   <td style="padding: 8px; border: 1px solid #e4e4e7; text-align: center;">${it.quantity}</td>
                   <td style="padding: 8px; border: 1px solid #e4e4e7; text-align: left;">${fmt(it.unitPrice)} ${cur}</td>
                   <td style="padding: 8px; border: 1px solid #e4e4e7; text-align: left; font-weight: bold;">${fmt(it.unitPrice * it.quantity)} ${cur}</td>
@@ -221,7 +221,7 @@ export function PosQuickRefundModal({
           </table>
 
           <div style="padding: 8px 12px; background: #fafafa; border-radius: 6px; margin-bottom: 16px;">
-            <strong>سبب المرتجع:</strong> ${opts.reason}
+            <strong>سبب المرتجع:</strong> ${esc(opts.reason)}
           </div>
 
           <div style="border-top: 1px dashed #ccc; padding-top: 12px; display: flex; justify-content: space-between; font-size: 12px;">

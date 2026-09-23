@@ -58,7 +58,7 @@ export function ReceiptViewerModal({
             <div className="text-center p-6">
               <FileText className="w-16 h-16 text-primary mx-auto mb-3 opacity-80" />
               <p className="font-semibold text-sm mb-2">{receiptName || "مستند PDF"}</p>
-              <Button size="sm" onClick={() => window.open(receiptUrl, "_blank")} className="gap-2">
+              <Button size="sm" onClick={() => window.open(receiptUrl, "_blank", "noopener,noreferrer")} className="gap-2">
                 <ExternalLink className="w-4 h-4" /> فتح المستند في نافذة جديدة
               </Button>
             </div>

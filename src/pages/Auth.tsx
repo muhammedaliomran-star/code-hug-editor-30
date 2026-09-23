@@ -14,7 +14,7 @@ export default AuthPage;
 
 const schema = z.object({
   email: z.string().trim().email({ message: "بريد غير صالح" }).max(255),
-  password: z.string().min(6, { message: "كلمة السر 6 أحرف على الأقل" }).max(72),
+  password: z.string().min(8, { message: "كلمة السر 8 أحرف على الأقل" }).max(72),
 });
 
 function AuthPage() {

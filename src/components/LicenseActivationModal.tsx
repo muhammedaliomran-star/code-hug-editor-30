@@ -64,7 +64,7 @@ export function LicenseActivationModal({
     const text = encodeURIComponent(
       "مرحباً فريق سِجلّي، أرغب في شراء أو تجديد ترخيص البرنامج وتفعيل النسخة الرسمية."
     );
-    window.open(`https://wa.me/201000000000?text=${text}`, "_blank");
+    window.open(`https://wa.me/201000000000?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   return (

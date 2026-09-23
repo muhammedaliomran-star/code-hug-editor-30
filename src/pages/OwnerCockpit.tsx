@@ -403,7 +403,7 @@ export default function OwnerCockpit() {
     });
 
     const url = waLink(phone, text);
-    window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

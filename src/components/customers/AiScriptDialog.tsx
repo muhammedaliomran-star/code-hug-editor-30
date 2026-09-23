@@ -86,6 +86,7 @@ export function AiScriptDialog({
                       window.open(
                         `https://wa.me/${phone}?text=${encodeURIComponent(toArabicDigits(msg))}`,
                         "_blank",
+                        "noopener,noreferrer",
                       );
                     }}
                   >

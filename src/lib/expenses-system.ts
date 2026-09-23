@@ -888,11 +888,11 @@ export function printPaymentVoucherPdf(
     meta: [
       { label: "رقم السند", value: voucherNo },
       { label: "تاريخ السند", value: dateFormatted },
-      { label: "الخزينة المسحوبة", value: acc?.name || "الدرج الرئيسي" },
+      { label: "الخزينة المسحوبة", value: esc(acc?.name || "الدرج الرئيسي") },
     ],
     kpis: [
       { label: "المبلغ الإجمالي", value: `${fmt(expense.amount)} ج.م`, tone: "danger" },
-      { label: "بند الصرف", value: catInfo.label },
+      { label: "بند الصرف", value: esc(catInfo.label) },
       { label: "حالة السند", value: "معتمد ومصروف" },
     ],
     body,

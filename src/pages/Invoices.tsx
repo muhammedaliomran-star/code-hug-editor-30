@@ -263,7 +263,7 @@ function InvoicesPage() {
       const msg = `مرحباً ${firstCust.name}، نود تذكيركم بموعد سداد القسط المستحق على فاتورتكم #${invoiceNumber(data.invoices, firstOverdue.id, shopSettings.invoicePrefix)} بقيمة ${fmt(remaining)} ج.م لدى ${shopSettings.shopName || "المحل"}. شكراً لتعاملكم معنا.`;
       const cleanPhone = firstCust.phone.replace(/\D/g, "");
       const waPhone = cleanPhone.startsWith("0") ? "2" + cleanPhone : cleanPhone;
-      window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+      window.open(`https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
       toast.success(`تم فتح واتساب للعميل ${firstCust.name} (${overdueOnes.length} فاتورة عليها متبقي)`);
     } else {
       toast.error("لا يوجد رقم هاتف مسجل لأول فاتورة متأخرة");

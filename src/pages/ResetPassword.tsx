@@ -25,7 +25,7 @@ export default function ResetPassword() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw.length < 6) { toast.error("كلمة السر 6 أحرف على الأقل"); return; }
+    if (pw.length < 8) { toast.error("كلمة السر 8 أحرف على الأقل"); return; }
     if (pw !== pw2) { toast.error("كلمتا السر غير متطابقتين"); return; }
     setBusy(true);
     try {

@@ -1328,7 +1328,7 @@ export default function Shipping() {
                       <Printer className="ml-2 h-4 w-4" /> بوليصة
                     </Button>
                     <Button asChild className="flex-1">
-                      <a href={whatsappLink(detail)} target="_blank" rel="noreferrer">
+                      <a href={whatsappLink(detail)} target="_blank" rel="noopener noreferrer">
                         <MessageCircle className="ml-2 h-4 w-4" /> واتساب
                       </a>
                     </Button>

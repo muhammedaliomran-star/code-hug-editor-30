@@ -270,6 +270,6 @@ export function shareStatement(
   lines.push("— سِجلّي");
   const text = lines.join("\n");
   const phone = c.phone.replace(/^0/, "20");
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(toArabicDigits(text))}`, "_blank");
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(toArabicDigits(text))}`, "_blank", "noopener,noreferrer");
   toast.success("جاري فتح واتساب لمشاركة الكشف");
 }

@@ -63,7 +63,7 @@ export function LicenseTab() {
     const text = encodeURIComponent(
       `مرحباً فريق سِجلّي، أحتاج للمساعدة أو التجديد بخصوص ترخيص متجري (${license.shopName}) ومفتاحي: ${license.key}`
     );
-    window.open(`https://wa.me/201000000000?text=${text}`, "_blank");
+    window.open(`https://wa.me/201000000000?text=${text}`, "_blank", "noopener,noreferrer");
   };
 
   return (

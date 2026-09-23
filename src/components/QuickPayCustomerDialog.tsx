@@ -147,6 +147,7 @@ export function QuickPayCustomerDialog({
         window.open(
           `https://wa.me/${waPhone}?text=${encodeURIComponent(toArabicDigits(waMessage))}`,
           "_blank",
+          "noopener,noreferrer",
         );
       }
 

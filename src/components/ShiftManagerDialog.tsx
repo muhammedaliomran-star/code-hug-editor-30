@@ -150,8 +150,8 @@ export function ShiftManagerDialog({ open, onOpenChange, onShiftUpdated }: Shift
         shift.closedAt ? format(new Date(shift.closedAt), "dd/MM/yyyy hh:mm a") : "الآن"
       }`,
       meta: [
-        { label: "المحل", value: shopName || "سِجلّي" },
-        { label: "الكاشير", value: shift.cashierName },
+        { label: "المحل", value: esc(shopName || "سِجلّي") },
+        { label: "الكاشير", value: esc(shift.cashierName) },
         { label: "رقم الوردية", value: shift.id.slice(-8) },
         { label: "الحالة", value: shift.status === "closed" ? "مقفلة" : "مفتوحة" },
       ],

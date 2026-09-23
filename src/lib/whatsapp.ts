@@ -261,5 +261,5 @@ ${lines}
   const url = params.customerPhone
     ? generateWhatsAppLink(params.customerPhone, message)
     : `https://wa.me/?text=${encodeURIComponent(message)}`;
-  if (typeof window !== "undefined") window.open(url, "_blank");
+  if (typeof window !== "undefined") window.open(url, "_blank", "noopener,noreferrer");
 }

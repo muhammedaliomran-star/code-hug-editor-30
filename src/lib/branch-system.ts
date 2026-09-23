@@ -821,8 +821,8 @@ export function printBranchShiftZReport(
     badge: "الخزينة والورديات",
     meta: [
       { label: "رقم الوردية", value: shift.shiftNumber },
-      { label: "الكاشير", value: shift.cashierName },
-      { label: "الفرع", value: branch?.name || "الفرع" },
+        { label: "الكاشير", value: esc(shift.cashierName) },
+        { label: "الفرع", value: esc(branch?.name || "الفرع") },
       { label: "التاريخ", value: (shift.closedAt || new Date().toISOString()).split("T")[0] },
     ],
     kpis: [

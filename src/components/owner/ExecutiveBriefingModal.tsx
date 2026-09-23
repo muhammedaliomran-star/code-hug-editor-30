@@ -94,7 +94,7 @@ export function ExecutiveBriefingModal({
   const handleSendWhatsApp = () => {
     const text = generateReportText();
     const url = waLink(ownerPhone.trim(), text);
-    window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

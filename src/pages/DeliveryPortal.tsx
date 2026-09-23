@@ -147,7 +147,7 @@ export default function DeliveryPortal() {
 
   const openGoogleMaps = (address: string) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
-    window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const sendWhatsApp = (s: Shipment) => {
@@ -160,7 +160,7 @@ export default function DeliveryPortal() {
 المبلغ المطلوب عند الاستلام: *${s.codAmount || 0} ج.م*
 
 أنا في طريقي إليك، هل العنوان (${s.deliveryAddress || "-"}) مناسب الآن؟`;
-    window.open(waLink(s.recipientPhone, text, { arabicDigits: false }), "_blank");
+    window.open(waLink(s.recipientPhone, text, { arabicDigits: false }), "_blank", "noopener,noreferrer");
   };
 
   if (portalToken && !board.loading && (board.error || !board.board)) {

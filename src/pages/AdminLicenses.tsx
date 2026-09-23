@@ -581,7 +581,7 @@ export default function AdminLicensesPage() {
     const clean = phone.replace(/[^0-9]/g, "");
     const formatted = clean.startsWith("01") ? `2${clean}` : clean;
     const url = `https://wa.me/${formatted}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   // If Not Authenticated, show Login Screen

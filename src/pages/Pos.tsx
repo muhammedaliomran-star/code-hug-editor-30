@@ -355,18 +355,18 @@ function PosPage() {
       docTitle: `إيصال بيع نقدي ${code}`,
       badge: "إيصال بيع كاش فوري",
       title: `إيصال بيع نقدي ${code}`,
-      lede: shop.shopName || "سِجلّي لنقاط البيع السريعة",
+      lede: esc(shop.shopName || "سِجلّي لنقاط البيع السريعة"),
       meta: [
         { label: "رقم الإيصال", value: code },
         { label: "الوقت", value: format(new Date(), "HH:mm - dd/MM/yyyy") },
-        ...(shop.phone ? [{ label: "الهاتف", value: shop.phone }] : []),
+        ...(shop.phone ? [{ label: "الهاتف", value: esc(shop.phone) }] : []),
       ],
       kpis: [
         { label: "المبلغ الإجمالي", value: `${fmt(invTotal)} ${cur}`, tone: "brand" },
         { label: "المسدد نقداً", value: `${fmt(invPaid)} ${cur}`, tone: "brand" },
       ],
       body,
-      footerNote: shop.footerNote || "شكراً لزيارتكم ونتمنى رؤيتكم مجدداً!",
+        footerNote: esc(shop.footerNote || "شكراً لزيارتكم ونتمنى رؤيتكم مجدداً!"),
       paper: shop.printPaper || "roll80",
     });
 

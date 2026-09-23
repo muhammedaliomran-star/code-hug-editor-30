@@ -70,7 +70,7 @@ import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
-import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
+import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 
 export default function Page() {
   return (
@@ -502,12 +502,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         const html = pdfDocument({
           docTitle: `فاتورة ${invoiceCode}`,
           badge: isCash ? "فاتورة مبيعات نقدية" : "فاتورة مبيعات تقسيط",
-          title: shop.shopName || "فاتورة ضريبية مبسطة",
-          brandSub: shop.shopName || undefined,
+          title: esc(shop.shopName || "فاتورة ضريبية مبسطة"),
+          brandSub: shop.shopName ? esc(shop.shopName) : undefined,
           meta: [
             { label: "رقم الفاتورة", value: invoiceCode },
             { label: "التاريخ", value: format(new Date(), "yyyy/MM/dd HH:mm") },
-            ...(shop.taxNumber ? [{ label: "الرقم الضريبي", value: shop.taxNumber }] : []),
+            ...(shop.taxNumber ? [{ label: "الرقم الضريبي", value: esc(shop.taxNumber) }] : []),
           ],
           kpis: [{ label: "الإجمالي", value: `${fmt(t)} ${cur}`, tone: "brand" }],
           body,

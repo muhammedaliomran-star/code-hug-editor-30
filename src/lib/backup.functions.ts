@@ -61,7 +61,8 @@ export const restoreBackup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => restoreSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertDataManager(supabase as never, userId);
     const { data: result, error } = await (supabase as any).rpc("restore_backup", {
       p_tables: data.tables,
       p_exported_by: data.exportedBy ?? null,
@@ -71,11 +72,16 @@ export const restoreBackup = createServerFn({ method: "POST" })
     return result as ServerRestoreResult;
   });
 
-/** Phase 2 (#15): single-transaction wipe with per-table counts. */
+/**
+ * Phase 2 (#15): single-transaction wipe with per-table counts.
+ * Phase 3 (security review): explicit JS role check like assertBackupAccess
+ * (defense in depth — the SQL function gates again server-side).
+ */
 export const wipeUserData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await assertDataManager(supabase as never, userId);
     const { data: result, error } = await (supabase as any).rpc("wipe_user_data");
     if (error) throw new Error(error.message);
     return result as { ok: boolean; deleted: Record<string, number> };

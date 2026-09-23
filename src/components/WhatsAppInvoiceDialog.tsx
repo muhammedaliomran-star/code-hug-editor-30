@@ -100,7 +100,7 @@ ${invoice.notes ? `• تفاصيل الأصناف: ${invoice.notes}` : ""}
       return;
     }
     const link = generateWhatsAppLink(phone, currentMessage);
-    window.open(link, "_blank");
+    window.open(link, "_blank", "noopener,noreferrer");
     toast.success("تم فتح محادثة واتساب مع العميل ✓");
     onOpenChange(false);
   };

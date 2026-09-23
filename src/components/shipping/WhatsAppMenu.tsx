@@ -131,7 +131,7 @@ export function WhatsAppMenu({
       return;
     }
     const link = waLink(shipment.recipientPhone, customText, { arabicDigits: false });
-    window.open(link, "_blank");
+    window.open(link, "_blank", "noopener,noreferrer");
     onOpenChange(false);
   };
 

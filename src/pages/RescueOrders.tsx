@@ -78,7 +78,7 @@ export default function RescueOrders() {
                     <p className="text-sm text-muted-foreground">{row.reason}</p>
                   </div>
                   <div className="flex gap-2">
-                    {row.phone && <Button size="sm" variant="outline" onClick={() => window.open(waLink(row.phone, renderRescuePending({ shop: { shopName: settings.shopName }, customer: row.customer, phone: row.phone, number: row.number, statusLabel: labels[row.status] ?? row.status, reason: row.reason, ageDays: ageInDays(row.createdAt), address: row.address })), "_blank")} className="gap-1"><MessageCircle className="h-3 w-3" /> واتساب</Button>}
+                    {row.phone && <Button size="sm" variant="outline" onClick={() => window.open(waLink(row.phone, renderRescuePending({ shop: { shopName: settings.shopName }, customer: row.customer, phone: row.phone, number: row.number, statusLabel: labels[row.status] ?? row.status, reason: row.reason, ageDays: ageInDays(row.createdAt), address: row.address })), "_blank", "noopener,noreferrer")} className="gap-1"><MessageCircle className="h-3 w-3" /> واتساب</Button>}
                     {row.shipmentId && row.status !== "shipped" && <Button size="sm" onClick={() => void markShipped(row.shipmentId!)} className="gap-1"><CheckCircle2 className="h-3 w-3" /> تم الشحن</Button>}
                   </div>
                 </div>
