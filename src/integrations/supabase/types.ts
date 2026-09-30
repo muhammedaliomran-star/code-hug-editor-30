@@ -481,6 +481,7 @@ export type Database = {
           phone: string
           rating: number
           status: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -499,6 +500,7 @@ export type Database = {
           phone?: string
           rating?: number
           status?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -517,6 +519,7 @@ export type Database = {
           phone?: string
           rating?: number
           status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -639,6 +642,7 @@ export type Database = {
           expense_date: string
           id: string
           notes: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -648,6 +652,7 @@ export type Database = {
           expense_date?: string
           id?: string
           notes?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -657,6 +662,7 @@ export type Database = {
           expense_date?: string
           id?: string
           notes?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -741,6 +747,7 @@ export type Database = {
           serial_numbers: string[]
           tax_amount: number
           tax_pct: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -757,6 +764,7 @@ export type Database = {
           serial_numbers?: string[]
           tax_amount?: number
           tax_pct?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -773,6 +781,7 @@ export type Database = {
           serial_numbers?: string[]
           tax_amount?: number
           tax_pct?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -806,6 +815,7 @@ export type Database = {
           tax_amount: number
           tax_pct: number
           total: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -828,6 +838,7 @@ export type Database = {
           tax_amount?: number
           tax_pct?: number
           total?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -850,6 +861,7 @@ export type Database = {
           tax_amount?: number
           tax_pct?: number
           total?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1042,6 +1054,7 @@ export type Database = {
           id: string
           invoice_id: string
           paid_at: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1049,6 +1062,7 @@ export type Database = {
           id?: string
           invoice_id: string
           paid_at?: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1056,6 +1070,7 @@ export type Database = {
           id?: string
           invoice_id?: string
           paid_at?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1145,6 +1160,7 @@ export type Database = {
           purchase_id: string
           quantity: number
           unit_cost: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1154,6 +1170,7 @@ export type Database = {
           purchase_id: string
           quantity?: number
           unit_cost?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1163,6 +1180,7 @@ export type Database = {
           purchase_id?: string
           quantity?: number
           unit_cost?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1184,6 +1202,7 @@ export type Database = {
           purchase_date: string
           supplier_id: string
           total: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1194,6 +1213,7 @@ export type Database = {
           purchase_date?: string
           supplier_id: string
           total?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1204,6 +1224,7 @@ export type Database = {
           purchase_date?: string
           supplier_id?: string
           total?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1338,6 +1359,7 @@ export type Database = {
           quantity: number
           return_id: string
           unit_price: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1347,6 +1369,7 @@ export type Database = {
           quantity?: number
           return_id: string
           unit_price?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1356,6 +1379,7 @@ export type Database = {
           quantity?: number
           return_id?: string
           unit_price?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1377,6 +1401,7 @@ export type Database = {
           reason: string | null
           total_amount: number
           type: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -1387,6 +1412,7 @@ export type Database = {
           reason?: string | null
           total_amount?: number
           type: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -1397,6 +1423,7 @@ export type Database = {
           reason?: string | null
           total_amount?: number
           type?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -1411,18 +1438,27 @@ export type Database = {
       }
       shifts: {
         Row: {
+          actual_cash: number
           branch_id: string | null
           card_sales: number
+          cash_sales: number
+          cashier_name: string | null
           closed_at: string | null
           closing_cash: number | null
           created_at: string
           denomination_count: Json | null
+          electronic_sales: number
           expected_cash: number | null
+          expenses: number
           id: string
           installment_sales: number
           notes: string | null
           opened_at: string
+          opening_balance: number
           opening_float: number
+          purchases: number
+          returns: number
+          shift_number: number
           staff_id: string | null
           status: string
           total_discounts: number
@@ -1430,22 +1466,32 @@ export type Database = {
           total_refunds: number
           total_sales: number
           type: string
+          updated_at: string
           user_id: string
           variance: number | null
         }
         Insert: {
+          actual_cash?: number
           branch_id?: string | null
           card_sales?: number
+          cash_sales?: number
+          cashier_name?: string | null
           closed_at?: string | null
           closing_cash?: number | null
           created_at?: string
           denomination_count?: Json | null
+          electronic_sales?: number
           expected_cash?: number | null
+          expenses?: number
           id?: string
           installment_sales?: number
           notes?: string | null
           opened_at?: string
+          opening_balance?: number
           opening_float?: number
+          purchases?: number
+          returns?: number
+          shift_number?: number
           staff_id?: string | null
           status?: string
           total_discounts?: number
@@ -1453,22 +1499,32 @@ export type Database = {
           total_refunds?: number
           total_sales?: number
           type?: string
+          updated_at?: string
           user_id: string
           variance?: number | null
         }
         Update: {
+          actual_cash?: number
           branch_id?: string | null
           card_sales?: number
+          cash_sales?: number
+          cashier_name?: string | null
           closed_at?: string | null
           closing_cash?: number | null
           created_at?: string
           denomination_count?: Json | null
+          electronic_sales?: number
           expected_cash?: number | null
+          expenses?: number
           id?: string
           installment_sales?: number
           notes?: string | null
           opened_at?: string
+          opening_balance?: number
           opening_float?: number
+          purchases?: number
+          returns?: number
+          shift_number?: number
           staff_id?: string | null
           status?: string
           total_discounts?: number
@@ -1476,6 +1532,7 @@ export type Database = {
           total_refunds?: number
           total_sales?: number
           type?: string
+          updated_at?: string
           user_id?: string
           variance?: number | null
         }
@@ -1570,6 +1627,7 @@ export type Database = {
           status: Database["public"]["Enums"]["shipment_status"] | null
           status_updated_by: string | null
           tracking_number: string | null
+          updated_at: string
           user_id: string | null
           weight_kg: number
           zone_id: string | null
@@ -1598,6 +1656,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["shipment_status"] | null
           status_updated_by?: string | null
           tracking_number?: string | null
+          updated_at?: string
           user_id?: string | null
           weight_kg?: number
           zone_id?: string | null
@@ -1626,6 +1685,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["shipment_status"] | null
           status_updated_by?: string | null
           tracking_number?: string | null
+          updated_at?: string
           user_id?: string | null
           weight_kg?: number
           zone_id?: string | null
@@ -1665,6 +1725,7 @@ export type Database = {
           id: string
           name: string
           phone: string | null
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -1677,6 +1738,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -1689,6 +1751,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string | null
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: []
@@ -1701,6 +1764,7 @@ export type Database = {
           estimated_days: number | null
           id: string
           name: string
+          updated_at: string
           user_id: string | null
         }
         Insert: {
@@ -1710,6 +1774,7 @@ export type Database = {
           estimated_days?: number | null
           id?: string
           name: string
+          updated_at?: string
           user_id?: string | null
         }
         Update: {
@@ -1719,6 +1784,7 @@ export type Database = {
           estimated_days?: number | null
           id?: string
           name?: string
+          updated_at?: string
           user_id?: string | null
         }
         Relationships: [
@@ -2106,6 +2172,7 @@ export type Database = {
           id: string
           paid_at: string
           supplier_id: string
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -2113,6 +2180,7 @@ export type Database = {
           id?: string
           paid_at?: string
           supplier_id: string
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -2120,6 +2188,7 @@ export type Database = {
           id?: string
           paid_at?: string
           supplier_id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -2141,6 +2210,7 @@ export type Database = {
           national_id: string | null
           notes: string | null
           opening_balance: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -2151,6 +2221,7 @@ export type Database = {
           national_id?: string | null
           notes?: string | null
           opening_balance?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -2161,6 +2232,7 @@ export type Database = {
           national_id?: string | null
           notes?: string | null
           opening_balance?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -2528,6 +2600,24 @@ export type Database = {
     }
     Functions: {
       assert_backup_manager: { Args: never; Returns: undefined }
+      assign_storefront_shipment: {
+        Args: {
+          p_carrier_id: string
+          p_invoice_id: string
+          p_tracking_number: string
+          p_zone_id: string
+        }
+        Returns: undefined
+      }
+      courier_update_shipment: {
+        Args: {
+          p_reason?: string
+          p_shipment_id: string
+          p_status: string
+          p_token: string
+        }
+        Returns: Json
+      }
       create_invoice_shipment: {
         Args: {
           p_carrier_id?: string
@@ -2559,6 +2649,7 @@ export type Database = {
           status: Database["public"]["Enums"]["shipment_status"] | null
           status_updated_by: string | null
           tracking_number: string | null
+          updated_at: string
           user_id: string | null
           weight_kg: number
           zone_id: string | null
@@ -2580,6 +2671,11 @@ export type Database = {
         Returns: undefined
       }
       get_admin_pin_hash: { Args: { _user_id: string }; Returns: string }
+      get_courier_board: { Args: { p_token: string }; Returns: Json }
+      get_storefront_analytics_summary: {
+        Args: { p_from?: string; p_storefront_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2587,6 +2683,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      invoice_store_order_installment:
+        | {
+            Args: {
+              p_down_payment: number
+              p_first_due_date: string
+              p_monthly_installment: number
+              p_order_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_down_payment: number
+              p_first_due_date: string
+              p_installment_count?: number
+              p_monthly_installment: number
+              p_order_id: string
+            }
+            Returns: Json
+          }
+      no_owner_exists: { Args: never; Returns: boolean }
       recalculate_invoice_paid: {
         Args: { p_invoice_id: string }
         Returns: number
@@ -2611,6 +2728,19 @@ export type Database = {
           p_total: number
         }
         Returns: string
+      }
+      record_storefront_event: {
+        Args: {
+          p_event_name: string
+          p_product_id?: string
+          p_source?: string
+          p_storefront_id: string
+        }
+        Returns: undefined
+      }
+      redeem_storefront_coupon: {
+        Args: { p_coupon_id: string; p_order_id: string }
+        Returns: number
       }
       restore_backup: {
         Args: { p_dry_run?: boolean; p_exported_by?: string; p_tables: Json }
@@ -2642,6 +2772,14 @@ export type Database = {
           p_purchase_id: string
           p_supplier_id: string
           p_total: number
+        }
+        Returns: undefined
+      }
+      update_storefront_shipment_status: {
+        Args: {
+          p_reason?: string
+          p_shipment_id: string
+          p_status: Database["public"]["Enums"]["shipment_status"]
         }
         Returns: undefined
       }
