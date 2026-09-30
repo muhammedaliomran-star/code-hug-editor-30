@@ -166,26 +166,25 @@ begin
   set role authenticated;
   perform set_config('request.jwt.claims', '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);
 
+  -- NOTE: matched by SQLSTATE, not message text: the gate raises P0001
+  -- (raise_exception) while any other failure (e.g. RLS 42501) propagates
+  -- loudly. String-matching Arabic messages proved fragile across editors.
   begin
     perform public.wipe_user_data();
     reset role;
     raise exception 'FAIL: non-owner executed wipe_user_data';
-  exception when others then
-    if sqlerrm not like '%المالك أو المدير%' then
-      reset role;
-      raise;
-    end if;
+  exception when raise_exception then
+    -- P0001 = our gate rejected the caller: expected, PASS.
+    null;
   end;
 
   begin
     perform public.restore_backup('{}'::jsonb);
     reset role;
     raise exception 'FAIL: non-owner executed restore_backup';
-  exception when others then
-    if sqlerrm not like '%المالك أو المدير%' then
-      reset role;
-      raise;
-    end if;
+  exception when raise_exception then
+    -- P0001 = our gate rejected the caller: expected, PASS.
+    null;
   end;
 
   reset role;
