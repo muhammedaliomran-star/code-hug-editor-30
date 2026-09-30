@@ -136,14 +136,16 @@ async function currentUserId() {
  * Phase 1 (#15): server-side owner/manager gate.
  * Fail-closed: any gate failure blocks the destructive operation.
  * Dynamic import keeps the server-function module out of unit-test bundles.
+ * Env-missing platform errors are retried (transient injection flakiness).
  */
 async function requireBackupAccess(): Promise<void> {
+  const { callServerFn, friendlyServerFnError } = await import("./health");
   try {
     const { assertBackupAccess } = await import("./backup.functions");
-    await assertBackupAccess();
+    await callServerFn(() => assertBackupAccess());
   } catch (e) {
     if (e instanceof Error && /المالك أو المدير/.test(e.message)) throw e;
-    throw new Error("تعذر التحقق من صلاحية النسخ — حاول مرة تانية");
+    throw new Error(friendlyServerFnError(e, "تعذر التحقق من صلاحية النسخ — حاول مرة تانية"));
   }
 }
 
@@ -360,11 +362,14 @@ export async function restoreJsonBackup(value: unknown): Promise<RestoreReport> 
   const payload = value as BackupPayload;
   const tables = remapBackupIds(payload.tables as Record<string, unknown[]>);
   const { restoreBackup } = await import("./backup.functions");
+  const { callServerFn, friendlyServerFnError } = await import("./health");
   let result: { ok: boolean; inserted: number; skipped: number; failed: Array<{ table: string; error: string }> };
   try {
-    result = await restoreBackup({ data: { tables, exportedBy: payload.exportedBy ?? null } });
+    result = await callServerFn(() =>
+      restoreBackup({ data: { tables, exportedBy: payload.exportedBy ?? null } }),
+    );
   } catch (e) {
-    throw new Error(e instanceof Error ? e.message : "تعذر الاسترجاع");
+    throw new Error(friendlyServerFnError(e, "تعذر الاسترجاع"));
   }
   if (!result.ok) {
     const first = result.failed[0];
@@ -425,10 +430,11 @@ export async function dataCounts(): Promise<Record<string, number>> {
 export async function wipeAllData(): Promise<void> {
   await requireBackupAccess();
   const { wipeUserData } = await import("./backup.functions");
+  const { callServerFn, friendlyServerFnError } = await import("./health");
   try {
-    await wipeUserData();
+    await callServerFn(() => wipeUserData());
   } catch (e) {
-    throw new Error(e instanceof Error ? e.message : "تعذر المسح");
+    throw new Error(friendlyServerFnError(e, "تعذر المسح"));
   }
 }
 

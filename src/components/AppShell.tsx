@@ -16,6 +16,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { useCurrentLicense, type ModulePermissions } from "@/lib/licensing";
 import { useStaffAndShifts, type StaffPermissions, type StaffRole } from "@/lib/staff";
+import { useDeploymentHealth } from "@/lib/health";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 type NavItem = {
   to: string;
@@ -242,6 +244,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     navigate("/landing");
   };
+  // Server-integration health: when the worker has no Supabase env, every
+  // server function fails — show a guided banner instead of cryptic errors.
+  const { linked: serverLinked, refresh: refreshHealth } = useDeploymentHealth();
   return (
     <div dir="rtl" className="relative min-h-screen text-foreground flex overflow-hidden selection:bg-primary selection:text-black">
       {/* Ambient background layer */}
@@ -349,6 +354,25 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <main className="min-w-0 flex-1 px-4 pb-32 pt-10 text-right md:px-12 md:pb-16 md:pt-16">
+        {serverLinked === false && (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-right" role="alert">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-foreground">ربط Supabase غير مكتمل على الخادم</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                عمليات الخادم (النسخ الاحتياطي، المسح، الدعوات) متوقفة حالياً. تحقق من ربط Supabase
+                في لوحة تحكم الاستضافة ثم أعد النشر، أو اضغط إعادة الفحص.
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-amber-500/20 px-3 py-1.5 text-xs font-bold text-amber-600 hover:bg-amber-500/30"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> إعادة الفحص
+              </button>
+            </div>
+          </div>
+        )}
         {children}
       </main>
     </div>

@@ -70,14 +70,17 @@ export function TeamTab() {
       return;
     }
     setSending(true);
+    const { callServerFn, friendlyServerFnError } = await import("@/lib/health");
     try {
-      const res = await sendInvite({
-        data: {
-          email: parsed.data,
-          role: inviteRole,
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined,
-        },
-      });
+      const res = await callServerFn(() =>
+        sendInvite({
+          data: {
+            email: parsed.data,
+            role: inviteRole,
+            redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : undefined,
+          },
+        }),
+      );
       if (res.status === "added") toast.success("الحساب موجود بالفعل — تمت إضافته للفريق");
       else if (res.status === "pending_no_email")
         toast.success("تم تسجيل الدعوة — لكن تعذر إرسال رسالة البريد");
@@ -87,7 +90,7 @@ export function TeamTab() {
       setInviteRole("seller");
       await Promise.all([reload(), reloadRole()]);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "تعذّر إرسال الدعوة");
+      toast.error(friendlyServerFnError(e, "تعذّر إرسال الدعوة"));
     } finally {
       setSending(false);
     }
