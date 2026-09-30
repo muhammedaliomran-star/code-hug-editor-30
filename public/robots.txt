@@ -10,5 +10,25 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+# AI answer-engine crawlers: explicitly allowed. Blocking them means
+# disappearing from AI-generated answers (GEO). No sensitive paths exist
+# outside authenticated routes, which crawlers cannot access anyway.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
 User-agent: *
 Allow: /
+
+Sitemap: https://code-hug-editor-30.lovable.app/sitemap.xml

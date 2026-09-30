@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import Landing from "@/pages/Landing";
+import { siteUrl } from "@/lib/site";
+
+const OG_IMAGE = siteUrl("/og-segilly.jpg");
 
 export const Route = createFileRoute("/landing")({
-  ssr: false,
+  // NOTE: SSR stays ON for /landing (unlike app routes) so search engines
+  // and AI crawlers that don't execute JS still see the full content.
   component: Landing,
   head: () => ({
     meta: [
@@ -19,10 +23,13 @@ export const Route = createFileRoute("/landing")({
           "من الفاتورة لآخر قسط — عملاء ومخزون ومصروفات، محسوبة بالمليم.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "/landing" },
-      { property: "og:image", content: "https://id-preview--78c0b7d5-7020-4705-a792-27e1ee2336b1.lovable.app/og-segilly.jpg" },
-      { name: "twitter:image", content: "https://id-preview--78c0b7d5-7020-4705-a792-27e1ee2336b1.lovable.app/og-segilly.jpg" },
-
+      { property: "og:url", content: siteUrl("/landing") },
+      { property: "og:image", content: OG_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "640" },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:locale", content: "ar_EG" },
+      { name: "twitter:image", content: OG_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "سِجلّي — إدارة فواتير وأقساط المحلات" },
       {
@@ -31,6 +38,10 @@ export const Route = createFileRoute("/landing")({
           "من الفاتورة لآخر قسط — عملاء ومخزون ومصروفات، محسوبة بالمليم.",
       },
     ],
-    links: [{ rel: "canonical", href: "/landing" }],
+    links: [
+      { rel: "canonical", href: siteUrl("/landing") },
+      { rel: "alternate", hrefLang: "ar", href: siteUrl("/landing") },
+      { rel: "alternate", hrefLang: "x-default", href: siteUrl("/landing") },
+    ],
   }),
 });

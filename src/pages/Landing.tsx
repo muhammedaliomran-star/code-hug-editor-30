@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { SiteFooter } from "@/components/SiteFooter";
+import { siteUrl } from "@/lib/site";
 
 import heroImg from "@/assets/landing-hero.jpg";
 import useCaseImg from "@/assets/landing-usecase.jpg";
@@ -102,9 +103,44 @@ const QUOTES = [
   },
 ];
 
+const SOFTWARE_APP_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "سِجلّي",
+  alternateName: "Segilly",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  inLanguage: "ar",
+  description:
+    "نظام عربي لإدارة العملاء والفواتير والأقساط والمخزون والمصروفات لمحلات البيع بالتقسيط في مصر.",
+  url: siteUrl("/landing"),
+  image: siteUrl("/og-segilly.jpg"),
+};
+
+const ORGANIZATION_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "سِجلّي",
+  alternateName: "Segilly",
+  url: siteUrl("/landing"),
+  logo: siteUrl("/icon-512.png"),
+  contactPoint: [
+    {
+      "@type": "ContactPoint",
+      telephone: "+201066830834",
+      contactType: "customer service",
+      areaServed: "EG",
+      availableLanguage: "ar",
+    },
+  ],
+  sameAs: ["https://www.facebook.com/devmohamedomran"],
+};
+
 function Landing() {
   return (
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
+      <script type="application/ld+json">{JSON.stringify(SOFTWARE_APP_JSON_LD)}</script>
+      <script type="application/ld+json">{JSON.stringify(ORGANIZATION_JSON_LD)}</script>
       {/* ── nav ─────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-5">
         <nav className="glass flex w-full max-w-4xl items-center justify-between gap-6 rounded-full py-2 pe-2 ps-6">
