@@ -67,17 +67,19 @@ export function BarcodeLabelModal({ open, onOpenChange, product }: BarcodeLabelM
       return `<svg viewBox="0 0 ${Math.max(x + 10, 180)} 40" style="width: 100%; height: 36px; display: block; margin: 0 auto;">${bars}</svg>`;
     };
 
+    const esc = (v: unknown) =>
+      String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] as string);
     const barcodeSvg = generateBarcodeSvg(barcodeVal);
 
     let labelsHtml = "";
     for (let i = 0; i < labelsCount; i++) {
       labelsHtml += `
         <div class="label-item">
-          ${showShopName ? `<div class="shop-name">${shop.shopName || "سِجلّي"}</div>` : ""}
-          <div class="product-name">${product.name}</div>
+          ${showShopName ? `<div class="shop-name">${esc(shop.shopName || "سِجلّي")}</div>` : ""}
+          <div class="product-name">${esc(product.name)}</div>
           <div class="barcode-container">
             ${barcodeSvg}
-            <div class="barcode-text">${barcodeVal}</div>
+            <div class="barcode-text">${esc(barcodeVal)}</div>
           </div>
           ${showPrice ? `<div class="product-price">${fmt(displayPrice)} ج.م</div>` : ""}
         </div>
@@ -91,7 +93,7 @@ export function BarcodeLabelModal({ open, onOpenChange, product }: BarcodeLabelM
       <html dir="rtl" lang="ar">
       <head>
         <meta charset="utf-8" />
-        <title>طباعة ملصقات الباركود — ${product.name}</title>
+        <title>طباعة ملصقات الباركود — ${esc(product.name)}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap');
           * { box-sizing: border-box; margin: 0; padding: 0; }
