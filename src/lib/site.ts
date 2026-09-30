@@ -7,7 +7,7 @@
  */
 export const SITE_URL = (
   import.meta.env.VITE_SITE_URL as string | undefined
-)?.replace(/\/$/, "") || "https://code-hug-editor-30.lovable.app";
+)?.replace(/\/$/, "") || "https://raha.business";
 
 export const siteUrl = (path = "/") =>
   `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;

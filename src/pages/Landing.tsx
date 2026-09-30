@@ -90,19 +90,6 @@ const PLANS = [
   },
 ];
 
-const QUOTES = [
-  {
-    text: "كنت بنسى مين دفع ومين لأ. بقيت أفتح الموبايل وأعرف في ثانية.",
-    name: "أحمد السعيد",
-    role: "معرض أجهزة — المنصورة",
-  },
-  {
-    text: "المخزن بيتظبط لوحده مع كل فاتورة. وفّر عليّ يوم شغل في الشهر.",
-    name: "بسمة علي",
-    role: "محل موبايلات — طنطا",
-  },
-];
-
 const SOFTWARE_APP_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
@@ -136,11 +123,34 @@ const ORGANIZATION_JSON_LD = {
   sameAs: ["https://www.facebook.com/devmohamedomran"],
 };
 
+// Offer catalog mirrors the PLANS array above so structured data can never
+// drift from displayed prices. Arabic-Indic digits → Western for schema.
+const arToLatDigits = (s: string) =>
+  s.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+
+const OFFERS_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  name: "سِجلّي",
+  description:
+    "نظام عربي لإدارة العملاء والفواتير والأقساط والمخزون والمصروفات لمحلات البيع بالتقسيط في مصر.",
+  brand: { "@type": "Brand", name: "سِجلّي" },
+  offers: PLANS.map((p) => ({
+    "@type": "Offer",
+    name: `سِجلّي — باقة ${p.name}`,
+    description: p.features.join("، "),
+    url: siteUrl("/landing#pricing"),
+    priceCurrency: "EGP",
+    price: arToLatDigits(p.price),
+  })),
+};
+
 function Landing() {
   return (
     <div dir="rtl" className="min-h-screen bg-background text-foreground">
       <script type="application/ld+json">{JSON.stringify(SOFTWARE_APP_JSON_LD)}</script>
       <script type="application/ld+json">{JSON.stringify(ORGANIZATION_JSON_LD)}</script>
+      <script type="application/ld+json">{JSON.stringify(OFFERS_JSON_LD)}</script>
       {/* ── nav ─────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-5">
         <nav className="glass flex w-full max-w-4xl items-center justify-between gap-6 rounded-full py-2 pe-2 ps-6">
@@ -369,39 +379,6 @@ function Landing() {
               </Reveal>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── 6. testimonials ─────────────────────────────── */}
-      <section className="border-y border-border/50 py-32">
-        <div className="mx-auto grid max-w-6xl gap-16 px-6 lg:grid-cols-[1fr_1.6fr] lg:items-end">
-          <div className="order-2 space-y-px lg:order-1">
-            {QUOTES.slice(1).map((q) => (
-              <Reveal key={q.name} className="border-t border-border py-6 last:border-b">
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  «{q.text}»
-                </p>
-                <p className="mt-3 text-xs font-bold">{q.name}</p>
-                <p className="text-xs text-muted-foreground">{q.role}</p>
-              </Reveal>
-            ))}
-          </div>
-
-          <Reveal className="relative order-1 lg:order-2">
-            <span
-              aria-hidden
-              className="absolute -top-8 right-0 select-none text-[9rem] font-extrabold leading-none text-foreground/[0.08]"
-            >
-              ”
-            </span>
-            <blockquote className="relative text-2xl font-medium leading-[1.6] sm:text-3xl">
-              {QUOTES[0].text}
-            </blockquote>
-            <footer className="mt-8">
-              <p className="font-bold">{QUOTES[0].name}</p>
-              <p className="text-sm text-muted-foreground">{QUOTES[0].role}</p>
-            </footer>
-          </Reveal>
         </div>
       </section>
 

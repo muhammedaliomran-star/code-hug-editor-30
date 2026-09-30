@@ -31,4 +31,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://code-hug-editor-30.lovable.app/sitemap.xml
+Sitemap: https://raha.business/sitemap.xml
