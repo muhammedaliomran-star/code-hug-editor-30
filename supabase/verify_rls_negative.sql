@@ -9,6 +9,27 @@
 -- A and B own one customer each; C has no roles at all.
 DO $$ BEGIN RAISE NOTICE '--- SETUP: test rows ---'; END $$;
 
+-- The audit trigger on customers would copy our fake user_ids into
+-- audit_events (which FK-references the users table) and abort the setup.
+-- Disable it for the test only; re-enabled in cleanup (and auto-restored
+-- by transaction rollback if any check below raises).
+DO $$ BEGIN
+  IF EXISTS (
+    select 1 from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where t.tgname = 'audit_customers'
+      and c.relname = 'customers'
+      and n.nspname = 'public'
+      and tgenabled <> 'D'
+  ) THEN
+    ALTER TABLE public.customers DISABLE TRIGGER audit_customers;
+    RAISE NOTICE 'setup: audit_customers trigger disabled for the test';
+  ELSE
+    RAISE NOTICE 'setup: no audit_customers trigger, nothing to disable';
+  END IF;
+END $$;
+
 insert into public.customers (id, user_id, name)
 values
   ('a0000000-0000-4000-8000-000000000001', '11111111-1111-1111-1111-111111111111', 'RLS_TEST_A'),
@@ -201,5 +222,19 @@ where id in (
   'a0000000-0000-4000-8000-000000000001',
   'a0000000-0000-4000-8000-000000000002'
 );
+
+DO $$ BEGIN
+  IF EXISTS (
+    select 1 from pg_trigger t
+    join pg_class c on c.oid = t.tgrelid
+    join pg_namespace n on n.oid = c.relnamespace
+    where t.tgname = 'audit_customers'
+      and c.relname = 'customers'
+      and n.nspname = 'public'
+  ) THEN
+    ALTER TABLE public.customers ENABLE TRIGGER audit_customers;
+    RAISE NOTICE 'cleanup: audit_customers trigger re-enabled';
+  END IF;
+END $$;
 
 DO $$ BEGIN RAISE NOTICE '--- ALL RLS NEGATIVE TESTS PASSED ---'; END $$;
