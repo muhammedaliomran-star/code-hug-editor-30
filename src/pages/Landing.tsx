@@ -128,6 +128,47 @@ const ORGANIZATION_JSON_LD = {
 const arToLatDigits = (s: string) =>
   s.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)));
 
+const FAQS = [
+  {
+    q: "هل يوجد فترة تجريبية مجانية؟",
+    a: "نعم — عند التسجيل تحصل على 14 يوماً بكامل مميزات باقة برو، بدون بطاقة ائتمان وبدون أي التزام.",
+  },
+  {
+    q: "هل يعمل سِجلّي بدون إنترنت؟",
+    a: "نعم جزئياً: بياناتك المحفوظة تفتح دائماً، وأي حركة جديدة تُسجَّل في طابور محلي ثم تتمزامن تلقائياً فور عودة الاتصال.",
+  },
+  {
+    q: "كيف أنقل عملائي من الدفاتر أو ملفات Excel؟",
+    a: "من صفحة العملاء يمكنك استيراد كشف عملائك من ملف Excel عبر قالب جاهز، ثم تكمل عليهم فواتيرك الجديدة.",
+  },
+  {
+    q: "هل يدعم سِجلّي الطباعة الحرارية؟",
+    a: "نعم — إيصالات بعرض 80مم وورق A4، مع باركود على كل إيصال وفتح تلقائي لدرج النقدية عند الطباعة.",
+  },
+  {
+    q: "هل يناسب محلات الملابس والموبايلات والأجهزة؟",
+    a: "نعم — مقاسات وألوان للأصناف، باركود ومسح ضوئي، وجداول أقساط مرنة بمقدم ودفعات شهرية تناسب البيع بالتقسيط.",
+  },
+  {
+    q: "هل يدعم الفروع وصلاحيات الموظفين؟",
+    a: "نعم — فروع متعددة، وأدوار مدير وكاشير مع رقم سري للمدير وصلاحيات منفصلة للتقارير والإعدادات والخصومات.",
+  },
+  {
+    q: "هل بيانات محلي آمنة؟ وكيف أحتفظ بنسخة؟",
+    a: "كل محل يرى بياناته فقط بعزل كامل على مستوى قاعدة البيانات، ويمكنك تنزيل نسخة احتياطية JSON أو Excel في أي وقت من الإعدادات.",
+  },
+];
+
+const FAQ_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: FAQS.map((f) => ({
+    "@type": "Question",
+    name: f.q,
+    acceptedAnswer: { "@type": "Answer", text: f.a },
+  })),
+};
+
 const OFFERS_JSON_LD = {
   "@context": "https://schema.org",
   "@type": "Product",
@@ -151,6 +192,7 @@ function Landing() {
       <script type="application/ld+json">{JSON.stringify(SOFTWARE_APP_JSON_LD)}</script>
       <script type="application/ld+json">{JSON.stringify(ORGANIZATION_JSON_LD)}</script>
       <script type="application/ld+json">{JSON.stringify(OFFERS_JSON_LD)}</script>
+      <script type="application/ld+json">{JSON.stringify(FAQ_JSON_LD)}</script>
       {/* ── nav ─────────────────────────────────────────── */}
       <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-5">
         <nav className="glass flex w-full max-w-4xl items-center justify-between gap-6 rounded-full py-2 pe-2 ps-6">
@@ -185,6 +227,7 @@ function Landing() {
           alt="محل أجهزة منزلية في مصر وقت الغروب"
           width={1920}
           height={1088}
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background/30 via-background/70 to-background" />
@@ -436,7 +479,30 @@ function Landing() {
         </div>
       </section>
 
-      {/* ── 8. final CTA + footer ───────────────────────── */}
+      {/* ── 8. FAQ (وقود محركات الإجابة — GEO) ────────── */}
+      <section className="mx-auto max-w-3xl px-6 py-32">
+        <Reveal className="text-center">
+          <span className="mb-4 block text-xs font-semibold tracking-[0.14em] text-muted-foreground">
+            أسئلة شائعة
+          </span>
+          <h2 className="text-title">عندك سؤال؟ عندنا الإجابة</h2>
+        </Reveal>
+        <div className="mt-12 space-y-3">
+          {FAQS.map((f) => (
+            <details
+              key={f.q}
+              className="group rounded-2xl border border-border/60 bg-card/50 px-6 py-5 transition-colors hover:border-border"
+            >
+              <summary className="cursor-pointer list-none text-[15px] font-bold marker:hidden [&::-webkit-details-marker]:hidden">
+                {f.q}
+              </summary>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* ── 9. final CTA + footer ───────────────────────── */}
       <section className="relative overflow-hidden">
         <img
           src={ctaImg}
