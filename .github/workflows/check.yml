@@ -17,3 +17,40 @@ jobs:
       # escapes and contract breaks are caught before deploy.
       - run: bun run typecheck
       - run: bun run test
+
+  # Phase 4 (security review): static RLS lint over migrations.
+  # No DB needed: fails on dangerous policy text that must never ship
+  # without a matching DROP (permissive USING(true), self-manage roles).
+  rls-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Denylisted policies must have a matching DROP
+        run: |
+          fail=0
+          for pol in \
+            "Allow authenticated full access to shipments" \
+            "Allow authenticated full access to shipping_carriers" \
+            "Allow authenticated full access to shipping_zones" \
+            "Users manage own roles"
+          do
+            if grep -rq "CREATE POLICY \"$pol\"" supabase/migrations/; then
+              if ! grep -rq "DROP POLICY IF EXISTS \"$pol\"" supabase/migrations/; then
+                echo "RLS-LINT FAIL: '$pol' created without a matching DROP"
+                fail=1
+              fi
+            fi
+          done
+          # Permissive USING(true) is only ever allowed on the intentional
+          # anon receipt surface (shop_settings). The three historical MVP
+          # permissives live only in 20260820000000 (all dropped by later
+          # migrations — see the denylist loop above); anything else leaks.
+          # (-B2: CREATE POLICY and USING(true) sit on different lines, so
+          # match with 2 lines of context, then keep only USING lines.)
+          leftover=$(grep -rn -B2 "USING (true)" supabase/migrations/ | grep -v "shop_settings" | grep -v "20260820000000_shipping_system.sql" | grep "USING (true)" || true)
+          if [ -n "$leftover" ]; then
+            echo "RLS-LINT FAIL: USING(true) outside allowlisted surfaces:"
+            echo "$leftover"
+            fail=1
+          fi
+          exit $fail
