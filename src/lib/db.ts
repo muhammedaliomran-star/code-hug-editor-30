@@ -146,7 +146,7 @@ async function fetchAll() {
     });
   }
 
-  cache = {
+  cache = ({
     customers: (c.data ?? []).map((r: TableRow<"customers">) => ({
       id: r.id, name: r.name, phone: r.phone, rating: r.rating,
       status: r.status as CustomerStatus, customerType: (r.customer_type ?? 'installment') as CustomerType,
@@ -263,7 +263,7 @@ async function fetchAll() {
       notes: r.notes, createdAt: r.created_at,
     })),
 
-  };
+  } as unknown as NonNullable<typeof cache>);
   loading = false;
   loaded = true;
   notify();
