@@ -110,7 +110,7 @@ create or replace function public.save_storefront_payment_config(
 declare v_owner uuid := auth.uid();
 begin
   if v_owner is null then raise exception 'سجل الدخول أولًا'; end if;
-  upsert into public.storefront_payment_config (owner_id, secret_key, public_key, hmac_secret, integration_id_card, integration_id_wallet, updated_at)
+  insert into public.storefront_payment_config (owner_id, secret_key, public_key, hmac_secret, integration_id_card, integration_id_wallet, updated_at)
     values (v_owner, p_secret_key, p_public_key, p_hmac_secret, p_integration_id_card, p_integration_id_wallet, now())
     on conflict (owner_id) do update set
       secret_key = excluded.secret_key,
