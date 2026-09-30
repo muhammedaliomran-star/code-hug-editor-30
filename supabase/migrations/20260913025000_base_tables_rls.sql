@@ -40,7 +40,12 @@ begin
       ('Public can read shop settings for receipts', 'shop_settings')
     ) as v(pol, tbl)
   loop
-    execute format('drop policy if exists %I on public.%I', r.pol, r.tbl);
+    -- DROP POLICY fails with 42P01 when the TABLE itself is missing
+    -- (IF EXISTS covers only the policy), so guard on table existence.
+    -- This block runs before the CREATE TABLEs below on fresh deploys.
+    if to_regclass('public.' || r.tbl) is not null then
+      execute format('drop policy if exists %I on public.%I', r.pol, r.tbl);
+    end if;
   end loop;
   for r in
     select * from (values
@@ -50,7 +55,9 @@ begin
       ('set_updated_at', 'shop_settings')
     ) as v(trg, tbl)
   loop
-    execute format('drop trigger if exists %I on public.%I', r.trg, r.tbl);
+    if to_regclass('public.' || r.tbl) is not null then
+      execute format('drop trigger if exists %I on public.%I', r.trg, r.tbl);
+    end if;
   end loop;
 end
 $$;
