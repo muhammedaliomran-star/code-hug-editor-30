@@ -112,6 +112,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Load runtime /app-config.json BEFORE first render so the Supabase
+  // client can fall back to it when build-time env is missing. Runs once
+  // per session (module-guarded inside loadAppConfig); no-op on server.
+  beforeLoad: async () => {
+    const { loadAppConfig } = await import("@/lib/app-config");
+    await loadAppConfig();
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
