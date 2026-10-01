@@ -372,6 +372,23 @@ $$;
 -- ===== FILE: 20260922020000_add_updated_at_for_sync.sql =====}
 -- Final migration: updated_at + indexes + triggers for all core tables
 
+-- Self-contained: the trigger helper must exist BEFORE the triggers below.
+-- (On the old DB it pre-existed via dashboard; on fresh DBs nothing defines
+-- it earlier in apply order, so CREATE TRIGGER would fail with 42883.)
+create or replace function public.sync_set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+revoke all on function public.sync_set_updated_at() from public;
+grant execute on function public.sync_set_updated_at() to authenticated;
+grant execute on function public.sync_set_updated_at() to service_role;
+
 -- 1. Add updated_at columns (skip tables that already have it).
 -- Every table below gets the column: the old DB had them added piecemeal
 -- via dashboard, but a fresh DB has none — and the indexes/triggers below
