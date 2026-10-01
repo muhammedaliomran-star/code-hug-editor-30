@@ -72,7 +72,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   return (
@@ -90,7 +90,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           بياناتك في أمان. جرّب تعيد المحاولة، ولو المشكلة كمّلت ارجع للوحة التحكم.
         </p>
         <pre className="mt-5 max-h-32 overflow-auto rounded-xl border border-border/60 bg-muted/30 p-3 text-right text-[11px] leading-relaxed text-muted-foreground" dir="ltr">
-          {error.message}
+          {error instanceof Error ? error.message : String(error)}
         </pre>
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <button
