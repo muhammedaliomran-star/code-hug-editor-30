@@ -1,7 +1,6 @@
 import { useNavigate } from "@/lib/router-compat";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,24 +152,28 @@ function AuthPage() {
           variant="outline"
           className="w-full gap-2" size="lg"
           disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            try {
-              const result = await lovable.auth.signInWithOAuth("google", {
-                redirect_uri: window.location.origin,
-              });
-              if (result.error) {
-                toast.error(result.error.message || "تعذّر تسجيل الدخول عبر جوجل");
+            onClick={async () => {
+              setBusy(true);
+              try {
+                // Native Supabase OAuth (post-migration): the Lovable bridge
+                // mints tokens for the OLD project, so it can no longer work.
+                // Requires Google provider enabled on the new Supabase project.
+                const { error } = await supabase.auth.signInWithOAuth({
+                  provider: "google",
+                  options: { redirectTo: window.location.origin },
+                });
+                if (error) {
+                  toast.error(error.message || "تعذّر تسجيل الدخول عبر جوجل");
+                  setBusy(false);
+                  return;
+                }
+                // Redirects to Google; on return the session auto-resumes and
+                // the ready-user effect above navigates to "/".
+              } catch (err: any) {
+                toast.error(err.message || "حدث خطأ");
                 setBusy(false);
-                return;
               }
-              if (result.redirected) return;
-              navigate("/");
-            } catch (err: any) {
-              toast.error(err.message || "حدث خطأ");
-              setBusy(false);
-            }
-          }}
+            }}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
