@@ -4,31 +4,31 @@
      src/lib/site.ts SITE_URL). -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://raha.business/landing</loc>
+    <loc>https://lavida55.lovable.app/landing</loc>
     <lastmod>2026-09-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://raha.business/about</loc>
+    <loc>https://lavida55.lovable.app/about</loc>
     <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://raha.business/support</loc>
+    <loc>https://lavida55.lovable.app/support</loc>
     <lastmod>2026-09-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://raha.business/privacy</loc>
+    <loc>https://lavida55.lovable.app/privacy</loc>
     <lastmod>2026-09-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://raha.business/terms</loc>
+    <loc>https://lavida55.lovable.app/terms</loc>
     <lastmod>2026-09-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
