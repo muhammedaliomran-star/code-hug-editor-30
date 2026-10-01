@@ -267,7 +267,7 @@ function Landing() {
       <section className="border-y border-border/50 py-20">
         <Reveal className="mx-auto max-w-4xl px-6 text-center">
           <p className="text-xs tracking-wide text-muted-foreground">
-            بيشتغل عليه تجّار في محافظات مصر
+            مصمم لتجّار التقسيط في كل محافظات مصر
           </p>
           <div className="mt-7 flex flex-wrap items-center justify-center gap-x-12 gap-y-5 text-lg font-bold text-muted-foreground/50">
             <span>المنصورة</span>
@@ -335,6 +335,9 @@ function Landing() {
         </Reveal>
 
         <Reveal delay={120} className="mx-auto mt-16 max-w-5xl px-6">
+          <p className="mb-4 text-center text-xs text-muted-foreground">
+            مثال توضيحي للوحة التحكم
+          </p>
           <div className="rounded-[1.75rem] bg-card/60 p-6 ring-1 ring-inset ring-[var(--hairline)] sm:p-9">
             <div className="grid gap-7 text-right sm:grid-cols-3 sm:gap-0 sm:[&>*+*]:border-s sm:[&>*+*]:border-[var(--hairline)] sm:[&>*+*]:ps-8">
               {[
@@ -425,7 +428,7 @@ function Landing() {
         </div>
       </section>
 
-      {/* ── 7. pricing ──────────────────────────────────── */}
+      {/* ── 6. pricing ──────────────────────────────────── */}
       <section id="pricing" className="scroll-mt-20 py-32">
         <Reveal className="mx-auto max-w-6xl px-6 text-center">
           <span className="mb-4 block text-xs font-semibold tracking-[0.14em] text-muted-foreground">الأسعار</span>
@@ -479,7 +482,7 @@ function Landing() {
         </div>
       </section>
 
-      {/* ── 8. FAQ (وقود محركات الإجابة — GEO) ────────── */}
+      {/* ── 7. FAQ (وقود محركات الإجابة — GEO) ────────── */}
       <section className="mx-auto max-w-3xl px-6 py-32">
         <Reveal className="text-center">
           <span className="mb-4 block text-xs font-semibold tracking-[0.14em] text-muted-foreground">
@@ -502,7 +505,7 @@ function Landing() {
         </div>
       </section>
 
-      {/* ── 9. final CTA + footer ───────────────────────── */}
+      {/* ── 8. final CTA + footer ───────────────────────── */}
       <section className="relative overflow-hidden">
         <img
           src={ctaImg}
