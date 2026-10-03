@@ -9,6 +9,7 @@ import {
 import { ShieldCheck, Crown, Eye, EyeOff, Printer, SlidersHorizontal } from "lucide-react";
 import { Link } from "@/lib/router-compat";
 import { cn } from "@/lib/utils";
+import { ActionButton } from "@/components/ActionButton";
 import type { TimeRange } from "@/components/dashboard";
 import {
   DashboardProvider,
@@ -97,48 +98,33 @@ function DashboardInner() {
               ))}
             </div>
 
-            <button
-              type="button"
+            <ActionButton
+              tone="surface"
               onClick={() => setCustomizationOpen(true)}
               title="تخصيص وترتيب البطاقات"
-              className="island-btn group ring-1 bg-foreground/[0.05] text-foreground ring-border hover:bg-foreground/[0.1] transition-all"
+              icon={<SlidersHorizontal className="h-4 w-4" />}
             >
               <span className="hidden sm:inline">تخصيص العرض</span>
-              <span className="island-btn-icon">
-                <SlidersHorizontal className="h-4 w-4" />
-              </span>
-            </button>
+            </ActionButton>
 
-            <button
-              type="button"
+            <ActionButton
               onClick={handleExportExecutiveReport}
               title="تصدير الموجز التنفيذي للوحة التحكم PDF"
-              className="island-btn group ring-1 bg-primary text-primary-foreground ring-primary/30 hover:bg-primary/90 shadow-sm transition-all"
+              icon={<Printer className="h-4 w-4" />}
             >
               <span className="hidden sm:inline">تقرير تنفيذي (PDF)</span>
-              <span className="island-btn-icon">
-                <Printer className="h-4 w-4" />
-              </span>
-            </button>
+            </ActionButton>
 
-            <button
-              type="button"
+            <ActionButton
+              tone="surface"
               onClick={toggle}
               title="إخفاء الأرقام"
-              className={cn(
-                "island-btn group ring-1",
-                privacy
-                  ? "bg-foreground/[0.08] text-foreground ring-foreground/15"
-                  : "bg-transparent text-muted-foreground ring-border hover:text-foreground",
-              )}
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
               <span className="hidden sm:inline">
                 {privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
               </span>
-              <span className="island-btn-icon">
-                {privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </span>
-            </button>
+            </ActionButton>
 
             <Link
               to="/reconciliation"

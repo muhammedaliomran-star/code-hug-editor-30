@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export type StatTab<T extends string = string> = {
@@ -5,6 +6,7 @@ export type StatTab<T extends string = string> = {
   label: string;
   count?: number;
   active?: boolean;
+  icon?: ReactNode;
 };
 
 /**
@@ -47,7 +49,10 @@ export function StatTabs<T extends string>({
                 : "font-medium text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground",
             )}
           >
-            <span className="truncate">{opt.label}</span>
+            <span className="flex items-center gap-1.5">
+              {opt.icon}
+              <span className="truncate">{opt.label}</span>
+            </span>
             {typeof opt.count === "number" && (
               <span className={cn("text-[11px] font-bold tabular-nums", active ? "opacity-85" : "opacity-70")}>
                 {opt.count}

@@ -54,8 +54,6 @@ import {
   FileDown,
   FileSpreadsheet,
   Upload,
-  ArrowUp,
-  ArrowDown,
   AlertTriangle,
   Banknote,
   QrCode,
@@ -65,7 +63,13 @@ import {
   Pencil,
   Trash2,
   Info,
+  Wallet,
+  TrendingUp,
+  BadgeCheck,
 } from "lucide-react";
+import { MetricCard } from "@/components/MetricCard";
+import { FilterChips } from "@/components/FilterChips";
+import { ActionButton } from "@/components/ActionButton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
@@ -99,47 +103,15 @@ export default function Page() {
   );
 }
 
-const FILTERS: { value: FilterTab; label: string; activeCls: string }[] = [
-  {
-    value: "all",
-    label: "الكل",
-    activeCls: "bg-primary text-primary-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.45)]",
-  },
-  {
-    value: "installment",
-    label: "عملاء قسط",
-    activeCls: "bg-foreground text-background shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
-  {
-    value: "dueToday",
-    label: "مستحق اليوم",
-    activeCls: "bg-warning text-warning-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
-  {
-    value: "overdue",
-    label: "المتأخرون",
-    activeCls: "bg-danger text-danger-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
-  {
-    value: "cash",
-    label: "عملاء فوري",
-    activeCls: "bg-foreground text-background shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
-  {
-    value: "frozen",
-    label: "المجمدون",
-    activeCls: "bg-destructive text-destructive-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
-  {
-    value: "bajah",
-    label: "عملاء بجحين",
-    activeCls: "bg-foreground text-background shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
-  {
-    value: "settled",
-    label: "الخالصون",
-    activeCls: "bg-foreground text-background shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.4)]",
-  },
+const FILTERS: { value: FilterTab; label: string }[] = [
+  { value: "all", label: "الكل" },
+  { value: "installment", label: "عملاء قسط" },
+  { value: "dueToday", label: "مستحق اليوم" },
+  { value: "overdue", label: "المتأخرون" },
+  { value: "cash", label: "عملاء فوري" },
+  { value: "frozen", label: "المجمدون" },
+  { value: "bajah", label: "عملاء بجحين" },
+  { value: "settled", label: "الخالصون" },
 ];
 
 function CustomersPage() {
@@ -386,17 +358,14 @@ function CustomersPage() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant={privacy ? "default" : "outline"}
-                    size="sm"
-                    className="gap-1.5"
+                  <ActionButton
+                    tone={privacy ? "primary" : "surface"}
                     onClick={toggle}
                     aria-pressed={privacy}
+                    icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   >
-                    {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     {privacy ? "إظهار" : "إخفاء الأرقام"}
-                  </Button>
+                  </ActionButton>
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   يطمس كل المبالغ المالية في الجدول لإخفائها عن أعين المتطفلين.
@@ -404,46 +373,37 @@ function CustomersPage() {
               </Tooltip>
             </TooltipProvider>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-success hover:text-success hover:bg-success/10 border-success/30"
+            <ActionButton
+              tone="surface"
               onClick={() => setImportOpen(true)}
+              icon={<Upload className="h-4 w-4" />}
             >
-              <Upload className="w-4 h-4" />
               استيراد من Excel
-            </Button>
+            </ActionButton>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone="surface"
               onClick={exportExcel}
               disabled={list.length === 0}
+              icon={<FileSpreadsheet className="h-4 w-4" />}
             >
-              <FileSpreadsheet className="w-4 h-4 text-success" />
               تصدير (Excel)
-            </Button>
+            </ActionButton>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone="surface"
               onClick={exportPDF}
               disabled={list.length === 0}
+              icon={<FileDown className="h-4 w-4" />}
             >
-              <FileDown className="w-4 h-4" />
               تصدير (PDF)
-            </Button>
+            </ActionButton>
 
             <CustomerDialog
               trigger={
-                <Button className="gap-2">
-                  <Plus className="w-4 h-4" /> إضافة عميل
-                </Button>
+                <ActionButton icon={<Plus className="h-4 w-4" />}>
+                  إضافة عميل
+                </ActionButton>
               }
             />
           </div>
@@ -451,81 +411,61 @@ function CustomersPage() {
       />
 
       {/* ===== Bento: KPI + بحث + فلاتر ===== */}
-      <Reveal className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-12">
-        {/* البطاقة الكبيرة */}
-        <BezelCard
-          variant="flat"
-          className="md:col-span-7 flex h-full flex-col justify-between gap-6 p-6 md:p-7"
-        >
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
-            <div className="min-w-0">
-              <span className="mb-1 inline-flex items-center rounded-full bg-foreground/[0.06] px-3 py-1 text-[11px] font-bold tracking-[0.06em] text-muted-foreground ring-1 ring-border">
-                Outstanding
-              </span>
-              <div className="mt-3 text-xs font-medium text-muted-foreground">
-                إجمالي الديون بالخارج
-              </div>
-              <div
-                className={cn(
-                  "text-numeric mt-1.5 text-4xl font-extrabold leading-none text-foreground md:text-5xl",
-                  privacy && "privacy-blur",
-                )}
-              >
-                {fmt(debtStats.totalDebt)}
-                <span className="ms-2 align-middle text-base font-bold text-muted-foreground">
-                  ج.م
-                </span>
-              </div>
-            </div>
-            <div
-              className={cn(
-                "flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold bg-foreground/[0.06] text-muted-foreground ring-1 ring-border",
-              )}
-            >
-              {debtStats.trendPct >= 0 ? (
-                <ArrowUp className="h-3 w-3" />
-              ) : (
-                <ArrowDown className="h-3 w-3" />
-              )}
-              {debtStats.trendPct >= 0 ? "تحصيل" : "تراجع"} {Math.abs(debtStats.trendPct)}٪
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary/70" />
-            موزعة على {debtStats.debtors} عميل من إجمالي {counts.all}
-          </div>
-        </BezelCard>
-
-        {/* عمود مصغّر */}
+      <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-12">
+        <Reveal className="md:col-span-7">
+          <MetricCard
+            hero
+            icon={Wallet}
+            label="إجمالي الديون بالخارج"
+            value={debtStats.totalDebt}
+            format={(n) => `${fmt(n)} ج.م`}
+            masked={privacy}
+            sub={
+              <>
+                موزعة على {debtStats.debtors} عميل من إجمالي {counts.all}
+                {" · "}
+                {debtStats.trendPct >= 0 ? "تحصيل" : "تراجع"} {Math.abs(debtStats.trendPct)}٪
+              </>
+            }
+          />
+        </Reveal>
         <div className="grid gap-4 md:col-span-5">
-          <BezelCard variant="flat" className="p-6">
-            <div className="text-xs font-medium text-muted-foreground">محصّل هذا الأسبوع</div>
-            <div
-              className={cn(
-                "text-numeric mt-1.5 text-3xl font-extrabold leading-none text-success",
-                privacy && "privacy-blur",
-              )}
-            >
-              {fmt(debtStats.thisWeek)}
-              <span className="ms-2 align-middle text-sm font-bold text-muted-foreground">ج.م</span>
-            </div>
-          </BezelCard>
-          <BezelCard variant="flat" className="grid grid-cols-2 gap-4 p-6">
-            <div>
-              <div className="text-xs font-medium text-muted-foreground">متأخرون</div>
-              <div className="text-numeric mt-1 text-2xl font-extrabold leading-none text-warning">
-                {counts.overdue}
-              </div>
-            </div>
-            <div>
-              <div className="text-xs font-medium text-muted-foreground">خالصون</div>
-              <div className="text-numeric mt-1 text-2xl font-extrabold leading-none text-success">
-                {counts.settled}
-              </div>
-            </div>
-          </BezelCard>
+          <Reveal>
+            <MetricCard
+              icon={TrendingUp}
+              label="محصّل هذا الأسبوع"
+              value={debtStats.thisWeek}
+              tone="positive"
+              format={(n) => `${fmt(n)} ج.م`}
+              masked={privacy}
+            />
+          </Reveal>
+          <div className="grid grid-cols-2 gap-4">
+            <Reveal>
+              <MetricCard
+                mini
+                icon={AlertTriangle}
+                label="متأخرون"
+                value={counts.overdue}
+                tone="danger"
+                format={(n) => String(Math.round(n))}
+                masked={privacy}
+              />
+            </Reveal>
+            <Reveal>
+              <MetricCard
+                mini
+                icon={BadgeCheck}
+                label="خالصون"
+                value={counts.settled}
+                tone="positive"
+                format={(n) => String(Math.round(n))}
+                masked={privacy}
+              />
+            </Reveal>
+          </div>
         </div>
-      </Reveal>
+      </div>
 
       {/* شريط التحكّم: فلاتر + بحث + يوم القسط */}
       <Reveal delay={80} className="sticky-search-bar mb-8">
@@ -563,33 +503,12 @@ function CustomersPage() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/20">
-            {FILTERS.map((f) => {
-              const active = filter === f.value;
-              return (
-                <button
-                  key={f.value}
-                  type="button"
-                  onClick={() => setFilter(f.value)}
-                  className={cn(
-                    "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.97]",
-                    active
-                      ? f.activeCls
-                      : "text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground",
-                  )}
-                >
-                  {f.label}
-                  <span
-                    className={cn(
-                      "text-numeric grid h-4.5 min-w-4.5 place-items-center rounded-full px-1.5 text-[10px] font-bold",
-                      active ? "bg-background/25" : "bg-foreground/[0.06]",
-                    )}
-                  >
-                    {counts[f.value]}
-                  </span>
-                </button>
-              );
-            })}
+          <div className="pt-1 border-t border-border/20">
+            <FilterChips
+              value={filter}
+              onChange={setFilter}
+              options={FILTERS.map((f) => ({ value: f.value, label: f.label, count: counts[f.value] }))}
+            />
           </div>
         </BezelCard>
       </Reveal>
@@ -625,9 +544,9 @@ function CustomersPage() {
               action={
                 <CustomerDialog
                   trigger={
-                    <Button className="gap-2">
-                      <Plus className="h-4 w-4" /> إضافة أول عميل
-                    </Button>
+                    <ActionButton icon={<Plus className="h-4 w-4" />}>
+                      إضافة أول عميل
+                    </ActionButton>
                   }
                 />
               }

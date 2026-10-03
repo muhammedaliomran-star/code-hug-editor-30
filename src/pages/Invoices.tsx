@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
 import { BezelCard } from "@/components/BezelCard";
@@ -25,7 +25,9 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -51,7 +53,6 @@ import { toArabicDigits } from "@/lib/arabic-digits";
 import { cn } from "@/lib/utils";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 import {
-  StatCard,
   HistoryDialog,
   EditInvoiceItemDialog,
   InvoiceReturnDialog,
@@ -91,7 +92,6 @@ function InvoicesPage() {
   const [returnInv, setReturnInv] = useState<Invoice | null>(null);
   const [shareInv, setShareInv] = useState<Invoice | null>(null);
   const { privacy, toggle } = usePrivacy();
-  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const { settings: shopSettings } = useShopSettings();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -468,17 +468,17 @@ function InvoicesPage() {
         subtitle="إدارة الأقساط والمبيعات."
         action={
           <div className="flex items-center gap-2">
-            <Button
-              variant={privacy ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
               onClick={toggle}
               title="إخفاء الأرقام"
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
-              {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </Button>
-            <Button asChild className="gap-2"><Link to="/invoices/new"><Plus className="w-4 h-4" /> فاتورة جديدة</Link></Button>
+            </ActionButton>
+            <ActionButton onClick={() => navigate("/invoices/new")} icon={<Plus className="h-4 w-4" />}>
+              فاتورة جديدة
+            </ActionButton>
           </div>
         }
       />
@@ -491,37 +491,30 @@ function InvoicesPage() {
       )}
 
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
-        <StatCard icon={<Wallet className="w-5 h-5" />} label="إجمالي المسدد" value={`${fmt(stats.totalPaid)} ج.م`} tone="neutral" trend="up" valueClassName={blurCls} />
-        <StatCard icon={<TrendingUp className="w-5 h-5" />} label="إجمالي المبيعات" value={`${fmt(stats.totalSales)} ج.م`} tone="neutral" trend="up" valueClassName={blurCls} />
-        <StatCard icon={<FileText className="w-5 h-5" />} label="عدد الفواتير" value={String(stats.invoiceCount)} tone="neutral" valueClassName={blurCls} />
-        
-        <StatCard icon={<AlertCircle className="w-5 h-5" />} label="الفواتير المتعثرة" value={String(stats.overdueCount)} tone="danger" trend="down" valueClassName={blurCls} />
-        <StatCard icon={<CalendarDays className="w-5 h-5" />} label="تحصيلات الشهر الحالي" value={`${fmt(stats.monthCollections)} ج.م`} tone="neutral" trend="up" valueClassName={blurCls} />
-        <StatCard icon={<Wallet className="w-5 h-5" />} label="إجمالي المبيعات النشطة" value={`${fmt(stats.activeSalesTotal)} ج.م`} tone="neutral" trend="up" valueClassName={blurCls} />
-
-        <StatCard icon={<TrendingUp className="w-5 h-5" />} label="نسبة التحصيل" value={`%${stats.collectionRate.toFixed(1)}`} tone="neutral" trend="up" valueClassName={blurCls} />
-        <StatCard icon={<FileText className="w-5 h-5" />} label="متوسط قيمة الفاتورة" value={`${fmt(stats.avgInvoiceValue)} ج.م`} tone="neutral" valueClassName={blurCls} />
-        <StatCard icon={<CalendarDays className="w-5 h-5" />} label="مبيعات الشهر الحالي" value={`${fmt(stats.monthSales)} ج.م`} tone="neutral" trend="up" valueClassName={blurCls} />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+        <MetricCard mini icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini icon={FileText} label="عدد الفواتير" value={stats.invoiceCount} format={(n) => String(Math.round(n))} masked={privacy} />
+        <MetricCard mini icon={AlertCircle} label="الفواتير المتعثرة" value={stats.overdueCount} tone="danger" format={(n) => String(Math.round(n))} masked={privacy} />
+        <MetricCard mini icon={CalendarDays} label="تحصيلات الشهر الحالي" value={stats.monthCollections} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini icon={Wallet} label="إجمالي المبيعات النشطة" value={stats.activeSalesTotal} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
+        <MetricCard mini icon={FileText} label="متوسط قيمة الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini icon={CalendarDays} label="مبيعات الشهر الحالي" value={stats.monthSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
       </div>
 
       <div className="sticky-search-bar">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="mb-4">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto">
-          <TabsTrigger value="active" className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground">
-            فواتير نشطة <Badge variant="secondary" className="rounded-full">{counts.active}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="overdue" className="gap-1.5 data-[state=active]:bg-danger/15 data-[state=active]:text-danger">
-            متأخرة <Badge variant="secondary" className="rounded-full">{counts.overdue}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="settled" className="gap-1.5 data-[state=active]:bg-success/15 data-[state=active]:text-success">
-            تم التحصيل <Badge variant="secondary" className="rounded-full">{counts.settled}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="all" className="gap-1.5">
-            الكل <Badge variant="secondary" className="rounded-full">{counts.all}</Badge>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <StatTabs
+          value={tab}
+          onChange={(v) => setTab(v as Tab)}
+          className="mb-4"
+          options={[
+            { value: "active", label: "فواتير نشطة", count: counts.active },
+            { value: "overdue", label: "متأخرة", count: counts.overdue },
+            { value: "settled", label: "تم التحصيل", count: counts.settled },
+            { value: "all", label: "الكل", count: counts.all },
+          ]}
+        />
 
         <div className="mb-5 flex flex-col md:flex-row md:items-center gap-2">
           <div className="relative md:w-72">

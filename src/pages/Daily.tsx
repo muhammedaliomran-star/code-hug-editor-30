@@ -5,6 +5,8 @@ import { PageTransition } from "@/components/PageTransition";
 import { BezelCard } from "@/components/BezelCard";
 import { MetricCard, MetricLabel } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
+import { FilterChips } from "@/components/FilterChips";
+import { StatTabs } from "@/components/StatTabs";
 import { EmptyState } from "@/components/EmptyState";
 import { Reveal } from "@/components/Reveal";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
@@ -93,7 +95,10 @@ function DailyPage() {
   }, [from]);
 
   // Quick Preset Date Selectors
-  const setQuickDate = (preset: "today" | "yesterday" | "this-week" | "this-month") => {
+  type QuickPreset = "today" | "yesterday" | "this-week" | "this-month";
+  const [quickPreset, setQuickPreset] = useState<QuickPreset>("today");
+  const setQuickDate = (preset: QuickPreset) => {
+    setQuickPreset(preset);
     const today = new Date();
     const tIso = today.toISOString().slice(0, 10);
     
@@ -382,41 +387,16 @@ function DailyPage() {
               <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
                 <CalendarDays className="h-4 w-4 text-primary" /> فترات سريعة:
               </span>
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("today")}
-                  className={cn(
-                    "px-3 py-1 text-xs font-bold rounded-xl transition-all",
-                    from === todayISO() && to === todayISO()
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  اليوم
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("yesterday")}
-                  className="px-3 py-1 text-xs font-bold rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                >
-                  أمس
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("this-week")}
-                  className="px-3 py-1 text-xs font-bold rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                >
-                  هذا الأسبوع
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setQuickDate("this-month")}
-                  className="px-3 py-1 text-xs font-bold rounded-xl bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all"
-                >
-                  هذا الشهر
-                </button>
-              </div>
+              <FilterChips<QuickPreset>
+                value={quickPreset}
+                onChange={setQuickDate}
+                options={[
+                  { value: "today", label: "اليوم" },
+                  { value: "yesterday", label: "أمس" },
+                  { value: "this-week", label: "هذا الأسبوع" },
+                  { value: "this-month", label: "هذا الشهر" },
+                ]}
+              />
             </div>
 
             {filtersActive && (
@@ -561,63 +541,16 @@ function DailyPage() {
       {/* تبويبات تفصيل حركة اليومية */}
       <div className="mt-8 space-y-4 pb-24 lg:pb-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/50 border border-[var(--hairline)] rounded-2xl">
-            <button
-              type="button"
-              onClick={() => setActiveTab("invoices")}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all",
-                activeTab === "invoices"
-                  ? "bg-card text-foreground shadow-sm border border-[var(--hairline)]"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <FileText className="h-3.5 w-3.5 text-primary" />
-              فواتير الفترة ({rows.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("payments")}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all",
-                activeTab === "payments"
-                  ? "bg-card text-foreground shadow-sm border border-[var(--hairline)]"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-              التحصيلات والأقساط المستلمة ({periodPayments.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("expenses")}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all",
-                activeTab === "expenses"
-                  ? "bg-card text-foreground shadow-sm border border-[var(--hairline)]"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Receipt className="h-3.5 w-3.5 text-warning" />
-              المصروفات اليومية ({periodExpensesList.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("returns")}
-              className={cn(
-                "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all",
-                activeTab === "returns"
-                  ? "bg-card text-foreground shadow-sm border border-[var(--hairline)]"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <RotateCcw className="h-3.5 w-3.5 text-danger" />
-              المرتجعات ({periodReturnsList.length})
-            </button>
-          </div>
+          <StatTabs<ActiveTab>
+            value={activeTab}
+            onChange={setActiveTab}
+            options={[
+              { value: "invoices", label: "فواتير الفترة", count: rows.length, icon: <FileText className="h-3.5 w-3.5 text-primary" /> },
+              { value: "payments", label: "التحصيلات والأقساط المستلمة", count: periodPayments.length, icon: <CheckCircle2 className="h-3.5 w-3.5 text-success" /> },
+              { value: "expenses", label: "المصروفات اليومية", count: periodExpensesList.length, icon: <Receipt className="h-3.5 w-3.5 text-warning" /> },
+              { value: "returns", label: "المرتجعات", count: periodReturnsList.length, icon: <RotateCcw className="h-3.5 w-3.5 text-danger" /> },
+            ]}
+          />
 
           <span className="text-xs font-medium text-muted-foreground font-mono">
             {rangeLabel}
