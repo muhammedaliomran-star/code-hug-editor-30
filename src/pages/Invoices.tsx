@@ -92,6 +92,7 @@ function InvoicesPage() {
   const [returnInv, setReturnInv] = useState<Invoice | null>(null);
   const [shareInv, setShareInv] = useState<Invoice | null>(null);
   const { privacy, toggle } = usePrivacy();
+  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const { settings: shopSettings } = useShopSettings();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -476,7 +477,7 @@ function InvoicesPage() {
             >
               <span className="hidden sm:inline">إخفاء الأرقام</span>
             </ActionButton>
-            <ActionButton onClick={() => navigate("/invoices/new")} icon={<Plus className="h-4 w-4" />}>
+            <ActionButton onClick={() => navigate({ to: "/invoices/new" })} icon={<Plus className="h-4 w-4" />}>
               فاتورة جديدة
             </ActionButton>
           </div>

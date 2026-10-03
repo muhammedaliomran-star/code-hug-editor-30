@@ -48,6 +48,7 @@ export function MetricCard({
   isMoney = true,
   masked = false,
   hero = false,
+  mini = false,
   format,
   className,
 }: {

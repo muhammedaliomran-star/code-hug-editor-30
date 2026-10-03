@@ -60,6 +60,7 @@ type Tab = "all" | "owing" | "settled" | "purchases";
 function SuppliersPage() {
   const data = useDB();
   const { privacy, toggle } = usePrivacy();
+  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [editing, setEditing] = useState<Supplier | null>(null);
