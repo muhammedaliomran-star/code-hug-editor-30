@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -137,69 +137,36 @@ export type Database = {
         }
         Relationships: []
       }
-      branch_extensions: {
-        Row: {
-          branch_id: string
-          commercial_register: string | null
-          created_at: string
-          custom_fields: Json | null
-          email: string | null
-          id: string
-          tax_number: string | null
-          user_id: string
-        }
-        Insert: {
-          branch_id: string
-          commercial_register?: string | null
-          created_at?: string
-          custom_fields?: Json | null
-          email?: string | null
-          id?: string
-          tax_number?: string | null
-          user_id: string
-        }
-        Update: {
-          branch_id?: string
-          commercial_register?: string | null
-          created_at?: string
-          custom_fields?: Json | null
-          email?: string | null
-          id?: string
-          tax_number?: string | null
-          user_id?: string
-        }
-        Relationships: []
-      }
       branch_stock: {
         Row: {
           branch_id: string
-          created_at: string
           id: string
           max_stock: number | null
           min_stock: number
           quantity: number
+          shelf_location: string | null
           stock_item_id: string
           updated_at: string
           user_id: string
         }
         Insert: {
           branch_id: string
-          created_at?: string
-          id?: string
+          id: string
           max_stock?: number | null
           min_stock?: number
           quantity?: number
+          shelf_location?: string | null
           stock_item_id: string
           updated_at?: string
           user_id: string
         }
         Update: {
           branch_id?: string
-          created_at?: string
           id?: string
           max_stock?: number | null
           min_stock?: number
           quantity?: number
+          shelf_location?: string | null
           stock_item_id?: string
           updated_at?: string
           user_id?: string
@@ -208,45 +175,69 @@ export type Database = {
       }
       branch_transfers: {
         Row: {
-          completed_at: string | null
           created_at: string
+          created_by: string | null
+          dispatched_at: string | null
+          dispatched_by: string | null
+          driver_name: string | null
+          driver_phone: string | null
           from_branch_id: string
           id: string
           items: Json
           notes: string | null
+          received_at: string | null
+          received_by: string | null
           status: string
           to_branch_id: string
+          transfer_number: string
           user_id: string
+          vehicle_number: string | null
         }
         Insert: {
-          completed_at?: string | null
           created_at?: string
+          created_by?: string | null
+          dispatched_at?: string | null
+          dispatched_by?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
           from_branch_id: string
-          id?: string
+          id: string
           items?: Json
           notes?: string | null
+          received_at?: string | null
+          received_by?: string | null
           status?: string
           to_branch_id: string
+          transfer_number: string
           user_id: string
+          vehicle_number?: string | null
         }
         Update: {
-          completed_at?: string | null
           created_at?: string
+          created_by?: string | null
+          dispatched_at?: string | null
+          dispatched_by?: string | null
+          driver_name?: string | null
+          driver_phone?: string | null
           from_branch_id?: string
           id?: string
           items?: Json
           notes?: string | null
+          received_at?: string | null
+          received_by?: string | null
           status?: string
           to_branch_id?: string
+          transfer_number?: string
           user_id?: string
+          vehicle_number?: string | null
         }
         Relationships: []
       }
       branches: {
         Row: {
-          created_at: string | null
+          created_at: string
           id: string
-          is_main: boolean | null
+          is_main: boolean
           location: string | null
           manager_name: string | null
           name: string
@@ -255,9 +246,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          is_main?: boolean | null
+          is_main?: boolean
           location?: string | null
           manager_name?: string | null
           name: string
@@ -266,9 +257,9 @@ export type Database = {
           user_id: string
         }
         Update: {
-          created_at?: string | null
+          created_at?: string
           id?: string
-          is_main?: boolean | null
+          is_main?: boolean
           location?: string | null
           manager_name?: string | null
           name?: string
@@ -280,30 +271,33 @@ export type Database = {
       }
       bundles: {
         Row: {
-          bundle_price: number
+          active: boolean
           created_at: string
+          discount_amount: number
           id: string
-          is_active: boolean
-          items: Json
-          name: string
+          item_keywords: Json
+          notes: string | null
+          title: string
           user_id: string
         }
         Insert: {
-          bundle_price: number
+          active?: boolean
           created_at?: string
-          id?: string
-          is_active?: boolean
-          items?: Json
-          name: string
+          discount_amount?: number
+          id: string
+          item_keywords?: Json
+          notes?: string | null
+          title: string
           user_id: string
         }
         Update: {
-          bundle_price?: number
+          active?: boolean
           created_at?: string
+          discount_amount?: number
           id?: string
-          is_active?: boolean
-          items?: Json
-          name?: string
+          item_keywords?: Json
+          notes?: string | null
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -360,7 +354,6 @@ export type Database = {
           alert_threshold: number
           category: string
           created_at: string
-          id: string
           monthly_budget: number
           user_id: string
         }
@@ -368,7 +361,6 @@ export type Database = {
           alert_threshold?: number
           category: string
           created_at?: string
-          id?: string
           monthly_budget?: number
           user_id: string
         }
@@ -376,7 +368,6 @@ export type Database = {
           alert_threshold?: number
           category?: string
           created_at?: string
-          id?: string
           monthly_budget?: number
           user_id?: string
         }
@@ -387,60 +378,60 @@ export type Database = {
           created_at: string
           customer_id: string
           id: string
+          invoice_id: string
           notes: string | null
           outcome: string
-          promise_date: string | null
+          outcome_label: string | null
           promised_amount: number | null
+          promised_date: string | null
           user_id: string
         }
         Insert: {
           created_at?: string
           customer_id: string
-          id?: string
+          id: string
+          invoice_id: string
           notes?: string | null
           outcome: string
-          promise_date?: string | null
+          outcome_label?: string | null
           promised_amount?: number | null
+          promised_date?: string | null
           user_id: string
         }
         Update: {
           created_at?: string
           customer_id?: string
           id?: string
+          invoice_id?: string
           notes?: string | null
           outcome?: string
-          promise_date?: string | null
+          outcome_label?: string | null
           promised_amount?: number | null
+          promised_date?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "collection_call_logs_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       collection_promises: {
         Row: {
           created_at: string
           customer_id: string
           id: string
-          notes: string | null
-          promise_date: string
+          invoice_id: string
+          note: string | null
           promised_amount: number
+          promised_date: string
           status: string
           user_id: string
         }
         Insert: {
           created_at?: string
           customer_id: string
-          id?: string
-          notes?: string | null
-          promise_date: string
-          promised_amount: number
+          id: string
+          invoice_id: string
+          note?: string | null
+          promised_amount?: number
+          promised_date: string
           status?: string
           user_id: string
         }
@@ -448,21 +439,14 @@ export type Database = {
           created_at?: string
           customer_id?: string
           id?: string
-          notes?: string | null
-          promise_date?: string
+          invoice_id?: string
+          note?: string | null
           promised_amount?: number
+          promised_date?: string
           status?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "collection_promises_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       customers: {
         Row: {
@@ -591,7 +575,7 @@ export type Database = {
           created_at?: string
           custom_fields?: Json | null
           expense_id: string
-          id?: string
+          id: string
           receipt_url?: string | null
           user_id: string
           voucher_number?: string | null
@@ -670,20 +654,62 @@ export type Database = {
       held_invoices: {
         Row: {
           created_at: string
-          data: Json
+          customer_id: string | null
+          customer_name: string | null
+          customer_phone: string | null
+          discount_amt: number | null
+          discount_pct: number | null
+          down_payment: number | null
           id: string
+          installment_count: number | null
+          items: Json
+          monthly_installment: number | null
+          notes: string | null
+          sale_type: string
+          shipping_address: string | null
+          source: string
+          tax_pct: number | null
+          total: number
           user_id: string
         }
         Insert: {
           created_at?: string
-          data?: Json
-          id?: string
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_amt?: number | null
+          discount_pct?: number | null
+          down_payment?: number | null
+          id: string
+          installment_count?: number | null
+          items?: Json
+          monthly_installment?: number | null
+          notes?: string | null
+          sale_type?: string
+          shipping_address?: string | null
+          source?: string
+          tax_pct?: number | null
+          total?: number
           user_id: string
         }
         Update: {
           created_at?: string
-          data?: Json
+          customer_id?: string | null
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount_amt?: number | null
+          discount_pct?: number | null
+          down_payment?: number | null
           id?: string
+          installment_count?: number | null
+          items?: Json
+          monthly_installment?: number | null
+          notes?: string | null
+          sale_type?: string
+          shipping_address?: string | null
+          source?: string
+          tax_pct?: number | null
+          total?: number
           user_id?: string
         }
         Relationships: []
@@ -964,29 +990,29 @@ export type Database = {
       loyalty_config: {
         Row: {
           created_at: string
-          earn_rate: number
-          id: string
-          is_active: boolean
-          min_points_redeem: number
-          redeem_rate: number
+          enabled: boolean
+          min_points_to_redeem: number
+          point_value_egp: number
+          points_per_100_egp: number
+          updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          earn_rate?: number
-          id?: string
-          is_active?: boolean
-          min_points_redeem?: number
-          redeem_rate?: number
+          enabled?: boolean
+          min_points_to_redeem?: number
+          point_value_egp?: number
+          points_per_100_egp?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
-          earn_rate?: number
-          id?: string
-          is_active?: boolean
-          min_points_redeem?: number
-          redeem_rate?: number
+          enabled?: boolean
+          min_points_to_redeem?: number
+          point_value_egp?: number
+          points_per_100_egp?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -994,10 +1020,12 @@ export type Database = {
       payment_vouchers: {
         Row: {
           amount: number
-          created_at: string | null
+          created_at: string
           customer_id: string | null
           description: string | null
           id: string
+          party_name: string | null
+          party_phone: string | null
           payment_method: string
           supplier_id: string | null
           type: string
@@ -1006,24 +1034,28 @@ export type Database = {
           voucher_date: string
         }
         Insert: {
-          amount: number
-          created_at?: string | null
+          amount?: number
+          created_at?: string
           customer_id?: string | null
           description?: string | null
           id?: string
-          payment_method: string
+          party_name?: string | null
+          party_phone?: string | null
+          payment_method?: string
           supplier_id?: string | null
-          type: string
+          type?: string
           updated_at?: string
           user_id: string
           voucher_date?: string
         }
         Update: {
           amount?: number
-          created_at?: string | null
+          created_at?: string
           customer_id?: string | null
           description?: string | null
           id?: string
+          party_name?: string | null
+          party_phone?: string | null
           payment_method?: string
           supplier_id?: string | null
           type?: string
@@ -1112,43 +1144,61 @@ export type Database = {
       }
       promo_coupons: {
         Row: {
+          active: boolean
           code: string
           created_at: string
-          expires_at: string | null
+          customer_eligibility: string
+          customer_id: string | null
+          discount_type: string
+          discount_value: number
+          ends_at: string | null
           id: string
-          is_active: boolean
-          max_uses: number | null
-          min_order: number
-          type: string
+          is_loyalty_reward: boolean
+          max_usage: number | null
+          min_order_value: number
+          notes: string | null
+          starts_at: string
+          title: string
           used_count: number
           user_id: string
-          value: number
         }
         Insert: {
+          active?: boolean
           code: string
           created_at?: string
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean
-          max_uses?: number | null
-          min_order?: number
-          type: string
+          customer_eligibility?: string
+          customer_id?: string | null
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
+          id: string
+          is_loyalty_reward?: boolean
+          max_usage?: number | null
+          min_order_value?: number
+          notes?: string | null
+          starts_at: string
+          title: string
           used_count?: number
           user_id: string
-          value: number
         }
         Update: {
+          active?: boolean
           code?: string
           created_at?: string
-          expires_at?: string | null
+          customer_eligibility?: string
+          customer_id?: string | null
+          discount_type?: string
+          discount_value?: number
+          ends_at?: string | null
           id?: string
-          is_active?: boolean
-          max_uses?: number | null
-          min_order?: number
-          type?: string
+          is_loyalty_reward?: boolean
+          max_usage?: number | null
+          min_order_value?: number
+          notes?: string | null
+          starts_at?: string
+          title?: string
           used_count?: number
           user_id?: string
-          value?: number
         }
         Relationships: []
       }
@@ -1239,33 +1289,33 @@ export type Database = {
       }
       qty_offers: {
         Row: {
+          active: boolean
           created_at: string
-          discount_pct: number
+          discount_percentage: number
           id: string
-          is_active: boolean
-          min_qty: number
-          name: string
-          stock_item_id: string | null
+          min_quantity: number
+          notes: string | null
+          title: string
           user_id: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
-          discount_pct: number
-          id?: string
-          is_active?: boolean
-          min_qty: number
-          name: string
-          stock_item_id?: string | null
+          discount_percentage?: number
+          id: string
+          min_quantity?: number
+          notes?: string | null
+          title: string
           user_id: string
         }
         Update: {
+          active?: boolean
           created_at?: string
-          discount_pct?: number
+          discount_percentage?: number
           id?: string
-          is_active?: boolean
-          min_qty?: number
-          name?: string
-          stock_item_id?: string | null
+          min_quantity?: number
+          notes?: string | null
+          title?: string
           user_id?: string
         }
         Relationships: []
@@ -1324,18 +1374,18 @@ export type Database = {
           frequency: string
           id: string
           is_active: boolean
-          next_due_date: string
+          next_due_date: string | null
           user_id: string
         }
         Insert: {
-          amount: number
+          amount?: number
           category: string
           created_at?: string
           description?: string | null
-          frequency: string
-          id?: string
+          frequency?: string
+          id: string
           is_active?: boolean
-          next_due_date: string
+          next_due_date?: string | null
           user_id: string
         }
         Update: {
@@ -1346,7 +1396,7 @@ export type Database = {
           frequency?: string
           id?: string
           is_active?: boolean
-          next_due_date?: string
+          next_due_date?: string | null
           user_id?: string
         }
         Relationships: []
@@ -1439,112 +1489,71 @@ export type Database = {
       shifts: {
         Row: {
           actual_cash: number
-          branch_id: string | null
-          card_sales: number
           cash_sales: number
           cashier_name: string | null
           closed_at: string | null
-          closing_cash: number | null
           created_at: string
-          denomination_count: Json | null
           electronic_sales: number
-          expected_cash: number | null
+          expected_cash: number
           expenses: number
           id: string
           installment_sales: number
           notes: string | null
-          opened_at: string
+          opened_at: string | null
           opening_balance: number
-          opening_float: number
           purchases: number
           returns: number
           shift_number: number
-          staff_id: string | null
           status: string
-          total_discounts: number
-          total_expenses: number
-          total_refunds: number
-          total_sales: number
-          type: string
           updated_at: string
           user_id: string
-          variance: number | null
+          variance: number
         }
         Insert: {
           actual_cash?: number
-          branch_id?: string | null
-          card_sales?: number
           cash_sales?: number
           cashier_name?: string | null
           closed_at?: string | null
-          closing_cash?: number | null
           created_at?: string
-          denomination_count?: Json | null
           electronic_sales?: number
-          expected_cash?: number | null
+          expected_cash?: number
           expenses?: number
           id?: string
           installment_sales?: number
           notes?: string | null
-          opened_at?: string
+          opened_at?: string | null
           opening_balance?: number
-          opening_float?: number
           purchases?: number
           returns?: number
           shift_number?: number
-          staff_id?: string | null
           status?: string
-          total_discounts?: number
-          total_expenses?: number
-          total_refunds?: number
-          total_sales?: number
-          type?: string
           updated_at?: string
           user_id: string
-          variance?: number | null
+          variance?: number
         }
         Update: {
           actual_cash?: number
-          branch_id?: string | null
-          card_sales?: number
           cash_sales?: number
           cashier_name?: string | null
           closed_at?: string | null
-          closing_cash?: number | null
           created_at?: string
-          denomination_count?: Json | null
           electronic_sales?: number
-          expected_cash?: number | null
+          expected_cash?: number
           expenses?: number
           id?: string
           installment_sales?: number
           notes?: string | null
-          opened_at?: string
+          opened_at?: string | null
           opening_balance?: number
-          opening_float?: number
           purchases?: number
           returns?: number
           shift_number?: number
-          staff_id?: string | null
           status?: string
-          total_discounts?: number
-          total_expenses?: number
-          total_refunds?: number
-          total_sales?: number
-          type?: string
           updated_at?: string
           user_id?: string
-          variance?: number | null
+          variance?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "shifts_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "staff_members"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       shipment_notifications: {
         Row: {
@@ -1940,86 +1949,93 @@ export type Database = {
       }
       staff_attendance: {
         Row: {
+          branch_name: string | null
           clock_in: string
           clock_out: string | null
           created_at: string
-          hours_worked: number | null
+          date: string
           id: string
+          notes: string | null
           staff_id: string
+          staff_name: string
           status: string
+          total_hours: number
           user_id: string
         }
         Insert: {
-          clock_in?: string
+          branch_name?: string | null
+          clock_in: string
           clock_out?: string | null
           created_at?: string
-          hours_worked?: number | null
-          id?: string
+          date: string
+          id: string
+          notes?: string | null
           staff_id: string
+          staff_name: string
           status?: string
+          total_hours?: number
           user_id: string
         }
         Update: {
+          branch_name?: string | null
           clock_in?: string
           clock_out?: string | null
           created_at?: string
-          hours_worked?: number | null
+          date?: string
           id?: string
+          notes?: string | null
           staff_id?: string
+          staff_name?: string
           status?: string
+          total_hours?: number
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "staff_attendance_staff_id_fkey"
-            columns: ["staff_id"]
-            isOneToOne: false
-            referencedRelation: "staff_members"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       staff_members: {
         Row: {
-          branch_id: string | null
-          commission_rate: number
+          base_salary: number
+          branch_name: string | null
+          commission_pct: number
           created_at: string
           id: string
           is_active: boolean
           name: string
+          notes: string | null
           permissions: Json | null
           phone: string | null
-          pin: string | null
+          pin_code: string | null
           role: string
-          salary: number
           user_id: string
         }
         Insert: {
-          branch_id?: string | null
-          commission_rate?: number
+          base_salary?: number
+          branch_name?: string | null
+          commission_pct?: number
           created_at?: string
-          id?: string
+          id: string
           is_active?: boolean
           name: string
+          notes?: string | null
           permissions?: Json | null
           phone?: string | null
-          pin?: string | null
+          pin_code?: string | null
           role?: string
-          salary?: number
           user_id: string
         }
         Update: {
-          branch_id?: string | null
-          commission_rate?: number
+          base_salary?: number
+          branch_name?: string | null
+          commission_pct?: number
           created_at?: string
           id?: string
           is_active?: boolean
           name?: string
+          notes?: string | null
           permissions?: Json | null
           phone?: string | null
-          pin?: string | null
+          pin_code?: string | null
           role?: string
-          salary?: number
           user_id?: string
         }
         Relationships: []
@@ -2422,63 +2438,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      treasury_transactions: {
-        Row: {
-          amount: number
-          category: string | null
-          created_at: string
-          description: string | null
-          fee: number
-          from_account_id: string | null
-          id: string
-          reference_number: string | null
-          to_account_id: string | null
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount: number
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          fee?: number
-          from_account_id?: string | null
-          id?: string
-          reference_number?: string | null
-          to_account_id?: string | null
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          fee?: number
-          from_account_id?: string | null
-          id?: string
-          reference_number?: string | null
-          to_account_id?: string | null
-          type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "treasury_transactions_from_account_id_fkey"
-            columns: ["from_account_id"]
-            isOneToOne: false
-            referencedRelation: "treasury_accounts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "treasury_transactions_to_account_id_fkey"
-            columns: ["to_account_id"]
-            isOneToOne: false
-            referencedRelation: "treasury_accounts"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       treasury_transfers: {
         Row: {

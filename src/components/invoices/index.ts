@@ -1,4 +1,3 @@
-export { StatCard } from "./StatCard";
 export { EditInvoiceItemDialog } from "./EditInvoiceItemDialog";
 export { InvoiceReturnDialog } from "./InvoiceReturnDialog";
 export { ShareInvoiceDialog } from "./ShareInvoiceDialog";
