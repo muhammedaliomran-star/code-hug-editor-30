@@ -8,7 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import {
   Select,
   SelectContent,
@@ -656,18 +659,15 @@ export default function AdminLicensesPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
+              <ActionButton
+                tone="surface"
                 onClick={() => setChangePinOpen(true)}
-                className="rounded-2xl h-10 gap-1.5 text-xs font-bold"
+                icon={<KeyRound className="h-4 w-4" />}
               >
-                <KeyRound className="w-4 h-4 text-muted-foreground" />
                 تغيير PIN المشرف
-              </Button>
+              </ActionButton>
 
-              <Button
-                size="sm"
+              <ActionButton
                 onClick={() => {
                   setGeneratedResult(null);
                   setShopName("");
@@ -680,81 +680,59 @@ export default function AdminLicensesPage() {
                   setEnableInstallments(false);
                   setCreateOpen(true);
                 }}
-                className="rounded-2xl h-10 px-5 gap-1.5 text-xs font-black bg-primary text-black hover:bg-primary/90 shadow-md shadow-primary/20"
+                icon={<Plus className="h-4 w-4" />}
               >
-                <Plus className="w-4 h-4" />
                 إصدار ترخيص / عميل جديد
-              </Button>
+              </ActionButton>
             </div>
           </div>
 
           {/* Top KPI Metrics Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-foreground/10 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground text-xs font-bold">
-                <span>إجمالي مبيعات التراخيص</span>
-                <DollarSign className="w-4 h-4 text-emerald-500" />
-              </div>
-              <div className="text-2xl font-black text-foreground">
-                {stats.totalRevenue.toLocaleString()} <span className="text-xs font-bold text-muted-foreground">ج.م</span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">من {stats.totalCount} ترخيص صادر</div>
-            </div>
+            <MetricCard
+              icon={DollarSign}
+              label="إجمالي مبيعات التراخيص"
+              value={stats.totalRevenue}
+              format={(n) => `${Math.round(n).toLocaleString()} ج.م`}
+              sub={`من ${stats.totalCount} ترخيص صادر`}
+            />
+            <MetricCard
+              icon={Wallet}
+              label="المتبقي بأقساط البرامج"
+              value={stats.totalInstallmentDue}
+              format={(n) => `${Math.round(n).toLocaleString()} ج.م`}
+              sub="أقساط مجدولة للتحصيل"
+            />
+            <MetricCard
+              icon={Users}
+              label="المشتركين السارين"
+              value={stats.activeCount}
+              format={(n) => `${Math.round(n)} نشط`}
+              sub={`بالإضافة إلى ${stats.trialCount} تجريبي`}
+            />
 
-            <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-foreground/10 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground text-xs font-bold">
-                <span>المتبقي بأقساط البرامج</span>
-                <Wallet className="w-4 h-4 text-amber-500" />
-              </div>
-              <div className="text-2xl font-black text-amber-600">
-                {stats.totalInstallmentDue.toLocaleString()} <span className="text-xs font-bold text-muted-foreground">ج.م</span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">أقساط مجدولة للتحصيل</div>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-foreground/10 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground text-xs font-bold">
-                <span>المشتركين السارين</span>
-                <Users className="w-4 h-4 text-primary" />
-              </div>
-              <div className="text-2xl font-black text-foreground">
-                {stats.activeCount} <span className="text-xs font-bold text-muted-foreground">نشط</span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">بالإضافة إلى {stats.trialCount} تجريبي</div>
-            </div>
-
-            <div className="p-5 rounded-3xl bg-foreground/[0.02] border border-foreground/10 space-y-1">
-              <div className="flex items-center justify-between text-muted-foreground text-xs font-bold">
-                <span>تنبيهات التجديد والمتابعة</span>
-                <BellRing className="w-4 h-4 text-danger" />
-              </div>
-              <div className={`text-2xl font-black ${stats.warningCount > 0 ? "text-danger" : "text-foreground"}`}>
-                {stats.warningCount} <span className="text-xs font-bold text-muted-foreground">عميل</span>
-              </div>
-              <div className="text-[11px] text-muted-foreground">منتهي أو قارب على الانتهاء</div>
-            </div>
+            <MetricCard
+              icon={BellRing}
+              label="تنبيهات التجديد والمتابعة"
+              value={stats.warningCount}
+              tone={stats.warningCount > 0 ? "danger" : "neutral"}
+              format={(n) => `${Math.round(n)} عميل`}
+              sub="منتهي أو قارب على الانتهاء"
+            />
           </div>
 
           {/* Main Navigation Tabs */}
           <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-6">
-            <TabsList className="h-12 p-1.5 rounded-2xl bg-foreground/[0.04] border border-foreground/10 flex flex-wrap gap-1">
-              <TabsTrigger value="subscribers" className="rounded-xl text-xs font-bold gap-2 px-4">
-                <Store className="w-4 h-4" />
-                سجل المشتركين والتراخيص ({licenses.length})
-              </TabsTrigger>
-              <TabsTrigger value="crm" className="rounded-xl text-xs font-bold gap-2 px-4">
-                <BellRing className="w-4 h-4 text-amber-500" />
-                مركز التجديدات والمتابعات CRM ({crmList.length})
-              </TabsTrigger>
-              <TabsTrigger value="installments" className="rounded-xl text-xs font-bold gap-2 px-4">
-                <Wallet className="w-4 h-4 text-emerald-500" />
-                أقساط البرامج والأجهزة ({installmentsList.length})
-              </TabsTrigger>
-              <TabsTrigger value="backup" className="rounded-xl text-xs font-bold gap-2 px-4">
-                <Download className="w-4 h-4 text-primary" />
-                النسخ الاحتياطي والمزامنة
-              </TabsTrigger>
-            </TabsList>
+            <StatTabs
+              value={activeTab}
+              onChange={setActiveTab}
+              options={[
+                { value: "subscribers", label: "سجل المشتركين والتراخيص", count: licenses.length, icon: <Store className="w-4 h-4" /> },
+                { value: "crm", label: "مركز التجديدات والمتابعات CRM", count: crmList.length, icon: <BellRing className="w-4 h-4 text-amber-500" /> },
+                { value: "installments", label: "أقساط البرامج والأجهزة", count: installmentsList.length, icon: <Wallet className="w-4 h-4 text-emerald-500" /> },
+                { value: "backup", label: "النسخ الاحتياطي والمزامنة", icon: <Download className="w-4 h-4 text-primary" /> },
+              ]}
+            />
 
             {/* TAB 1: ALL SUBSCRIBERS */}
             <TabsContent value="subscribers" className="space-y-4">

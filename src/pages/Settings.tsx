@@ -3,7 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { StatTabs } from "@/components/StatTabs";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useShopSettings,
@@ -95,6 +96,7 @@ function SettingsPage() {
   const navigate = useNavigate();
   const [form, setForm] = useState<ShopSettings>(settings);
   const [busy, setBusy] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<string>("shop");
 
   useEffect(() => {
     setForm(settings);
@@ -139,35 +141,25 @@ function SettingsPage() {
         icon={<SettingsIcon className="w-7 h-7 text-primary" />}
       />
 
-      <Tabs defaultValue="shop" dir="rtl" className="w-full text-right">
+      <Tabs value={settingsTab} onValueChange={setSettingsTab} dir="rtl" className="w-full text-right">
         {/* شريط التنقل الملتصق بتأثير بلوري */}
         <div className="sticky top-0 z-30 -mx-4 px-4 py-2 bg-background/70 backdrop-blur-xl border-b border-foreground/5 mb-8">
-          <TabsList
-            dir="rtl"
-            className="h-auto w-full bg-transparent justify-start gap-2 border-none p-0 rounded-none overflow-x-auto custom-scrollbar no-scrollbar"
-          >
-            {[
-              { value: "shop", label: "المحل والنشاط", icon: Store },
-              { value: "billing", label: "الفواتير والطباعة", icon: Receipt },
-              { value: "alerts", label: "التنبيهات والواتساب", icon: Bell },
-              { value: "appearance", label: "المظهر والألوان", icon: Palette },
-              { value: "license", label: "الترخيص والاشتراك", icon: ShieldCheck },
-              { value: "team", label: "الفريق والصلاحيات", icon: Users },
-              { value: "integrations", label: "المتجر والشحن", icon: ShoppingBag },
-              { value: "account", label: "الحساب والأمان", icon: KeyRound },
+          <StatTabs<string>
+            value={settingsTab}
+            onChange={setSettingsTab}
+            options={[
+              { value: "shop", label: "المحل والنشاط", icon: <Store className="w-4 h-4 shrink-0" /> },
+              { value: "billing", label: "الفواتير والطباعة", icon: <Receipt className="w-4 h-4 shrink-0" /> },
+              { value: "alerts", label: "التنبيهات والواتساب", icon: <Bell className="w-4 h-4 shrink-0" /> },
+              { value: "appearance", label: "المظهر والألوان", icon: <Palette className="w-4 h-4 shrink-0" /> },
+              { value: "license", label: "الترخيص والاشتراك", icon: <ShieldCheck className="w-4 h-4 shrink-0" /> },
+              { value: "team", label: "الفريق والصلاحيات", icon: <Users className="w-4 h-4 shrink-0" /> },
+              { value: "integrations", label: "المتجر والشحن", icon: <ShoppingBag className="w-4 h-4 shrink-0" /> },
+              { value: "account", label: "الحساب والأمان", icon: <KeyRound className="w-4 h-4 shrink-0" /> },
               // Phase 1 (#15): backup/restore UI is owner+manager only (server gate is the real enforcement)
-              ...(showDataTab ? [{ value: "data", label: "البيانات والنسخ", icon: Database }] : []),
-            ].map((tab) => (
-              <TabsTrigger
-                key={tab.value}
-                value={tab.value}
-                className="relative h-11 px-5 gap-2 rounded-2xl border-b-2 border-transparent bg-transparent data-[state=active]:border-primary data-[state=active]:bg-primary/10 data-[state=active]:text-primary transition-all duration-300 font-bold opacity-75 data-[state=active]:opacity-100 hover:opacity-100 whitespace-nowrap"
-              >
-                <tab.icon className="w-4 h-4 shrink-0" />
-                {tab.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+              ...(showDataTab ? [{ value: "data", label: "البيانات والنسخ", icon: <Database className="w-4 h-4 shrink-0" /> }] : []),
+            ]}
+          />
         </div>
 
         <TabsContent value="shop">

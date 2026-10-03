@@ -2,8 +2,9 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
-import { CountUp } from "@/components/CountUp";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GitBranch, Building2, Boxes, ArrowLeftRight, Wallet, Receipt, BarChart3, Users, Truck } from "lucide-react";
 import { fmt } from "@/lib/store";
@@ -23,94 +24,52 @@ function BranchesPageInner() {
           />
 
           <Reveal className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-5 flex flex-col gap-1 shadow-sm">
-              <span className="text-muted-foreground text-xs font-semibold flex items-center justify-between">
-                <span>إجمالي الفروع النشطة</span>
-                <Building2 className="h-4 w-4 text-primary" />
-              </span>
-              <div className="text-2xl sm:text-3xl font-black tabular-nums mt-1">
-                <CountUp value={branches.length} />
-              </div>
-              <span className="text-[11px] text-muted-foreground">
-                {branches.filter((b) => b.isMain).length} فرع رئيسي معتمد
-              </span>
-            </div>
+            <MetricCard
+              icon={Building2}
+              label="إجمالي الفروع النشطة"
+              value={branches.length}
+              format={(n) => String(Math.round(n))}
+              sub={`${branches.filter((b) => b.isMain).length} فرع رئيسي معتمد`}
+            />
 
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-5 flex flex-col gap-1 shadow-sm">
-              <span className="text-muted-foreground text-xs font-semibold flex items-center justify-between">
-                <span>تقييم مخزون الفروع (تكلفة)</span>
-                <Boxes className="h-4 w-4 text-emerald-500" />
-              </span>
-              <div className="text-2xl sm:text-3xl font-black tabular-nums text-emerald-600 dark:text-emerald-400 mt-1">
-                {fmt(totalValuation.cost)} <span className="text-xs font-normal">{cur}</span>
-              </div>
-              <span className="text-[11px] text-muted-foreground">
-                القيمة البيعية: {fmt(totalValuation.retail)} {cur}
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-5 flex flex-col gap-1 shadow-sm">
-              <span className="text-muted-foreground text-xs font-semibold flex items-center justify-between">
-                <span>التحويلات الجارية</span>
-                <Truck className="h-4 w-4 text-amber-500" />
-              </span>
-              <div className="text-2xl sm:text-3xl font-black tabular-nums text-amber-600 dark:text-amber-400 mt-1">
-                {transfers.filter((t) => t.status === "in_transit").length}
-              </div>
-              <span className="text-[11px] text-muted-foreground">
-                من إجمالي {transfers.length} أمر تحويل مسجل
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-5 flex flex-col gap-1 shadow-sm">
-              <span className="text-muted-foreground text-xs font-semibold flex items-center justify-between">
-                <span>كادر وموظفي الفروع</span>
-                <Users className="h-4 w-4 text-indigo-500" />
-              </span>
-              <div className="text-2xl sm:text-3xl font-black tabular-nums text-indigo-600 dark:text-indigo-400 mt-1">
-                {staffList.filter((s) => s.active).length}
-              </div>
-              <span className="text-[11px] text-muted-foreground">
-                موزعين على {branches.length} مواقع تشغيلية
-              </span>
-            </div>
+            <MetricCard
+              icon={Boxes}
+              label="تقييم مخزون الفروع (تكلفة)"
+              value={totalValuation.cost}
+              format={(n) => `${fmt(n)} ${cur}`}
+              sub={`القيمة البيعية: ${fmt(totalValuation.retail)} ${cur}`}
+            />
+            <MetricCard
+              icon={Truck}
+              label="التحويلات الجارية"
+              value={transfers.filter((t) => t.status === "in_transit").length}
+              format={(n) => String(Math.round(n))}
+              sub={`من إجمالي ${transfers.length} أمر تحويل مسجل`}
+            />
+            <MetricCard
+              icon={Users}
+              label="كادر وموظفي الفروع"
+              value={staffList.filter((s) => s.active).length}
+              format={(n) => String(Math.round(n))}
+              sub={`موزعين على ${branches.length} مواقع تشغيلية`}
+            />
           </Reveal>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[var(--hairline)] pb-4">
-              <TabsList className="h-auto p-1.5 bg-card/80 border border-foreground/10 rounded-2xl flex-wrap justify-start gap-1">
-                <TabsTrigger value="branches" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Building2 className="h-3.5 w-3.5" />
-                  1. الفروع والمقرات
-                </TabsTrigger>
-                <TabsTrigger value="inventory" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Boxes className="h-3.5 w-3.5" />
-                  2. مخزون الفروع
-                </TabsTrigger>
-                <TabsTrigger value="transfers" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <ArrowLeftRight className="h-3.5 w-3.5" />
-                  3. التحويلات والنقل
-                  {transfers.filter((t) => t.status === "in_transit").length > 0 && (
-                    <span className="h-2 w-2 rounded-full bg-amber-500 animate-ping" />
-                  )}
-                </TabsTrigger>
-                <TabsTrigger value="cashbox" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Wallet className="h-3.5 w-3.5" />
-                  4. الخزن والورديات (Z-Report)
-                </TabsTrigger>
-                <TabsTrigger value="profitability" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Receipt className="h-3.5 w-3.5" />
-                  5. الأرباح والمصروفات (P&L)
-                </TabsTrigger>
-                <TabsTrigger value="analytics" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <BarChart3 className="h-3.5 w-3.5" />
-                  6. المقارنات والتحليلات
-                </TabsTrigger>
-                <TabsTrigger value="staff" className="rounded-xl px-4 py-2 text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Users className="h-3.5 w-3.5" />
-                  7. الموظفين والصلاحيات
-                </TabsTrigger>
-              </TabsList>
+              <StatTabs<string>
+                value={activeTab}
+                onChange={setActiveTab}
+                options={[
+                  { value: "branches", label: "1. الفروع والمقرات", icon: <Building2 className="h-3.5 w-3.5" /> },
+                  { value: "inventory", label: "2. مخزون الفروع", icon: <Boxes className="h-3.5 w-3.5" /> },
+                  { value: "transfers", label: "3. التحويلات والنقل", icon: <ArrowLeftRight className="h-3.5 w-3.5" />, dot: transfers.some((t) => t.status === "in_transit") ? "amber" : undefined },
+                  { value: "cashbox", label: "4. الخزن والورديات (Z-Report)", icon: <Wallet className="h-3.5 w-3.5" /> },
+                  { value: "profitability", label: "5. الأرباح والمصروفات (P&L)", icon: <Receipt className="h-3.5 w-3.5" /> },
+                  { value: "analytics", label: "6. المقارنات والتحليلات", icon: <BarChart3 className="h-3.5 w-3.5" /> },
+                  { value: "staff", label: "7. الموظفين والصلاحيات", icon: <Users className="h-3.5 w-3.5" /> },
+                ]}
+              />
 
               {activeTab !== "branches" && activeTab !== "analytics" && (
                 <div className="flex items-center gap-2 bg-card/60 border border-foreground/10 px-3 py-1.5 rounded-full">

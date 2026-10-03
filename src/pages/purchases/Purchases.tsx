@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter 
@@ -26,7 +26,10 @@ import {
   Info, CheckCircle2, DollarSign, Receipt, Clock, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Link } from "@/lib/router-compat";
+import { useNavigate } from "@/lib/router-compat";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,6 +37,7 @@ type FilterTab = "all" | "month" | "cash" | "credit";
 
 export function PurchasesPage() {
   const data = useDB();
+  const navigate = useNavigate();
   const { privacy, toggle } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
 
@@ -147,57 +151,52 @@ export function PurchasesPage() {
             icon={<Truck className="w-7 h-7 text-primary" />}
             action={
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={toggle} 
-                  title="خصوصية الأرقام" 
-                  className="rounded-full h-9 w-9 p-0"
-                >
-                  {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 text-muted-foreground" />}
-                </Button>
-                <Button asChild size="sm" className="gap-1.5 rounded-full h-9 bg-primary text-primary-foreground font-bold shadow-sm">
-                  <Link to="/purchases/new">
-                    <Plus className="w-4 h-4" /> فاتورة شراء جديدة
-                  </Link>
-                </Button>
+                <ActionButton
+                  tone="surface"
+                  onClick={toggle}
+                  title="خصوصية الأرقام"
+                  icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                />
+                <ActionButton onClick={() => navigate("/purchases/new")} icon={<Plus className="h-4 w-4" />}>
+                  فاتورة شراء جديدة
+                </ActionButton>
               </div>
             }
           />
 
           {/* Top Statistics Bar */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title="مشتريات الشهر الحالي"
-              value={`${fmt(stats.monthTotal)} ج.م`}
+            <MetricCard
+              icon={Receipt}
+              label="مشتريات الشهر الحالي"
+              value={stats.monthTotal}
+              format={(n) => `${fmt(n)} ج.م`}
+              masked={privacy}
               sub="إجمالي البضاعة الموردة هذا الشهر"
-              icon={<Receipt className="w-5 h-5 text-primary" />}
-              blurCls={blurCls}
-              color="primary"
             />
-            <StatCard
-              title="مشتريات نقدية (خزينة)"
-              value={`${fmt(stats.cashMonth)} ج.م`}
+            <MetricCard
+              icon={Banknote}
+              label="مشتريات نقدية (خزينة)"
+              value={stats.cashMonth}
+              tone="positive"
+              format={(n) => `${fmt(n)} ج.م`}
+              masked={privacy}
               sub="سُددت نقداً من الخزينة هذا الشهر"
-              icon={<Banknote className="w-5 h-5 text-success" />}
-              blurCls={blurCls}
-              color="success"
             />
-            <StatCard
-              title="مشتريات آجلة (مديونية)"
-              value={`${fmt(stats.creditMonth)} ج.م`}
+            <MetricCard
+              icon={Wallet}
+              label="مشتريات آجلة (مديونية)"
+              value={stats.creditMonth}
+              format={(n) => `${fmt(n)} ج.م`}
+              masked={privacy}
               sub="أضيفت لحسابات الموردين هذا الشهر"
-              icon={<Wallet className="w-5 h-5 text-warning" />}
-              blurCls={blurCls}
-              color="warning"
             />
-            <StatCard
-              title="إجمالي عدد الفواتير"
-              value={String(stats.totalInvoicesCount)}
+            <MetricCard
+              icon={Package}
+              label="إجمالي عدد الفواتير"
+              value={stats.totalInvoicesCount}
+              format={(n) => String(Math.round(n))}
               sub="كل فواتير الشراء المسجلة"
-              icon={<Package className="w-5 h-5 text-foreground/70" />}
-              blurCls="privacy-clear"
-              color="neutral"
             />
           </div>
 
@@ -242,22 +241,16 @@ export function PurchasesPage() {
 
               {/* Quick Tab Filters */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/30">
-                <Tabs value={tab} onValueChange={(v) => setTab(v as FilterTab)}>
-                  <TabsList className="bg-foreground/[0.04] p-1 rounded-xl h-auto">
-                    <TabsTrigger value="all" className="rounded-lg text-xs font-semibold px-3 py-1.5">
-                      الكل ({data.purchases.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="month" className="rounded-lg text-xs font-semibold px-3 py-1.5">
-                      هذا الشهر
-                    </TabsTrigger>
-                    <TabsTrigger value="cash" className="rounded-lg text-xs font-semibold px-3 py-1.5 gap-1">
-                      <Banknote className="w-3.5 h-3.5 text-success" /> نقدي
-                    </TabsTrigger>
-                    <TabsTrigger value="credit" className="rounded-lg text-xs font-semibold px-3 py-1.5 gap-1">
-                      <Wallet className="w-3.5 h-3.5 text-warning" /> آجل
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <StatTabs
+                  value={tab}
+                  onChange={(v) => setTab(v as FilterTab)}
+                  options={[
+                    { value: "all", label: "الكل", count: data.purchases.length },
+                    { value: "month", label: "هذا الشهر" },
+                    { value: "cash", label: "نقدي", icon: <Banknote className="w-3.5 h-3.5 text-success" /> },
+                    { value: "credit", label: "آجل", icon: <Wallet className="w-3.5 h-3.5 text-warning" /> },
+                  ]}
+                />
 
                 <div className="text-xs text-muted-foreground font-medium">
                   عرض <span className="font-bold text-foreground">{filteredPurchases.length}</span> فاتورة
@@ -502,30 +495,6 @@ export function PurchasesPage() {
 
       </PageTransition>
     </AppShell>
-  );
-}
-
-/* Stat Box component */
-function StatCard({ 
-  title, value, sub, icon, blurCls, color 
-}: { 
-  title: string; value: string; sub: string; icon: React.ReactNode; blurCls: string; color: "primary" | "success" | "warning" | "neutral";
-}) {
-  return (
-    <div className="rounded-2xl border border-border/40 bg-card p-4 space-y-2 shadow-sm transition-all hover:border-border/80">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-muted-foreground">{title}</span>
-        <div className="p-2 rounded-xl bg-foreground/[0.04] border border-border/30">
-          {icon}
-        </div>
-      </div>
-      <div className={cn("text-2xl font-black text-foreground tabular-nums", blurCls)}>
-        {value}
-      </div>
-      <div className="text-[11px] text-muted-foreground font-medium truncate">
-        {sub}
-      </div>
-    </div>
   );
 }
 

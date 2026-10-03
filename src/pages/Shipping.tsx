@@ -811,7 +811,7 @@ export default function Shipping() {
             <div className="sticky-search-bar mb-6">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <StatTabs
+                  <StatTabs<string>
                     value={shipTab}
                     onChange={setShipTab}
                     options={[
