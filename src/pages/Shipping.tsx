@@ -1,6 +1,10 @@
 import { Badge } from "@/components/ui/badge";
 import { useEffect, useMemo, useState } from "react";
 import { useSearch, Link } from "@tanstack/react-router";
+import { useNavigate } from "@/lib/router-compat";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import {
   Truck, Search, Plus, MapPin, Building2, PackageCheck, Clock, Pencil, Trash2, ExternalLink,
   ShieldAlert, CalendarDays, Printer, FileText, Wallet, BarChart3, MessageCircle, CheckCheck, AlertTriangle,
@@ -22,7 +26,7 @@ import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Reveal } from "@/components/Reveal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -87,6 +91,8 @@ const daysBetween = (a: string, b: string) => Math.max(0, (new Date(b).getTime()
 export default function Shipping() {
   const { shipments, carriers, zones, invoices, customers, loading, refresh } = useDB();
   const { settings: shopSettings } = useShopSettings();
+  const navigate = useNavigate();
+  const [shipTab, setShipTab] = useState("shipments");
   const search = useSearch({ strict: false }) as { q?: string; invoice?: string };
   const [searchQuery, setSearchQuery] = useState(search.q ?? search.invoice ?? "");
   const [orderNumbers, setOrderNumbers] = useState<Record<string, string>>({});
@@ -585,36 +591,38 @@ export default function Shipping() {
           action={
             <div className="flex flex-wrap gap-2">
               <NotificationPrompt />
-              <Button
-                variant="outline"
-                className="gap-1.5 font-bold border-primary/30 text-primary hover:bg-primary/10"
+              <ActionButton
+                tone="surface"
                 onClick={() => setFastScannerOpen(true)}
+                icon={<QrCode className="h-4 w-4" />}
               >
-                <QrCode className="h-4 w-4" />
                 الماسح السريع (باركون / كاميرا)
-              </Button>
-              <Button
-                variant="outline"
-                className="gap-1.5 font-bold border-emerald-600/30 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+              </ActionButton>
+              <ActionButton
+                tone="surface"
                 onClick={() => setExcelModalOpen(true)}
+                icon={<FileSpreadsheet className="h-4 w-4" />}
               >
-                <FileSpreadsheet className="h-4 w-4" />
                 تكامل إكسيل شركات الشحن
-              </Button>
-              <Button variant="outline" asChild>
-                <a href="/delivery" target="_blank" rel="noopener noreferrer">
-                  <Smartphone className="ml-1.5 h-4 w-4 text-indigo-500" />
-                  بوابة المندوب (موبايل)
-                </a>
-              </Button>
-              <Button variant="outline" asChild><Link to="/shipping/day"><CalendarDays className="ml-2 h-4 w-4" /> يوم الشحن</Link></Button>
-              <Button variant="outline" asChild><Link to="/shipping/rescue"><ShieldAlert className="ml-2 h-4 w-4" /> إنقاذ الطلبات</Link></Button>
+              </ActionButton>
+              <ActionButton
+                tone="surface"
+                onClick={() => window.open("/delivery", "_blank", "noopener,noreferrer")}
+                icon={<Smartphone className="h-4 w-4" />}
+              >
+                بوابة المندوب (موبايل)
+              </ActionButton>
+              <ActionButton tone="surface" onClick={() => navigate("/shipping/day")} icon={<CalendarDays className="h-4 w-4" />}>
+                يوم الشحن
+              </ActionButton>
+              <ActionButton tone="surface" onClick={() => navigate("/shipping/rescue")} icon={<ShieldAlert className="h-4 w-4" />}>
+                إنقاذ الطلبات
+              </ActionButton>
               <Dialog open={isAddShipmentOpen} onOpenChange={(open) => { setIsAddShipmentOpen(open); if (!open) resetShipmentForm(); }}>
                 <DialogTrigger asChild>
-                  <Button size="lg" className="h-12 rounded-2xl px-6 font-bold shadow-lg shadow-primary/20">
-                    <Plus className="ml-2 h-5 w-5" />
+                  <ActionButton icon={<Plus className="h-5 w-5" />}>
                     شحنة جديدة
-                  </Button>
+                  </ActionButton>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[480px]" dir="rtl">
                   <DialogHeader>
@@ -799,30 +807,22 @@ export default function Shipping() {
         )}
 
         <Reveal delay={0.4}>
-          <Tabs defaultValue="shipments" className="w-full">
+          <Tabs value={shipTab} onValueChange={setShipTab} className="w-full">
             <div className="sticky-search-bar mb-6">
               <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <TabsList className="h-12 w-fit rounded-2xl bg-muted/50 p-1 ring-1 ring-hairline backdrop-blur-md">
-                    <TabsTrigger value="shipments" className="rounded-xl px-5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <Truck className="ml-2 h-4 w-4" /> الشحنات
-                    </TabsTrigger>
-                    <TabsTrigger value="reconciliation" className="rounded-xl px-5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <Calculator className="ml-2 h-4 w-4 text-emerald-600" /> كشف الحساب والمطابقة
-                    </TabsTrigger>
-                    <TabsTrigger value="dues" className="rounded-xl px-5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <Wallet className="ml-2 h-4 w-4" /> المستحقات
-                    </TabsTrigger>
-                    <TabsTrigger value="carriers" className="rounded-xl px-5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <Building2 className="ml-2 h-4 w-4" /> المناديب
-                    </TabsTrigger>
-                    <TabsTrigger value="zones" className="rounded-xl px-5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <MapPin className="ml-2 h-4 w-4" /> المناطق
-                    </TabsTrigger>
-                    <TabsTrigger value="analytics" className="rounded-xl px-5 font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                      <BarChart3 className="ml-2 h-4 w-4" /> التحليلات
-                    </TabsTrigger>
-                  </TabsList>
+                  <StatTabs
+                    value={shipTab}
+                    onChange={setShipTab}
+                    options={[
+                      { value: "shipments", label: "الشحنات", icon: <Truck className="h-4 w-4" /> },
+                      { value: "reconciliation", label: "كشف الحساب والمطابقة", icon: <Calculator className="h-4 w-4 text-emerald-600" /> },
+                      { value: "dues", label: "المستحقات", icon: <Wallet className="h-4 w-4" /> },
+                      { value: "carriers", label: "المناديب", icon: <Building2 className="h-4 w-4" /> },
+                      { value: "zones", label: "المناطق", icon: <MapPin className="h-4 w-4" /> },
+                      { value: "analytics", label: "التحليلات", icon: <BarChart3 className="h-4 w-4" /> },
+                    ]}
+                  />
                   <div className="relative w-full max-w-sm">
                     <Search className="absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input

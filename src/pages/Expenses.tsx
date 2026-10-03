@@ -9,7 +9,9 @@ import { CountUp } from "@/components/CountUp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import {
   Select,
   SelectContent,
@@ -372,19 +374,17 @@ function ExpensesPage() {
         icon={<Receipt className="w-7 h-7" />}
         action={
           <div className="flex items-center gap-2">
-            <Button
-              variant={privacy ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
               onClick={toggle}
               title="إخفاء الأرقام للحفاظ على الخصوصية"
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
-              {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </Button>
-            <Button onClick={onAdd} size="sm" className="gap-1.5 shadow-sm">
-              <Plus className="w-4 h-4" /> تسجيل مصروف
-            </Button>
+            </ActionButton>
+            <ActionButton onClick={onAdd} icon={<Plus className="h-4 w-4" />}>
+              تسجيل مصروف
+            </ActionButton>
           </div>
         }
       />
@@ -395,38 +395,17 @@ function ExpensesPage() {
         onValueChange={(v: any) => setActiveTab(v)}
         className="w-full mb-6"
       >
-        <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full h-auto p-1.5 bg-muted/60 rounded-2xl gap-1">
-          <TabsTrigger value="list" className="rounded-xl py-2 gap-2 text-xs font-bold data-[state=active]:shadow-xs">
-            <Receipt className="w-4 h-4" />
-            سجل المصروفات
-          </TabsTrigger>
-
-          <TabsTrigger value="recurring" className="rounded-xl py-2 gap-2 text-xs font-bold data-[state=active]:shadow-xs relative">
-            <CalendarClock className="w-4 h-4" />
-            <span>المصروفات الدورية</span>
-            {dueRecurringCount > 0 && (
-              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse absolute top-1.5 left-2" />
-            )}
-          </TabsTrigger>
-
-          <TabsTrigger value="budgets" className="rounded-xl py-2 gap-2 text-xs font-bold data-[state=active]:shadow-xs relative">
-            <Target className="w-4 h-4" />
-            الميزانيات وسقف الإنفاق
-            {exceededBudgets.length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-danger animate-pulse absolute top-1.5 left-2" />
-            )}
-          </TabsTrigger>
-
-          <TabsTrigger value="analytics" className="rounded-xl py-2 gap-2 text-xs font-bold data-[state=active]:shadow-xs">
-            <BarChart3 className="w-4 h-4" />
-            التحليلات والمقارنة
-          </TabsTrigger>
-
-          <TabsTrigger value="categories" className="rounded-xl py-2 gap-2 text-xs font-bold data-[state=active]:shadow-xs">
-            <Tags className="w-4 h-4" />
-            التصنيفات المخصصة
-          </TabsTrigger>
-        </TabsList>
+        <StatTabs
+          value={activeTab}
+          onChange={setActiveTab}
+          options={[
+            { value: "list", label: "سجل المصروفات", icon: <Receipt className="w-4 h-4" /> },
+            { value: "recurring", label: "المصروفات الدورية", icon: <CalendarClock className="w-4 h-4" />, dot: dueRecurringCount > 0 ? "amber" : undefined },
+            { value: "budgets", label: "الميزانيات وسقف الإنفاق", icon: <Target className="w-4 h-4" />, dot: exceededBudgets.length > 0 ? "danger" : undefined },
+            { value: "analytics", label: "التحليلات والمقارنة", icon: <BarChart3 className="w-4 h-4" /> },
+            { value: "categories", label: "التصنيفات المخصصة", icon: <Tags className="w-4 h-4" /> },
+          ]}
+        />
 
         {activeTab === "list" && (dueRecurringCount > 0 || exceededBudgets.length > 0) && (
           <div className="mt-4 flex flex-wrap gap-2">

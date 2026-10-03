@@ -7,7 +7,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -264,10 +266,9 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
           <div className="flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={isExporting} className="gap-1.5">
-                  <Download className="w-4 h-4" />
+                <ActionButton tone="surface" disabled={isExporting} icon={<Download className="h-4 w-4" />}>
                   <span className="hidden sm:inline">{isExporting ? "جاري التصدير..." : "تصدير"}</span>
-                </Button>
+                </ActionButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportExcel} disabled={isExporting} className="gap-2">
@@ -278,27 +279,34 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button variant={privacy ? "default" : "outline"} size="sm" className="gap-1.5" onClick={toggle} title="إخفاء الأرقام">
-              {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
+              onClick={toggle}
+              title="إخفاء الأرقام"
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            >
               <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </Button>
+            </ActionButton>
           </div>
         }
       />
 
-      <Tabs value={range} onValueChange={(v) => setRange(v as Range)} className="mb-6">
-        <TabsList className="grid grid-cols-3 w-full sm:w-72 h-auto">
-          <TabsTrigger value="3">3 شهور</TabsTrigger>
-          <TabsTrigger value="6">6 شهور</TabsTrigger>
-          <TabsTrigger value="12">سنة</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <StatTabs
+        value={range}
+        onChange={(v) => setRange(v as Range)}
+        className="mb-6 sm:max-w-72"
+        options={[
+          { value: "3", label: "3 شهور" },
+          { value: "6", label: "6 شهور" },
+          { value: "12", label: "سنة" },
+        ]}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
-        <SummaryBox label="المبيعات" value={totals.sales} icon={<Receipt className="w-5 h-5" />} tone="neutral" blurCls={blurCls} />
-        <SummaryBox label="التحصيلات" value={totals.collected} icon={<Wallet className="w-5 h-5" />} tone="neutral" blurCls={blurCls} />
-        <SummaryBox label="المصروفات" value={totals.expenses} icon={<TrendingDown className="w-5 h-5" />} tone="danger" blurCls={blurCls} />
-        <SummaryBox label="صافي الربح" value={totals.net} icon={<TrendingUp className="w-5 h-5" />} tone={totals.net >= 0 ? "neutral" : "danger"} blurCls={blurCls} />
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
+        <MetricCard icon={Receipt} label="المبيعات" value={totals.sales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard icon={Wallet} label="التحصيلات" value={totals.collected} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard icon={TrendingDown} label="المصروفات" value={totals.expenses} tone="danger" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard icon={TrendingUp} label="صافي الربح" value={totals.net} tone={totals.net >= 0 ? "neutral" : "danger"} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
       </div>
 
       {incompleteCostCount > 0 && <div className="mb-6 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-bold text-warning">بيانات غير مكتملة: {incompleteCostCount} فاتورة مستبعدة من حساب الربح لعدم اكتمال تكلفة الأصناف.</div>}
@@ -463,21 +471,4 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
   );
 }
 
-function SummaryBox({
-  label, value, icon, tone, blurCls,
-}: {
-  label: string; value: number; icon: React.ReactNode;
-  tone: "primary" | "success" | "danger" | "neutral"; blurCls: string;
-}) {
-  const toneCls = tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : tone === "primary" ? "text-primary" : "text-foreground";
-  const iconCls = tone === "success" ? "text-success" : tone === "danger" ? "text-danger" : tone === "primary" ? "text-primary" : "text-muted-foreground";
-  return (
-    <div className="rounded-[1.25rem] hairline/70 bg-card/70 p-4">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">{label}</span>
-        <span className={iconCls}>{icon}</span>
-      </div>
-      <div className={cn("text-2xl font-extrabold tabular-nums", toneCls, blurCls)}>{fmt(value)} ج.م</div>
-    </div>
-  );
-}
+

@@ -19,6 +19,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
@@ -57,7 +60,6 @@ type Tab = "all" | "owing" | "settled" | "purchases";
 function SuppliersPage() {
   const data = useDB();
   const { privacy, toggle } = usePrivacy();
-  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [editing, setEditing] = useState<Supplier | null>(null);
@@ -105,70 +107,63 @@ function SuppliersPage() {
         icon={<Truck className="w-7 h-7" />}
         action={
           <div className="flex items-center gap-2">
-            <Button
-              variant={privacy ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
               onClick={toggle}
               title="إخفاء الأرقام"
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
-              {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </Button>
+            </ActionButton>
             <NewPurchaseDialog
-              trigger={<Button size="sm" variant="outline" className="gap-1.5"><ShoppingCart className="w-4 h-4" /> فاتورة شراء</Button>}
+              trigger={<ActionButton tone="surface" icon={<ShoppingCart className="h-4 w-4" />}>فاتورة شراء</ActionButton>}
             />
-            <Button size="sm" className="gap-1.5" onClick={() => { setEditing(null); setOpenSupplier(true); }}>
-              <Plus className="w-4 h-4" /> إضافة مورد
-            </Button>
+            <ActionButton onClick={() => { setEditing(null); setOpenSupplier(true); }} icon={<Plus className="h-4 w-4" />}>
+              إضافة مورد
+            </ActionButton>
           </div>
         }
       />
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-<StatBox
+        <MetricCard
+          icon={Wallet}
           label="إجمالي ديون الموردين"
-          value={`${fmt(totals.totalDebt)} ج.م`}
-          icon={<Wallet className="w-5 w-5" />}
-          tone="neutral"
-          valueClassName={blurCls}
+          value={totals.totalDebt}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
           sub={`${totals.owing} مورد له مديونية`}
         />
-        <StatBox
+        <MetricCard
+          icon={Banknote}
           label="مشتريات نقدية (الشهر)"
-          value={`${fmt(totals.monthCash)} ج.م`}
-          icon={<Banknote className="w-5 w-5" />}
-          tone="neutral"
-          valueClassName={blurCls}
+          value={totals.monthCash}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
           sub="مخصومة من صافي الربح"
         />
-        <StatBox
+        <MetricCard
+          icon={Truck}
           label="إجمالي الموردين"
-          value={String(data.suppliers.length)}
-          icon={<Truck className="w-5 w-5" />}
-          tone="neutral"
+          value={data.suppliers.length}
+          format={(n) => String(Math.round(n))}
           sub={`${data.purchases.length} فاتورة شراء`}
         />
       </div>
 
       <div className="sticky-search-bar">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="mb-4">
-        <TabsList className="grid grid-cols-4 w-full h-auto">
-          <TabsTrigger value="all" className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground">
-            الكل <Badge variant="secondary" className="rounded-full">{enriched.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="owing" className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground">
-            عليهم مديونية <Badge variant="secondary" className="rounded-full">{enriched.filter((x) => x.balance > 0).length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="settled" className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground">
-            مسدد <Badge variant="secondary" className="rounded-full">{enriched.filter((x) => x.balance <= 0).length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="purchases" className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground">
-            كل المشتريات <Badge variant="secondary" className="rounded-full">{data.purchases.length}</Badge>
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <StatTabs
+          value={tab}
+          onChange={(v) => setTab(v as Tab)}
+          className="mb-4"
+          options={[
+            { value: "all", label: "الكل", count: enriched.length },
+            { value: "owing", label: "عليهم مديونية", count: enriched.filter((x) => x.balance > 0).length },
+            { value: "settled", label: "مسدد", count: enriched.filter((x) => x.balance <= 0).length },
+            { value: "purchases", label: "كل المشتريات", count: data.purchases.length },
+          ]}
+        />
 
       {tab !== "purchases" && (
         <div className="mb-5">
@@ -320,39 +315,6 @@ function SuppliersPage() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
-}
-
-function StatBox({
-  label, value, icon, tone, valueClassName, sub,
-}: { label: string; value: string; icon: React.ReactNode; tone: "primary" | "success" | "neutral" | "danger"; valueClassName?: string; sub?: string }) {
-  const isSuccess = tone === "success";
-  const isPrimary = tone === "primary";
-  return (
-    <div className={cn(
-      "relative overflow-hidden bg-card plate p-5 transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5",
-      tone === "danger" ? "border-danger/30 hover:border-danger/60" : "border-border/30 hover:border-border/40",
-    )}>
-      <div className={cn(
-        "absolute inset-0 opacity-[0.06] pointer-events-none",
-        "bg-gradient-to-bl from-transparent to-transparent",
-      )} />
-      <div className="relative">
-        <div className="flex items-start justify-between">
-          <div className={cn(
-            "w-10 h-10 rounded-2xl border flex items-center justify-center",
-            "bg-foreground/[0.06] border-border/30 text-muted-foreground",
-          )}>{icon}</div>
-          <div className="text-xs text-muted-foreground text-left max-w-[55%]">{label}</div>
-        </div>
-        <div className={cn(
-          "text-2xl lg:text-3xl font-extrabold mt-4 tabular-nums text-right",
-          "text-foreground",
-          valueClassName,
-        )}>{value}</div>
-        {sub && <div className="text-xs text-muted-foreground mt-1.5 text-right">{sub}</div>}
-      </div>
-    </div>
   );
 }
 

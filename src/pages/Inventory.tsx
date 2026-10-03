@@ -9,7 +9,9 @@ import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -131,7 +133,6 @@ function InventoryPage() {
   const data = useDB();
   const { activeBranchId, activeBranch, isAllBranches } = useActiveBranch();
   const { privacy, toggle } = usePrivacy();
-  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [editing, setEditing] = useState<StockItem | null>(null);
@@ -279,21 +280,21 @@ ${
         icon={<Package className="w-7 h-7" />}
         action={
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone="surface"
               onClick={() => setExcelOpen(true)}
+              icon={<FileSpreadsheet className="h-4 w-4" />}
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
               <span className="hidden sm:inline">إكسيل (استيراد/تصدير)</span>
-            </Button>
+            </ActionButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Download className="w-4 h-4" />
+                <ActionButton
+                  tone="surface"
+                  icon={<Download className="h-4 w-4" />}
+                >
                   <span className="hidden sm:inline">تصدير</span>
-                </Button>
+                </ActionButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportExcel} className="gap-2">
@@ -304,99 +305,80 @@ ${
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              variant={privacy ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
               onClick={toggle}
               title="إخفاء الأرقام"
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
-              {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </Button>
-            <Button
-              size="sm"
-              className="gap-1.5"
+            </ActionButton>
+            <ActionButton
               onClick={() => {
                 setAddPrefillBarcode(undefined);
                 setAddOpen(true);
               }}
+              icon={<PackagePlus className="h-4 w-4" />}
             >
-              <PackagePlus className="w-4 h-4" />
               <span className="hidden sm:inline">إضافة منتج</span>
-            </Button>
+            </ActionButton>
           </div>
         }
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-6">
-        <StatBox
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <MetricCard
+          icon={Boxes}
           label="إجمالي الأصناف"
-          value={String(totals.totalItems)}
-          icon={<Boxes className="w-5 h-5" />}
-          tone="neutral"
+          value={totals.totalItems}
+          format={(n) => String(Math.round(n))}
           sub="عدد الأصناف الفريدة"
         />
-        <StatBox
+        <MetricCard
+          icon={Wallet}
           label="قيمة المخزن"
-          value={`${fmt(totals.value)} ج.م`}
-          icon={<Wallet className="w-5 h-5" />}
-          tone="neutral"
-          valueClassName={blurCls}
+          value={totals.value}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
           sub="الكمية × سعر الشراء"
         />
-        <StatBox
+        <MetricCard
+          icon={TrendingUp}
           label="متوسط سعر الشراء"
-          value={`${fmt(totals.avgCost)} ج.م`}
-          icon={<TrendingUp className="w-5 h-5" />}
-          tone="neutral"
-          valueClassName={blurCls}
+          value={totals.avgCost}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
           sub="متوسط على كل الأصناف"
         />
-        <StatBox
+        <MetricCard
+          icon={AlertTriangle}
           label="نواقص"
-          value={String(totals.low)}
-          icon={<AlertTriangle className="w-5 w-5" />}
+          value={totals.low}
           tone={totals.low > 0 ? "danger" : "neutral"}
+          format={(n) => String(Math.round(n))}
           sub={`أقل من ${LOW_STOCK()} وحدات • مرتبط بالمنبه`}
         />
       </div>
 
       <div className="sticky-search-bar">
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="mb-4">
-          <TabsList className="grid grid-cols-3 w-full h-auto">
-            <TabsTrigger
-              value="all"
-              className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground"
-            >
-              الكل{" "}
-              <Badge variant="secondary" className="rounded-full">
-                {data.stockItems.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger
-              value="low"
-              className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground"
-            >
-              ناقص{" "}
-              <Badge variant="secondary" className="rounded-full">
-                {
-                  data.stockItems.filter((it) => it.quantity > 0 && it.quantity < LOW_STOCK())
-                    .length
-                }
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger
-              value="out"
-              className="gap-1.5 data-[state=active]:bg-foreground/[0.06] data-[state=active]:text-foreground"
-            >
-              نفذ{" "}
-              <Badge variant="secondary" className="rounded-full">
-                {data.stockItems.filter((it) => it.quantity <= 0).length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <StatTabs
+          value={tab}
+          onChange={(v) => setTab(v as Tab)}
+          className="mb-4"
+          options={[
+            { value: "all", label: "الكل", count: data.stockItems.length },
+            {
+              value: "low",
+              label: "ناقص",
+              count: data.stockItems.filter((it) => it.quantity > 0 && it.quantity < LOW_STOCK()).length,
+            },
+            {
+              value: "out",
+              label: "نفذ",
+              count: data.stockItems.filter((it) => it.quantity <= 0).length,
+            },
+          ]}
+        />
 
         <div className="mb-5">
           <div className="relative">
@@ -1461,83 +1443,5 @@ function HistoryDialog({ item, onClose }: { item: StockItem | null; onClose: () 
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function StatBox({
-  label,
-  value,
-  icon,
-  tone,
-  valueClassName,
-  sub,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  tone: "primary" | "success" | "danger" | "neutral";
-  valueClassName?: string;
-  sub?: string;
-}) {
-  const toneCls =
-    tone === "success"
-      ? {
-          border: "border-success/30 hover:border-success/60",
-          chip: "bg-success/10 border-success/30 text-success",
-          text: "text-success",
-          grad: "bg-linear-to-bl from-success to-transparent",
-        }
-      : tone === "danger"
-        ? {
-            border: "border-danger/30 hover:border-danger/60",
-            chip: "bg-danger/10 border-danger/30 text-danger",
-            text: "text-danger",
-            grad: "bg-linear-to-bl from-danger to-transparent",
-          }
-        : tone === "neutral"
-          ? {
-              border: "border-border/30 hover:border-border/40",
-              chip: "bg-foreground/[0.06] text-muted-foreground ring-1 ring-border",
-              text: "text-foreground",
-              grad: "bg-linear-to-bl from-transparent to-transparent",
-            }
-          : {
-              border: "border-border/30 hover:border-border/40",
-              chip: "bg-foreground/[0.06] text-muted-foreground ring-1 ring-border",
-              text: "text-foreground",
-              grad: "bg-linear-to-bl from-transparent to-transparent",
-            };
-  return (
-    <div
-      className={cn(
-        "relative overflow-hidden bg-card plate p-5 transition-[transform,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5",
-        toneCls.border,
-      )}
-    >
-      <div className={cn("absolute inset-0 opacity-[0.06] pointer-events-none", toneCls.grad)} />
-      <div className="relative">
-        <div className="flex items-start justify-between">
-          <div
-            className={cn(
-              "w-10 h-10 rounded-2xl border flex items-center justify-center",
-              "bg-foreground/[0.06] border-border/30 text-muted-foreground ring-1 ring-border",
-            )}
-          >
-            {icon}
-          </div>
-          <div className="text-xs text-muted-foreground text-left max-w-[55%]">{label}</div>
-        </div>
-        <div
-          className={cn(
-            "text-2xl lg:text-3xl font-extrabold mt-4 tabular-nums text-right",
-            toneCls.text,
-            valueClassName,
-          )}
-        >
-          {value}
-        </div>
-        {sub && <div className="text-[11px] text-muted-foreground mt-1.5 text-right">{sub}</div>}
-      </div>
-    </div>
   );
 }

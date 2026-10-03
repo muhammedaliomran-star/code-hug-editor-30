@@ -7,6 +7,9 @@ import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Button } from "@/components/ui/button";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import { useState, useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -105,31 +108,19 @@ export default function PaymentsPage() {
             icon={<Banknote className="h-7 w-7" />} 
             subtitle="إدارة سندات القبض والصرف" 
             action={
-            <Button 
+            <ActionButton
               onClick={() => setIsDialogOpen(true)}
-              className="rounded-full px-6 shadow-sm"
+              icon={<Plus className="h-4 w-4" />}
             >
-              <Plus className="ml-2 h-4 w-4" />
               إضافة سند جديد
-            </Button>
+            </ActionButton>
           } />
 
           {/* Metrics Grid */}
-          <Reveal className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-6 flex flex-col gap-1 border-r-4 border-success">
-              <span className="text-muted-foreground text-sm font-medium">إجمالي المقبوضات</span>
-              <span className="text-3xl font-bold text-success" dir="ltr">{stats.receipts.toLocaleString()} <span className="text-sm">EGP</span></span>
-            </div>
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-6 flex flex-col gap-1 border-r-4 border-danger">
-              <span className="text-muted-foreground text-sm font-medium">إجمالي المدفوعات</span>
-              <span className="text-3xl font-bold text-danger" dir="ltr">{stats.payments.toLocaleString()} <span className="text-sm">EGP</span></span>
-            </div>
-            <div className="rounded-2xl border border-foreground/10 bg-card/70 p-6 flex flex-col gap-1 border-r-4 border-primary">
-              <span className="text-muted-foreground text-sm font-medium">صافي الحركة</span>
-              <span className={cn("text-3xl font-bold", stats.balance >= 0 ? "text-success" : "text-danger")} dir="ltr">
-                {stats.balance.toLocaleString()} <span className="text-sm">EGP</span>
-              </span>
-            </div>
+          <Reveal className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <MetricCard icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} EGP`} />
+            <MetricCard icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} EGP`} />
+            <MetricCard icon={Banknote} label="صافي الحركة" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} EGP`} />
           </Reveal>
 
           {/* Filters Bar */}
@@ -162,31 +153,15 @@ export default function PaymentsPage() {
                   />
                 </div>
               </div>
-              <div className="flex gap-1">
-                <Button 
-                  variant={typeFilter === "all" ? "default" : "ghost"} 
-                  onClick={() => setTypeFilter("all")}
-                  className="rounded-xl px-4 h-9 text-xs font-bold"
-                >
-                  الكل
-                </Button>
-                <Button 
-                  variant={typeFilter === "receipt" ? "default" : "ghost"} 
-                  onClick={() => setTypeFilter("receipt")}
-                  className="rounded-xl px-4 h-9 gap-2 text-xs font-bold"
-                >
-                  <ArrowDownLeft className="h-3 w-3 text-success" />
-                  قبض
-                </Button>
-                <Button 
-                  variant={typeFilter === "payment" ? "default" : "ghost"} 
-                  onClick={() => setTypeFilter("payment")}
-                  className="rounded-xl px-4 h-9 gap-2 text-xs font-bold"
-                >
-                  <ArrowUpRight className="h-3 w-3 text-danger" />
-                  صرف
-                </Button>
-              </div>
+              <StatTabs
+                value={typeFilter}
+                onChange={setTypeFilter}
+                options={[
+                  { value: "all", label: "الكل" },
+                  { value: "receipt", label: "قبض", icon: <ArrowDownLeft className="h-3 w-3 text-success" /> },
+                  { value: "payment", label: "صرف", icon: <ArrowUpRight className="h-3 w-3 text-danger" /> },
+                ]}
+              />
             </div>
           </div>
 
