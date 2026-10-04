@@ -105,8 +105,9 @@ function CashboxPageContent() {
           />
 
           {/* High-Level Liquidity Summary Cards */}
-          <Reveal className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Reveal className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
             <MetricCard
+              className="h-full"
               icon={PiggyBank}
               label="إجمالي السيولة الكلية (جميع الخزن)"
               value={totalLiquidity}
@@ -114,6 +115,7 @@ function CashboxPageContent() {
               sub={`موزعة على ${accounts.length} حسابات وخزائن`}
             />
             <MetricCard
+              className="h-full"
               icon={Banknote}
               label="الدرج النقدي الرئيسي (الكاش)"
               value={accountBalances["acc-cash-main"]?.currentBalance || 0}
@@ -121,6 +123,7 @@ function CashboxPageContent() {
               sub="السيولة الحاضرة المتاحة فوراً"
             />
             <MetricCard
+              className="h-full"
               icon={Smartphone}
               label="المحافظ الإلكترونية وإنستاباي"
               value={accounts
@@ -130,6 +133,7 @@ function CashboxPageContent() {
               sub="فودافون كاش، أورانج، InstaPay"
             />
             <MetricCard
+              className="h-full"
               icon={CreditCard}
               label="الحسابات البنكية وماكينات الدفع"
               value={accounts

@@ -322,8 +322,9 @@ export default function Reconciliation() {
         </div>
 
         {/* Top KPI Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
           <MetricCard
+            className="h-full"
             icon={ShieldCheck}
             label="مؤشر الصحة المحاسبية"
             value={summary.healthScore}
@@ -332,6 +333,7 @@ export default function Reconciliation() {
             sub={`تم فحص ${summary.totalAuditedRecords.invoices + summary.totalAuditedRecords.stockItems + summary.totalAuditedRecords.customers} سجلاً إجمالياً`}
           />
           <MetricCard
+            className="h-full"
             icon={AlertCircle}
             label="أخطاء حرجة"
             value={summary.criticalCount}
@@ -340,6 +342,7 @@ export default function Reconciliation() {
             sub="فروق تحصيل مباشرة أو تكاليف مفقودة"
           />
           <MetricCard
+            className="h-full"
             icon={TrendingDown}
             label="فروق المبالغ المعلقة"
             value={summary.totalDiscrepancyAmount}
@@ -347,6 +350,7 @@ export default function Reconciliation() {
             sub={`${summary.warningCount} تحذيرات + ${summary.noticeCount} تنبيهات`}
           />
           <MetricCard
+            className="h-full"
             icon={Sparkles}
             label="إصلاح بنقرة واحدة"
             value={summary.autoFixableCount}

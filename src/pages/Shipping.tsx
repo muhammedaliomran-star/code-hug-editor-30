@@ -742,9 +742,10 @@ export default function Shipping() {
           }
         />
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Reveal delay={0}>
+        <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Reveal delay={0} className="h-full">
             <MetricCard
+              className="h-full"
               icon={Truck}
               label="شحنات نشطة"
               value={shipments.filter((s) => ["pending", "processing", "shipped"].includes(s.status)).length}
@@ -753,8 +754,9 @@ export default function Shipping() {
               sub="قيد الانتظار والتجهيز والشحن"
             />
           </Reveal>
-          <Reveal delay={70}>
+          <Reveal delay={70} className="h-full">
             <MetricCard
+              className="h-full"
               icon={PackageCheck}
               label="تم التوصيل"
               value={shipments.filter((s) => s.status === "delivered").length}
@@ -763,8 +765,9 @@ export default function Shipping() {
               sub="شحنات مكتملة التسليم"
             />
           </Reveal>
-          <Reveal delay={140}>
+          <Reveal delay={140} className="h-full">
             <MetricCard
+              className="h-full"
               icon={AlertTriangle}
               label="شحنات متأخرة"
               value={analytics.lateCount}
@@ -773,8 +776,9 @@ export default function Shipping() {
               sub="تجاوزت موعد التسليم المتوقع"
             />
           </Reveal>
-          <Reveal delay={210}>
+          <Reveal delay={210} className="h-full">
             <MetricCard
+              className="h-full"
               icon={Wallet}
               label="مستحقات المناديب"
               value={totalDue}

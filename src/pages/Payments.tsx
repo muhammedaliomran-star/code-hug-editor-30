@@ -117,10 +117,10 @@ export default function PaymentsPage() {
           } />
 
           {/* Metrics Grid */}
-          <Reveal className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <MetricCard icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} EGP`} />
-            <MetricCard icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} EGP`} />
-            <MetricCard icon={Banknote} label="صافي الحركة" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} EGP`} />
+          <Reveal className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3">
+            <MetricCard className="h-full" icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} EGP`} />
+            <MetricCard className="h-full" icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} EGP`} />
+            <MetricCard className="h-full" icon={Banknote} label="صافي الرصيد" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} EGP`} />
           </Reveal>
 
           {/* Filters Bar */}

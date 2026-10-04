@@ -127,8 +127,9 @@ function SuppliersPage() {
       />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 mb-14">
         <MetricCard
+          className="h-full"
           icon={Wallet}
           label="إجمالي ديون الموردين"
           value={totals.totalDebt}
@@ -137,6 +138,7 @@ function SuppliersPage() {
           sub={`${totals.owing} مورد له مديونية`}
         />
         <MetricCard
+          className="h-full"
           icon={Banknote}
           label="مشتريات نقدية (الشهر)"
           value={totals.monthCash}
@@ -145,6 +147,7 @@ function SuppliersPage() {
           sub="مخصومة من صافي الربح"
         />
         <MetricCard
+          className="h-full"
           icon={Truck}
           label="إجمالي الموردين"
           value={data.suppliers.length}

@@ -302,35 +302,46 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
         ]}
       />
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 mb-6">
-        <MetricCard icon={Receipt} label="المبيعات" value={totals.sales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard icon={Wallet} label="التحصيلات" value={totals.collected} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard icon={TrendingDown} label="المصروفات" value={totals.expenses} tone="danger" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard icon={TrendingUp} label="صافي الربح" value={totals.net} tone={totals.net >= 0 ? "neutral" : "danger"} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4 mb-14">
+        <MetricCard className="h-full" icon={Receipt} label="المبيعات" value={totals.sales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard className="h-full" icon={Wallet} label="التحصيلات" value={totals.collected} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard className="h-full" icon={TrendingDown} label="المصروفات" value={totals.expenses} tone="danger" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard className="h-full" icon={TrendingUp} label="صافي الربح" value={totals.net} tone={totals.net >= 0 ? "neutral" : "danger"} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
       </div>
 
       {incompleteCostCount > 0 && <div className="mb-6 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-bold text-warning">بيانات غير مكتملة: {incompleteCostCount} فاتورة مستبعدة من حساب الربح لعدم اكتمال تكلفة الأصناف.</div>}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          { label: "المتبقي على العملاء", value: fmt(outstanding), tone: "text-muted-foreground" },
-          {
-            label: "قيمة المخزن",
-            value: fmt(stockItems.reduce((s, i) => s + i.quantity * i.lastUnitCost, 0)),
-            tone: "text-foreground",
-          },
-          { label: "مجمل الربح قبل المصروفات", value: fmt(totals.profit), tone: "text-muted-foreground" },
-        ].map((row) => (
-          <div
-            key={row.label}
-            className="rounded-xl hairline/70 bg-card/70 px-5 py-4"
-          >
-            <p className="text-xs uppercase tracking-[0.12em] text-muted-foreground">{row.label}</p>
-            <p className={cn("mt-1.5 text-base font-bold tabular-nums", row.tone, blurCls)}>
-              {row.value} ج.م
-            </p>
-          </div>
-        ))}
+      <div className="mb-14 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3">
+        <MetricCard
+          mini
+          className="h-full"
+          icon={Users}
+          label="المتبقي على العملاء"
+          value={outstanding}
+          format={(n) => `${fmt(n)} ج.م`}
+          tone="neutral"
+          masked={privacy}
+        />
+        <MetricCard
+          mini
+          className="h-full"
+          icon={Package}
+          label="قيمة المخزن"
+          value={stockItems.reduce((s, i) => s + i.quantity * i.lastUnitCost, 0)}
+          format={(n) => `${fmt(n)} ج.م`}
+          tone="neutral"
+          masked={privacy}
+        />
+        <MetricCard
+          mini
+          className="h-full"
+          icon={BarChart3}
+          label="مجمل الربح قبل المصروفات"
+          value={totals.profit}
+          format={(n) => `${fmt(n)} ج.م`}
+          tone={totals.profit >= 0 ? "neutral" : "danger"}
+          masked={privacy}
+        />
       </div>
 
       <div className="grid gap-5 lg:grid-cols-2 mb-6">

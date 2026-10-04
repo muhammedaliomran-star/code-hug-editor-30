@@ -326,8 +326,9 @@ ${
         }
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4 mb-14">
         <MetricCard
+          className="h-full"
           icon={Boxes}
           label="إجمالي الأصناف"
           value={totals.totalItems}
@@ -335,6 +336,7 @@ ${
           sub="عدد الأصناف الفريدة"
         />
         <MetricCard
+          className="h-full"
           icon={Wallet}
           label="قيمة المخزن"
           value={totals.value}
@@ -343,6 +345,7 @@ ${
           sub="الكمية × سعر الشراء"
         />
         <MetricCard
+          className="h-full"
           icon={TrendingUp}
           label="متوسط سعر الشراء"
           value={totals.avgCost}
@@ -351,6 +354,7 @@ ${
           sub="متوسط على كل الأصناف"
         />
         <MetricCard
+          className="h-full"
           icon={AlertTriangle}
           label="نواقص"
           value={totals.low}

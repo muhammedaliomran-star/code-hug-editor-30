@@ -442,9 +442,10 @@ function ExpensesPage() {
         {/* ================= TAB 1: سجل المصروفات ================= */}
         <TabsContent value="list" className="space-y-6 mt-6">
           {/* Summary KPIs */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <MetricCard
-              icon={Receipt}
+            <div className="grid auto-rows-fr grid-cols-1 gap-4 sm:grid-cols-3">
+              <MetricCard
+                className="h-full"
+                icon={Receipt}
               label="إجمالي المصروفات (المعروضة)"
               value={total}
               format={(n) => `${fmt(n)} ج.م`}
@@ -452,16 +453,18 @@ function ExpensesPage() {
               masked={privacy}
               sub="حسب الفلاتر الحالية"
             />
-            <MetricCard
-              icon={FileText}
+              <MetricCard
+                className="h-full"
+                icon={FileText}
               label="عدد القيود المسجلة"
               value={filtered.length}
               format={(n) => String(Math.round(n))}
               tone="neutral"
               sub="قيود مطابقة للبحث"
             />
-            <MetricCard
-              icon={Wallet}
+              <MetricCard
+                className="h-full"
+                icon={Wallet}
               label="متوسط القيد الواحد"
               value={filtered.length ? total / filtered.length : 0}
               format={(n) => `${fmt(Math.round(n))} ج.م`}
