@@ -34,9 +34,10 @@ export function SecondaryKPIsSection() {
           <MetricCard
             icon={Truck}
             label="شحنات COD المعلقة"
-            value={money(shippingStats.pendingCodAmount)}
+            value={shippingStats.pendingCodAmount}
+            format={(n) => money(n)}
             tone="neutral"
-            sub={`${shippingStats.unsettledCount} شحنة مسلّمة تنتظر التوريد للخزينة} ${shippingStats.collectedCount} محصّلة باليد ($${money(shippingStats.collectedCodAmount)}) • ${shippingStats.uncollectedCount} عند العملاء ($${money(shippingStats.uncollectedCodAmount)})`}
+            sub={`${shippingStats.unsettledCount} شحنة مسلّمة تنتظر التوريد للخزينة • ${shippingStats.collectedCount} محصّلة باليد (${money(shippingStats.collectedCodAmount)}) • ${shippingStats.uncollectedCount} عند العملاء (${money(shippingStats.uncollectedCodAmount)})`}
           />
         </Reveal>
 
@@ -45,6 +46,7 @@ export function SecondaryKPIsSection() {
             icon={ShieldCheck}
             label="مؤشر الرقابة المحاسبية"
             value={reconciliationSummary.healthScore}
+            format={(n) => `${Math.round(n)}%`}
             tone={reconciliationSummary.healthScore >= 90 ? "positive" : reconciliationSummary.healthScore >= 70 ? "neutral" : "danger"}
             sub={`${reconciliationSummary.criticalCount} حرج | ${reconciliationSummary.autoFixableCount} قابل للإصلاح الآلي`}
           />
