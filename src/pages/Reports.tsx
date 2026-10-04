@@ -313,7 +313,6 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
 
       <div className="mb-14 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3">
         <MetricCard
-          mini
           className="h-full"
           icon={Users}
           label="المتبقي على العملاء"
@@ -323,7 +322,6 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
           masked={privacy}
         />
         <MetricCard
-          mini
           className="h-full"
           icon={Package}
           label="قيمة المخزن"
@@ -333,7 +331,6 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
           masked={privacy}
         />
         <MetricCard
-          mini
           className="h-full"
           icon={BarChart3}
           label="مجمل الربح قبل المصروفات"
