@@ -742,27 +742,48 @@ export default function Shipping() {
           }
         />
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { label: "شحنات نشطة", value: String(shipments.filter((s) => ["pending", "processing", "shipped"].includes(s.status)).length), icon: Truck, color: "text-blue-500", bg: "bg-blue-500/10" },
-            { label: "تم التوصيل", value: String(shipments.filter((s) => s.status === "delivered").length), icon: PackageCheck, color: "text-emerald-500", bg: "bg-emerald-500/10" },
-            { label: "شحنات متأخرة", value: String(analytics.lateCount), icon: AlertTriangle, color: "text-rose-500", bg: "bg-rose-500/10" },
-            { label: "مستحقات المناديب", value: privacy ? "••••" : egp(totalDue), icon: Wallet, color: "text-amber-500", bg: "bg-amber-500/10" },
-          ].map((metric, i) => (
-            <Reveal key={metric.label} delay={i * 0.1}>
-              <BezelCard className="group relative overflow-hidden p-6 transition-all hover:translate-y-[-4px]">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{metric.label}</p>
-                    <p className="mt-2 text-3xl font-bold tracking-tight">{metric.value}</p>
-                  </div>
-                  <div className={`rounded-2xl ${metric.bg} p-3 ${metric.color} ring-1 ring-inset ring-current/20`}>
-                    <metric.icon className="h-6 w-6" />
-                  </div>
-                </div>
-              </BezelCard>
-            </Reveal>
-          ))}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Reveal delay={0}>
+            <MetricCard
+              icon={Truck}
+              label="شحنات نشطة"
+              value={shipments.filter((s) => ["pending", "processing", "shipped"].includes(s.status)).length}
+              format={(n) => String(Math.round(n))}
+              tone="neutral"
+              sub="قيد الانتظار والتجهيز والشحن"
+            />
+          </Reveal>
+          <Reveal delay={70}>
+            <MetricCard
+              icon={PackageCheck}
+              label="تم التوصيل"
+              value={shipments.filter((s) => s.status === "delivered").length}
+              format={(n) => String(Math.round(n))}
+              tone="positive"
+              sub="شحنات مكتملة التسليم"
+            />
+          </Reveal>
+          <Reveal delay={140}>
+            <MetricCard
+              icon={AlertTriangle}
+              label="شحنات متأخرة"
+              value={analytics.lateCount}
+              format={(n) => String(Math.round(n))}
+              tone="danger"
+              sub="تجاوزت موعد التسليم المتوقع"
+            />
+          </Reveal>
+          <Reveal delay={210}>
+            <MetricCard
+              icon={Wallet}
+              label="مستحقات المناديب"
+              value={totalDue}
+              format={(n) => egp(n)}
+              tone="neutral"
+              masked={privacy}
+              sub="إجمالي المبالغ لدى المناديب"
+            />
+          </Reveal>
         </div>
 
         {shippingNotifications.length > 0 && (
