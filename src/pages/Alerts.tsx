@@ -39,7 +39,10 @@ import {
   CheckCircle2,
   ArrowUpDown,
   Filter,
+  Layers,
 } from "lucide-react";
+import { StatTabs } from "@/components/StatTabs";
+import { ActionButton } from "@/components/ActionButton";
 import { Link } from "@/lib/router-compat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -316,17 +319,6 @@ function AlertsPage() {
     printCollectorSheetA4(sheetItems, settings.shopName || "سِجلّي", settings.phone || "");
   };
 
-  const tabs: Array<{ id: TabType; label: string; count?: number; icon?: React.ReactNode }> = [
-    { id: "all", label: "الكل", count: allAlertItems.length },
-    { id: "due_today", label: "🎯 مستحق اليوم وقريباً", count: stats.dueSoonCount },
-    { id: "minor", label: "🟡 تأخر (1-15 يوم)", count: allAlertItems.filter((x) => x.bracket === "minor").length },
-    { id: "moderate", label: "🟠 تأخر (16-30 يوم)", count: allAlertItems.filter((x) => x.bracket === "moderate").length },
-    { id: "critical", label: "🔴 متعثر (>30 يوم)", count: stats.criticalCount },
-    { id: "promises", label: "🤝 وعود السداد", count: stats.promisesCount },
-    { id: "stock", label: "📦 نواقص المخزن", count: stats.lowStockCount },
-    { id: "history", label: "📞 سجل المتابعات", count: callLogs.length },
-  ];
-
   return (
     <>
       <PageHeader
@@ -335,27 +327,23 @@ function AlertsPage() {
         icon={<Bell className="w-7 h-7 text-rose-500" />}
         action={
           <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 border-primary/40 hover:bg-primary/5 text-primary"
+            <ActionButton
+              tone="surface"
               onClick={handlePrintCollectorSheet}
               title="طباعة كشف خطة التحصيل الميداني للمحصلين"
+              icon={<Printer className="h-4 w-4" />}
             >
-              <Printer className="w-4 h-4" />
               <span className="hidden sm:inline">كشف التحصيل الميداني</span>
-            </Button>
+            </ActionButton>
 
-            <Button
-              variant={privacy ? "default" : "outline"}
-              size="sm"
-              className="gap-1.5"
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
               onClick={toggle}
               title="إخفاء الأرقام"
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
-              {privacy ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </Button>
+            </ActionButton>
           </div>
         }
       />
@@ -371,45 +359,24 @@ function AlertsPage() {
           promisesAmount={stats.promisesAmount}
           criticalCount={stats.criticalCount}
           criticalAmount={stats.criticalAmount}
-          lowStockCount={stats.lowStockCount}
-          blurCls={blurCls}
-          activeTab={activeTab}
-          onSelectTab={(t) => setActiveTab(t as TabType)}
+          masked={privacy}
         />
 
         {/* Tab Selection Navigation */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/60 scrollbar-none">
-          {tabs.map((t) => {
-            const isActive = activeTab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setActiveTab(t.id)}
-                className={cn(
-                  "px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                )}
-              >
-                <span>{t.label}</span>
-                {t.count !== undefined && (
-                  <span
-                    className={cn(
-                      "px-1.5 py-0.5 text-[10px] rounded-full font-mono font-bold",
-                      isActive
-                        ? "bg-primary-foreground/20 text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {t.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <StatTabs
+          value={activeTab}
+          onChange={(v) => setActiveTab(v as TabType)}
+          options={[
+            { value: "all", label: "الكل", count: allAlertItems.length, icon: <Layers className="h-3.5 w-3.5" /> },
+            { value: "due_today", label: "مستحق اليوم وقريباً", count: stats.dueSoonCount, icon: <Calendar className="h-3.5 w-3.5" /> },
+            { value: "minor", label: "تأخر (1-15 يوم)", count: allAlertItems.filter((x) => x.bracket === "minor").length, icon: <Clock className="h-3.5 w-3.5" /> },
+            { value: "moderate", label: "تأخر (16-30 يوم)", count: allAlertItems.filter((x) => x.bracket === "moderate").length, icon: <AlertTriangle className="h-3.5 w-3.5" /> },
+            { value: "critical", label: "متعثر (>30 يوم)", count: stats.criticalCount, icon: <ShieldAlert className="h-3.5 w-3.5" /> },
+            { value: "promises", label: "وعود السداد", count: stats.promisesCount, icon: <Handshake className="h-3.5 w-3.5" /> },
+            { value: "stock", label: "نواقص المخزن", count: stats.lowStockCount, icon: <Package className="h-3.5 w-3.5" /> },
+            { value: "history", label: "سجل المتابعات", count: callLogs.length, icon: <PhoneCall className="h-3.5 w-3.5" /> },
+          ]}
+        />
 
         {/* Search & Sort Controls (for list views) */}
         {activeTab !== "stock" && activeTab !== "history" && (

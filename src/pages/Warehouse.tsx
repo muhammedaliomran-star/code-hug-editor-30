@@ -5,6 +5,8 @@ import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
 import { BezelCard } from "@/components/BezelCard";
 import { MetricCard } from "@/components/MetricCard";
+import { FilterChips } from "@/components/FilterChips";
+import { ActionButton } from "@/components/ActionButton";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Button } from "@/components/ui/button";
@@ -24,7 +26,7 @@ import {
 } from "@/lib/store";
 import {
   Warehouse as WarehouseIcon, Boxes, Wallet, Sun, Snowflake, Search, Plus,
-  ArrowLeft, Trash2, Layers, Store, Pencil, Check
+  ArrowLeft, Trash2, Store, Pencil, Check
 } from "lucide-react";
 import { usePrivacy } from "@/lib/privacy";
 import { cn } from "@/lib/utils";
@@ -87,18 +89,20 @@ function WarehousePage() {
         icon={<WarehouseIcon className="h-7 w-7" />}
         subtitle="البضاعة المركونة — صيفي وشتوي وعام."
         action={
-          <>
-            <Button asChild variant="outline" size="sm" className="rounded-full">
-              <Link to="/inventory">
-                <ArrowLeft className="me-2 h-4 w-4" />
-                المنتجات
-              </Link>
-            </Button>
-            <Button size="sm" className="rounded-full" onClick={() => setAddOpen(true)}>
-              <Plus className="me-2 h-4 w-4" />
+          <div className="flex items-center gap-2">
+            <Link
+              to="/inventory"
+              className="group island-btn bg-secondary text-secondary-foreground ring-1 ring-border"
+            >
+              <span className="ps-1">المنتجات</span>
+              <span className="island-btn-icon">
+                <ArrowLeft className="h-4 w-4" />
+              </span>
+            </Link>
+            <ActionButton onClick={() => setAddOpen(true)} icon={<Plus className="h-4 w-4" />}>
               إضافة للمخزن
-            </Button>
-          </>
+            </ActionButton>
+          </div>
         }
       />
 
@@ -152,34 +156,16 @@ function WarehousePage() {
               className="h-12 rounded-full pe-11 text-right"
             />
           </div>
-          <div className="glass flex w-max items-center gap-1 rounded-full p-1.5">
-            {(
-              [
-                { value: "any", label: "الكل", icon: Layers },
-                { value: "summer", label: "صيفي", icon: Sun },
-                { value: "winter", label: "شتوي", icon: Snowflake },
-                { value: "all", label: "عام", icon: Boxes },
-              ] as { value: Filter; label: string; icon: typeof Sun }[]
-            ).map((f) => {
-              const active = filter === f.value;
-              const Icon = f.icon;
-return (
-                <button
-                  key={f.value}
-                  onClick={() => setFilter(f.value)}
-                  className={cn(
-                    "press flex items-center gap-1.5 rounded-full px-4 py-2 text-sm transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                    active
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground",
-                  )}
-              >
-                  <Icon className="h-3.5 w-3.5" />
-                  {f.label}
-                </button>
-              );
-            })}
-          </div>
+          <FilterChips
+            value={filter}
+            onChange={(v) => setFilter(v as Filter)}
+            options={[
+              { value: "any", label: "الكل" },
+              { value: "summer", label: "صيفي" },
+              { value: "winter", label: "شتوي" },
+              { value: "all", label: "عام" },
+            ]}
+          />
         </div>
       </Reveal>
 

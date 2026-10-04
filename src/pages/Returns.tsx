@@ -11,13 +11,13 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { Plus, History, TrendingUp, X, Check, Trash2, Receipt, Package, Undo2, Search } from "lucide-react";
-import { CountUp } from "@/components/CountUp";
+import { MetricCard } from "@/components/MetricCard";
+import { ActionButton } from "@/components/ActionButton";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivacy } from "@/lib/privacy";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import * as React from "react";
 import { useState } from "react";
 import {
   Dialog,
@@ -95,9 +95,9 @@ function ReturnsPage() {
         action={
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 rounded-2xl h-12 px-6 shadow-sm hover:scale-105 transition-transform">
-                <Plus className="w-5 h-5" /> تسجيل مرتجع جديد
-              </Button>
+              <ActionButton icon={<Plus className="h-4 w-4" />}>
+                تسجيل مرتجع جديد
+              </ActionButton>
             </DialogTrigger>
             <DialogContent className="max-w-2xl overflow-hidden p-0 border-none bg-card/95 ">
               <DialogHeader className="p-6 pb-2 sticky top-0 bg-card z-20 border-b border-[var(--hairline)]">
@@ -242,10 +242,42 @@ function ReturnsPage() {
 
       {/* Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <MetricCard label="إجمالي المرتجعات" value={data.returns.reduce((acc, r) => acc + r.totalAmount, 0)} icon={<Undo2 className="w-4 h-4 text-muted-foreground" />} color="muted" privacy={privacy} />
-        <MetricCard label="مرتجعات مبيعات" value={data.returns.filter(r => r.type === "sale").reduce((acc, r) => acc + r.totalAmount, 0)} icon={<TrendingUp className="w-4 h-4 text-warning" />} color="warning" privacy={privacy} glow />
-        <MetricCard label="مرتجعات موردين" value={data.returns.filter(r => r.type === "supplier").reduce((acc, r) => acc + r.totalAmount, 0)} icon={<Package className="w-4 h-4 text-muted-foreground" />} color="muted" privacy={privacy} />
-        <MetricCard label="عدد العمليات" value={data.returns.length} icon={<History className="w-4 h-4 text-muted-foreground" />} color="muted" privacy={privacy} isCount glow />
+        <MetricCard
+          icon={Undo2}
+          label="إجمالي المرتجعات"
+          value={data.returns.reduce((acc, r) => acc + r.totalAmount, 0)}
+          format={(n) => `${fmt(n)} ج.م`}
+          tone="neutral"
+          masked={privacy}
+          sub="مبيعات + موردين"
+        />
+        <MetricCard
+          icon={TrendingUp}
+          label="مرتجعات مبيعات"
+          value={data.returns.filter(r => r.type === "sale").reduce((acc, r) => acc + r.totalAmount, 0)}
+          format={(n) => `${fmt(n)} ج.م`}
+          tone="neutral"
+          masked={privacy}
+          sub="مرتجعات من العملاء"
+        />
+        <MetricCard
+          icon={Package}
+          label="مرتجعات موردين"
+          value={data.returns.filter(r => r.type === "supplier").reduce((acc, r) => acc + r.totalAmount, 0)}
+          format={(n) => `${fmt(n)} ج.م`}
+          tone="neutral"
+          masked={privacy}
+          sub="مرتجعات للموردين"
+        />
+        <MetricCard
+          icon={History}
+          label="عدد العمليات"
+          value={data.returns.length}
+          format={(n) => String(Math.round(n))}
+          tone="neutral"
+          masked={privacy}
+          sub="إجمالي عمليات الإرجاع"
+        />
       </div>
 
       {/* Full Width History Table/List */}
@@ -369,41 +401,4 @@ function ReturnsPage() {
   );
 }
 
-function MetricCard({ label, value, icon, color, privacy, isCount, glow }: { label: string, value: number, icon: React.ReactNode, color: string, privacy: boolean, isCount?: boolean, glow?: boolean }) {
-  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
-  const colorCls = {
-    success: "text-success",
-    danger: "text-danger",
-    primary: "text-primary",
-    warning: "text-warning",
-    muted: "text-muted-foreground"
-  }[color as "success" | "danger" | "primary" | "warning" | "muted"] || "text-foreground";
 
-  const glowCls = glow ? {
-    success: "shadow-[0_0_30px_-10px_hsl(var(--success)/0.3)]",
-    danger: "shadow-[0_0_30px_-10px_hsl(var(--danger)/0.3)]",
-    primary: "shadow-[0_0_30px_-10px_hsl(var(--primary)/0.3)]",
-    warning: "shadow-[0_0_30px_-10px_hsl(var(--warning)/0.3)]",
-    muted: "shadow-none"
-  }[color as "success" | "danger" | "primary" | "warning" | "muted"] : "";
-
-  return (
-    <div className={cn("rounded-2xl border border-foreground/10 bg-card/70 p-5 flex flex-col items-center justify-center text-center  group relative overflow-hidden", glowCls)}>
-      {glow && (
-        <div className={cn(
-          "absolute -right-4 -top-4 w-12 h-12 blur-2xl opacity-20 transition-opacity group-hover:opacity-40",
-          color === 'primary' ? "bg-primary" : color === 'warning' ? "bg-warning" : "bg-muted"
-        )} />
-      )}
-      <div className="flex items-center gap-2 mb-1.5">
-        <div className="p-1.5 rounded-lg bg-muted/20 ring-1 ring-inset ring-[var(--hairline)]">
-          {icon}
-        </div>
-        <span className="text-xs font-black text-muted-foreground uppercase tracking-[0.12em]">{label}</span>
-      </div>
-      <div className={cn("text-2xl font-black tabular-nums tracking-tighter", colorCls, blurCls)}>
-        {isCount ? <CountUp value={value} /> : <><CountUp value={value} format={(n: number) => fmt(n)} /> <span className="text-xs font-bold opacity-60">ج.م</span></>}
-      </div>
-    </div>
-  );
-}
