@@ -506,7 +506,7 @@ export default function OwnerCockpit() {
 
               {/* Cash Balance & Quick Action Banner */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Total Receivables in market */
+                {/* Total Receivables in market */}
                 <MetricCard
                   icon={Users}
                   label="ديون السوق (عند العملاء)"
@@ -528,7 +528,7 @@ export default function OwnerCockpit() {
                   }
                 />
 
-                /* Today Due Summary */
+                {/* Today Due Summary */}
                 <MetricCard
                   icon={Calendar}
                   label="مستحق التحصيل اليوم"
@@ -555,7 +555,7 @@ export default function OwnerCockpit() {
                   }
                 />
 
-                /* Quick Security Summary */
+                {/* Quick Security Summary */}
                 <MetricCard
                   icon={ShieldCheck}
                   label="تنبيهات الرقابة والمخزن"
@@ -578,7 +578,7 @@ export default function OwnerCockpit() {
                 />
               </div>
 
-              /* Today's Transactions Feed */}
+              {/* Today's Transactions Feed */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground">آخر فواتير تم إصدارها في الفترة</h3>
