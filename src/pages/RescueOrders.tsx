@@ -6,8 +6,10 @@ import { Reveal } from "@/components/Reveal";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MetricCard } from "@/components/MetricCard";
+import { FilterChips } from "@/components/FilterChips";
 import { db, useDB, type ShipmentStatus } from "@/lib/store";
-import { AlertTriangle, CheckCircle2, ChevronLeft, MessageCircle, Phone, RefreshCw, Search, ShieldAlert, Truck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, MessageCircle, Phone, RefreshCw, RotateCcw, Search, ShieldAlert, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { renderRescuePending, waLink, trackUrlFor } from "@/lib/whatsapp-templates";
 import { useShopSettings } from "@/lib/store";
@@ -54,16 +56,43 @@ export default function RescueOrders() {
         icon={<ShieldAlert className="h-7 w-7" />}
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <BezelCard variant="flat" className="p-4"><p className="text-xs text-muted-foreground">إجمالي الطلبات</p><p className="mt-2 text-2xl font-black">{rows.length}</p></BezelCard>
-        <BezelCard variant="flat" className="p-4"><p className="text-xs text-muted-foreground">عاجل</p><p className="mt-2 text-2xl font-black text-red-600">{urgentCount}</p></BezelCard>
-        <BezelCard variant="flat" className="p-4"><p className="text-xs text-muted-foreground">مرتجع</p><p className="mt-2 text-2xl font-black text-orange-600">{rows.filter((r) => r.status === "returned").length}</p></BezelCard>
+      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+        <MetricCard
+          icon={Truck}
+          label="إجمالي الطلبات"
+          value={rows.length}
+          format={(n) => String(Math.round(n))}
+          tone="neutral"
+          sub="شحنة تحتاج إجراء"
+        />
+        <MetricCard
+          icon={AlertTriangle}
+          label="عاجل"
+          value={urgentCount}
+          format={(n) => String(Math.round(n))}
+          tone="danger"
+          sub="أولوية قصوى"
+        />
+        <MetricCard
+          icon={RotateCcw}
+          label="مرتجع"
+          value={rows.filter((r) => r.status === "returned").length}
+          format={(n) => String(Math.round(n))}
+          tone="neutral"
+          sub="شحنات مرتجعة"
+        />
       </div>
 
-      <div className="mb-4 flex gap-2">
+      <div className="mb-4 flex flex-col gap-3">
         <div className="relative flex-1"><Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" /><Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="ابحث بالرقم أو الاسم أو الهاتف" className="pr-10" /></div>
-        <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>الكل</Button>
-        <Button variant={filter === "urgent" ? "default" : "outline"} size="sm" onClick={() => setFilter("urgent")}>عاجل</Button>
+        <FilterChips
+          value={filter}
+          onChange={(v) => setFilter(v as "all" | "urgent" | "shipment")}
+          options={[
+            { value: "all", label: "الكل", count: rows.length },
+            { value: "urgent", label: "عاجل", count: urgentCount },
+          ]}
+        />
       </div>
 
       {filtered.length === 0 ? <BezelCard className="p-10 text-center text-muted-foreground">مفيش طلبات مطابقة.</BezelCard> : (

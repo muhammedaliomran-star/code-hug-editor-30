@@ -3,10 +3,11 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { BezelCard } from "@/components/BezelCard";
 import { Reveal } from "@/components/Reveal";
-import { Button } from "@/components/ui/button";
 import { useDB } from "@/lib/store";
 import { Link } from "@/lib/router-compat";
-import { CalendarDays, ChevronLeft, PackageCheck, RefreshCw, Truck } from "lucide-react";
+import { MetricCard } from "@/components/MetricCard";
+import { ActionButton } from "@/components/ActionButton";
+import { Banknote, CalendarDays, ChevronLeft, Hourglass, PackageCheck, RefreshCw, Truck } from "lucide-react";
 
 const money = (value: number) => new Intl.NumberFormat("ar-EG", { maximumFractionDigits: 0 }).format(Math.round(value));
 const dayKey = (value: string) => { const date = new Date(value); return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`; };
@@ -44,30 +45,68 @@ export default function ShippingDay() {
           icon={<CalendarDays className="h-7 w-7" />}
           action={
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" asChild>
-                <Link to="/shipping"><ChevronLeft className="h-4 w-4" /> قسم الشحن</Link>
-              </Button>
-              <Button variant="outline" onClick={() => void refresh()} disabled={loading}>
-                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /> تحديث
-              </Button>
+              <Link
+                to="/shipping"
+                className="group island-btn bg-secondary text-secondary-foreground ring-1 ring-border"
+              >
+                <span className="ps-1">قسم الشحن</span>
+                <span className="island-btn-icon">
+                  <ChevronLeft className="h-4 w-4" />
+                </span>
+              </Link>
+              <ActionButton
+                tone="surface"
+                onClick={() => void refresh()}
+                disabled={loading}
+                icon={<RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />}
+              >
+                تحديث
+              </ActionButton>
             </div>
           }
         />
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          {[
-            { label: "إجمالي الأيام", value: String(days.length) },
-            { label: "عدد الشحنات", value: String(totals.count) },
-            { label: "المدفوع", value: `${money(totals.paid)} ج.م`, tone: "text-success" },
-            { label: "المعلّق", value: `${money(totals.due)} ج.م`, tone: "text-warning" },
-          ].map((kpi, i) => (
-            <Reveal key={kpi.label} delay={i * 0.05}>
-              <BezelCard className="plate p-4">
-                <p className="text-[11px] font-bold text-muted-foreground">{kpi.label}</p>
-                <p className={`mt-2 text-xl font-black tabular-nums sm:text-2xl ${kpi.tone ?? ""}`}>{kpi.value}</p>
-              </BezelCard>
-            </Reveal>
-          ))}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Reveal delay={0}>
+            <MetricCard
+              icon={CalendarDays}
+              label="إجمالي الأيام"
+              value={days.length}
+              format={(n) => String(Math.round(n))}
+              tone="neutral"
+              sub="أيام شحن مسجلة"
+            />
+          </Reveal>
+          <Reveal delay={50}>
+            <MetricCard
+              icon={Truck}
+              label="عدد الشحنات"
+              value={totals.count}
+              format={(n) => String(Math.round(n))}
+              tone="neutral"
+              sub="إجمالي الشحنات"
+            />
+          </Reveal>
+          <Reveal delay={100}>
+            <MetricCard
+              icon={Banknote}
+              label="المدفوع"
+              value={totals.paid}
+              format={(n) => `${money(n)} ج.م`}
+              tone="positive"
+              sub="مبالغ محصلة"
+            />
+          </Reveal>
+          <Reveal delay={150}>
+            <MetricCard
+              icon={Hourglass}
+              label="المعلّق"
+              value={totals.due}
+              format={(n) => `${money(n)} ج.م`}
+              tone="neutral"
+              sub="مبالغ معلقة"
+            />
+          </Reveal>
         </div>
 
         <Reveal>

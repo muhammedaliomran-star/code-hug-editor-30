@@ -2,7 +2,6 @@ import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { ProductForm } from "@/components/ProductForm";
-import { Button } from "@/components/ui/button";
 import { useDB } from "@/lib/store";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, PackagePlus } from "lucide-react";
@@ -29,12 +28,15 @@ function AddProductPage() {
         subtitle="نفس الحقول الموجودة في النافذة السريعة، بمساحة أوسع للإدخال المتكرر."
         icon={<PackagePlus className="h-7 w-7" />}
         action={
-          <Button asChild variant="outline" className="rounded-full">
-            <Link to="/inventory">
-              <ArrowRight className="me-1.5 h-4 w-4" />
-              رجوع للمنتجات
-            </Link>
-          </Button>
+          <Link
+            to="/inventory"
+            className="group island-btn bg-secondary text-secondary-foreground ring-1 ring-border"
+          >
+            <span className="ps-1">رجوع للمنتجات</span>
+            <span className="island-btn-icon">
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </Link>
         }
       />
 
