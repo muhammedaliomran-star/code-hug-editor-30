@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
-import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

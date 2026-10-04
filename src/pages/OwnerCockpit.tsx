@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
-import { CountUp as BaseCountUp } from "@/components/CountUp";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { FilterChips } from "@/components/FilterChips";
+import { ActionButton } from "@/components/ActionButton";
 import { usePrivacy } from "@/lib/privacy";
 import {
   useDB,
@@ -53,47 +56,6 @@ import { CashFlowForecastTab } from "@/components/owner/CashFlowForecastTab";
 import { SalesTargetsTab } from "@/components/owner/SalesTargetsTab";
 import { OwnerApprovalsTab } from "@/components/owner/OwnerApprovalsTab";
 import { GeoShippingIntelligenceTab } from "@/components/owner/GeoShippingIntelligenceTab";
-
-function CountUp({ value, prefix }: { value: number; prefix?: string }) {
-  return (
-    <span>
-      {prefix}
-      <BaseCountUp value={value} format={(n) => fmt(n)} />
-    </span>
-  );
-}
-
-function MetricCard({
-  title,
-  hint,
-  icon,
-  children,
-  className,
-}: {
-  title: string;
-  hint?: string;
-  icon?: React.ReactNode;
-  children?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "plate rounded-3xl border border-border/80 bg-card/60 p-5 transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5",
-        className,
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-bold text-foreground">{title}</div>
-          {hint && <div className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{hint}</div>}
-        </div>
-        {icon && <span className="shrink-0">{icon}</span>}
-      </div>
-      <div className="mt-4">{children}</div>
-    </div>
-  );
-}
 
 type TimeRange = "today" | "yesterday" | "this_week" | "this_month" | "all";
 
@@ -435,131 +397,67 @@ export default function OwnerCockpit() {
               </div>
 
               {/* Top Controls: Quick Actions + Privacy + Range Selector */}
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 {/* Quick Action: Shift Closeout */}
-                <button
-                  type="button"
+                <ActionButton
                   onClick={() => setShiftModalOpen(true)}
-                  className="flex h-11 items-center gap-2 rounded-2xl bg-emerald-600 px-4 text-xs font-bold text-white shadow-md hover:bg-emerald-500 transition"
                   title="تقفيل الوردية اليومية وعد النقدية بالدرج"
+                  icon={<Wallet className="h-4 w-4" />}
                 >
-                  <Wallet className="h-4 w-4" />
-                  <span>تقفيل الوردية اليومية</span>
-                </button>
+                  تقفيل الوردية اليومية
+                </ActionButton>
 
                 {/* Quick Action: Executive WhatsApp Briefing */}
-                <button
-                  type="button"
+                <ActionButton
+                  tone="surface"
                   onClick={() => setBriefingModalOpen(true)}
-                  className="flex h-11 items-center gap-2 rounded-2xl bg-primary/20 border border-primary/40 px-4 text-xs font-bold text-primary hover:bg-primary/30 transition"
                   title="توليد ملخص تنفيذي ذكي وإرساله عبر واتساب"
+                  icon={<Send className="h-4 w-4" />}
                 >
-                  <Send className="h-4 w-4" />
-                  <span>ملخص واتساب للمالك</span>
-                </button>
+                  ملخص واتساب للمالك
+                </ActionButton>
 
-                <button
-                  type="button"
+                <ActionButton
+                  tone={privacy ? "primary" : "surface"}
                   onClick={togglePrivacy}
                   title={privacy ? "إظهار الأرقام والأرباح" : "وضع الخصوصية (إخفاء الأرقام)"}
-                  className={cn(
-                    "flex h-11 items-center gap-2 rounded-2xl border px-4 text-sm font-semibold transition-all duration-300",
-                    privacy
-                      ? "border-warning/40 bg-warning/10 text-warning hover:bg-warning/20"
-                      : "border-border bg-card/80 text-muted-foreground hover:text-foreground"
-                  )}
+                  icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 >
-                  {privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  <span>{privacy ? "وضع الخصوصية نشط" : "إخفاء الأرقام"}</span>
-                </button>
+                  {privacy ? "وضع الخصوصية نشط" : "إخفاء الأرقام"}
+                </ActionButton>
 
                 {/* Range Filter */}
-                <div className="flex rounded-2xl border border-border/70 bg-card/70 p-1">
-                  {(
-                    [
-                      { key: "today", label: "اليوم" },
-                      { key: "yesterday", label: "أمس" },
-                      { key: "this_week", label: "الأسبوع" },
-                      { key: "this_month", label: "الشهر" },
-                      { key: "all", label: "الكل" },
-                    ] as const
-                  ).map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => setTimeRange(t.key)}
-                      className={cn(
-                        "rounded-xl px-3 py-1.5 text-xs font-bold transition-all",
-                        timeRange === t.key
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+                <FilterChips
+                  value={timeRange}
+                  onChange={(v) => setTimeRange(v as TimeRange)}
+                  options={[
+                    { value: "today", label: "اليوم" },
+                    { value: "yesterday", label: "أمس" },
+                    { value: "this_week", label: "الأسبوع" },
+                    { value: "this_month", label: "الشهر" },
+                    { value: "all", label: "الكل" },
+                  ]}
+                />
               </div>
             </div>
 
             {/* Navigation Tabs */}
-            <div className="mt-6 flex flex-wrap gap-2 border-t border-border/40 pt-4">
-              {[
-                { id: "pulse", label: "نبض اليوم والسيولة", icon: Wallet, badge: null },
-                {
-                  id: "debt",
-                  label: "رادار التحصيل والديون",
-                  icon: Users,
-                  badge: overdueInvoices.length > 0 ? overdueInvoices.length : null,
-                  badgeColor: "bg-danger text-danger-foreground",
-                },
-                { id: "cashflow", label: "محاكي التدفق النقدي", icon: TrendingUp, badge: null },
-                { id: "targets", label: "تارجت وعمولات البائعين", icon: Trophy, badge: null },
-                { id: "approvals", label: "اعتمادات المالك", icon: ShieldAlert, badge: null },
-                { id: "geo", label: "التحليل الجغرافي والشحن", icon: Compass, badge: null },
-                {
-                  id: "security",
-                  label: "الرقابة والأمان",
-                  icon: ShieldCheck,
-                  badge: auditAlerts.length > 0 ? auditAlerts.length : null,
-                  badgeColor: "bg-warning text-black",
-                },
-                {
-                  id: "branches",
-                  label: "أداء الفروع",
-                  icon: GitBranch,
-                  badge: branches.length > 1 ? branches.length : null,
-                  badgeColor: "bg-primary/20 text-primary",
-                },
-                { id: "insights", label: "بوصلة الأصناف", icon: Sparkles, badge: null },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const active = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as any)}
-                    className={cn(
-                      "flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all",
-                      active
-                        ? "bg-foreground text-background shadow-md"
-                        : "bg-card/40 text-muted-foreground hover:bg-card hover:text-foreground"
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{tab.label}</span>
-                    {tab.badge !== null && (
-                      <span
-                        className={cn(
-                          "flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[11px] font-extrabold leading-none",
-                          tab.badgeColor
-                        )}
-                      >
-                        {tab.badge}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="mt-6 border-t border-border/40 pt-4">
+              <StatTabs
+                value={activeTab}
+                onChange={(v) => setActiveTab(v as typeof activeTab)}
+                options={[
+                  { value: "pulse", label: "نبض اليوم والسيولة", icon: <Wallet className="h-4 w-4" /> },
+                  { value: "debt", label: "رادار التحصيل والديون", icon: <Users className="h-4 w-4" />, count: overdueInvoices.length > 0 ? overdueInvoices.length : undefined },
+                  { value: "cashflow", label: "محاكي التدفق النقدي", icon: <TrendingUp className="h-4 w-4" /> },
+                  { value: "targets", label: "تارجت وعمولات البائعين", icon: <Trophy className="h-4 w-4" /> },
+                  { value: "approvals", label: "اعتمادات المالك", icon: <ShieldAlert className="h-4 w-4" /> },
+                  { value: "geo", label: "التحليل الجغرافي والشحن", icon: <Compass className="h-4 w-4" /> },
+                  { value: "security", label: "الرقابة والأمان", icon: <ShieldCheck className="h-4 w-4" />, count: auditAlerts.length > 0 ? auditAlerts.length : undefined },
+                  { value: "branches", label: "أداء الفروع", icon: <GitBranch className="h-4 w-4" />, count: branches.length > 1 ? branches.length : undefined },
+                  { value: "insights", label: "بوصلة الأصناف", icon: <Sparkles className="h-4 w-4" /> },
+                ]}
+              />
             </div>
           </div>
 
@@ -569,136 +467,118 @@ export default function OwnerCockpit() {
               {/* Core Financial Metrics */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
-                  title="السيولة المحصلة كاش"
-                  hint="إجمالي النقدية الفعلية الداخلة للصندوق في الفترة"
-                  icon={<Wallet className="h-5 w-5 text-emerald-400" />}
-                >
-                  <div className="text-display text-2xl font-black text-emerald-400 sm:text-3xl">
-                    <CountUp value={stats.totalCashCollected} prefix="ج.م " />
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
-                    <span>نقدية جاهزة للاستخدام أو التوريد</span>
-                  </div>
-                </MetricCard>
-
+                  icon={Wallet}
+                  label="السيولة المحصلة كاش"
+                  value={stats.totalCashCollected}
+                  format={(n) => `ج.م ${fmt(n)}`}
+                  tone="positive"
+                  masked={privacy}
+                  sub="نقدية جاهزة للاستخدام أو التوريد"
+                />
                 <MetricCard
-                  title="صافي الربح الحقيقي"
-                  hint="إجمالي أرباح المبيعات بعد خصم تكلفة البضاعة والمصروفات"
-                  icon={<TrendingUp className="h-5 w-5 text-primary" />}
-                >
-                  <div className="text-display text-2xl font-black text-primary sm:text-3xl">
-                    <CountUp value={stats.netProfit} prefix="ج.م " />
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span>هامش الربح الصافي: </span>
-                    <span className="font-bold text-foreground">{stats.profitMargin}%</span>
-                  </div>
-                </MetricCard>
-
+                  icon={TrendingUp}
+                  label="صافي الربح الحقيقي"
+                  value={stats.netProfit}
+                  format={(n) => `ج.م ${fmt(n)}`}
+                  tone={stats.netProfit >= 0 ? "positive" : "danger"}
+                  masked={privacy}
+                  sub={<>هامش الربح الصافي: <strong className="text-foreground">{stats.profitMargin}%</strong></>}
+                />
                 <MetricCard
-                  title="إجمالي المبيعات الجديدة"
-                  hint="قيمة عقود وفواتير المبيعات (كاش وتقسيط)"
-                  icon={<DollarSign className="h-5 w-5 text-blue-400" />}
-                >
-                  <div className="text-display text-2xl font-black text-blue-400 sm:text-3xl">
-                    <CountUp value={stats.totalSales} prefix="ج.م " />
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <span>عدد الفواتير: {filteredInvoices.length} فاتورة</span>
-                  </div>
-                </MetricCard>
-
+                  icon={DollarSign}
+                  label="إجمالي المبيعات الجديدة"
+                  value={stats.totalSales}
+                  format={(n) => `ج.م ${fmt(n)}`}
+                  tone="neutral"
+                  masked={privacy}
+                  sub={`عدد الفواتير: ${filteredInvoices.length} فاتورة`}
+                />
                 <MetricCard
-                  title="المصروفات والمسحوبات"
-                  hint="إجمالي ما تم صرفه من الصندوق في الفترة"
-                  icon={<Receipt className="h-5 w-5 text-rose-400" />}
-                >
-                  <div className="text-display text-2xl font-black text-rose-400 sm:text-3xl">
-                    <CountUp value={stats.totalExpenses} prefix="ج.م " />
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <span>عدد الحركات: {filteredExpenses.length} حركة صرف</span>
-                  </div>
-                </MetricCard>
+                  icon={Receipt}
+                  label="المصروفات والمسحوبات"
+                  value={stats.totalExpenses}
+                  format={(n) => `ج.م ${fmt(n)}`}
+                  tone="danger"
+                  masked={privacy}
+                  sub={`عدد الحركات: ${filteredExpenses.length} حركة صرف`}
+                />
               </div>
 
               {/* Cash Balance & Quick Action Banner */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                {/* Total Receivables in market */}
-                <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-muted-foreground">ديون السوق (عند العملاء)</span>
-                    <Users className="h-5 w-5 text-warning" />
-                  </div>
-                  <div className="mt-4 text-3xl font-extrabold text-warning">
-                    <CountUp value={stats.totalReceivables} prefix="ج.م " />
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    إجمالي المبالغ المستحقة لك في السوق كأقساط ومتبقيات فواتير غير مسددة.
-                  </p>
-                  <div className="mt-5">
-                    <button
-                      onClick={() => setActiveTab("debt")}
-                      className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
-                    >
-                      <span>عرض رادار التحصيل والعملاء المتأخرين</span>
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                {/* Total Receivables in market */
+                <MetricCard
+                  icon={Users}
+                  label="ديون السوق (عند العملاء)"
+                  value={stats.totalReceivables}
+                  format={(n) => `ج.م ${fmt(n)}`}
+                  tone="neutral"
+                  masked={privacy}
+                  sub={
+                    <>
+                      <span>إجمالي المبالغ المستحقة لك في السوق كأقساط ومتبقيات فواتير غير مسددة.</span>
+                      <button
+                        onClick={() => setActiveTab("debt")}
+                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                      >
+                        <span>عرض رادار التحصيل والعملاء المتأخرين</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                    </>
+                  }
+                />
 
-                {/* Today Due Summary */}
-                <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-muted-foreground">مستحق التحصيل اليوم</span>
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="mt-4 text-3xl font-extrabold text-foreground">
-                    {dueTodayInvoices.length} <span className="text-base font-normal text-muted-foreground">أقساط</span>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    إجمالي المبلغ المفترض تحصيله اليوم من العملاء:{" "}
-                    <strong className="text-foreground">
-                      {fmt(dueTodayInvoices.reduce((s, i) => s + i.amount, 0))} ج.م
-                    </strong>
-                  </p>
-                  <div className="mt-5">
-                    <button
-                      onClick={() => setActiveTab("debt")}
-                      className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
-                    >
-                      <span>إرسال تذكيرات واتساب سريعة</span>
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                /* Today Due Summary */
+                <MetricCard
+                  icon={Calendar}
+                  label="مستحق التحصيل اليوم"
+                  value={dueTodayInvoices.length}
+                  format={(n) => `${Math.round(n)} أقساط`}
+                  tone="neutral"
+                  masked={privacy}
+                  sub={
+                    <>
+                      <span>
+                        إجمالي المبلغ المفترض تحصيله اليوم من العملاء:{" "}
+                        <strong className="text-foreground">
+                          {fmt(dueTodayInvoices.reduce((s, i) => s + i.amount, 0))} ج.م
+                        </strong>
+                      </span>
+                      <button
+                        onClick={() => setActiveTab("debt")}
+                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                      >
+                        <span>إرسال تذكيرات واتساب سريعة</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                    </>
+                  }
+                />
 
-                {/* Quick Security Summary */}
-                <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-muted-foreground">تنبيهات الرقابة والمخزن</span>
-                    <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                  </div>
-                  <div className="mt-4 text-3xl font-extrabold text-foreground">
-                    {auditAlerts.length} <span className="text-base font-normal text-muted-foreground">تنبيهات نشطة</span>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    عمليات الخصومات الاستثنائية، المرتجعات، وتنبيهات نواقص البضاعة.
-                  </p>
-                  <div className="mt-5">
-                    <button
-                      onClick={() => setActiveTab("security")}
-                      className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
-                    >
-                      <span>فحص سجل الرقابة والعمليات</span>
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+                /* Quick Security Summary */
+                <MetricCard
+                  icon={ShieldCheck}
+                  label="تنبيهات الرقابة والمخزن"
+                  value={auditAlerts.length}
+                  format={(n) => `${Math.round(n)} تنبيهات نشطة`}
+                  tone={auditAlerts.length > 0 ? "danger" : "neutral"}
+                  masked={privacy}
+                  sub={
+                    <>
+                      <span>عمليات الخصومات الاستثنائية، المرتجعات، وتنبيهات نواقص البضاعة.</span>
+                      <button
+                        onClick={() => setActiveTab("security")}
+                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                      >
+                        <span>فحص سجل الرقابة والعمليات</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                    </>
+                  }
+                />
               </div>
 
-              {/* Today's Transactions Feed */}
+              /* Today's Transactions Feed */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-bold text-foreground">آخر فواتير تم إصدارها في الفترة</h3>
