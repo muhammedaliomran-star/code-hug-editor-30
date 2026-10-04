@@ -13,6 +13,31 @@ export interface RuntimeAppConfig {
   key?: string;
 }
 
+/**
+ * Bundled last-resort fallback. Same publishable values as
+ * public/app-config.json (public by design — RLS is the real defense),
+ * inlined into the JS bundle at build time so the app boots even when the
+ * static host fails to serve /app-config.json. Keep the two files in sync;
+ * the fetched copy wins when it loads, this one only fills the gap.
+ */
+import fallbackJson from "./app-config.fallback.json";
+
+function readBundledFallback(): RuntimeAppConfig | null {
+  try {
+    const json = fallbackJson as Record<string, unknown>;
+    const url = typeof json["SUPABASE_URL"] === "string" ? json["SUPABASE_URL"] : undefined;
+    const key =
+      typeof json["SUPABASE_PUBLISHABLE_KEY"] === "string" ? json["SUPABASE_PUBLISHABLE_KEY"] : undefined;
+    return url && key ? { url, key } : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getBundledFallback(): RuntimeAppConfig | null {
+  return readBundledFallback();
+}
+
 let cached: RuntimeAppConfig | null | undefined;
 
 export function getRuntimeConfig(): RuntimeAppConfig | null {
@@ -20,7 +45,12 @@ export function getRuntimeConfig(): RuntimeAppConfig | null {
 }
 
 /** Which source resolved the client credentials (for one-line diagnostics). */
-export function describeEnvSource(): "build-env" | "runtime-config" | "process-env" | "missing" {
+export function describeEnvSource():
+  | "build-env"
+  | "runtime-config"
+  | "bundled-fallback"
+  | "process-env"
+  | "missing" {
   if (typeof import.meta !== "undefined") {
     try {
       const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
@@ -30,6 +60,7 @@ export function describeEnvSource(): "build-env" | "runtime-config" | "process-e
     }
   }
   if (cached?.url && cached?.key) return "runtime-config";
+  if (readBundledFallback()) return "bundled-fallback";
   if (typeof process !== "undefined" && process.env?.["SUPABASE_URL"]) return "process-env";
   return "missing";
 }

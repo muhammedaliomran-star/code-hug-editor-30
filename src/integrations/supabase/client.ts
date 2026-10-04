@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 import { brokeredPreviewStorage } from './previewAuthStorage';
-import { describeEnvSource, getRuntimeConfig } from '@/lib/app-config';
+import { describeEnvSource, getBundledFallback, getRuntimeConfig } from '@/lib/app-config';
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
@@ -32,12 +32,17 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 function createSupabaseClient() {
   // Resolution order: build-time VITE_* (normal case) -> runtime
   // /app-config.json (loaded in root beforeLoad; survives broken builds)
-  // -> process.env (SSR). See src/lib/app-config.ts.
+  // -> bundled fallback (same values, inlined at build; survives undelivered
+  // static files) -> process.env (SSR). See src/lib/app-config.ts.
   const runtime = getRuntimeConfig();
+  const bundled = getBundledFallback();
   const SUPABASE_URL =
-    import.meta.env['VITE_SUPABASE_URL'] || runtime?.url || process.env['SUPABASE_URL'];
+    import.meta.env['VITE_SUPABASE_URL'] || runtime?.url || bundled?.url || process.env['SUPABASE_URL'];
   const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] || runtime?.key || process.env['SUPABASE_PUBLISHABLE_KEY'];
+    import.meta.env['VITE_SUPABASE_PUBLISHABLE_KEY'] ||
+    runtime?.key ||
+    bundled?.key ||
+    process.env['SUPABASE_PUBLISHABLE_KEY'];
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
     const missing = [
