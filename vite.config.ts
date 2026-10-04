@@ -20,6 +20,10 @@ export default defineConfig({
         includeAssets: ["favicon.ico", "favicon.png", "icon-192.png", "icon-512.png"],
         manifest: false, // We use our own manifest.webmanifest
         workbox: {
+          // Take over immediately on redeploy: without this, an old broken
+          // bundle can keep serving itself while any tab stays open.
+          skipWaiting: true,
+          clientsClaim: true,
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff,ttf}"],
           runtimeCaching: [
             {

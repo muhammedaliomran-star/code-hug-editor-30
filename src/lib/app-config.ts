@@ -34,24 +34,45 @@ export function describeEnvSource(): "build-env" | "runtime-config" | "process-e
   return "missing";
 }
 
+function configCandidates(): string[] {
+  let base = "/";
+  try {
+    const env = (import.meta as unknown as { env?: Record<string, string | undefined> }).env;
+    if (typeof env?.["BASE_URL"] === "string" && env["BASE_URL"]) base = env["BASE_URL"];
+  } catch {
+    // ignore — fall back to root-absolute
+  }
+  if (!base.endsWith("/")) base += "/";
+  const primary = `${base}app-config.json`;
+  return primary === "/app-config.json" ? [primary] : [primary, "/app-config.json"];
+}
+
 export async function loadAppConfig(): Promise<void> {
   if (cached !== undefined) return;
   if (typeof window === "undefined") {
     cached = null;
     return;
   }
-  try {
-    const res = await fetch("/app-config.json", { cache: "no-store" });
-    if (!res.ok) {
-      cached = null;
-      return;
+  // One retry: the very first navigation can race the service worker /
+  // static host warm-up and fail transiently.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    for (const url of configCandidates()) {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) continue;
+        const json = (await res.json()) as Record<string, unknown>;
+        const siteUrl = typeof json["SUPABASE_URL"] === "string" ? json["SUPABASE_URL"] : undefined;
+        const key =
+          typeof json["SUPABASE_PUBLISHABLE_KEY"] === "string" ? json["SUPABASE_PUBLISHABLE_KEY"] : undefined;
+        if (siteUrl && key) {
+          cached = { url: siteUrl, key };
+          return;
+        }
+      } catch {
+        // try next candidate / retry once
+      }
     }
-    const json = (await res.json()) as Record<string, unknown>;
-    const url = typeof json["SUPABASE_URL"] === "string" ? json["SUPABASE_URL"] : undefined;
-    const key =
-      typeof json["SUPABASE_PUBLISHABLE_KEY"] === "string" ? json["SUPABASE_PUBLISHABLE_KEY"] : undefined;
-    cached = url && key ? { url, key } : null;
-  } catch {
-    cached = null;
+    if (attempt === 0) await new Promise((r) => setTimeout(r, 500));
   }
+  cached = null;
 }
