@@ -16,6 +16,7 @@ import {
   ROLE_DEFAULT_PERMISSIONS,
 } from "@/lib/staff";
 import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/ActionButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -320,7 +321,7 @@ export default function StaffAndShifts() {
             action={
               <div className="flex items-center gap-2">
                 {currentOpenShift ? (
-                  <Button
+                  <ActionButton
                     onClick={() => {
                       setActualDrawerCash(
                         currentShiftLiveStats ? String(Math.round(currentShiftLiveStats.expectedDrawerCash)) : "0"
@@ -328,36 +329,30 @@ export default function StaffAndShifts() {
                       setCloseNotes("");
                       setIsOpenCloseShift(true);
                     }}
-                    size="sm"
-                    className="gap-1.5 rounded-xl font-bold bg-danger text-danger-foreground hover:bg-danger/90 shadow-sm"
+                    icon={<Square className="h-4 w-4 fill-current" />}
                   >
-                    <Square className="w-4 h-4 fill-current" />
                     تسليم وإغلاق الوردية
-                  </Button>
+                  </ActionButton>
                 ) : (
-                  <Button
+                  <ActionButton
                     onClick={() => {
                       setStartOpeningFloat("500");
                       setStartStaffId(currentStaff.id);
                       setIsOpenStartShift(true);
                     }}
-                    size="sm"
-                    className="gap-1.5 rounded-xl font-bold bg-success text-success-foreground hover:bg-success/90 shadow-sm"
+                    icon={<Play className="h-4 w-4 fill-current" />}
                   >
-                    <Play className="w-4 h-4 fill-current" />
                     فتح وردية جديدة
-                  </Button>
+                  </ActionButton>
                 )}
 
-                <Button
+                <ActionButton
+                  tone="surface"
                   onClick={handleOpenNewStaff}
-                  size="sm"
-                  variant="outline"
-                  className="gap-1.5 rounded-xl font-bold border-border/50 text-xs"
+                  icon={<Plus className="h-3.5 w-3.5" />}
                 >
-                  <Plus className="w-3.5 h-3.5" />
                   موظف جديد
-                </Button>
+                </ActionButton>
               </div>
             }
           />

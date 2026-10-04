@@ -10,7 +10,7 @@ import { ShieldCheck, Crown, Eye, EyeOff, Printer, SlidersHorizontal } from "luc
 import { Link } from "@/lib/router-compat";
 import { cn } from "@/lib/utils";
 import { ActionButton } from "@/components/ActionButton";
-import type { TimeRange } from "@/components/dashboard";
+import { FilterChips } from "@/components/FilterChips";
 import {
   DashboardProvider,
   useDashboard,
@@ -80,23 +80,17 @@ function DashboardInner() {
               </span>
             </Link>
 
-            <div className="flex items-center rounded-lg bg-foreground/[0.05] p-1 ring-1 ring-border text-xs">
-              {(["today", "7d", "month", "all"] as TimeRange[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setTimeRange(r)}
-                  className={cn(
-                    "px-2.5 py-1 rounded-md font-semibold transition-all",
-                    timeRange === r
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {r === "today" ? "اليوم" : r === "7d" ? "7 أيام" : r === "month" ? "الشهر" : "الكل"}
-                </button>
-              ))}
-            </div>
+            <FilterChips
+        options={[
+          { value: "today", label: "اليوم" },
+          { value: "7d", label: "7 أيام" },
+          { value: "month", label: "الشهر" },
+          { value: "all", label: "الكل" },
+        ]}
+        value={timeRange}
+        onChange={setTimeRange}
+        className="mt-2"
+      />
 
             <ActionButton
               tone="surface"

@@ -18,6 +18,7 @@ import {
   generatePromoWhatsAppText,
 } from "@/lib/discounts";
 import { Button } from "@/components/ui/button";
+import { ActionButton } from "@/components/ActionButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -421,34 +422,28 @@ export default function Discounts() {
             action={
               <div className="flex items-center gap-2">
                 {activeTab === "coupons" && (
-                  <Button
+                  <ActionButton
                     onClick={handleOpenNewCoupon}
-                    size="sm"
-                    className="gap-1.5 rounded-xl font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                    icon={<Plus className="h-4 w-4" />}
                   >
-                    <Plus className="w-4 h-4" />
                     كوبون جديد
-                  </Button>
+                  </ActionButton>
                 )}
                 {activeTab === "tiers" && (
                   <div className="flex items-center gap-1.5">
-                    <Button
+                    <ActionButton
+                      tone="surface"
                       onClick={handleOpenNewQtyOffer}
-                      size="sm"
-                      variant="outline"
-                      className="gap-1.5 rounded-xl font-bold border-border/50 text-xs"
+                      icon={<Plus className="h-3.5 w-3.5" />}
                     >
-                      <Plus className="w-3.5 h-3.5" />
                       عرض كميات
-                    </Button>
-                    <Button
+                    </ActionButton>
+                    <ActionButton
                       onClick={handleOpenNewBundle}
-                      size="sm"
-                      className="gap-1.5 rounded-xl font-bold bg-primary text-primary-foreground text-xs"
+                      icon={<Plus className="h-3.5 w-3.5" />}
                     >
-                      <Plus className="w-3.5 h-3.5" />
                       باقة مجمعة
-                    </Button>
+                    </ActionButton>
                   </div>
                 )}
               </div>
