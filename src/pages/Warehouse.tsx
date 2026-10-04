@@ -108,8 +108,9 @@ function WarehousePage() {
 
       {/* المؤشرات — ٤ كروت زي التصميم */}
       <Reveal>
-        <div className="stagger grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
+          className="h-full"
             label="إجمالي الأصناف"
             value={stats.skus}
             icon={Boxes}
@@ -118,6 +119,7 @@ function WarehousePage() {
             sub={<>{fmt(stats.units)} قطعة مخزنة</>}
           />
           <MetricCard
+          className="h-full"
             label="☀️ قيمة الصيفي"
             value={stats.summerValue}
             icon={Sun}
@@ -126,6 +128,7 @@ function WarehousePage() {
             sub={<>{fmt(stats.summerCount)} صنف صيفي</>}
           />
           <MetricCard
+          className="h-full"
             label="❄️ قيمة الشتوي"
             value={stats.winterValue}
             icon={Snowflake}
@@ -134,6 +137,7 @@ function WarehousePage() {
             sub={<>{fmt(stats.winterCount)} صنف شتوي</>}
           />
           <MetricCard
+          className="h-full"
             label="رأس المال المجمد"
             value={stats.frozen}
             icon={Wallet}

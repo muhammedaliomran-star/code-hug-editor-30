@@ -198,8 +198,9 @@ export default function AuditLog() {
         />
 
         {/* Metric Cards */}
-        <div className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-14">
           <MetricCard
+          className="h-full"
             label="إجمالي الحركات المسجلة"
             value={stats.total}
             isMoney={false}
@@ -210,6 +211,7 @@ export default function AuditLog() {
           />
 
           <MetricCard
+          className="h-full"
             label="حركات اليوم"
             value={stats.todayCount}
             isMoney={false}
@@ -220,6 +222,7 @@ export default function AuditLog() {
           />
 
           <MetricCard
+          className="h-full"
             label="إجراءات حرجة وتعديلات"
             value={stats.warningCount}
             isMoney={false}
@@ -230,6 +233,7 @@ export default function AuditLog() {
           />
 
           <MetricCard
+          className="h-full"
             label="الموظفين المسجل نشاطهم"
             value={stats.staffActionCounts.length}
             isMoney={false}

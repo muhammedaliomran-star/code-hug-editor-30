@@ -165,8 +165,9 @@ export function PurchasesPage() {
           />
 
           {/* Top Statistics Bar */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
             <MetricCard
+            className="h-full"
               icon={Receipt}
               label="مشتريات الشهر الحالي"
               value={stats.monthTotal}
@@ -175,6 +176,7 @@ export function PurchasesPage() {
               sub="إجمالي البضاعة الموردة هذا الشهر"
             />
             <MetricCard
+            className="h-full"
               icon={Banknote}
               label="مشتريات نقدية (خزينة)"
               value={stats.cashMonth}
@@ -184,6 +186,7 @@ export function PurchasesPage() {
               sub="سُددت نقداً من الخزينة هذا الشهر"
             />
             <MetricCard
+            className="h-full"
               icon={Wallet}
               label="مشتريات آجلة (مديونية)"
               value={stats.creditMonth}
@@ -192,6 +195,7 @@ export function PurchasesPage() {
               sub="أضيفت لحسابات الموردين هذا الشهر"
             />
             <MetricCard
+            className="h-full"
               icon={Package}
               label="إجمالي عدد الفواتير"
               value={stats.totalInvoicesCount}

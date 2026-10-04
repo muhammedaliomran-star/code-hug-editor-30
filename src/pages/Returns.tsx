@@ -241,8 +241,9 @@ function ReturnsPage() {
       />
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4 mb-14">
         <MetricCard
+        className="h-full"
           icon={Undo2}
           label="إجمالي المرتجعات"
           value={data.returns.reduce((acc, r) => acc + r.totalAmount, 0)}
@@ -252,6 +253,7 @@ function ReturnsPage() {
           sub="مبيعات + موردين"
         />
         <MetricCard
+        className="h-full"
           icon={TrendingUp}
           label="مرتجعات مبيعات"
           value={data.returns.filter(r => r.type === "sale").reduce((acc, r) => acc + r.totalAmount, 0)}
@@ -261,6 +263,7 @@ function ReturnsPage() {
           sub="مرتجعات من العملاء"
         />
         <MetricCard
+        className="h-full"
           icon={Package}
           label="مرتجعات موردين"
           value={data.returns.filter(r => r.type === "supplier").reduce((acc, r) => acc + r.totalAmount, 0)}
@@ -270,6 +273,7 @@ function ReturnsPage() {
           sub="مرتجعات للموردين"
         />
         <MetricCard
+        className="h-full"
           icon={History}
           label="عدد العمليات"
           value={data.returns.length}

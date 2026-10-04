@@ -465,8 +465,9 @@ export default function OwnerCockpit() {
           {activeTab === "pulse" && (
             <div className="space-y-8">
               {/* Core Financial Metrics */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <MetricCard
+                  className="h-full"
                   icon={Wallet}
                   label="السيولة المحصلة كاش"
                   value={stats.totalCashCollected}
@@ -476,6 +477,7 @@ export default function OwnerCockpit() {
                   sub="نقدية جاهزة للاستخدام أو التوريد"
                 />
                 <MetricCard
+                  className="h-full"
                   icon={TrendingUp}
                   label="صافي الربح الحقيقي"
                   value={stats.netProfit}
@@ -485,6 +487,7 @@ export default function OwnerCockpit() {
                   sub={<>هامش الربح الصافي: <strong className="text-foreground">{stats.profitMargin}%</strong></>}
                 />
                 <MetricCard
+                  className="h-full"
                   icon={DollarSign}
                   label="إجمالي المبيعات الجديدة"
                   value={stats.totalSales}
@@ -494,6 +497,7 @@ export default function OwnerCockpit() {
                   sub={`عدد الفواتير: ${filteredInvoices.length} فاتورة`}
                 />
                 <MetricCard
+                  className="h-full"
                   icon={Receipt}
                   label="المصروفات والمسحوبات"
                   value={stats.totalExpenses}
@@ -505,9 +509,10 @@ export default function OwnerCockpit() {
               </div>
 
               {/* Cash Balance & Quick Action Banner */}
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3">
                 {/* Total Receivables in market */}
                 <MetricCard
+                  className="h-full"
                   icon={Users}
                   label="ديون السوق (عند العملاء)"
                   value={stats.totalReceivables}
@@ -530,6 +535,7 @@ export default function OwnerCockpit() {
 
                 {/* Today Due Summary */}
                 <MetricCard
+                  className="h-full"
                   icon={Calendar}
                   label="مستحق التحصيل اليوم"
                   value={dueTodayInvoices.length}
@@ -557,6 +563,7 @@ export default function OwnerCockpit() {
 
                 {/* Quick Security Summary */}
                 <MetricCard
+                  className="h-full"
                   icon={ShieldCheck}
                   label="تنبيهات الرقابة والمخزن"
                   value={auditAlerts.length}

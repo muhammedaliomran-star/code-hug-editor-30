@@ -66,9 +66,10 @@ export default function ShippingDay() {
           }
         />
 
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
           <Reveal delay={0}>
             <MetricCard
+            className="h-full"
               icon={CalendarDays}
               label="إجمالي الأيام"
               value={days.length}
@@ -79,6 +80,7 @@ export default function ShippingDay() {
           </Reveal>
           <Reveal delay={50}>
             <MetricCard
+            className="h-full"
               icon={Truck}
               label="عدد الشحنات"
               value={totals.count}
@@ -89,6 +91,7 @@ export default function ShippingDay() {
           </Reveal>
           <Reveal delay={100}>
             <MetricCard
+            className="h-full"
               icon={Banknote}
               label="المدفوع"
               value={totals.paid}
@@ -99,6 +102,7 @@ export default function ShippingDay() {
           </Reveal>
           <Reveal delay={150}>
             <MetricCard
+            className="h-full"
               icon={Hourglass}
               label="المعلّق"
               value={totals.due}

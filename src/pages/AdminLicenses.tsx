@@ -687,8 +687,9 @@ export default function AdminLicensesPage() {
           </div>
 
           {/* Top KPI Metrics Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
             <MetricCard
+            className="h-full"
               icon={DollarSign}
               label="إجمالي مبيعات التراخيص"
               value={stats.totalRevenue}
@@ -696,6 +697,7 @@ export default function AdminLicensesPage() {
               sub={`من ${stats.totalCount} ترخيص صادر`}
             />
             <MetricCard
+            className="h-full"
               icon={Wallet}
               label="المتبقي بأقساط البرامج"
               value={stats.totalInstallmentDue}
@@ -703,6 +705,7 @@ export default function AdminLicensesPage() {
               sub="أقساط مجدولة للتحصيل"
             />
             <MetricCard
+            className="h-full"
               icon={Users}
               label="المشتركين السارين"
               value={stats.activeCount}
@@ -711,6 +714,7 @@ export default function AdminLicensesPage() {
             />
 
             <MetricCard
+            className="h-full"
               icon={BellRing}
               label="تنبيهات التجديد والمتابعة"
               value={stats.warningCount}

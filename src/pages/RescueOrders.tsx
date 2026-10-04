@@ -56,8 +56,9 @@ export default function RescueOrders() {
         icon={<ShieldAlert className="h-7 w-7" />}
       />
 
-      <div className="mb-4 grid gap-4 sm:grid-cols-3">
+      <div className="mb-14 grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3">
         <MetricCard
+        className="h-full"
           icon={Truck}
           label="إجمالي الطلبات"
           value={rows.length}
@@ -66,6 +67,7 @@ export default function RescueOrders() {
           sub="شحنة تحتاج إجراء"
         />
         <MetricCard
+        className="h-full"
           icon={AlertTriangle}
           label="عاجل"
           value={urgentCount}
@@ -74,6 +76,7 @@ export default function RescueOrders() {
           sub="أولوية قصوى"
         />
         <MetricCard
+        className="h-full"
           icon={RotateCcw}
           label="مرتجع"
           value={rows.filter((r) => r.status === "returned").length}

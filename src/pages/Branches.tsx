@@ -23,8 +23,9 @@ function BranchesPageInner() {
             subtitle="المنظومة المركزية لإدارة الفروع، حركة المخزون، التحويلات، الخزن والورديات، وقوائم الأرباح"
           />
 
-          <Reveal className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Reveal className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
             <MetricCard
+            className="h-full"
               icon={Building2}
               label="إجمالي الفروع النشطة"
               value={branches.length}
@@ -33,6 +34,7 @@ function BranchesPageInner() {
             />
 
             <MetricCard
+            className="h-full"
               icon={Boxes}
               label="تقييم مخزون الفروع (تكلفة)"
               value={totalValuation.cost}
@@ -40,6 +42,7 @@ function BranchesPageInner() {
               sub={`القيمة البيعية: ${fmt(totalValuation.retail)} ${cur}`}
             />
             <MetricCard
+            className="h-full"
               icon={Truck}
               label="التحويلات الجارية"
               value={transfers.filter((t) => t.status === "in_transit").length}
@@ -47,6 +50,7 @@ function BranchesPageInner() {
               sub={`من إجمالي ${transfers.length} أمر تحويل مسجل`}
             />
             <MetricCard
+            className="h-full"
               icon={Users}
               label="كادر وموظفي الفروع"
               value={staffList.filter((s) => s.active).length}
