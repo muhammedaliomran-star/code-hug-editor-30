@@ -5,12 +5,12 @@ import { PageTransition } from "@/components/PageTransition";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
-import { CountUp } from "@/components/CountUp";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { StatTabs } from "@/components/StatTabs";
+import { MetricCard } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
 import {
   Select,
@@ -443,34 +443,32 @@ function ExpensesPage() {
         <TabsContent value="list" className="space-y-6 mt-6">
           {/* Summary KPIs */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4.5 rounded-2xl border bg-card/80 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground">إجمالي المصروفات (المعروضة)</span>
-              <div className="text-2xl font-extrabold text-danger mt-1 tabular-nums">
-                <CountUp
-                  value={total}
-                  disabled={privacy}
-                  className={cn("tabular-nums", blurCls)}
-                  suffix=" ج.م"
-                  format={(n) => fmt(n)}
-                >
-                  {fmt(total)} ج.م
-                </CountUp>
-              </div>
-            </div>
-
-            <div className="p-4.5 rounded-2xl border bg-card/80 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground">عدد القيود المسجلة</span>
-              <div className="text-2xl font-extrabold text-foreground mt-1 tabular-nums">
-                <CountUp value={filtered.length} duration={500} format={(n) => String(Math.round(n))} />
-              </div>
-            </div>
-
-            <div className="p-4.5 rounded-2xl border bg-card/80 flex flex-col justify-between">
-              <span className="text-xs text-muted-foreground">متوسط القيد الواحد</span>
-              <div className="text-2xl font-extrabold text-foreground mt-1 tabular-nums">
-                {fmt(filtered.length ? Math.round(total / filtered.length) : 0)} <span className="text-xs text-muted-foreground font-bold">ج.م</span>
-              </div>
-            </div>
+            <MetricCard
+              icon={Receipt}
+              label="إجمالي المصروفات (المعروضة)"
+              value={total}
+              format={(n) => `${fmt(n)} ج.م`}
+              tone="danger"
+              masked={privacy}
+              sub="حسب الفلاتر الحالية"
+            />
+            <MetricCard
+              icon={FileText}
+              label="عدد القيود المسجلة"
+              value={filtered.length}
+              format={(n) => String(Math.round(n))}
+              tone="neutral"
+              sub="قيود مطابقة للبحث"
+            />
+            <MetricCard
+              icon={Wallet}
+              label="متوسط القيد الواحد"
+              value={filtered.length ? total / filtered.length : 0}
+              format={(n) => `${fmt(Math.round(n))} ج.م`}
+              tone="neutral"
+              masked={privacy}
+              sub="إجمالي المعروض ÷ عدد القيود"
+            />
           </div>
 
           {/* Advanced Multi-Filters Bar */}
