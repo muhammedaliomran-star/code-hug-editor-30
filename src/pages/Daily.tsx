@@ -474,8 +474,10 @@ function DailyPage() {
       </Reveal>
 
       {/* مؤشرات التدفق المالي — معادلة الدرج الصافية */}
-      <div className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
+          mini
+          className="h-full"
           label="إجمالي المبيعات المُصدرة"
           value={stats.sales}
           icon={Coins}
@@ -487,6 +489,8 @@ function DailyPage() {
         />
 
         <MetricCard
+          mini
+          className="h-full"
           label="التحصيلات الفعلية بالدرج"
           value={stats.totalCollectedActual}
           icon={ArrowDownRight}
@@ -498,6 +502,8 @@ function DailyPage() {
         />
 
         <MetricCard
+          mini
+          className="h-full"
           label="المصروفات والمرتجعات"
           value={stats.periodExpenses + stats.periodReturnsTotal}
           icon={ArrowUpRight}
@@ -508,6 +514,8 @@ function DailyPage() {
         />
 
         <MetricCard
+          mini
+          className="h-full"
           label="صافي التدفق النقدي بالخزينة"
           value={stats.netCashDrawer}
           icon={Wallet}
@@ -519,20 +527,28 @@ function DailyPage() {
       </div>
 
       {/* تفصيل المبيعات الفورية والأقساط */}
-      <div className="stagger mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="stagger mt-4 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
+          mini
+          className="h-full"
           label="مبيعات فوري" value={stats.cashSales} icon={Coins} tone="positive" masked={masked}
           series={stats.series.cashSales} format={money} sub={stats.cashSales ? "بيع نقدي" : "لا توجد مبيعات فورية"}
         />
         <MetricCard
+          mini
+          className="h-full"
           label="مبيعات قسط" value={stats.instSales} icon={Coins} tone="positive" masked={masked}
           series={stats.series.instSales} format={money} sub={stats.instSales ? "فواتير آجلة/قسط" : "لا توجد مبيعات أقساط"}
         />
         <MetricCard
+          mini
+          className="h-full"
           label="المتبقي على فواتير الفترة" value={stats.remaining} icon={Clock} tone={stats.remaining > 0 ? "danger" : "neutral"}
           masked={masked} series={stats.series.remaining} format={money} sub="مستحقات غير محصلة بعد"
         />
         <MetricCard
+          mini
+          className="h-full"
           label="عدد الفواتير" value={stats.count} icon={FileText} isMoney={false}
           series={stats.series.count} format={(n) => `${Math.round(n)} فاتورة`} sub="حركة الفواتير"
         />

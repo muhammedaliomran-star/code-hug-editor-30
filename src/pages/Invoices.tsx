@@ -492,16 +492,16 @@ function InvoicesPage() {
       )}
 
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
-        <MetricCard mini icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini icon={FileText} label="عدد الفواتير" value={stats.invoiceCount} format={(n) => String(Math.round(n))} masked={privacy} />
-        <MetricCard mini icon={AlertCircle} label="الفواتير المتعثرة" value={stats.overdueCount} tone="danger" format={(n) => String(Math.round(n))} masked={privacy} />
-        <MetricCard mini icon={CalendarDays} label="تحصيلات الشهر الحالي" value={stats.monthCollections} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini icon={Wallet} label="إجمالي المبيعات النشطة" value={stats.activeSalesTotal} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
-        <MetricCard mini icon={FileText} label="متوسط قيمة الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini icon={CalendarDays} label="مبيعات الشهر الحالي" value={stats.monthSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3 mb-14">
+        <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini className="h-full" icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini className="h-full" icon={FileText} label="عدد الفواتير" value={stats.invoiceCount} format={(n) => String(Math.round(n))} masked={privacy} />
+        <MetricCard mini className="h-full" icon={AlertCircle} label="الفواتير المتعثرة" value={stats.overdueCount} tone="danger" format={(n) => String(Math.round(n))} masked={privacy} />
+        <MetricCard mini className="h-full" icon={CalendarDays} label="تحصيلات الشهر الحالي" value={stats.monthCollections} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المبيعات النشطة" value={stats.activeSalesTotal} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini className="h-full" icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
+        <MetricCard mini className="h-full" icon={FileText} label="متوسط قيمة الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard mini className="h-full" icon={CalendarDays} label="مبيعات الشهر الحالي" value={stats.monthSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
       </div>
 
       <div className="sticky-search-bar">

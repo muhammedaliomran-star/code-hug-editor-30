@@ -18,9 +18,10 @@ export function SecondaryKPIsSection() {
 
   return (
     <section className="mb-14">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Reveal delay={320}>
+      <div className="grid auto-rows-fr grid-cols-1 gap-4 md:grid-cols-3">
+        <Reveal delay={320} className="h-full">
           <MetricCard
+            className="h-full"
             icon={Users}
             label="العملاء والنشاط"
             value={activeCustomers}
@@ -30,8 +31,9 @@ export function SecondaryKPIsSection() {
           />
         </Reveal>
 
-        <Reveal delay={340}>
+        <Reveal delay={340} className="h-full">
           <MetricCard
+            className="h-full"
             icon={Truck}
             label="شحنات COD المعلقة"
             value={shippingStats.pendingCodAmount}
@@ -41,8 +43,9 @@ export function SecondaryKPIsSection() {
           />
         </Reveal>
 
-        <Reveal delay={360}>
+        <Reveal delay={360} className="h-full">
           <MetricCard
+            className="h-full"
             icon={ShieldCheck}
             label="مؤشر الرقابة المحاسبية"
             value={reconciliationSummary.healthScore}

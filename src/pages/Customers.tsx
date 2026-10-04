@@ -411,10 +411,11 @@ function CustomersPage() {
       />
 
       {/* ===== Bento: KPI + بحث + فلاتر ===== */}
-      <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-12">
-        <Reveal className="md:col-span-7">
+      <div className="mb-14 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3">
+        <Reveal className="col-span-full h-full">
           <MetricCard
             hero
+            className="h-full"
             icon={Wallet}
             label="إجمالي الديون بالخارج"
             value={debtStats.totalDebt}
@@ -429,42 +430,39 @@ function CustomersPage() {
             }
           />
         </Reveal>
-        <div className="grid gap-4 md:col-span-5">
-          <Reveal>
-            <MetricCard
-              icon={TrendingUp}
-              label="محصّل هذا الأسبوع"
-              value={debtStats.thisWeek}
-              tone="positive"
-              format={(n) => `${fmt(n)} ج.م`}
-              masked={privacy}
-            />
-          </Reveal>
-          <div className="grid grid-cols-2 gap-4">
-            <Reveal>
-              <MetricCard
-                mini
-                icon={AlertTriangle}
-                label="متأخرون"
-                value={counts.overdue}
-                tone="danger"
-                format={(n) => String(Math.round(n))}
-                masked={privacy}
-              />
-            </Reveal>
-            <Reveal>
-              <MetricCard
-                mini
-                icon={BadgeCheck}
-                label="خالصون"
-                value={counts.settled}
-                tone="positive"
-                format={(n) => String(Math.round(n))}
-                masked={privacy}
-              />
-            </Reveal>
-          </div>
-        </div>
+        <Reveal className="h-full">
+          <MetricCard
+            className="h-full"
+            icon={TrendingUp}
+            label="محصّل هذا الأسبوع"
+            value={debtStats.thisWeek}
+            tone="positive"
+            format={(n) => `${fmt(n)} ج.م`}
+            masked={privacy}
+          />
+        </Reveal>
+        <Reveal className="h-full">
+          <MetricCard
+            className="h-full"
+            icon={AlertTriangle}
+            label="متأخرون"
+            value={counts.overdue}
+            tone="danger"
+            format={(n) => String(Math.round(n))}
+            masked={privacy}
+          />
+        </Reveal>
+        <Reveal className="h-full">
+          <MetricCard
+            className="h-full"
+            icon={BadgeCheck}
+            label="خالصون"
+            value={counts.settled}
+            tone="positive"
+            format={(n) => String(Math.round(n))}
+            masked={privacy}
+          />
+        </Reveal>
       </div>
 
       {/* شريط التحكّم: فلاتر + بحث + يوم القسط */}

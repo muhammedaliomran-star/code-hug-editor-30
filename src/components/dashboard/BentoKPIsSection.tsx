@@ -26,8 +26,8 @@ export function BentoKPIsSection() {
 
   return (
     <section className="mb-14">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:auto-rows-fr">
-        <Reveal className="col-span-2 h-full lg:row-span-2" delay={0}>
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+        <Reveal className="col-span-full h-full" delay={0}>
           <MetricCard
             hero
             className="h-full"
