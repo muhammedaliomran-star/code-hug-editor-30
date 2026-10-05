@@ -97,7 +97,29 @@ export async function hydrateFromIDB() {
   }
 }
 
+let inflight: Promise<void> | null = null;
 async function fetchAll() {
+  if (inflight) return inflight;
+  inflight = (async () => {
+    try {
+      // Safety net: never leave pages stuck on the loading skeleton.
+      await Promise.race([
+        fetchAllInner(),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error("انتهت مهلة تحميل البيانات — تحقق من الاتصال")), 20000)),
+      ]);
+    } catch (e) {
+      console.error("[db] fetchAll failed:", e);
+      lastFetchErrors = [e instanceof Error ? e.message : String(e)];
+    } finally {
+      loading = false;
+      inflight = null;
+      notify();
+    }
+  })();
+  return inflight;
+}
+
+async function fetchAllInner() {
   loading = true;
   lastFetchErrors = [];
   notify();
