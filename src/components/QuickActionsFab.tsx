@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, X, ShoppingBag, UserPlus, Wallet, Receipt, ShoppingCart } from "lucide-react";
+import { Plus, X, ShoppingBag, UserPlus, Wallet, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import { db, useDB } from "@/lib/store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ExpenseFormDialog } from "@/pages/Expenses";
-import { NewPurchaseDialog } from "@/pages/Suppliers";
 
 type Mode = null | "sale" | "customer" | "payment" | "expense" | "purchase";
 
