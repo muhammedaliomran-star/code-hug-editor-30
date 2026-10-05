@@ -206,9 +206,9 @@ const InventoryIndexRoute = InventoryIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const InventoryNewRoute = InventoryNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => InventoryRoute,
+  id: '/inventory/new',
+  path: '/inventory/new',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InvoicesIndexRoute = InvoicesIndexRouteImport.update({
   id: '/invoices/',
@@ -216,9 +216,9 @@ const InvoicesIndexRoute = InvoicesIndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvoicesNewRoute = InvoicesNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => InvoicesRoute,
+  id: '/invoices/new',
+  path: '/invoices/new',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const PurchasesIndexRoute = PurchasesIndexRouteImport.update({
   id: '/purchases/',
@@ -538,6 +538,8 @@ export interface RootRouteChildren {
   SupportRoute: typeof SupportRoute
   TermsRoute: typeof TermsRoute
   WarehouseRoute: typeof WarehouseRoute
+  InventoryNewRoute: typeof InventoryNewRoute
+  InvoicesNewRoute: typeof InvoicesNewRoute
   PurchasesNewRoute: typeof PurchasesNewRoute
   ReceiptTokenRoute: typeof ReceiptTokenRoute
   ShippingDayRoute: typeof ShippingDayRoute
@@ -769,10 +771,10 @@ declare module '@tanstack/react-router' {
     }
     '/inventory/new': {
       id: '/inventory/new'
-      path: '/new'
+      path: '/inventory/new'
       fullPath: '/inventory/new'
       preLoaderRoute: typeof InventoryNewRouteImport
-      parentRoute: typeof InventoryRoute
+      parentRoute: typeof rootRouteImport
     }
     '/invoices/': {
       id: '/invoices/'
@@ -783,10 +785,10 @@ declare module '@tanstack/react-router' {
     }
     '/invoices/new': {
       id: '/invoices/new'
-      path: '/new'
+      path: '/invoices/new'
       fullPath: '/invoices/new'
       preLoaderRoute: typeof InvoicesNewRouteImport
-      parentRoute: typeof InvoicesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/purchases/': {
       id: '/purchases/'
@@ -864,6 +866,8 @@ const rootRouteChildren: RootRouteChildren = {
   SupportRoute: SupportRoute,
   TermsRoute: TermsRoute,
   WarehouseRoute: WarehouseRoute,
+  InventoryNewRoute: InventoryNewRoute,
+  InvoicesNewRoute: InvoicesNewRoute,
   PurchasesNewRoute: PurchasesNewRoute,
   ReceiptTokenRoute: ReceiptTokenRoute,
   ShippingDayRoute: ShippingDayRoute,
