@@ -4,7 +4,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { BezelCard } from "@/components/BezelCard";
 import { Reveal } from "@/components/Reveal";
-import { CountUp } from "@/components/CountUp";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
 import { usePrivacy } from "@/lib/privacy";
 import { useDB, fmt, useShopSettings } from "@/lib/store";
 import {
@@ -439,135 +440,70 @@ export default function StaffAndShifts() {
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/40 border border-border/40 rounded-2xl w-fit">
-            <button
-              type="button"
-              onClick={() => setActiveTab("live-shift")}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "live-shift"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <Clock className="w-3.5 h-3.5 text-primary" />
-              الوردية الحالية
-              {currentOpenShift && <span className="w-2 h-2 rounded-full bg-success animate-pulse" />}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("commissions")}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "commissions"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <Award className="w-3.5 h-3.5 text-primary" />
-              عمولات ومكافآت المبيعات
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("attendance")}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "attendance"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <Timer className="w-3.5 h-3.5 text-primary" />
-              سجل الحضور والانصراف ({attendance.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("shifts-history")}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "shifts-history"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <Calendar className="w-3.5 h-3.5 text-primary" />
-              أرشيف الورديات ({shifts.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("staff-list")}
-              className={cn(
-                "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "staff-list"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-              الموظفين والصلاحيات ({staffList.length})
-            </button>
-          </div>
+          <StatTabs
+            value={activeTab}
+            onChange={(v) => setActiveTab(v as StaffPageTab)}
+            options={[
+              { value: "live-shift", label: "الوردية الحالية", icon: <Clock className="w-3.5 h-3.5" /> },
+              { value: "commissions", label: "عمولات ومكافآت المبيعات", icon: <Award className="w-3.5 h-3.5" /> },
+              { value: "attendance", label: "سجل الحضور والانصراف", count: attendance.length, icon: <Timer className="w-3.5 h-3.5" /> },
+              { value: "shifts-history", label: "أرشيف الورديات", count: shifts.length, icon: <Calendar className="w-3.5 h-3.5" /> },
+              { value: "staff-list", label: "الموظفين والصلاحيات", count: staffList.length, icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+            ]}
+          />
 
           {/* TAB 1: LIVE SHIFT */}
           {activeTab === "live-shift" && (
             <div className="space-y-6">
               {currentOpenShift ? (
                 <>
-                  {/* Live Shift KPI Cards */}
-                  <Reveal>
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
-                      <BezelCard
-                        label="النقدية المتوقعة بالدرج"
+                    {/* Live Shift KPI Cards */}
+                    <Reveal>
+                      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+                      <MetricCard
+                        className="h-full"
                         icon={Coins}
-                        value={
-                          <span className={cn("font-mono font-black tabular-nums text-success text-xl", blurCls)}>
-                            <CountUp value={currentShiftLiveStats?.expectedDrawerCash || 0} /> ج.م
-                          </span>
-                        }
+                        label="النقدية المتوقعة بالدرج"
+                        value={currentShiftLiveStats?.expectedDrawerCash || 0}
+                        format={(n) => `${fmt(n)} ج.م`}
+                        tone="positive"
+                        masked={privacy}
                         sub={`بدء بـ ${fmt(currentOpenShift.openingFloat)} ج.م`}
                       />
 
-                      <BezelCard
-                        label="إجمالي مبيعات الوردية"
+                      <MetricCard
+                        className="h-full"
                         icon={TrendingUp}
-                        value={
-                          <span className={cn("font-mono font-bold tabular-nums text-foreground", blurCls)}>
-                            <CountUp value={currentShiftLiveStats?.totalGrossSales || 0} /> ج.م
-                          </span>
-                        }
+                        label="إجمالي مبيعات الوردية"
+                        value={currentShiftLiveStats?.totalGrossSales || 0}
+                        format={(n) => `${fmt(n)} ج.م`}
+                        tone="neutral"
+                        masked={privacy}
                         sub={`${currentShiftLiveStats?.invoicesCount || 0} فواتير مسجلة`}
                       />
 
-                      <BezelCard
-                        label="تحصيلات الكاش والفيزا"
+                      <MetricCard
+                        className="h-full"
                         icon={CreditCard}
-                        value={
-                          <span className={cn("font-mono font-bold tabular-nums text-primary", blurCls)}>
-                            {fmt(currentShiftLiveStats?.totalCashSales || 0)} كاش
-                          </span>
-                        }
+                        label="تحصيلات الكاش والفيزا"
+                        value={currentShiftLiveStats?.totalCashSales || 0}
+                        format={(n) => `${fmt(n)} كاش`}
+                        tone="neutral"
+                        masked={privacy}
                         sub={`${fmt(currentShiftLiveStats?.totalCardSales || 0)} ج.م إلكتروني`}
                       />
 
-                      <BezelCard
-                        label="مدة الوردية الحالية"
+                      <MetricCard
+                        className="h-full"
                         icon={Clock}
-                        value={
-                          <span className="font-mono font-bold tabular-nums text-warning">
-                            {new Date(currentOpenShift.openedAt).toLocaleTimeString("ar-EG", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </span>
-                        }
+                        label="مدة الوردية الحالية"
+                        value={Math.max(0, Math.round((Date.now() - new Date(currentOpenShift.openedAt).getTime()) / 60000))}
+                        format={(n) => `${Math.round(n)} دقيقة`}
+                        tone="neutral"
                         sub={`كاشير: ${currentOpenShift.staffName}`}
                       />
-                    </div>
-                  </Reveal>
+                      </div>
+                    </Reveal>
 
                   {/* Live Shift Detailed Status Box */}
                   <div className="p-5 rounded-2xl border border-border/40 bg-card/60 space-y-4">
