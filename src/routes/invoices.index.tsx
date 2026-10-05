@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import Invoices from "@/pages/Invoices";
 import { requireAuth } from "@/lib/route-guards";
 
-export const Route = createFileRoute("/invoices")({
+export const Route = createFileRoute("/invoices/")({
   ssr: false,
   beforeLoad: requireAuth,
   component: Invoices,
