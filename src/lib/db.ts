@@ -97,7 +97,25 @@ export async function hydrateFromIDB() {
   }
 }
 
+let inflight: Promise<void> | null = null;
 async function fetchAll() {
+  if (inflight) return inflight;
+  inflight = (async () => {
+    try {
+      await fetchAllInner();
+    } catch (e) {
+      console.error("[db] fetchAll failed:", e);
+      lastFetchErrors = [e instanceof Error ? e.message : String(e)];
+    } finally {
+      loading = false;
+      inflight = null;
+      notify();
+    }
+  })();
+  return inflight;
+}
+
+async function fetchAllInner() {
   loading = true;
   lastFetchErrors = [];
   notify();
