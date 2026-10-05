@@ -4,7 +4,6 @@ import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { BezelCard } from "@/components/BezelCard";
 import { Reveal } from "@/components/Reveal";
-import { CountUp } from "@/components/CountUp";
 import { usePrivacy } from "@/lib/privacy";
 import { useDB, fmt, useShopSettings } from "@/lib/store";
 import {
@@ -19,6 +18,9 @@ import {
 } from "@/lib/discounts";
 import { Button } from "@/components/ui/button";
 import { ActionButton } from "@/components/ActionButton";
+import { MetricCard } from "@/components/MetricCard";
+import { StatTabs } from "@/components/StatTabs";
+import { FilterChips } from "@/components/FilterChips";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -452,114 +454,62 @@ export default function Discounts() {
 
           {/* Top KPI Cards */}
           <Reveal>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-4">
-              <BezelCard
-                label="إجمالي الخصومات الممنوحة"
+            <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+              <MetricCard
+                className="h-full"
                 icon={TrendingDown}
-                value={
-                  <span className={cn("font-mono font-bold tabular-nums text-warning", blurCls)}>
-                    <CountUp value={metrics.totalDiscountsGiven} /> ج.م
-                  </span>
-                }
+                label="إجمالي الخصومات الممنوحة"
+                value={metrics.totalDiscountsGiven}
+                format={(n) => `${fmt(n)} ج.م`}
+                tone="danger"
+                masked={privacy}
                 sub={`${metrics.invoicesWithDiscountCount} فاتورة تضمنت خصماً`}
               />
 
-              <BezelCard
-                label="الكوبونات والعروض النشطة"
+              <MetricCard
+                className="h-full"
                 icon={Tag}
-                value={
-                  <span className="font-mono font-bold text-success tabular-nums">
-                    <CountUp value={metrics.activeCouponsCount} /> / {metrics.totalCouponsCount}
-                  </span>
-                }
+                label="الكوبونات والعروض النشطة"
+                value={metrics.activeCouponsCount}
+                format={(n) => `${Math.round(n)} / ${metrics.totalCouponsCount}`}
+                tone="positive"
                 sub={`${qtyOffers.filter((o) => o.active).length} عروض كميات + ${bundles.filter((b) => b.active).length} باقات`}
               />
 
-              <BezelCard
-                label="مرات استخدام الكوبونات"
+              <MetricCard
+                className="h-full"
                 icon={Gift}
-                value={
-                  <span className="font-mono font-bold tabular-nums text-primary">
-                    <CountUp value={metrics.totalCouponRedemptions} /> مرة
-                  </span>
-                }
+                label="مرات استخدام الكوبونات"
+                value={metrics.totalCouponRedemptions}
+                format={(n) => `${Math.round(n)} مرة`}
+                tone="neutral"
                 sub="إجمالي عمليات الاستفادة"
               />
 
-              <BezelCard
-                label="معدل الخصم من المبيعات"
+              <MetricCard
+                className="h-full"
                 icon={Percent}
-                value={
-                  <span className={cn("font-mono font-bold tabular-nums text-foreground", blurCls)}>
-                    {metrics.discountRate.toFixed(1)}%
-                  </span>
-                }
+                label="معدل الخصم من المبيعات"
+                value={metrics.discountRate}
+                format={(n) => `${n.toFixed(1)}%`}
+                tone="neutral"
+                masked={privacy}
                 sub={`متوسط ${fmt(metrics.avgDiscountPerInvoice)} ج.م / فاتورة`}
               />
             </div>
           </Reveal>
 
           {/* Navigation Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/40 border border-border/40 rounded-2xl w-fit">
-            <button
-              type="button"
-              onClick={() => setActiveTab("coupons")}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "coupons"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <Tag className="w-3.5 h-3.5 text-primary" />
-              أكواد وقسائم الخصم ({coupons.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("tiers")}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "tiers"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <PackagePlus className="w-3.5 h-3.5 text-primary" />
-              عروض الكميات والباقات ({qtyOffers.length + bundles.length})
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("loyalty")}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "loyalty"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <Coins className="w-3.5 h-3.5 text-warning" />
-              نقاط الولاء والمكافآت
-              {loyaltyConfig.enabled && (
-                <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("guard")}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
-                activeTab === "guard"
-                  ? "bg-card text-foreground shadow-sm border border-border/40"
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/40"
-              )}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-primary" />
-              حماية الأرباح والمحاكي
-            </button>
-          </div>
+          <StatTabs
+            value={activeTab}
+            onChange={(v) => setActiveTab(v as ActiveTab)}
+            options={[
+              { value: "coupons", label: "أكواد وقسائم الخصم", count: coupons.length, icon: <Tag className="w-3.5 h-3.5" /> },
+              { value: "tiers", label: "عروض الكميات والباقات", count: qtyOffers.length + bundles.length, icon: <PackagePlus className="w-3.5 h-3.5" /> },
+              { value: "loyalty", label: "نقاط الولاء والمكافآت", icon: <Coins className="w-3.5 h-3.5" /> },
+              { value: "guard", label: "حماية الأرباح والمحاكي", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+            ]}
+          />
 
           {/* TAB 1: COUPONS & WHATSAPP PROMO CAMPAIGNS */}
           {activeTab === "coupons" && (
@@ -576,27 +526,16 @@ export default function Discounts() {
                   />
                 </div>
 
-                <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
-                  {[
-                    { id: "all", label: "الكل" },
-                    { id: "active", label: "النشطة" },
-                    { id: "expired", label: "المنتهية/المستنفدة" },
-                    { id: "inactive", label: "المعطلة" },
-                  ].map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setFilterTab(t.id as any)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
-                        filterTab === t.id
-                          ? "bg-primary text-primary-foreground font-bold shadow-xs"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                      )}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
+                <FilterChips
+                  value={filterTab}
+                  onChange={(v) => setFilterTab(v as typeof filterTab)}
+                  options={[
+                    { value: "all", label: "الكل" },
+                    { value: "active", label: "النشطة" },
+                    { value: "expired", label: "المنتهية/المستنفدة" },
+                    { value: "inactive", label: "المعطلة" },
+                  ]}
+                />
               </div>
 
               {/* Coupons Grid */}
