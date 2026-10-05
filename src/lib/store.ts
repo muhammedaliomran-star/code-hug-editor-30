@@ -175,13 +175,21 @@ export function useAuth() {
       setReady(true);
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!alive) return;
       setUser(session?.user ? toIdentity(session.user) : null);
       setReady(true);
-      if (session?.user) void verify();
-      // Refresh data on auth change
-      invalidateCache();
+      // Never call Supabase auth methods synchronously inside this callback —
+      // supabase-js holds its auth lock here, so awaiting getUser() deadlocks
+      // and every page stays on its loading skeleton. Defer to the next tick.
+      setTimeout(() => {
+        if (!alive) return;
+        if (session?.user) void verify();
+        // Refresh data only on real identity changes (not token refresh / mount).
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+          void invalidateCache();
+        }
+      }, 0);
     });
 
     void verify();
