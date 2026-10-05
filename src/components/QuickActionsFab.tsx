@@ -1,24 +1,30 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Plus, X, ShoppingBag, UserPlus, Wallet, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db, useDB } from "@/lib/store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { ExpenseFormDialog } from "@/pages/Expenses";
 
-type Mode = null | "sale" | "customer" | "payment" | "expense" | "purchase";
+type Mode = null | "customer" | "payment" | "expense" | "purchase";
 
 export function QuickActionsFab() {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
   const { customers, invoices } = useDB();
+  const navigate = useNavigate();
 
   const close = () => { setMode(null); setOpen(false); };
+
+  const goNewInvoice = () => {
+    close();
+    navigate({ to: "/invoices/new" });
+  };
 
   return (
     <>
@@ -36,7 +42,7 @@ export function QuickActionsFab() {
         </button>
         {open && (
           <>
-            <FabItem label="بيع سريع" icon={<ShoppingBag className="w-5 h-5" />} onClick={() => setMode("sale")} delay={0} />
+            <FabItem label="بيع سريع" icon={<ShoppingBag className="w-5 h-5" />} onClick={goNewInvoice} delay={0} />
             <FabItem label="إضافة عميل" icon={<UserPlus className="w-5 h-5" />} onClick={() => setMode("customer")} delay={60} />
             <FabItem label="تسجيل دفعة" icon={<Wallet className="w-5 h-5" />} onClick={() => setMode("payment")} delay={120} />
             <FabItem label="إضافة مصروف" icon={<Receipt className="w-5 h-5" />} onClick={() => setMode("expense")} delay={180} />
@@ -48,12 +54,10 @@ export function QuickActionsFab() {
         <DialogContent dir="rtl" className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-right">
-              {mode === "sale" && "بيع سريع"}
               {mode === "customer" && "إضافة عميل جديد"}
               {mode === "payment" && "تسجيل دفعة"}
             </DialogTitle>
           </DialogHeader>
-          {mode === "sale" && <QuickSaleForm customers={customers} onDone={close} />}
           {mode === "customer" && <QuickCustomerForm onDone={close} />}
           {mode === "payment" && <QuickPaymentForm customers={customers} invoices={invoices} onDone={close} />}
         </DialogContent>
@@ -139,89 +143,6 @@ function QuickCustomerForm({ onDone }: { onDone: () => void }) {
       <div><Label>رقم الهاتف</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} dir="ltr" /></div>
       <div><Label>رصيد افتتاحي (اختياري)</Label><Input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} /></div>
       <Button onClick={submit} disabled={busy} className="w-full">حفظ</Button>
-    </div>
-  );
-}
-
-function QuickSaleForm({ customers, onDone }: { customers: any[]; onDone: () => void }) {
-  const [customerId, setCustomerId] = useState("");
-  const [saleType, setSaleType] = useState<"installment" | "cash">("installment");
-  const [total, setTotal] = useState("");
-  const [down, setDown] = useState("0");
-  const [installment, setInstallment] = useState("");
-  const [notes, setNotes] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  const customer = customers.find((c) => c.id === customerId);
-  const isCash = saleType === "cash";
-
-  const submit = async () => {
-    if (!customerId) return toast.error("اختر عميل");
-    const t = Number(total);
-    const d = isCash ? t : (Number(down) || 0);
-    const m = isCash ? 0 : (Number(installment) || 0);
-    if (!t || t <= 0) return toast.error("أدخل إجمالي الفاتورة");
-    if (!isCash && customer?.customerType === "cash") {
-      return toast.error("العميل مسجّل «فوري (نقدي)» — لا يسمح بالتقسيط");
-    }
-    if (!isCash && !m) return toast.error("أدخل القسط الشهري");
-    setBusy(true);
-    try {
-      const due = new Date(); due.setMonth(due.getMonth() + 1);
-      await db.addInvoice({
-        customerId, total: t, downPayment: d, monthlyInstallment: m,
-        firstDueDate: isCash ? new Date().toISOString().slice(0, 10) : due.toISOString().slice(0, 10),
-        notes: notes || null, paid: d,
-      });
-      toast.success(isCash ? "تم إنشاء فاتورة بيع نقدي ✓ مسددة" : "تم إنشاء الفاتورة");
-      onDone();
-    } catch (e: any) { toast.error(e.message || "خطأ"); }
-    finally { setBusy(false); }
-  };
-
-  return (
-    <div className="space-y-3">
-      <div>
-        <Label>العميل</Label>
-        <Select
-          value={customerId}
-          onValueChange={(v) => {
-            setCustomerId(v);
-            const c = customers.find((x) => x.id === v);
-            setSaleType(c?.customerType === "cash" ? "cash" : "installment");
-          }}
-        >
-          <SelectTrigger><SelectValue placeholder="اختر..." /></SelectTrigger>
-          <SelectContent>
-            {customers.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name} — {c.customerType === "cash" ? "فوري" : "قسط"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div>
-        <Label>نوع البيع</Label>
-        <TypeToggle
-          value={saleType}
-          onChange={(v) => {
-            if (v === "installment" && customer?.customerType === "cash") {
-              toast.error("هذا عميل فوري (نقدي) — غيّر نوعه من صفحة العملاء أولًا");
-              return;
-            }
-            setSaleType(v);
-          }}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <div><Label>إجمالي</Label><Input type="number" value={total} onChange={(e) => setTotal(e.target.value)} /></div>
-        {!isCash && <div><Label>مقدم</Label><Input type="number" value={down} onChange={(e) => setDown(e.target.value)} /></div>}
-      </div>
-      {!isCash && <div><Label>القسط الشهري</Label><Input type="number" value={installment} onChange={(e) => setInstallment(e.target.value)} /></div>}
-      <div><Label>ملاحظات</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
-      <Button onClick={submit} disabled={busy} className="w-full">حفظ الفاتورة</Button>
-
     </div>
   );
 }
