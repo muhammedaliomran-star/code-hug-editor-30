@@ -72,7 +72,7 @@ export const WHATSAPP_TEMPLATES: WhatsAppTemplateDef[] = [
     category: "shipping",
     iconName: "Truck",
     description: "إشعار العميل بأن الشحنة في الطريق مع بيانات المندوب للتنسيق",
-    defaultTemplate: `مرحباً {customer_name} 🚚✨
+ defaultTemplate: `مرحباً {customer_name} 🚚
 
 شحنتك رقم #{order_number} من *{store_name}* خرجت الآن للتوصيل!
 

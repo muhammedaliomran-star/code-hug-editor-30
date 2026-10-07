@@ -218,7 +218,7 @@ export function ShiftCloseoutModal({
                 {variance === 0 ? "حالة الدرج" : variance > 0 ? "زيادة في الدرج" : "عجز في الدرج"}
               </span>
               <div className="text-xl font-black mt-1">
-                {variance === 0 ? "متطابق تماماً ✨" : `${fmt(Math.abs(variance))} ج.م`}
+                {variance === 0 ? "متطابق تماماً" : `${fmt(Math.abs(variance))} ج.م`}
               </div>
               <div className="text-[10px] opacity-80 mt-1">
                 {variance === 0 ? "لا يوجد أي فروقات" : variance > 0 ? "فائض نقدية" : "مبلغ مفقود من الدرج"}

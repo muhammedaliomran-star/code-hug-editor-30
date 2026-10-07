@@ -240,7 +240,7 @@ export function generatePromoWhatsAppText(coupon: PromoCoupon, shopName = "سِ�
     coupon.discountType === "percentage" ? `${coupon.discountValue}%` : `${coupon.discountValue} ج.م`;
 
   let text = `🎉 *عرض خاص وحصري من ${shopName}!* 🎉\n\n`;
-  text += `✨ *${coupon.title}*\n`;
+  text += `*${coupon.title}*\n`;
   text += `🏷️ كود الخصم: *${coupon.code}*\n`;
   text += `🎁 قيمة الخصم: *خصم ${discountLabel}*\n`;
 
@@ -254,7 +254,7 @@ export function generatePromoWhatsAppText(coupon: PromoCoupon, shopName = "سِ�
   }
 
   text += `\n💬 استخدم الكود عند طلبك القادم واستمتع بأفضل الأسعار!\n`;
-  text += `نسعد دائماً بخدمتكم في *${shopName}* ✨`;
+  text += `نسعد دائماً بخدمتكم في *${shopName}*`;
 
   return text;
 }

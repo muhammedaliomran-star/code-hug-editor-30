@@ -85,7 +85,7 @@ function BranchesPageInner() {
                     <SelectContent>
                       {branches.map((b) => (
                         <SelectItem key={b.id} value={b.id} className="text-xs">
-                          {b.name} {b.isMain ? "⭐ (رئيسي)" : ""}
+ {b.name} {b.isMain ? " (رئيسي)" : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -647,7 +647,7 @@ export function generateLicenseWhatsAppMessage(lic: LicenseRecord): string {
 ⏳ *تاريخ انتهاء الترخيص:* ${isLife ? "مدى الحياة (دائم)" : lic.expiryDate}
 ${lic.hardwareIncluded ? `🖨️ *الأجهزة المشمولة:* ${lic.hardwareIncluded}` : ""}
 
-✨ *طريقة التفعيل:*
+*طريقة التفعيل:*
 1. افتح البرنامج ثم ادخل على "الإعدادات" > "الترخيص والاشتراك".
 2. الصق مفتاح التفعيل واضغط "تفعيل الترخيص".
 
