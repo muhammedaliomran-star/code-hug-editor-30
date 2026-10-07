@@ -32,10 +32,10 @@ export function LicenseStatusBanner() {
 
   return (
     <>
-      <div className="w-full bg-gradient-to-r from-amber-500/15 via-primary/10 to-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs flex items-center justify-between gap-3 text-foreground transition-all">
+      <div className="w-full bg-gradient-to-r from-amber-500/15 via-primary/10 to-amber-500/15 border-b border-amber-500/30 px-4 py-2 text-xs flex items-center justify-between gap-3 text-foreground transition-[background-color,border-color]">
         <div className="flex items-center gap-2">
           {isExpired ? (
-            <ShieldAlert className="w-4 h-4 text-danger animate-bounce shrink-0" />
+            <ShieldAlert className="w-4 h-4 text-danger shrink-0" />
           ) : (
             <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
           )}
@@ -62,7 +62,7 @@ export function LicenseStatusBanner() {
           <Button
             size="sm"
             onClick={() => setModalOpen(true)}
-            className="h-7 rounded-xl text-[11px] font-bold bg-primary text-black hover:bg-primary/90 px-3 gap-1"
+            className="h-10 rounded-xl text-xs font-bold bg-primary text-black hover:bg-primary/90 px-4 gap-1.5"
           >
             <KeyRound className="w-3 h-3" />
             {isExpired ? "تفعيل / تجديد الآن" : "ترقية وترخيص"}

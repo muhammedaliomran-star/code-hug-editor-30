@@ -595,6 +595,13 @@
 @keyframes shimmer {
   100% { transform: translateX(200%); }
 }
+@keyframes skeleton-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@utility animate-skeleton-soft {
+  animation: skeleton-soft 1.6s ease-in-out infinite;
+}
 
 /* إصلاح حركة الأكورديون: لا تستخدم height (خاصية تخطيط) — استخدم transform/opacity فقط */
 @keyframes accordion-down {
