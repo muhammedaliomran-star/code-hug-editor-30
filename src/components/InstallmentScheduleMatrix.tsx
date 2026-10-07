@@ -122,7 +122,7 @@ export function InstallmentScheduleMatrix({
             {paidCount} من {schedule.length} قسط مسدد ({progressPct}%)
           </Badge>
           {overdueCount > 0 && (
-            <Badge variant="outline" className="text-xs font-bold bg-danger/10 text-danger border-danger/30 motion-safe:animate-pulse">
+            <Badge variant="outline" className="text-xs font-bold bg-danger/10 text-danger border-danger/30">
               {overdueCount} قسط متأخر
             </Badge>
           )}

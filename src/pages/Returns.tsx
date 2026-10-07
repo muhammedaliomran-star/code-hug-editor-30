@@ -126,7 +126,7 @@ function ReturnsPage() {
                           "absolute inset-y-1 w-[calc(50%-6px)] rounded-xl shadow-lg z-0",
                           returnType === "sale" ? "bg-primary left-1.5" : "bg-warning right-1.5"
                         )}
-                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        transition={{ duration: 0.25, ease: "easeOut" }}
                       />
                       <Button 
                         variant="ghost"

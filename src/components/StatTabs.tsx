@@ -55,7 +55,7 @@ export function StatTabs<T extends string>({
               <span
                 aria-hidden
                 className={cn(
-                  "absolute left-2 top-1.5 h-2 w-2 motion-safe:animate-pulse rounded-full",
+                  "absolute left-2 top-1.5 h-2 w-2 rounded-full",
                   opt.dot === "amber" ? "bg-amber-500" : "bg-danger",
                 )}
               />

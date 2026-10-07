@@ -34,7 +34,7 @@ export function QuickActionsFab() {
           onClick={() => setOpen((v) => !v)}
           aria-label="إجراء سريع"
           className={cn(
-            "w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-2xl shadow-black/50 grid place-items-center transition-[transform,box-shadow] duration-300 hover:scale-110 animate-fab-spring",
+            "w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-2xl shadow-black/50 grid place-items-center transition-[transform,box-shadow] duration-300 hover:scale-110 animate-fab-enter",
             open && "rotate-45"
           )}
         >

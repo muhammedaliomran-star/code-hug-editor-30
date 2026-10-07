@@ -203,7 +203,7 @@ function SettingsPage() {
           <div className="flex items-center gap-3 px-3">
             <div
               className={cn(
-                "h-2.5 w-2.5 rounded-full animate-pulse",
+                "h-2.5 w-2.5 rounded-full",
                 dirty ? "bg-amber-500" : "bg-emerald-500",
               )}
             />

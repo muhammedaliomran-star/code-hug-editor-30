@@ -88,11 +88,11 @@ function MobileBottomBar({ items, pathname, overdueCount }: { items: NavItem[]; 
           const Icon = n.icon;
           const showBadge = n.alertKey && overdueCount > 0;
           return (
-            <Link key={n.to} to={n.to} className={cn("press flex min-w-[60px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-[10px]", active ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}>
+            <Link key={n.to} to={n.to} className={cn("press flex min-w-[60px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-xs font-medium", active ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}>
               <span className="relative">
                 <Icon className="h-5 w-5" />
                 {showBadge && (
-                  <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-danger-foreground">
+                  <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold leading-none text-danger-foreground">
                     {overdueCount}
                   </span>
                 )}
@@ -104,12 +104,12 @@ function MobileBottomBar({ items, pathname, overdueCount }: { items: NavItem[]; 
         <button
           type="button"
           onClick={() => setMoreOpen(true)}
-          className={cn("press flex min-w-[60px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-[10px]", moreActive ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}
+          className={cn("press flex min-w-[60px] flex-1 flex-col items-center gap-1.5 rounded-[1.25rem] py-3 text-xs font-medium", moreActive ? "bg-primary/12 font-semibold text-primary" : "text-muted-foreground")}
         >
           <span className="relative">
             <MoreHorizontal className="h-5 w-5" />
-            {overdueCount > 0 && (
-              <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[9px] font-bold leading-none text-danger-foreground">
+              {overdueCount > 0 && (
+                <span className="absolute -right-2 -top-1.5 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-danger px-1 text-[11px] font-bold leading-none text-danger-foreground">
                 {overdueCount}
               </span>
             )}
@@ -168,7 +168,7 @@ function MobileMoreSheet({
         <span className="flex items-center gap-2">
           {n.label}
           {showBadge && (
-            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[10px] font-bold leading-none text-danger-foreground">
+            <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold leading-none text-danger-foreground">
               {overdueCount}
             </span>
           )}
@@ -203,7 +203,7 @@ function MobileMoreSheet({
           <div className="flex flex-col gap-4">
             {sections.map((s) => (
               <div key={s.key}>
-                <p className="mb-1 px-4 text-[11px] font-bold text-muted-foreground">{s.title}</p>
+                <p className="mb-1 px-4 text-xs font-bold text-muted-foreground">{s.title}</p>
                 <div className="flex flex-col gap-1">
                   {s.rows.map(renderRow)}
                 </div>
@@ -260,7 +260,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </span>
           <div>
             <div className="text-display text-2xl font-bold leading-none text-foreground">سِجلّي</div>
-            <div className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground/85">Segilly</div>
+            <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground/85">Segilly</div>
           </div>
         </div>
 
@@ -296,7 +296,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="text-[10px] text-muted-foreground truncate">لوحة الإدارة والقرارات</p>
             </div>
           </div>
-          <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse shrink-0" title="جاهز للعمل" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" title="جاهز للعمل" />
         </Link>
 
         <nav className="stagger no-scrollbar -mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1">
@@ -318,7 +318,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="flex items-center gap-2">
                   {n.label}
                   {showBadge && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[10px] font-bold leading-none motion-safe:animate-pulse">
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[10px] font-bold leading-none">
                       {overdueCount}
                     </span>
                   )}

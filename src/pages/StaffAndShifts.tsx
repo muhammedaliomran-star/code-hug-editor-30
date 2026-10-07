@@ -707,7 +707,7 @@ export default function StaffAndShifts() {
                                 "text-[10px] py-0.5",
                                 rec.status === "completed"
                                   ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
-                                  : "bg-blue-500/10 text-blue-600 border-blue-500/30 animate-pulse"
+                                  : "bg-primary/10 text-primary border-primary/30"
                               )}
                             >
                               {rec.status === "completed" ? "دوام مكتمل" : "حاضر بالعمل"}

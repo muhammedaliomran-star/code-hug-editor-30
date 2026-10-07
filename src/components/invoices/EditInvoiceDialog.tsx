@@ -153,7 +153,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
 
           <AnimatePresence>
             {isCash && (
-              <motion.div key="cash" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} transition={{ type: "spring", stiffness: 400, damping: 14 }} className="flex justify-center">
+              <motion.div key="cash" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.2, ease: "easeOut" }} className="flex justify-center">
                 <Badge className="gap-1.5 bg-success/15 text-success border border-success/40 text-sm py-1.5 px-3">
                   <Banknote className="w-4 h-4" /> بيع نقدي — لا توجد أقساط
                 </Badge>
