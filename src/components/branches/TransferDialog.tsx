@@ -132,7 +132,7 @@ export function CreateTransferDialog() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-7 w-7 text-danger rounded-full"
+                          className="h-10 w-10 text-danger rounded-full"
                           onClick={() => setTransferItems((prev) => prev.filter((_, iIdx) => iIdx !== idx))}
                         >
                           <Trash2 className="h-3.5 w-3.5" />

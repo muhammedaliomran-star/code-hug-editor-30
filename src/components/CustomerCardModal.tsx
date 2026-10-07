@@ -80,7 +80,7 @@ export function CustomerCardModal({
               type="button"
               size="icon"
               variant="outline"
-              className="h-8 w-8 rounded-full"
+              className="h-10 w-10 rounded-full"
               onClick={handleCopyCode}
               title="نسخ الكود"
             >

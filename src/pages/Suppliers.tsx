@@ -404,9 +404,9 @@ function SupplierFormDialog({
               />
             </div>
             <div className="flex gap-2 justify-end mt-2">
-              <Button type="button" variant="outline" size="sm" className="h-7 rounded-full px-3 text-xs"
+              <Button type="button" variant="outline" size="sm" className="h-10 rounded-full px-4 text-xs"
                 onClick={() => setJoinDate(firstOfMonth())}>أول الشهر</Button>
-              <Button type="button" variant="outline" size="sm" className="h-7 rounded-full px-3 text-xs"
+              <Button type="button" variant="outline" size="sm" className="h-10 rounded-full px-4 text-xs"
                 onClick={() => setJoinDate(new Date().toISOString().slice(0, 10))}>النهارده</Button>
             </div>
           </div>
@@ -659,7 +659,7 @@ export function NewPurchaseDialog({
                 >
                   <div className="rounded-2xl border border-foreground/10 bg-card/50/[0.03] p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <Button type="button" size="icon" variant="ghost" onClick={() => removeItem(p.id)} disabled={items.length === 1} className="h-7 w-7 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف">
+                      <Button type="button" size="icon" variant="ghost" onClick={() => removeItem(p.id)} disabled={items.length === 1} className="h-10 w-10 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                       <span className="text-xs text-muted-foreground font-bold">صنف #{idx + 1}</span>
@@ -751,7 +751,7 @@ function PaymentDialog({ supplier, balance }: { supplier: Supplier; balance: num
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-success hover:bg-success/10" title="تسجيل دفعة">
+        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-success hover:bg-success/10" title="تسجيل دفعة">
           <Wallet className="w-4 h-4" />
         </Button>
       </DialogTrigger>
@@ -931,13 +931,13 @@ function PurchasesTable({ privacy }: { privacy: boolean }) {
                     </td>
                     <td className="p-4" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-0.5">
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10" title="تفاصيل" onClick={() => setDetailFor(p)}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10" title="تفاصيل" onClick={() => setDetailFor(p)}>
                           <Eye className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10" title="تعديل" onClick={() => setEditFor(p)}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10" title="تعديل" onClick={() => setEditFor(p)}>
                           <Pencil className="w-4 h-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف" onClick={() => setDeleteId(p.id)}>
+                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف" onClick={() => setDeleteId(p.id)}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
@@ -1065,14 +1065,14 @@ function SupplierPaymentRow({ payment, blurCls }: { payment: SupplierPayment; bl
         <div className="flex items-center gap-1">
           <Button
             size="icon" variant="ghost" title="تعديل الدفعة"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
+            className="h-10 w-10 text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
             onClick={() => { setAmount(String(payment.amount)); setEditOpen(true); }}
           >
             <Pencil className="w-4 h-4" />
           </Button>
           <Button
             size="icon" variant="ghost" title="حذف الدفعة"
-            className="h-8 w-8 text-muted-foreground hover:text-danger hover:bg-danger/10"
+            className="h-10 w-10 text-muted-foreground hover:text-danger hover:bg-danger/10"
             onClick={() => setConfirmDelete(true)}
           >
             <Trash2 className="w-4 h-4" />

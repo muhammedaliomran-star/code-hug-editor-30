@@ -48,7 +48,7 @@ export function QuickAddPayment({ invoices }: { invoices: Invoice[] }) {
         <Button
           size="icon"
           variant="outline"
-          className="h-7 w-7 text-success border-success/30 hover:bg-success/10"
+          className="h-10 w-10 text-success border-success/30 hover:bg-success/10"
           aria-label="تسجيل دفعة"
           disabled={open_invoices.length === 0}
         >

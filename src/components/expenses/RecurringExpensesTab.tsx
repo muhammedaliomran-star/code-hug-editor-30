@@ -316,7 +316,7 @@ export function RecurringExpensesTab() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      className="h-10 w-10 text-muted-foreground hover:text-foreground"
                       onClick={() => onOpenEdit(item)}
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -324,7 +324,7 @@ export function RecurringExpensesTab() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-8 w-8 text-danger hover:bg-danger/10"
+                      className="h-10 w-10 text-danger hover:bg-danger/10"
                       onClick={() => handleDelete(item.id)}
                     >
                       <Trash2 className="w-3.5 h-3.5" />

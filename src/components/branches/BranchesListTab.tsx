@@ -57,7 +57,7 @@ export default function BranchesListTab() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full"
+                  className="h-10 w-10 rounded-full"
                   onClick={() => {
                     setEditingBranch(branch);
                     setIsBranchDialogOpen(true);
@@ -68,7 +68,7 @@ export default function BranchesListTab() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 rounded-full text-danger hover:bg-danger/10"
+                  className="h-10 w-10 rounded-full text-danger hover:bg-danger/10"
                   onClick={() => {
                     if (confirm(`هل أنت متأكد من حذف ${branch.name}؟`)) {
                       removeBranch(branch.id);

@@ -158,7 +158,7 @@ export default function CashboxTab() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 rounded-full"
+                      className="h-10 w-10 rounded-full"
                       onClick={() => printBranchShiftZReport(sh, activeBranch, shopSettings, "thermal")}
                     >
                       <Printer className="h-3.5 w-3.5" />

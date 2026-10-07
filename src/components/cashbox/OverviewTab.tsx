@@ -154,7 +154,7 @@ export function OverviewTab() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7 rounded-xl text-danger hover:bg-danger/10"
+                    className="h-10 w-10 rounded-xl text-danger hover:bg-danger/10"
                     onClick={() => {
                       if (confirm(`هل أنت متأكد من حذف الحساب "${acc.name}"؟`)) {
                         deleteTreasuryAccount(acc.id);

@@ -130,7 +130,7 @@ export function TransfersTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 rounded-lg text-danger hover:bg-danger/10"
+                        className="h-10 w-10 rounded-lg text-danger hover:bg-danger/10"
                         onClick={() => handleDeleteTransfer(trf.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />

@@ -121,7 +121,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
                 >
                   <div className="rounded-2xl hairline bg-foreground/[0.03] p-3 space-y-2">
                     <div className="flex items-center justify-between">
-                      <Button type="button" size="icon" variant="ghost" onClick={() => removeProduct(p.id)} disabled={products.length === 1} className="h-7 w-7 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف المنتج">
+                      <Button type="button" size="icon" variant="ghost" onClick={() => removeProduct(p.id)} disabled={products.length === 1} className="h-10 w-10 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف المنتج">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                       <span className="text-xs text-muted-foreground font-bold">منتج #{idx + 1}</span>

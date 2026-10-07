@@ -273,7 +273,7 @@ export function BudgetsTab() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                        className="h-10 w-10 text-muted-foreground hover:text-foreground"
                         onClick={() => onOpenEdit(rawBudget)}
                       >
                         <Pencil className="w-3 h-3" />
@@ -283,7 +283,7 @@ export function BudgetsTab() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-danger hover:bg-danger/10"
+                        className="h-10 w-10 text-danger hover:bg-danger/10"
                         onClick={() => handleDelete(budgetKey(st))}
                       >
                         <Trash2 className="w-3 h-3" />

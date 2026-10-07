@@ -124,7 +124,7 @@ export default function StaffTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 rounded-full"
+                        className="h-10 w-10 rounded-full"
                         onClick={() => {
                           setEditingStaff(staff);
                           setIsStaffDialogOpen(true);
@@ -135,7 +135,7 @@ export default function StaffTab() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 rounded-full text-danger hover:bg-danger/10"
+                        className="h-10 w-10 rounded-full text-danger hover:bg-danger/10"
                         onClick={() => {
                           if (confirm(`هل أنت متأكد من حذف ${staff.name}؟`)) {
                             removeBranchStaffMember(staff.id);

@@ -236,7 +236,7 @@ export function LedgerTab() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 rounded-lg text-primary hover:bg-primary/10"
+                            className="h-10 w-10 rounded-lg text-primary hover:bg-primary/10"
                             onClick={() => openEditManualTx(tx.id.replace("man-", ""))}
                             title="تعديل الحركة اليدوية"
                           >
@@ -245,7 +245,7 @@ export function LedgerTab() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 rounded-lg text-danger hover:bg-danger/10"
+                            className="h-10 w-10 rounded-lg text-danger hover:bg-danger/10"
                             onClick={() => handleDeleteManual(tx.id)}
                             title="حذف"
                           >

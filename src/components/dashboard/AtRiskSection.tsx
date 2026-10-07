@@ -78,7 +78,7 @@ export function AtRiskSection() {
                       {row.customer.phone && (
                         <a
                           href={`tel:${row.customer.phone}`}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/25 transition hover:bg-primary/20 active:scale-[0.95]"
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/25 transition hover:bg-primary/20 active:scale-[0.95]"
                           title="اتصال"
                         >
                           <Phone className="h-3.5 w-3.5" />

@@ -192,7 +192,7 @@ function ReturnsPage() {
                           {items.map((it, idx) => (
                             <div key={idx} className="flex justify-between items-center text-sm border-b border-[var(--hairline)]/50 pb-3 last:border-0">
                               <div className="flex items-center gap-3">
-                                <button onClick={() => setItems(items.filter((_, i) => i !== idx))} className="w-8 h-8 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                <button onClick={() => setItems(items.filter((_, i) => i !== idx))} className="w-10 h-10 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
                                 <div className="text-left">
                                   <span className={cn("font-black text-numeric text-primary block", blurCls)}>{fmt(it.unitPrice * it.quantity)} <span className="text-xs">ج.م</span></span>
                                 </div>

@@ -76,7 +76,7 @@ export function QuickAddInvoice({ customerId, blocked }: { customerId: string; b
         <Button
           size="icon"
           variant="outline"
-          className="h-7 w-7 text-primary border-primary/30 hover:bg-primary/10"
+          className="h-10 w-10 text-primary border-primary/30 hover:bg-primary/10"
           aria-label="إضافة فاتورة"
         >
           <Plus className="w-3.5 h-3.5" />

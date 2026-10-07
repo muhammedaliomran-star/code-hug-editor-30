@@ -72,16 +72,16 @@ export function HistoryDialog({ customer, onClose, invoices, payments, items, bl
                     <div key={inv.id}>
                       <div className="w-full flex items-center justify-between p-3 hover:bg-foreground/[0.035] transition text-right gap-2">
                         <div className="flex items-center gap-1">
-                          <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-warning hover:bg-warning/10" title="تعديل الفاتورة" onClick={(e) => { e.stopPropagation(); onEditInvoice(inv); }}>
+                          <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-warning hover:bg-warning/10" title="تعديل الفاتورة" onClick={(e) => { e.stopPropagation(); onEditInvoice(inv); }}>
                             <Pencil className="w-3.5 h-3.5" />
                           </Button>
                           {onViewInvoice && (
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-primary hover:bg-primary/10" title="عرض التفاصيل" onClick={(e) => { e.stopPropagation(); onViewInvoice(inv); }}>
+                            <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10" title="عرض التفاصيل" onClick={(e) => { e.stopPropagation(); onViewInvoice(inv); }}>
                               <Eye className="w-3.5 h-3.5" />
                             </Button>
                           )}
                           {inv.monthlyInstallment > 0 && remaining > 0 && (
-                            <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-success hover:bg-success/10" title="دفع قسط">
+                            <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-success hover:bg-success/10" title="دفع قسط">
                               <Wallet className="w-3.5 h-3.5" />
                             </Button>
                           )}

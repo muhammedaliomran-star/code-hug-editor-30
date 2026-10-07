@@ -198,7 +198,7 @@ export function CustomCategoriesTab() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                      className="h-10 w-10 text-muted-foreground hover:text-foreground"
                       onClick={() => onOpenEdit(cat)}
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export function CustomCategoriesTab() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-danger hover:bg-danger/10"
+                        className="h-10 w-10 text-danger hover:bg-danger/10"
                         onClick={() => handleDelete(cat)}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
