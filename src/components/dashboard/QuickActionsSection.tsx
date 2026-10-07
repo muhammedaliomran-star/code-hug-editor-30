@@ -30,7 +30,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-emerald-500/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
               <ArrowDownLeft className="h-4 w-4" />
             </span>
             <div className="text-right">
@@ -38,7 +38,7 @@ export function QuickActionsSection() {
               <div className="text-[11px] font-medium text-muted-foreground">توريد للخزينة</div>
             </div>
           </div>
-          <ChevronLeft className="h-4 w-4 text-muted-foreground/50 group-hover:text-emerald-600 transition-colors" />
+          <ChevronLeft className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
         </Link>
 
         <Link
@@ -46,7 +46,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-rose-500/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-rose-500/10 text-rose-600 group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
               <ArrowUpRight className="h-4 w-4" />
             </span>
             <div className="text-right">
@@ -54,7 +54,7 @@ export function QuickActionsSection() {
               <div className="text-[11px] font-medium text-muted-foreground">تشغيلي / إيجار / نثريات</div>
             </div>
           </div>
-          <ChevronLeft className="h-4 w-4 text-muted-foreground/50 group-hover:text-rose-600 transition-colors" />
+          <ChevronLeft className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
         </Link>
 
         <Link
@@ -62,7 +62,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-amber-500/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-amber-500/10 text-amber-600 group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
               <Wallet className="h-4 w-4" />
             </span>
             <div className="text-right">
@@ -72,7 +72,7 @@ export function QuickActionsSection() {
               </div>
             </div>
           </div>
-          <ChevronLeft className="h-4 w-4 text-muted-foreground/50 group-hover:text-amber-600 transition-colors" />
+          <ChevronLeft className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
         </Link>
       </div>
     </section>

@@ -193,7 +193,7 @@ export function DashboardCustomizationModal({
               variant="ghost"
               size="sm"
               onClick={onReset}
-              className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-8"
+              className="text-xs text-muted-foreground hover:text-foreground gap-1.5 h-10"
             >
               <RotateCcw className="h-3.5 w-3.5" />
               إعادة الضبط الافتراضي
@@ -208,15 +208,13 @@ export function DashboardCustomizationModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-2 py-2">
+        <div className="divide-y divide-border/60 py-2">
           {sections.map((section, idx) => (
             <div
               key={section.id}
               className={cn(
-                "flex items-center justify-between p-3.5 rounded-2xl border transition-all",
-                section.visible
-                  ? "bg-card border-border/80"
-                  : "bg-muted/30 border-border/40 opacity-60"
+                "flex items-center justify-between gap-3 py-3.5 transition-opacity duration-300",
+                !section.visible && "opacity-60"
               )}
             >
               {/* Order Controls & Visibility */}
@@ -226,19 +224,19 @@ export function DashboardCustomizationModal({
                     type="button"
                     disabled={idx === 0}
                     onClick={() => onMove(idx, "up")}
-                    className="p-1 rounded-md hover:bg-muted disabled:opacity-30 disabled:pointer-events-none text-muted-foreground transition-colors"
+                    className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted disabled:opacity-30 disabled:pointer-events-none text-muted-foreground transition-colors"
                     title="تحريك لأعلى"
                   >
-                    <ArrowUp className="h-3.5 w-3.5" />
+                    <ArrowUp className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
                     disabled={idx === sections.length - 1}
                     onClick={() => onMove(idx, "down")}
-                    className="p-1 rounded-md hover:bg-muted disabled:opacity-30 disabled:pointer-events-none text-muted-foreground transition-colors"
+                    className="grid h-10 w-10 place-items-center rounded-xl hover:bg-muted disabled:opacity-30 disabled:pointer-events-none text-muted-foreground transition-colors"
                     title="تحريك لأسفل"
                   >
-                    <ArrowDown className="h-3.5 w-3.5" />
+                    <ArrowDown className="h-4 w-4" />
                   </button>
                 </div>
 
@@ -253,13 +251,10 @@ export function DashboardCustomizationModal({
 
               {/* Title & Description */}
               <div className="text-right flex-1 pe-3">
-                <div className="text-sm font-bold text-foreground flex items-center justify-end gap-2">
-                  <span>{section.label}</span>
-                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
-                    #{idx + 1}
-                  </span>
+                <div className="text-sm font-bold text-foreground">
+                  {section.label}
                 </div>
-                <div className="text-[11px] text-muted-foreground mt-0.5">
+                <div className="text-xs text-muted-foreground mt-0.5">
                   {section.description}
                 </div>
               </div>
