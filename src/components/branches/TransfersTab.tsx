@@ -40,7 +40,7 @@ export default function TransfersTab() {
 
           const statusConfig = {
             draft: { label: "مسودة", color: "bg-slate-500/10 text-slate-600 border-slate-500/30" },
-            in_transit: { label: "قيد النقل والشحن", color: "bg-amber-500/10 text-amber-600 border-amber-500/30 animate-pulse" },
+            in_transit: { label: "قيد النقل والشحن", color: "bg-amber-500/10 text-amber-600 border-amber-500/30 motion-safe:animate-pulse" },
             received: { label: "تم الاستلام بنجاح", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
             cancelled: { label: "ملغي", color: "bg-red-500/10 text-red-600 border-red-500/30" },
           }[trf.status];

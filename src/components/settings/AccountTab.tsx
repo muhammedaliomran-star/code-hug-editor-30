@@ -38,7 +38,7 @@ function LineSkeleton({ rows = 2 }: { rows?: number }) {
   return (
     <div className="grid gap-2.5">
       {Array.from({ length: rows }).map((_, i) => (
-        <span key={i} className="block h-9 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+        <span key={i} className="block h-9 motion-safe:animate-pulse rounded-2xl bg-foreground/[0.06]" />
       ))}
     </div>
   );

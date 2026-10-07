@@ -21,7 +21,7 @@ export function NetworkStatusIndicator() {
         <div className="flex items-center gap-2">
           {!isOnline ? (
             <>
-              <WifiOff className="w-4 h-4 text-warning animate-pulse" />
+              <WifiOff className="w-4 h-4 text-warning motion-safe:animate-pulse" />
               <span>أنت غير متصل بالإنترنت — العمل مستمر أوفلاين وسيتم حفظ الدفعات محليًا</span>
             </>
           ) : (

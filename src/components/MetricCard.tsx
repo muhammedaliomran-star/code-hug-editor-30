@@ -28,7 +28,7 @@ export function MetricLabel({
   return (
     <span
       className={cn(
-        "block text-xs font-bold uppercase leading-none tracking-[0.12em] text-muted-foreground",
+        "block text-xs font-bold leading-relaxed text-muted-foreground",
         className,
       )}
     >
@@ -108,7 +108,7 @@ export function MetricCard({
           <div
             className={cn(
               "mt-2 text-muted-foreground",
-              hero ? "text-xs sm:text-[13px]" : compact ? "text-[10px] leading-snug" : "text-[11px] leading-relaxed",
+              hero ? "text-xs sm:text-[13px]" : compact ? "text-[11px] font-medium leading-snug" : "text-xs leading-relaxed",
             )}
           >
             {sub}

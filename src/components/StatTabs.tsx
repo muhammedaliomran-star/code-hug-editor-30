@@ -45,7 +45,7 @@ export function StatTabs<T extends string>({
             aria-selected={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "press relative flex min-w-0 flex-1 flex-col items-center gap-0.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-[13px] transition-colors duration-300",
+              "press relative flex min-h-[40px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap rounded-xl px-4 py-2.5 text-[13px] transition-colors duration-300",
               active
                 ? "bg-primary font-bold text-primary-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.45)]"
                 : "font-medium text-muted-foreground hover:bg-foreground/[0.05] hover:text-foreground",
@@ -55,7 +55,7 @@ export function StatTabs<T extends string>({
               <span
                 aria-hidden
                 className={cn(
-                  "absolute left-2 top-1.5 h-2 w-2 animate-pulse rounded-full",
+                  "absolute left-2 top-1.5 h-2 w-2 motion-safe:animate-pulse rounded-full",
                   opt.dot === "amber" ? "bg-amber-500" : "bg-danger",
                 )}
               />
@@ -65,7 +65,7 @@ export function StatTabs<T extends string>({
               <span className="truncate">{opt.label}</span>
             </span>
             {typeof opt.count === "number" && (
-              <span className={cn("text-[11px] font-bold tabular-nums", active ? "opacity-85" : "opacity-70")}>
+              <span className={cn("text-xs font-bold tabular-nums", active ? "opacity-85" : "opacity-70")}>
                 {opt.count}
               </span>
             )}

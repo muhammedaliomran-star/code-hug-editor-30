@@ -104,7 +104,7 @@ export function TeamTab() {
         hint="تحديد الصلاحيات المتاحة للمالك والمدير والبائع في النظام."
       >
         {roleLoading ? (
-          <div className="h-24 rounded-2xl bg-muted animate-pulse" />
+          <div className="h-24 rounded-2xl bg-muted motion-safe:animate-pulse" />
         ) : (
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-4 p-6 rounded-[2rem] bg-primary/[0.03] border border-primary/10">
@@ -190,7 +190,7 @@ export function TeamTab() {
         {loading ? (
           <div className="space-y-2">
             {[0, 1].map((i) => (
-              <div key={i} className="h-16 rounded-2xl bg-muted animate-pulse" />
+              <div key={i} className="h-16 rounded-2xl bg-muted motion-safe:animate-pulse" />
             ))}
           </div>
         ) : members.length === 0 ? (

@@ -39,10 +39,10 @@ export function UserChip({ className = "" }: { className?: string }) {
     return (
       <div className={cn("flex items-center gap-2.5 rounded-full px-2 py-1.5", className)}>
         <div className="flex items-center gap-2.5 rounded-full px-2 py-1.5">
-          <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-foreground/10" />
+          <span className="h-9 w-9 shrink-0 motion-safe:animate-pulse rounded-full bg-foreground/10" />
           <span className="flex-1 space-y-1.5">
-            <span className="block h-2.5 w-24 animate-pulse rounded-full bg-foreground/10" />
-            <span className="block h-2 w-32 animate-pulse rounded-full bg-foreground/[0.07]" />
+            <span className="block h-2.5 w-24 motion-safe:animate-pulse rounded-full bg-foreground/10" />
+            <span className="block h-2 w-32 motion-safe:animate-pulse rounded-full bg-foreground/[0.07]" />
           </span>
         </div>
       </div>

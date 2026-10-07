@@ -296,7 +296,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <p className="text-[10px] text-muted-foreground truncate">لوحة الإدارة والقرارات</p>
             </div>
           </div>
-          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="جاهز للعمل" />
+          <span className="h-2 w-2 rounded-full bg-emerald-500 motion-safe:animate-pulse shrink-0" title="جاهز للعمل" />
         </Link>
 
         <nav className="stagger no-scrollbar -mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1">
@@ -318,7 +318,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="flex items-center gap-2">
                   {n.label}
                   {showBadge && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[10px] font-bold leading-none animate-pulse">
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[10px] font-bold leading-none motion-safe:animate-pulse">
                       {overdueCount}
                     </span>
                   )}

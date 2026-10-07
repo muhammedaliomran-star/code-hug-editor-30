@@ -333,7 +333,7 @@ export function ShiftManagerDialog({ open, onOpenChange, onShiftUpdated }: Shift
               <div className="space-y-4 my-2">
                 <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-3">
-                    <span className="h-3 w-3 rounded-full bg-success animate-pulse" />
+                    <span className="h-3 w-3 rounded-full bg-success motion-safe:animate-pulse" />
                     <div>
                       <div className="text-sm font-bold text-foreground">
                         وردية مفتوحة: {activeShift.cashierName}
