@@ -14,7 +14,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-primary/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-foreground/[0.05] text-muted-foreground group-hover:scale-105 group-hover:bg-primary/10 group-hover:text-primary transition-[transform,background-color,color]">
               <Plus className="h-4 w-4" />
             </span>
             <div className="text-right">
@@ -30,7 +30,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-emerald-500/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-foreground/[0.05] text-muted-foreground group-hover:scale-105 group-hover:bg-primary/10 group-hover:text-primary transition-[transform,background-color,color]">
               <ArrowDownLeft className="h-4 w-4" />
             </span>
             <div className="text-right">
@@ -46,7 +46,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-rose-500/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-foreground/[0.05] text-muted-foreground group-hover:scale-105 group-hover:bg-primary/10 group-hover:text-primary transition-[transform,background-color,color]">
               <ArrowUpRight className="h-4 w-4" />
             </span>
             <div className="text-right">
@@ -62,7 +62,7 @@ export function QuickActionsSection() {
           className="flex items-center justify-between p-3.5 rounded-2xl bg-card border border-border/70 hover:border-amber-500/50 transition-[border-color,box-shadow,background-color] duration-300 group hover:shadow-md"
         >
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+            <span className="p-2.5 rounded-xl bg-foreground/[0.05] text-muted-foreground group-hover:scale-105 group-hover:bg-primary/10 group-hover:text-primary transition-[transform,background-color,color]">
               <Wallet className="h-4 w-4" />
             </span>
             <div className="text-right">

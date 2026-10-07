@@ -72,7 +72,7 @@ function DashboardInner() {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to="/owner"
-              className="island-btn group bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/40 hover:bg-amber-500/25 font-bold"
+              className="island-btn group bg-foreground/[0.05] text-amber-300 ring-1 ring-border hover:bg-foreground/[0.09] font-bold"
             >
               <span>تطبيق المالك (سِجلّي Boss)</span>
               <span className="island-btn-icon text-amber-400">
@@ -123,10 +123,10 @@ function DashboardInner() {
             <Link
               to="/reconciliation"
               className={cn(
-                "island-btn group ring-1 transition-all",
+                "island-btn group ring-1 ring-border transition-[background-color,box-shadow]",
                 reconciliationSummary.healthScore >= 90
-                  ? "bg-emerald-500/10 text-emerald-600 ring-emerald-500/20 hover:bg-emerald-500/20"
-                  : "bg-amber-500/10 text-amber-600 ring-amber-500/20 hover:bg-amber-500/20"
+                  ? "bg-foreground/[0.05] text-success hover:bg-foreground/[0.09]"
+                  : "bg-foreground/[0.05] text-warning hover:bg-foreground/[0.09]"
               )}
             >
               <span>المطابقة {reconciliationSummary.healthScore}%</span>
