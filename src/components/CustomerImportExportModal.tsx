@@ -489,15 +489,15 @@ export function CustomerImportExportModal({
                         <tr key={i} className={cn(!r.isValid && "bg-danger/5", r.isDuplicateInDB && "bg-warning/5")}>
                           <td className="p-2.5">
                             {r.isDuplicateInDB ? (
-                              <Badge variant="outline" className="bg-warning/15 text-warning border-warning/40 text-[10px]">
+                              <Badge variant="outline" className="bg-warning/15 text-warning border-warning/40 text-[11px]">
                                 مكرر بالنظام
                               </Badge>
                             ) : !r.isValid ? (
-                              <Badge variant="outline" className="bg-danger/15 text-danger border-danger/40 text-[10px]">
+                              <Badge variant="outline" className="bg-danger/15 text-danger border-danger/40 text-[11px]">
                                 {r.errorReason || "خطأ"}
                               </Badge>
                             ) : (
-                              <Badge variant="outline" className="bg-success/15 text-success border-success/40 text-[10px]">
+                              <Badge variant="outline" className="bg-success/15 text-success border-success/40 text-[11px]">
                                 سليم ✓
                               </Badge>
                             )}

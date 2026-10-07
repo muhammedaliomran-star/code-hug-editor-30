@@ -273,7 +273,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           to="/owner"
           className={cn(
-            "group relative flex items-center justify-between gap-3 rounded-2xl p-3 border transition-all duration-300",
+            "group relative flex items-center justify-between gap-3 rounded-2xl p-3 border transition-[background-color,border-color,box-shadow] duration-300",
             location.pathname.startsWith("/owner")
               ? "bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm"
               : "bg-card/70 border-border/80 text-foreground hover:bg-card hover:border-amber-500/30"
@@ -291,9 +291,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <div className="min-w-0 text-right">
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-bold truncate">تطبيق المالك</span>
-                <span className="inline-block rounded-md bg-amber-500/20 px-1 py-0.2 text-[9px] font-extrabold text-amber-400">Boss</span>
+                <span className="inline-block rounded-md bg-amber-500/20 px-1 py-0.2 text-[11px] font-extrabold text-amber-400">Boss</span>
               </div>
-              <p className="text-[10px] text-muted-foreground truncate">لوحة الإدارة والقرارات</p>
+              <p className="text-[11px] text-muted-foreground truncate">لوحة الإدارة والقرارات</p>
             </div>
           </div>
           <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" title="جاهز للعمل" />
@@ -318,7 +318,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="flex items-center gap-2">
                   {n.label}
                   {showBadge && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[10px] font-bold leading-none">
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[11px] font-bold leading-none">
                       {overdueCount}
                     </span>
                   )}

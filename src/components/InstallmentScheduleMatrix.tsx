@@ -181,22 +181,22 @@ export function InstallmentScheduleMatrix({
                   </td>
                   <td className="p-2 text-center">
                     {row.status === "paid" && (
-                      <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[10px] gap-1 py-0.5">
+                      <Badge variant="outline" className="bg-success/15 text-success border-success/30 text-[11px] gap-1 py-0.5">
                         <CheckCircle2 className="w-3 h-3" /> مسدد بالكامل
                       </Badge>
                     )}
                     {row.status === "partial" && (
-                      <Badge variant="outline" className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px] gap-1 py-0.5">
+                      <Badge variant="outline" className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[11px] gap-1 py-0.5">
                         <Clock className="w-3 h-3" /> مسدد جزئياً
                       </Badge>
                     )}
                     {row.status === "overdue" && (
-                      <Badge variant="outline" className="bg-danger/15 text-danger border-danger/30 text-[10px] gap-1 py-0.5 font-bold">
+                      <Badge variant="outline" className="bg-danger/15 text-danger border-danger/30 text-[11px] gap-1 py-0.5 font-bold">
                         <AlertTriangle className="w-3 h-3" /> متأخر {row.daysLate} يوم
                       </Badge>
                     )}
                     {row.status === "upcoming" && (
-                      <Badge variant="outline" className="bg-foreground/[0.06] text-muted-foreground border-border text-[10px] gap-1 py-0.5">
+                      <Badge variant="outline" className="bg-foreground/[0.06] text-muted-foreground border-border text-[11px] gap-1 py-0.5">
                         <Calendar className="w-3 h-3" /> قادم في موعده
                       </Badge>
                     )}
@@ -208,12 +208,12 @@ export function InstallmentScheduleMatrix({
                           size="sm"
                           variant="outline"
                           onClick={() => onPayInstallment(row.remainingAmount, row.index)}
-                          className="h-6 px-2 text-[10px] gap-1 border-success/40 text-success hover:bg-success/10 font-bold"
+                          className="h-10 px-3 text-[11px] gap-1 border-success/40 text-success hover:bg-success/10 font-bold"
                         >
                           <Wallet className="w-2.5 h-2.5" /> سداد
                         </Button>
                       ) : (
-                        <span className="text-[10px] text-success font-bold">✓ تم</span>
+                        <span className="text-[11px] text-success font-bold">✓ تم</span>
                       )}
                     </td>
                   )}

@@ -99,11 +99,11 @@ export function CustomerCardModal({
           {/* Key metrics */}
           <div className="grid grid-cols-2 gap-2 w-full pt-2 border-t border-border/30 text-xs">
             <div className="p-2 rounded-xl bg-background/80 border border-border/30">
-              <span className="text-muted-foreground block text-[10px]">المديونية</span>
+              <span className="text-muted-foreground block text-[11px]">المديونية</span>
               <span className="font-extrabold text-danger text-sm">{fmt(balance)} ج.م</span>
             </div>
             <div className="p-2 rounded-xl bg-background/80 border border-border/30">
-              <span className="text-muted-foreground block text-[10px]">نوع الحساب</span>
+              <span className="text-muted-foreground block text-[11px]">نوع الحساب</span>
               <span className="font-bold text-foreground">
                 {customer.customerType === "cash" ? "فوري (نقدي)" : `أقساط (يوم ${customer.dueDay})`}
               </span>

@@ -265,7 +265,7 @@ export function CreateInvoiceShipmentDialog({
                 placeholder="0"
                 className="font-bold text-center"
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 المبلغ المطلوب تحصيله من العميل
               </p>
             </div>
@@ -279,7 +279,7 @@ export function CreateInvoiceShipmentDialog({
                 placeholder="0"
                 className="text-center"
               />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-[11px] text-muted-foreground mt-0.5">
                 رسوم شركة الشحن
               </p>
             </div>
@@ -339,14 +339,14 @@ export function CreateInvoiceShipmentDialog({
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="h-6 text-[10px]"
+                className="h-10 text-[11px]"
                 onClick={() => setShippingCost(String(pricing.total))}
               >
                 تطبيق ({fmt(pricing.total)})
               </Button>
             </div>
             {pricing.lines.map((l) => (
-              <div key={l.label} className="flex items-center justify-between text-[10px] text-muted-foreground">
+              <div key={l.label} className="flex items-center justify-between text-[11px] text-muted-foreground">
                 <span>{l.label}</span>
                 <span className="font-mono">{fmt(l.value)}</span>
               </div>

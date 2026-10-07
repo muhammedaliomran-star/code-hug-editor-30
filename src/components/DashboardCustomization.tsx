@@ -255,7 +255,7 @@ export function DashboardCustomizationModal({
               <div className="text-right flex-1 pe-3">
                 <div className="text-sm font-bold text-foreground flex items-center justify-end gap-2">
                   <span>{section.label}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-medium">
                     #{idx + 1}
                   </span>
                 </div>

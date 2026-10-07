@@ -40,7 +40,7 @@ export function BranchSwitcher({ className }: { className?: string }) {
           variant="outline"
           size="sm"
           className={cn(
-            "h-9 gap-2 rounded-full border-foreground/10 bg-card/60 px-3 text-xs font-semibold hover:bg-card/90 shadow-sm transition-all",
+            "h-9 gap-2 rounded-full border-foreground/10 bg-card/60 px-3 text-xs font-semibold hover:bg-card/90 shadow-sm transition-colors",
             activeId !== "all" && "ring-1 ring-primary/40 bg-primary/10 text-primary border-primary/20",
             className
           )}
@@ -50,7 +50,7 @@ export function BranchSwitcher({ className }: { className?: string }) {
             {activeId === "all" ? "كل الفروع" : currentBranch?.name || "الفرع المحدد"}
           </span>
           {activeId !== "all" && currentBranch?.isMain && (
-            <Badge variant="secondary" className="h-4 px-1 text-[9px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400">
+            <Badge variant="secondary" className="h-4 px-1 text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400">
               الرئيسي
             </Badge>
           )}
@@ -98,7 +98,7 @@ export function BranchSwitcher({ className }: { className?: string }) {
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
                   {b.isMain && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold">
+                    <span className="text-[11px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-bold">
                       رئيسي
                     </span>
                   )}

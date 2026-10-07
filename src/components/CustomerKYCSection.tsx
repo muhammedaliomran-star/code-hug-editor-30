@@ -182,7 +182,7 @@ export function CustomerKYCSection({
                 </div>
                 <div className="text-right flex-1">
                   <div className="font-bold text-xs">{slot.label}</div>
-                  <div className="text-[10px] text-muted-foreground">{slot.description}</div>
+                  <div className="text-[11px] text-muted-foreground">{slot.description}</div>
                 </div>
               </div>
 
