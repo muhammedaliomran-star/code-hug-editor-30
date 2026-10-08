@@ -434,7 +434,7 @@ function DailyPage() {
             <label className="block text-right">
               <MetricLabel className="mb-1.5 text-xs">العميل</MetricLabel>
               <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
                 <SelectContent dir="rtl">
                   <SelectItem value="all">كل العملاء</SelectItem>
                   {customers.map((c) => (
@@ -449,7 +449,7 @@ function DailyPage() {
             <label className="block text-right">
               <MetricLabel className="mb-1.5 text-xs">نوع التعامل</MetricLabel>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent dir="rtl">
                   <SelectItem value="all">كل الأنواع (فوري + قسط)</SelectItem>
                   <SelectItem value="installment">قسط فقط</SelectItem>
@@ -460,7 +460,7 @@ function DailyPage() {
             <label className="block text-right">
               <MetricLabel className="mb-1.5 text-xs">حالة الفاتورة</MetricLabel>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent dir="rtl">
                   <SelectItem value="all">كل الحالات</SelectItem>
                   <SelectItem value="paid">مسدّدة بالكامل</SelectItem>
@@ -766,22 +766,22 @@ function DailyPage() {
                 <h2 className="text-base font-bold text-foreground">كشف تسوية الخزينة</h2>
               </div>
 
-              <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between items-center p-2 rounded-xl bg-background/50 border border-[var(--hairline)]">
+              <div className="divide-y divide-border/60 text-xs">
+                <div className="flex justify-between items-center py-2.5">
                   <span className="text-muted-foreground">إجمالي المبيعات المصدرة:</span>
                   <strong className={cn("font-mono text-foreground", masked && "privacy-blur")}>
                     {money(stats.sales)}
                   </strong>
                 </div>
 
-                <div className="flex justify-between items-center p-2 rounded-xl bg-success/5 border border-success/20">
+                <div className="flex justify-between items-center py-2.5">
                   <span className="text-success font-bold">التحصيلات والأقساط المستلمة:</span>
                   <strong className={cn("font-mono text-success text-sm font-black", masked && "privacy-blur")}>
                     +{money(stats.totalCollectedActual)}
                   </strong>
                 </div>
 
-                <div className="flex justify-between items-center p-2 rounded-xl bg-danger/5 border border-danger/20">
+                <div className="flex justify-between items-center py-2.5">
                   <span className="text-danger">المصروفات النقدية المسحوبة:</span>
                   <strong className={cn("font-mono text-danger", masked && "privacy-blur")}>
                     -{money(stats.periodExpenses)}
@@ -789,7 +789,7 @@ function DailyPage() {
                 </div>
 
                 {stats.periodReturnsTotal > 0 && (
-                  <div className="flex justify-between items-center p-2 rounded-xl bg-danger/5 border border-danger/20">
+                  <div className="flex justify-between items-center py-2.5">
                     <span className="text-danger">مرتجعات مبيعات نقدية:</span>
                     <strong className={cn("font-mono text-danger", masked && "privacy-blur")}>
                       -{money(stats.periodReturnsTotal)}
@@ -797,7 +797,7 @@ function DailyPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between items-center p-3 rounded-xl bg-primary/10 border border-primary/30 pt-3">
+                <div className="flex justify-between items-center py-3">
                   <span className="font-bold text-foreground">صافي رصيد الخزينة بالدرج:</span>
                   <strong className={cn("font-mono text-base font-black text-primary", masked && "privacy-blur")}>
                     {money(stats.netCashDrawer)}
@@ -807,7 +807,7 @@ function DailyPage() {
 
               <div className="border-t border-[var(--hairline)] pt-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-medium text-muted-foreground">تُحفَظ محلياً تلقائياً</span>
+                  <span className="text-[11px] font-medium text-muted-foreground">تُحفَظ محلياً تلقائياً</span>
                   <h3 className="text-xs font-bold text-foreground">ملاحظة اليوم واليومية</h3>
                 </div>
                 <Textarea
@@ -870,12 +870,12 @@ function AddExpenseDialog({
         <div className="grid gap-3 py-2">
           <div className="grid gap-1.5">
             <Label className="text-xs">المبلغ (ج.م)</Label>
-            <Input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0" className="h-9 text-xs" />
+            <Input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0" className="h-10 text-xs" />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">التصنيف</Label>
             <Select value={category} onValueChange={(v) => setCategory(v as ExpenseCategory)}>
-              <SelectTrigger className="h-9 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent dir="rtl">
                 {EXPENSE_CATEGORIES.map((c) => (
                   <SelectItem key={c.value} value={c.value}>{expenseCategoryLabel(c.value)}</SelectItem>
@@ -885,7 +885,7 @@ function AddExpenseDialog({
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">التاريخ</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} dir="ltr" className="h-9 text-xs" />
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} dir="ltr" className="h-10 text-xs" />
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">ملاحظات وبيان الصرف</Label>
