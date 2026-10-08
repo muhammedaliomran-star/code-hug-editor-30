@@ -13,10 +13,11 @@ export function NetworkStatusIndicator() {
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        className="w-full bg-warning/20 border-b border-warning/30 px-4 py-2 text-warning flex items-center justify-between text-xs sm:text-sm font-medium z-50 backdrop-blur-md"
+        exit={{ opacity: 0, y: -12 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="fixed top-3 right-3 left-3 sm:left-auto sm:w-[440px] rounded-2xl bg-warning/20 border border-warning/30 px-4 py-2.5 text-warning flex items-center justify-between gap-3 text-xs sm:text-sm font-medium z-[60] backdrop-blur-md shadow-xl"
       >
         <div className="flex items-center gap-2">
           {!isOnline ? (
@@ -38,7 +39,7 @@ export function NetworkStatusIndicator() {
             variant="outline"
             onClick={triggerSync}
             disabled={isSyncing}
-            className="h-7 text-xs gap-1 border-warning/40 hover:bg-warning/20 text-warning"
+            className="h-10 text-xs gap-1.5 px-3 border-warning/40 hover:bg-warning/20 text-warning"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
             {isSyncing ? "جاري المزامنة..." : "مزامنة الآن"}

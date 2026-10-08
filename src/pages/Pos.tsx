@@ -676,7 +676,7 @@ function PosPage() {
                   كاشير سريع
                 </Badge>
               </h1>
-              <p className="text-[11px] text-muted-foreground hidden sm:block">
+              <p className="text-xs text-muted-foreground hidden sm:block">
                 اختيار الأصناف بنقرة واحدة، طباعة الفاتورة، وتعليق الطلبات فورياً.
               </p>
             </div>
@@ -690,7 +690,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={() => setRefundModalOpen(true)}
-            className="gap-1.5 rounded-xl border-danger/30 text-danger hover:bg-danger/10 font-bold h-10 text-xs"
+            className="gap-1.5 rounded-xl border-border/50 text-danger hover:bg-foreground/[0.06] font-bold h-10 text-xs"
             title="مرتجع سريع (F3)"
           >
             <Undo2 className="h-4 w-4" />
@@ -704,7 +704,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={handleOpenCustomerDisplay}
-            className="gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 font-bold h-10 text-xs"
+            className="gap-1.5 rounded-xl border-border/50 text-primary hover:bg-foreground/[0.06] font-bold h-10 text-xs"
             title="فتح شاشة عرض العميل (F10)"
           >
             <Tv className="h-4 w-4" />
@@ -717,7 +717,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={() => setShiftDialogOpen(true)}
-            className="gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 font-bold h-10 text-xs"
+            className="gap-1.5 rounded-xl border-border/50 text-primary hover:bg-foreground/[0.06] font-bold h-10 text-xs"
           >
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">الوردية (Z-Report)</span>
@@ -730,7 +730,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={() => setHeldModalOpen(true)}
-            className="relative gap-1.5 rounded-xl border-warning/40 text-warning hover:bg-warning/10 font-bold h-10 text-xs"
+            className="relative gap-1.5 rounded-xl border-border/50 text-warning hover:bg-foreground/[0.06] font-bold h-10 text-xs"
           >
             <PauseCircle className="h-4 w-4" />
             <span>معلّق (F9)</span>
@@ -797,7 +797,7 @@ function PosPage() {
                 variant="outline"
                 size="sm"
                 onClick={() => setScanOpen(true)}
-                className="h-10 gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 px-3 shrink-0 font-bold text-xs"
+                className="h-10 gap-1.5 rounded-xl border-border/50 text-primary hover:bg-foreground/[0.06] px-3 shrink-0 font-bold text-xs"
               >
                 <ScanLine className="h-4 w-4" />
                 <span className="hidden sm:inline">مسح باركود</span>
@@ -924,9 +924,9 @@ function PosPage() {
         {/* Cart & Fast Checkout Sidebar */}
         <div className="flex flex-col min-h-0 bg-card p-3.5 sm:p-4 space-y-3 shadow-lg">
           {/* Customer Selection Row */}
-          <div className="p-2.5 rounded-2xl border border-border/40 bg-foreground/[0.02] flex items-center justify-between gap-2 shrink-0">
+          <div className="py-2.5 flex items-center justify-between gap-2 shrink-0 border-b border-border/40">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary grid place-items-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-foreground/[0.06] text-muted-foreground grid place-items-center shrink-0">
                 <User className="w-4 h-4" />
               </div>
               <div className="min-w-0">
@@ -954,7 +954,7 @@ function PosPage() {
                 variant="outline"
                 size="icon"
                 onClick={() => setQuickCustOpen(true)}
-                className="h-10 w-10 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
+                className="h-10 w-10 rounded-xl border-border/50 text-primary hover:bg-foreground/[0.06]"
                 title="إضافة عميل جديد سريع"
               >
                 <UserPlus className="h-3.5 w-3.5" />
@@ -968,7 +968,7 @@ function PosPage() {
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-2 border-2 border-dashed border-border/40 rounded-2xl">
                 <ShoppingCart className="h-10 w-10 text-muted-foreground/30" />
                 <p className="text-xs font-bold">السلة فارغة</p>
-                <p className="text-[11px] text-muted-foreground/70">
+                <p className="text-xs text-muted-foreground/70">
                   اضغط على الأصناف لإضافتها مباشرة للفاتورة.
                 </p>
               </div>
@@ -1127,7 +1127,7 @@ function PosPage() {
 
             {/* Total Big Display */}
             <div className="p-3 rounded-2xl bg-foreground text-background flex items-center justify-between shadow-sm">
-              <span className="text-xs font-bold uppercase tracking-wider text-background/80">
+              <span className="text-xs font-bold text-background/80">
                 المجموع المستحق
               </span>
               <span className="text-xl sm:text-2xl font-black font-mono">
@@ -1165,7 +1165,7 @@ function PosPage() {
                 <button
                   type="button"
                   onClick={() => setCashReceived(String(total))}
-                    className="flex-1 min-h-[40px] rounded-lg bg-primary/10 hover:bg-primary/20 text-[11px] font-bold font-mono text-primary transition-colors"
+                    className="flex-1 min-h-[40px] rounded-lg bg-foreground/[0.05] hover:bg-foreground/[0.09] text-[11px] font-bold font-mono text-primary transition-colors"
                 >
                   بالضبط
                 </button>
@@ -1203,7 +1203,7 @@ function PosPage() {
                   size="sm"
                   disabled={cart.length === 0}
                   onClick={handleHoldCart}
-                   className="rounded-xl border-warning/40 text-warning hover:bg-warning/10 font-bold h-10 text-xs gap-1.5 px-3"
+                   className="rounded-xl border-border/50 text-warning hover:bg-foreground/[0.06] font-bold h-10 text-xs gap-1.5 px-3"
                 >
                   <PauseCircle className="h-3.5 w-3.5" />
                   <span>تعليق (F8)</span>

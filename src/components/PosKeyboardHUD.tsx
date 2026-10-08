@@ -122,9 +122,9 @@ export function PosKeyboardHUD({
             className={cn(
               "flex items-center gap-1 px-2.5 min-h-[40px] rounded-lg border transition-[background-color,border-color,color] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold",
               sc.highlight
-                ? "bg-amber-500/10 border-amber-500/30 text-amber-600 font-bold"
+                ? "bg-foreground/[0.05] border-border/50 text-amber-600 font-bold"
                 : sc.tone === "primary"
-                ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+                ? "bg-foreground/[0.05] border-border/50 text-primary hover:bg-foreground/[0.09]"
                 : sc.tone === "danger"
                 ? "bg-danger/5 border-danger/20 text-danger hover:bg-danger/10"
                 : "bg-muted/40 border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground"
