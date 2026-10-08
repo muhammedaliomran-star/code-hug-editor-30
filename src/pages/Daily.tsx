@@ -807,7 +807,7 @@ function DailyPage() {
 
               <div className="border-t border-[var(--hairline)] pt-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-medium text-muted-foreground">تُحفَظ محلياً تلقائياً</span>
+                  <span className="text-xs font-medium text-muted-foreground">تُحفَظ محلياً تلقائياً</span>
                   <h3 className="text-xs font-bold text-foreground">ملاحظة اليوم واليومية</h3>
                 </div>
                 <Textarea
