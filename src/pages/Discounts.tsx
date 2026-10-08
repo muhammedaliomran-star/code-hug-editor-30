@@ -600,14 +600,14 @@ export default function Discounts() {
 
                             <div className="flex items-center gap-1">
                               {coupon.isLoyaltyReward && (
-                                <Badge variant="outline" className="text-[10px] bg-warning/10 text-warning border-warning/30 gap-1 py-0.5">
+                                <Badge variant="outline" className="text-[11px] bg-warning/10 text-warning border-warning/30 gap-1 py-0.5">
                                   <Award className="w-2.5 h-2.5" /> مكافأة ولاء
                                 </Badge>
                               )}
                               <Badge
                                 variant="outline"
                                 className={cn(
-                                  "text-[10px] font-bold py-0.5",
+                                  "text-[11px] font-bold py-0.5",
                                   status.color === "success" && "bg-success/10 text-success border-success/30",
                                   status.color === "warning" && "bg-warning/10 text-warning border-warning/30",
                                   status.color === "danger" && "bg-danger/10 text-danger border-danger/30",
@@ -619,7 +619,7 @@ export default function Discounts() {
                             </div>
                           </div>
 
-                          <h4 className="font-bold text-sm text-foreground line-clamp-1">{coupon.title}</h4>
+                          <h2 className="font-bold text-sm text-foreground line-clamp-1">{coupon.title}</h2>
 
                           <div className="mt-2 flex items-baseline gap-2">
                             <span className="text-xl font-black text-foreground font-mono">
@@ -652,7 +652,7 @@ export default function Discounts() {
                               )}
                             </span>
                             {coupon.maxUsage !== null && (
-                              <span className="font-mono text-[10px] text-muted-foreground">{usagePct.toFixed(0)}%</span>
+                              <span className="font-mono text-[11px] text-muted-foreground">{usagePct.toFixed(0)}%</span>
                             )}
                           </div>
 
@@ -669,7 +669,7 @@ export default function Discounts() {
                           )}
 
                           {/* Validity Date */}
-                          <div className="flex items-center justify-between text-[10px]">
+                          <div className="flex items-center justify-between text-[11px]">
                             <span className="flex items-center gap-1 text-muted-foreground">
                               <Calendar className="w-3 h-3" />
                               {coupon.endsAt
@@ -678,7 +678,7 @@ export default function Discounts() {
                             </span>
 
                             {coupon.customerEligibility !== "all" && (
-                              <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[9px] font-medium">
+                                <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
                                 {coupon.customerEligibility === "vip"
                                   ? "مميزين VIP"
                                   : coupon.customerEligibility === "cash"
@@ -696,7 +696,7 @@ export default function Discounts() {
                               variant="outline"
                               size="sm"
                               onClick={() => handleOpenWhatsAppShare(coupon)}
-                              className="h-8 px-2.5 rounded-lg text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 border-emerald-500/30 gap-1.5"
+                              className="h-10 px-3 rounded-lg text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 border-emerald-500/30 gap-1.5"
                             >
                               <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
                               واتساب
@@ -708,7 +708,7 @@ export default function Discounts() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => toggleCouponStatus(coupon.id)}
-                                className="h-8 px-2 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                                className="h-10 px-3 text-[11px] font-medium text-muted-foreground hover:text-foreground"
                               >
                                 {coupon.active ? "تعطيل" : "تفعيل"}
                               </Button>
@@ -786,7 +786,7 @@ export default function Discounts() {
                             خصم {offer.discountPercentage}%
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm">{offer.title}</h4>
+                        <h2 className="font-bold text-sm">{offer.title}</h2>
                         {offer.notes && <p className="text-xs text-muted-foreground mt-1">{offer.notes}</p>}
                       </div>
 
@@ -856,12 +856,12 @@ export default function Discounts() {
                             − {fmt(bundle.discountAmount)} ج.م
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm">{bundle.title}</h4>
+                        <h2 className="font-bold text-sm">{bundle.title}</h2>
                         <div className="flex flex-wrap gap-1 mt-2">
                           {bundle.itemKeywords.map((kw, i) => (
                             <span
                               key={i}
-                              className="px-2 py-0.5 rounded-md bg-muted/70 text-[10px] font-bold text-foreground border border-border/30"
+                              className="px-2 py-0.5 rounded-md bg-muted/70 text-[11px] font-bold text-foreground border border-border/30"
                             >
                               + {kw}
                             </span>
@@ -1014,7 +1014,7 @@ export default function Discounts() {
                           <tr key={stat.customer.id} className="hover:bg-muted/30 transition-colors">
                             <td className="py-3 font-bold text-foreground">
                               {stat.customer.name}
-                              <span className="block text-[10px] font-normal text-muted-foreground">{stat.customer.phone}</span>
+                              <span className="block text-[11px] font-normal text-muted-foreground">{stat.customer.phone}</span>
                             </td>
                             <td className={cn("py-3 font-mono font-medium", blurCls)}>
                               {fmt(stat.totalSpent)} ج.م
@@ -1036,7 +1036,7 @@ export default function Discounts() {
                                   const cpn = generateCustomerLoyaltyVoucher(stat.customer, stat.availablePoints);
                                   toast.success(`تم توليد كوبون مكافأة ولاء (${cpn.code}) بقيمة ${cpn.discountValue} ج.م!`);
                                 }}
-                                className="h-7 px-2.5 rounded-lg text-[11px] font-bold gap-1 bg-warning text-warning-foreground hover:bg-warning/90 disabled:opacity-40"
+                                className="h-10 px-3 rounded-lg text-[11px] font-bold gap-1.5 bg-warning text-warning-foreground hover:bg-warning/90 disabled:opacity-40"
                               >
                                 <Gift className="w-3 h-3" />
                                 تحويل لكوبون
@@ -1118,7 +1118,7 @@ export default function Discounts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">سعر البيع (ج.م)</Label>
+                    <Label className="text-[11px] text-muted-foreground">سعر البيع (ج.م)</Label>
                     <Input
                       type="number"
                       value={simPrice}
@@ -1127,7 +1127,7 @@ export default function Discounts() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">التكلفة (ج.م)</Label>
+                    <Label className="text-[11px] text-muted-foreground">التكلفة (ج.م)</Label>
                     <Input
                       type="number"
                       value={simCost}
@@ -1139,7 +1139,7 @@ export default function Discounts() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">نوع الخصم</Label>
+                    <Label className="text-[11px] text-muted-foreground">نوع الخصم</Label>
                     <Select value={simDiscType} onValueChange={(v: any) => setSimDiscType(v)}>
                       <SelectTrigger className="h-9 text-xs">
                         <SelectValue />
@@ -1151,7 +1151,7 @@ export default function Discounts() {
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">قيمة الخصم</Label>
+                    <Label className="text-[11px] text-muted-foreground">قيمة الخصم</Label>
                     <Input
                       type="number"
                       value={simDiscVal}
@@ -1462,7 +1462,7 @@ export default function Discounts() {
                   onChange={(e) => setBundleKeywords(e.target.value)}
                   placeholder="مثال: هاتف, شاحن"
                 />
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground">
                   عند وجود صنف يحتوي الكلمة الأولى وصنف يحتوي الكلمة الثانية في نفس الفاتورة، يُطبق الخصم تلقائياً.
                 </p>
               </div>
