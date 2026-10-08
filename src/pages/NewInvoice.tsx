@@ -56,7 +56,7 @@ import {
   EyeOff,
   Truck,
   Undo2,
-  Sparkles,
+  Lightbulb,
   CreditCard,
   Smartphone,
   PauseCircle,
@@ -638,7 +638,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-foreground/[0.03] border border-foreground/5 text-xs text-muted-foreground">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-bold text-foreground flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-primary" /> اختصارات الكاشير:
+            <Lightbulb className="w-3.5 h-3.5 text-primary" /> اختصارات الكاشير:
           </span>
           <span className="px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 font-mono">
             F1 عميل فوري
@@ -846,7 +846,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                 onSubmit={handleQuickBarcodeSubmit}
                 className="p-3.5 rounded-2xl bg-primary/[0.04] border border-primary/20 flex items-center gap-2"
               >
-                <ScanLine className="w-5 h-5 text-primary shrink-0 animate-pulse" />
+                <ScanLine className="w-5 h-5 text-primary shrink-0" />
                 <Input
                   ref={barcodeInputRef}
                   value={quickBarcodeInput}

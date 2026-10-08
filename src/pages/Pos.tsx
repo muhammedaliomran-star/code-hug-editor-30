@@ -38,7 +38,7 @@ import { PosKeyboardHUD } from "@/components/PosKeyboardHUD";
 import { broadcastCustomerDisplay } from "@/lib/customer-display";
 import {
   Plus, Minus, Trash2, Search, ScanLine, Printer, UserPlus,
-  ArrowRight, Eye, EyeOff, Check, X, Sparkles, PauseCircle,
+  ArrowRight, Eye, EyeOff, Check, X, PauseCircle,
   PlayCircle, MessageCircle, AlertTriangle, Package, Zap,
   Calculator, User, Receipt, Layers, RefreshCw, ShoppingCart,
   Clock, ShieldAlert, Percent, Tag, Tv, Undo2, HeartHandshake
@@ -672,7 +672,7 @@ function PosPage() {
             <div>
               <h1 className="text-base font-extrabold leading-tight text-foreground flex items-center gap-2">
                 نقطة البيع السريعة (POS)
-                <Badge variant="outline" className="text-[10px] font-bold border-primary/30 text-primary py-0">
+                <Badge variant="outline" className="text-[11px] font-bold border-primary/30 text-primary py-0">
                   كاشير سريع
                 </Badge>
               </h1>
@@ -690,7 +690,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={() => setRefundModalOpen(true)}
-            className="gap-1.5 rounded-xl border-danger/30 text-danger hover:bg-danger/10 font-bold h-9 text-xs"
+            className="gap-1.5 rounded-xl border-danger/30 text-danger hover:bg-danger/10 font-bold h-10 text-xs"
             title="مرتجع سريع (F3)"
           >
             <Undo2 className="h-4 w-4" />
@@ -704,7 +704,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={handleOpenCustomerDisplay}
-            className="gap-1.5 rounded-xl border-blue-500/30 text-blue-600 hover:bg-blue-500/10 font-bold h-9 text-xs"
+            className="gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 font-bold h-10 text-xs"
             title="فتح شاشة عرض العميل (F10)"
           >
             <Tv className="h-4 w-4" />
@@ -717,7 +717,7 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={() => setShiftDialogOpen(true)}
-            className="gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 font-bold h-9 text-xs"
+            className="gap-1.5 rounded-xl border-primary/30 text-primary hover:bg-primary/10 font-bold h-10 text-xs"
           >
             <Clock className="h-4 w-4" />
             <span className="hidden sm:inline">الوردية (Z-Report)</span>
@@ -730,12 +730,12 @@ function PosPage() {
             variant="outline"
             size="sm"
             onClick={() => setHeldModalOpen(true)}
-            className="relative gap-1.5 rounded-xl border-warning/40 text-warning hover:bg-warning/10 font-bold h-9 text-xs"
+            className="relative gap-1.5 rounded-xl border-warning/40 text-warning hover:bg-warning/10 font-bold h-10 text-xs"
           >
             <PauseCircle className="h-4 w-4" />
             <span>معلّق (F9)</span>
             {heldCount > 0 && (
-              <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-warning text-black text-[10px] font-black px-1 animate-pulse">
+              <span className="grid h-5 min-w-[20px] place-items-center rounded-full bg-warning text-black text-[11px] font-black px-1">
                 {heldCount}
               </span>
             )}
@@ -747,7 +747,7 @@ function PosPage() {
             size="icon"
             onClick={toggle}
             className={cn(
-              "h-9 w-9 rounded-xl transition-colors",
+              "h-10 w-10 rounded-xl transition-colors",
               privacy ? "bg-warning/10 text-warning" : "text-muted-foreground hover:bg-foreground/5"
             )}
             title={privacy ? "إظهار الأرباح" : "إخفاء الأرباح"}
@@ -756,7 +756,7 @@ function PosPage() {
           </Button>
 
           {/* Detailed Full Invoice Mode Link */}
-          <Button asChild variant="outline" size="sm" className="rounded-xl font-bold h-9 text-xs gap-1.5">
+          <Button asChild variant="outline" size="sm" className="rounded-xl font-bold h-10 text-xs gap-1.5">
             <Link to="/invoices/new">
               <Receipt className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">فاتورة أقساط</span>
@@ -815,8 +815,8 @@ function PosPage() {
                       key={cat}
                       type="button"
                       onClick={() => setSelectedCategory(cat)}
-                      className={cn(
-                        "rounded-xl px-3 py-1.5 text-xs font-bold transition-all whitespace-nowrap shrink-0",
+                  className={cn(
+                    "rounded-xl px-3 py-1.5 min-h-[40px] inline-flex items-center justify-center text-xs font-bold transition-[background-color,border-color,color,box-shadow] whitespace-nowrap shrink-0",
                         active
                           ? "bg-foreground text-background shadow-sm"
                           : "bg-card border border-border/40 text-muted-foreground hover:bg-foreground/[0.05]"
@@ -856,7 +856,7 @@ function PosPage() {
                       disabled={isOutOfStock}
                       onClick={() => addToCart(p)}
                       className={cn(
-                        "relative flex flex-col justify-between text-right p-3 rounded-2xl border transition-all duration-150 group",
+                        "relative flex flex-col justify-between text-right p-3 rounded-2xl border transition-[border-color,box-shadow,background-color,transform] duration-150 group",
                         isOutOfStock
                           ? "bg-muted/30 border-border/30 opacity-50 cursor-not-allowed"
                           : inCartItem
@@ -877,7 +877,7 @@ function PosPage() {
                           {p.name}
                         </div>
                         {p.size && (
-                          <span className="inline-block mt-0.5 text-[10px] text-muted-foreground/80 bg-foreground/5 px-1.5 py-0.2 rounded">
+                          <span className="inline-block mt-0.5 text-[11px] text-muted-foreground/80 bg-foreground/5 px-1.5 py-0.2 rounded">
                             مقاس: {p.size}
                           </span>
                         )}
@@ -887,10 +887,10 @@ function PosPage() {
                       <div className="mt-3 pt-2 border-t border-border/30 flex items-end justify-between gap-1">
                         <div>
                           <div className="font-black text-sm sm:text-base font-mono text-primary">
-                            {fmt(p.salePrice || 0)} <span className="text-[10px] font-normal text-muted-foreground">ج.م</span>
+                            {fmt(p.salePrice || 0)} <span className="text-[11px] font-normal text-muted-foreground">ج.م</span>
                           </div>
                           {!privacy && p.lastUnitCost > 0 && (
-                            <div className="text-[9px] text-muted-foreground font-mono">
+                            <div className="text-[11px] text-muted-foreground font-mono">
                               ت: {fmt(p.lastUnitCost)} ج.م
                             </div>
                           )}
@@ -899,15 +899,15 @@ function PosPage() {
                         {/* Live Stock Indicators */}
                         <div className="text-left shrink-0">
                           {isOutOfStock ? (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-md">
+                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-md">
                               نفد
                             </span>
                           ) : isLowStock ? (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-bold text-warning bg-warning/15 px-1.5 py-0.5 rounded-md animate-pulse">
+                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-warning bg-warning/15 px-1.5 py-0.5 rounded-md">
                               باقي {p.quantity}
                             </span>
                           ) : (
-                            <span className="text-[10px] text-muted-foreground font-medium">
+                              <span className="text-[11px] text-muted-foreground font-medium">
                               المخزن: <b className="text-foreground">{p.quantity}</b>
                             </span>
                           )}
@@ -933,7 +933,7 @@ function PosPage() {
                 <div className="text-xs font-bold text-foreground truncate">
                   {customer ? customer.name : "عميل نقدي سريع"}
                 </div>
-                <div className="text-[10px] text-muted-foreground truncate" dir="ltr">
+                <div className="text-[11px] text-muted-foreground truncate" dir="ltr">
                   {customer?.phone || "مبيعات فورية نقدية"}
                 </div>
               </div>
@@ -945,7 +945,7 @@ function PosPage() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setCustSelectOpen(true)}
-                className="h-8 text-xs font-bold px-2 rounded-xl text-primary hover:bg-primary/10"
+                className="h-10 text-xs font-bold px-3 rounded-xl text-primary hover:bg-primary/10"
               >
                 {customer ? "تغيير" : "تحديد عميل"}
               </Button>
@@ -954,7 +954,7 @@ function PosPage() {
                 variant="outline"
                 size="icon"
                 onClick={() => setQuickCustOpen(true)}
-                className="h-8 w-8 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
+                className="h-10 w-10 rounded-xl border-primary/30 text-primary hover:bg-primary/10"
                 title="إضافة عميل جديد سريع"
               >
                 <UserPlus className="h-3.5 w-3.5" />
@@ -998,7 +998,7 @@ function PosPage() {
                     </div>
 
                     {isShortage && (
-                      <div className="text-[10px] text-danger font-bold flex items-center gap-1">
+                      <div className="text-[11px] text-danger font-bold flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3 shrink-0" />
                         الكمية المطلوبة تتجاوز المخزون ({item.maxStock} متاح)
                       </div>
@@ -1010,7 +1010,7 @@ function PosPage() {
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, -1)}
-                          className="h-6 w-6 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
+                          className="h-10 w-10 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
@@ -1019,12 +1019,12 @@ function PosPage() {
                           min="1"
                           value={item.quantity}
                           onChange={(e) => setItemQty(item.id, e.target.value)}
-                          className="h-6 w-12 text-center rounded-lg border border-border/50 text-xs font-black font-mono bg-background"
+                          className="h-10 w-14 text-center rounded-lg border border-border/50 text-xs font-black font-mono bg-background"
                         />
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="h-6 w-6 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
+                          className="h-10 w-10 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
@@ -1033,7 +1033,7 @@ function PosPage() {
                       <button
                         type="button"
                         onClick={() => removeFromCart(item.id)}
-                        className="text-muted-foreground hover:text-danger p-1 rounded-lg transition-colors"
+                        className="text-muted-foreground hover:text-danger h-10 w-10 grid place-items-center rounded-lg transition-colors"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -1056,12 +1056,12 @@ function PosPage() {
                     placeholder="0"
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
-                    className="w-16 h-7 text-center rounded-lg border border-border/50 text-xs font-mono bg-background"
+                    className="w-16 h-10 text-center rounded-lg border border-border/50 text-xs font-mono bg-background"
                   />
                   <button
                     type="button"
                     onClick={() => setDiscountType(discountType === "amt" ? "pct" : "amt")}
-                    className="h-7 px-1.5 rounded-lg bg-foreground/5 text-[10px] font-bold border border-border/40"
+                    className="h-10 px-2.5 rounded-lg bg-foreground/5 text-[11px] font-bold border border-border/40"
                   >
                     {discountType === "amt" ? "ج.م" : "%"}
                   </button>
@@ -1078,7 +1078,7 @@ function PosPage() {
                         setDiscountValue(String(pct));
                       }}
                       className={cn(
-                        "px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors",
+                        "px-3 min-h-[40px] inline-flex items-center rounded text-[11px] font-bold border transition-colors",
                         discountType === "pct" && discountValue === String(pct)
                           ? "bg-primary text-primary-foreground border-primary"
                           : "bg-muted/50 border-border/60 hover:bg-muted text-muted-foreground"
@@ -1091,7 +1091,7 @@ function PosPage() {
                     <button
                       type="button"
                       onClick={() => setDiscountValue("")}
-                      className="px-1 py-0.5 text-[10px] text-muted-foreground hover:text-danger"
+                        className="px-2 min-h-[40px] inline-flex items-center text-[11px] text-muted-foreground hover:text-danger"
                       title="إلغاء الخصم"
                     >
                       ✕
@@ -1116,7 +1116,7 @@ function PosPage() {
                     </span>
                   </div>
                   {profit < 0 && (
-                    <span className="text-[10px] font-bold text-danger flex items-center gap-1">
+                    <span className="text-[11px] font-bold text-danger flex items-center gap-1">
                       <ShieldAlert className="h-3 w-3" />
                       تنبيه: الخصم نزل عن سعر التكلفة!
                     </span>
@@ -1157,7 +1157,7 @@ function PosPage() {
                     key={bill}
                     type="button"
                     onClick={() => setCashReceived(String(bill))}
-                    className="flex-1 py-1 rounded-lg bg-foreground/[0.04] hover:bg-foreground/10 text-[10px] font-bold font-mono text-muted-foreground transition-colors"
+                    className="flex-1 min-h-[40px] rounded-lg bg-foreground/[0.04] hover:bg-foreground/10 text-[11px] font-bold font-mono text-muted-foreground transition-colors"
                   >
                     {bill}
                   </button>
@@ -1165,7 +1165,7 @@ function PosPage() {
                 <button
                   type="button"
                   onClick={() => setCashReceived(String(total))}
-                  className="flex-1 py-1 rounded-lg bg-primary/10 hover:bg-primary/20 text-[10px] font-bold font-mono text-primary transition-colors"
+                    className="flex-1 min-h-[40px] rounded-lg bg-primary/10 hover:bg-primary/20 text-[11px] font-bold font-mono text-primary transition-colors"
                 >
                   بالضبط
                 </button>
@@ -1179,17 +1179,17 @@ function PosPage() {
                   type="button"
                   disabled={cart.length === 0 || saving}
                   onClick={() => handleInstantCashCheckout(true)}
-                  className="h-11 rounded-2xl bg-success hover:bg-success/90 text-white font-extrabold text-xs gap-1.5 shadow-md transition-all active:scale-[0.99]"
+                   className="h-11 rounded-2xl bg-success hover:bg-success/90 text-white font-extrabold text-xs gap-1.5 shadow-md transition-[background-color,box-shadow,transform] active:scale-[0.99]"
                 >
                   <Zap className="h-4 w-4" />
-                  <span>{saving ? "جاري الحفظ..." : "⚡ كاش فوري (F4)"}</span>
+                   <span>{saving ? "جاري الحفظ..." : "كاش فوري (F4)"}</span>
                 </Button>
 
                 <Button
                   type="button"
                   disabled={cart.length === 0 || saving}
                   onClick={() => setSplitModalOpen(true)}
-                  className="h-11 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs gap-1.5 shadow-md transition-all active:scale-[0.99]"
+                   className="h-11 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs gap-1.5 shadow-md transition-[background-color,box-shadow,transform] active:scale-[0.99]"
                 >
                   <Layers className="h-4 w-4" />
                   <span>دفع متعدد (F6)</span>
@@ -1203,7 +1203,7 @@ function PosPage() {
                   size="sm"
                   disabled={cart.length === 0}
                   onClick={handleHoldCart}
-                  className="rounded-xl border-warning/40 text-warning hover:bg-warning/10 font-bold h-8 text-xs gap-1"
+                   className="rounded-xl border-warning/40 text-warning hover:bg-warning/10 font-bold h-10 text-xs gap-1.5 px-3"
                 >
                   <PauseCircle className="h-3.5 w-3.5" />
                   <span>تعليق (F8)</span>
@@ -1214,7 +1214,7 @@ function PosPage() {
                   size="sm"
                   disabled={cart.length === 0}
                   onClick={clearCart}
-                  className="rounded-xl text-muted-foreground hover:text-danger hover:bg-danger/10 font-bold h-8 text-xs gap-1"
+                   className="rounded-xl text-muted-foreground hover:text-danger hover:bg-danger/10 font-bold h-10 text-xs gap-1.5 px-3"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   <span>مسح (Esc)</span>
@@ -1354,7 +1354,7 @@ function PosPage() {
                 className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-foreground/5 text-right font-bold text-xs"
               >
                 <span>عميل نقدي سريع (افتراضي)</span>
-                <Badge variant="secondary" className="text-[10px]">كاش</Badge>
+                <Badge variant="secondary" className="text-[11px]">كاش</Badge>
               </button>
               {data.customers
                 .filter(
@@ -1375,7 +1375,7 @@ function PosPage() {
                   >
                     <div>
                       <div className="font-bold text-xs text-foreground">{c.name}</div>
-                      {c.phone && <div className="text-[10px] text-muted-foreground font-mono" dir="ltr">{c.phone}</div>}
+                      {c.phone && <div className="text-[11px] text-muted-foreground font-mono" dir="ltr">{c.phone}</div>}
                     </div>
                     <CustomerTypeBadge type={c.customerType} />
                   </button>
@@ -1412,7 +1412,7 @@ function PosPage() {
                   <div className="min-w-0">
                     <div className="font-bold text-xs text-foreground flex items-center gap-2">
                       <span>{held.customerName || "عميل نقدي"}</span>
-                      <span className="text-[10px] text-muted-foreground font-mono">
+                      <span className="text-[11px] text-muted-foreground font-mono">
                         {format(new Date(held.createdAt), "HH:mm - dd/MM")}
                       </span>
                     </div>

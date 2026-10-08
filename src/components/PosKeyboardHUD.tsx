@@ -120,7 +120,7 @@ export function PosKeyboardHUD({
             onClick={sc.action}
             disabled={sc.disabled}
             className={cn(
-              "flex items-center gap-1 px-2 py-0.5 rounded-lg border transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-[10px] font-semibold",
+              "flex items-center gap-1 px-2.5 min-h-[40px] rounded-lg border transition-[background-color,border-color,color] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold",
               sc.highlight
                 ? "bg-amber-500/10 border-amber-500/30 text-amber-600 font-bold"
                 : sc.tone === "primary"
@@ -130,7 +130,7 @@ export function PosKeyboardHUD({
                 : "bg-muted/40 border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <kbd className="px-1 py-0.2 rounded bg-background border border-border/80 font-mono font-bold text-[9px] shadow-2xs">
+            <kbd className="px-1 py-0.2 rounded bg-background border border-border/80 font-mono font-bold text-[10px] shadow-2xs">
               {sc.key}
             </kbd>
             <span className="hidden xl:inline">{sc.icon}</span>
