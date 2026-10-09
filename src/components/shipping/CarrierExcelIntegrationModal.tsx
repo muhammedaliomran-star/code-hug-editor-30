@@ -167,7 +167,7 @@ export function CarrierExcelIntegrationModal({
 
           {/* TAB 1: EXPORT */}
           <TabsContent value="export" className="space-y-4 pt-3">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-muted/30 p-3 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 py-1">
               <div>
                 <span className="text-xs font-bold block mb-1">صيغة وقالب شركة الشحن:</span>
                 <Select value={exportFormat} onValueChange={(v: ExcelCarrierFormat) => setExportFormat(v)}>
@@ -218,7 +218,7 @@ export function CarrierExcelIntegrationModal({
             </div>
 
             {/* Preview Count & Info */}
-            <div className="p-3 bg-primary/5 rounded-lg border border-primary/20 flex items-center justify-between">
+            <div className="py-2 flex items-center justify-between border-b border-border/40">
               <div className="flex items-center gap-2 text-sm">
                 <FileCheck className="h-5 w-5 text-primary" />
                 <span>

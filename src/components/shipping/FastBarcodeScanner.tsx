@@ -21,7 +21,6 @@ import {
   PackageCheck,
   Printer,
   Trash2,
-  Sparkles,
 } from "lucide-react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 
@@ -306,7 +305,7 @@ export function FastBarcodeScanner({
 
         {/* Dispatch Carrier Selector */}
         {actionMode === "dispatch" && (
-          <div className="bg-muted/40 p-3 rounded-lg border flex flex-col sm:flex-row items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 py-1">
             <span className="text-sm font-medium shrink-0">المندوب / شركة الشحن المستلمة:</span>
             <Select value={selectedCarrierId} onValueChange={setSelectedCarrierId}>
               <SelectTrigger className="flex-1 bg-background font-bold">
@@ -363,7 +362,7 @@ export function FastBarcodeScanner({
           {/* Feedback Banner */}
           {message && (
             <div
-              className={`p-3 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
+              className={`p-3 rounded-lg text-sm font-bold flex items-center gap-2 transition-[background-color,border-color] ${
                 message.type === "success"
                   ? "bg-success/15 text-success border border-success/30"
                   : message.type === "warn"
@@ -382,23 +381,23 @@ export function FastBarcodeScanner({
         </div>
 
         {/* Live Batch Summary Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-          <div className="p-3 rounded-xl bg-card border text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 divide-x divide-x-reverse divide-border/40">
+          <div className="px-2 text-center">
             <span className="text-xs text-muted-foreground">عدد الشحنات الممسوحة</span>
             <p className="text-2xl font-black text-primary mt-1">{scannedList.length}</p>
           </div>
-          <div className="p-3 rounded-xl bg-card border text-center">
+          <div className="px-2 text-center">
             <span className="text-xs text-muted-foreground">إجمالي مبالغ COD</span>
             <p className="text-2xl font-black text-foreground mt-1">
               {totalCodScanned.toLocaleString("ar-EG")} <span className="text-xs font-normal">ج.م</span>
             </p>
           </div>
-          <div className="col-span-2 sm:col-span-1 p-2 rounded-xl bg-card border flex items-center justify-center">
+          <div className="col-span-2 sm:col-span-1 px-2 flex items-center justify-center">
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="w-full h-full gap-2 font-bold"
+              className="w-full h-10 gap-2 font-bold"
               onClick={handlePrintBatchManifest}
               disabled={scannedList.length === 0}
             >
@@ -411,15 +410,15 @@ export function FastBarcodeScanner({
         {/* Scanned List History */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-bold flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4 text-primary" />
-              سجل الشحنات في هذه الجلسة ({scannedList.length})
-            </span>
+              <span className="text-sm font-bold flex items-center gap-1.5">
+                <PackageCheck className="h-4 w-4 text-primary" />
+                سجل الشحنات في هذه الجلسة ({scannedList.length})
+              </span>
             {scannedList.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-xs text-muted-foreground hover:text-destructive h-7 gap-1"
+                className="text-xs text-muted-foreground hover:text-destructive h-10 px-2 gap-1"
                 onClick={() => setScannedList([])}
               >
                 <Trash2 className="h-3 w-3" />
