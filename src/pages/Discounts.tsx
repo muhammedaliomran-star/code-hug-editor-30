@@ -717,8 +717,8 @@ export default function Discounts() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleEditCoupon(coupon)}
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                onClick={() => handleEditCoupon(coupon.id)}
+                                className="h-10 w-10 text-muted-foreground hover:text-primary"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
                               </Button>
@@ -728,7 +728,7 @@ export default function Discounts() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setDeleteTargetCouponId(coupon.id)}
-                                className="h-8 w-8 text-muted-foreground hover:text-danger"
+                                className="h-10 w-10 text-muted-foreground hover:text-danger"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </Button>
