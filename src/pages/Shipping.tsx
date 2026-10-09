@@ -8,7 +8,7 @@ import { ActionButton } from "@/components/ActionButton";
 import {
   Truck, Search, Plus, MapPin, Building2, PackageCheck, Clock, Pencil, Trash2, ExternalLink,
   ShieldAlert, CalendarDays, Printer, FileText, Wallet, BarChart3, MessageCircle, CheckCheck, AlertTriangle,
-  Link2, RefreshCw,
+  Link2, RefreshCw, Undo2,
 } from "lucide-react";
 import { buildCourierLink, freshCourierToken } from "@/lib/courier-token";
 import { useDB, db, useShopSettings, ShipmentStatus, type Shipment, type ShipmentCarrier, type ShippingZone } from "@/lib/store";
@@ -841,7 +841,7 @@ export default function Shipping() {
                     onChange={setShipTab}
                     options={[
                       { value: "shipments", label: "الشحنات", icon: <Truck className="h-4 w-4" /> },
-                      { value: "reconciliation", label: "كشف الحساب والمطابقة", icon: <Calculator className="h-4 w-4 text-emerald-600" /> },
+                      { value: "reconciliation", label: "كشف الحساب والمطابقة", icon: <Calculator className="h-4 w-4" /> },
                       { value: "dues", label: "المستحقات", icon: <Wallet className="h-4 w-4" /> },
                       { value: "carriers", label: "المناديب", icon: <Building2 className="h-4 w-4" /> },
                       { value: "zones", label: "المناطق", icon: <MapPin className="h-4 w-4" /> },
@@ -1064,7 +1064,7 @@ export default function Shipping() {
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
                           <Building2 className="h-6 w-6" />
                         </div>
-                        <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${c.active ? "bg-emerald-500/10 text-emerald-500" : "bg-rose-500/10 text-rose-500"}`}>
+                        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${c.active ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}>
                           {c.active ? "نشط" : "غير نشط"}
                         </span>
                       </div>
@@ -1220,20 +1220,51 @@ export default function Shipping() {
 
             <TabsContent value="analytics">
               <div className="space-y-6">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  {[
-                    { label: "نسبة التسليم الناجح", value: `${analytics.successRate.toFixed(1)}%`, tone: "text-emerald-500" },
-                    { label: "نسبة المرتجع", value: `${analytics.returnRate.toFixed(1)}%`, tone: "text-rose-500" },
-                    { label: "متوسط أيام التسليم", value: analytics.avgDays.toFixed(1), tone: "text-blue-500" },
-                    { label: "متوسط تكلفة الشحنة", value: egp(analytics.avgCost), tone: "text-amber-500" },
-                  ].map((k, i) => (
-                    <Reveal key={k.label} delay={i * 0.08}>
-                      <BezelCard className="plate p-6">
-                        <p className="text-sm font-medium text-muted-foreground">{k.label}</p>
-                        <p className={`mt-2 text-3xl font-bold tracking-tight ${k.tone}`}>{k.value}</p>
-                      </BezelCard>
-                    </Reveal>
-                  ))}
+                <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+                  <Reveal delay={0} className="h-full">
+                    <MetricCard
+                      className="h-full"
+                      icon={PackageCheck}
+                      label="معدل التسليم الناجح"
+                      value={analytics.successRate}
+                      format={(n) => `${n.toFixed(1)}%`}
+                      tone="positive"
+                      sub="نسبة الشحنات المسلمة"
+                    />
+                  </Reveal>
+                  <Reveal delay={80} className="h-full">
+                    <MetricCard
+                      className="h-full"
+                      icon={Undo2}
+                      label="معدل المرتجعات"
+                      value={analytics.returnRate}
+                      format={(n) => `${n.toFixed(1)}%`}
+                      tone="danger"
+                      sub="نسبة الشحنات المرتجعة"
+                    />
+                  </Reveal>
+                  <Reveal delay={160} className="h-full">
+                    <MetricCard
+                      className="h-full"
+                      icon={Clock}
+                      label="متوسط زمن التوصيل"
+                      value={analytics.avgDays}
+                      format={(n) => `${n.toFixed(1)} يوم`}
+                      tone="neutral"
+                      sub="متوسط أيام التسليم"
+                    />
+                  </Reveal>
+                  <Reveal delay={240} className="h-full">
+                    <MetricCard
+                      className="h-full"
+                      icon={Wallet}
+                      label="متوسط تكلفة الشحن"
+                      value={analytics.avgCost}
+                      format={(n) => egp(n)}
+                      tone="neutral"
+                      sub="متوسط التكلفة للشحنة"
+                    />
+                  </Reveal>
                 </div>
 
                 <Reveal delay={0.2}>
