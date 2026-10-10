@@ -1489,7 +1489,7 @@ function PosPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-3 space-y-2">
-            <div className="p-3 rounded-2xl bg-foreground/[0.02] border border-border/40 text-xs space-y-1">
+            <div className="py-1 text-xs space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">العميل:</span>
                 <span className="font-bold text-foreground">{completedInvoice?.customerName}</span>

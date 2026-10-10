@@ -24,7 +24,7 @@ import {
   AlertCircle,
   Calculator,
   ArrowLeft,
-  Sparkles,
+  Zap,
 } from "lucide-react";
 
 export interface SplitPaymentDetail {
@@ -167,7 +167,7 @@ export function PosSplitPaymentModal({
         </DialogHeader>
 
         {/* Invoice Total Banner */}
-        <div className="p-4 rounded-2xl bg-card border border-border/70 flex items-center justify-between flex-wrap gap-2 shadow-xs">
+        <div className="py-2 flex items-center justify-between flex-wrap gap-2 border-b border-border/40">
           <div>
             <div className="text-xs text-muted-foreground font-semibold">إجمالي الفاتورة المطلوب</div>
             <div className="text-2xl font-black text-foreground mt-0.5 font-mono">
@@ -248,7 +248,7 @@ export function PosSplitPaymentModal({
           {/* 2. InstaPay */}
           <div className="flex items-center gap-2 p-2 rounded-2xl bg-card border border-border/50">
             <div className="p-2 rounded-xl bg-violet-500/10 text-violet-600 shrink-0">
-              <Sparkles className="h-4 w-4" />
+              <Zap className="h-4 w-4" />
             </div>
             <div className="flex-1 text-right">
               <Label className="text-xs font-bold text-foreground">إنستاباي (InstaPay)</Label>

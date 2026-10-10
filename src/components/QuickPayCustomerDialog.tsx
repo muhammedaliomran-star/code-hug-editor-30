@@ -177,7 +177,7 @@ export function QuickPayCustomerDialog({
 
         <div className="space-y-4 text-right my-2">
           {/* Customer Summary Card */}
-          <div className="p-4 rounded-2xl bg-foreground/[0.035] border border-border/40 space-y-3">
+          <div className="py-1 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-primary/10 text-primary border border-primary/20">
                 {getCustomerCode(customer)}
@@ -186,13 +186,13 @@ export function QuickPayCustomerDialog({
             </div>
 
             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/30">
-              <div className="bg-background/80 p-2.5 rounded-xl border border-border/40">
+              <div className="px-1">
                 <div className="text-[11px] text-muted-foreground">المديونية الحالية</div>
                 <div className="text-base font-extrabold text-danger mt-0.5">
                   {fmt(balance)} ج.م
                 </div>
               </div>
-              <div className="bg-background/80 p-2.5 rounded-xl border border-border/40">
+              <div className="px-1">
                 <div className="text-[11px] text-muted-foreground">الرصيد بعد السداد</div>
                 <div
                   className={cn(

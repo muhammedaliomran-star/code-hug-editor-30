@@ -81,7 +81,7 @@ export default function StaffDialog() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-xl border border-foreground/10 bg-card/50">
+          <div className="flex items-center justify-between py-2 border-b border-border/40">
             <span className="text-xs font-bold">الحساب نشط</span>
             <Switch name="active" defaultChecked={editingStaff ? editingStaff.active : true} />
           </div>

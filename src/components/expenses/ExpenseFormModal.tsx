@@ -448,7 +448,7 @@ export function ExpenseFormModal({
           </div>
 
           {/* إرفاق صورة الفاتورة أو الإيصال */}
-          <div className="p-3.5 rounded-xl border border-dashed border-border bg-card/50">
+          <div className="py-1">
             <Label className="text-xs font-bold text-foreground flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Paperclip className="w-3.5 h-3.5 text-primary" />

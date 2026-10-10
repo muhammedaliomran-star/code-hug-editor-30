@@ -44,16 +44,16 @@ export function HistoryDialog({ customer, onClose, invoices, payments, items, bl
           <DialogDescription className="text-right">كل فواتير ومنتجات ومدفوعات العميل {customer.name}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-right">
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-2xl hairline bg-foreground/[0.035] p-2.5">
+          <div className="grid grid-cols-3 gap-2 divide-x divide-x-reverse divide-border/40">
+            <div className="px-1">
               <div className="text-[11px] text-muted-foreground">عدد الفواتير</div>
               <div className="font-bold text-lg">{myInvoices.length}</div>
             </div>
-            <div className="rounded-2xl hairline bg-success/10 p-2.5">
+            <div className="px-1">
               <div className="text-[11px] text-muted-foreground">إجمالي المسدد</div>
               <div className={cn("font-bold text-lg text-success", blurCls)}>{fmt(totalPaid)} ج.م</div>
             </div>
-            <div className="rounded-2xl hairline bg-danger/10 p-2.5">
+            <div className="px-1">
               <div className="text-[11px] text-muted-foreground">المتبقي</div>
               <div className={cn("font-bold text-lg", balance > 0 ? "text-danger" : "text-success", blurCls)}>{fmt(balance)} ج.م</div>
             </div>

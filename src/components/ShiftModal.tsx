@@ -209,7 +209,7 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
           <div className="space-y-4 py-2">
             {activeShift && currentStats ? (
               <>
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-primary/10 border border-primary/20">
+                <div className="flex items-center justify-between py-2 border-b border-border/40">
                   <div className="text-left">
                     <Badge className="bg-success text-success-foreground hover:bg-success">
                       وردية مفتوحة
@@ -230,37 +230,37 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="p-3 rounded-xl bg-card/60 border">
+                  <div className="py-2 border-b border-border/40">
                     <div className="text-[11px] text-muted-foreground">رصيد البداية (الفكة)</div>
                     <div className="text-base font-bold mt-0.5">
                       {fmt(activeShift.openingBalance)} {shop.currency}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-success/10 border border-success/20">
+                  <div className="py-2 border-b border-border/40">
                     <div className="text-[11px] text-success font-medium">مبيعات كاش محصلة</div>
                     <div className="text-base font-bold text-success mt-0.5">
                       {fmt(currentStats.cashSalesAmount + currentStats.splitCashAmount)} {shop.currency}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-card/60 border">
+                  <div className="py-2 border-b border-border/40">
                     <div className="text-[11px] text-muted-foreground">مبيعات إلكترونية (فيزا)</div>
                     <div className="text-base font-bold mt-0.5">
                       {fmt(currentStats.electronicSalesAmount)} {shop.currency}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-danger/10 border border-danger/20">
+                  <div className="py-2 border-b border-border/40">
                     <div className="text-[11px] text-danger font-medium">مصروفات ونثريات</div>
                     <div className="text-base font-bold text-danger mt-0.5">
                       {fmt(currentStats.expensesAmount)} {shop.currency}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-card/60 border">
+                  <div className="py-2 border-b border-border/40">
                     <div className="text-[11px] text-muted-foreground">مشتريات ومرتجعات</div>
                     <div className="text-base font-bold mt-0.5">
                       {fmt(currentStats.purchasesAmount + currentStats.returnsAmount)} {shop.currency}
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-primary/15 border border-primary/30">
+                  <div className="py-2 border-b border-border/40">
                     <div className="text-[11px] text-primary font-bold">المفترض حالياً بالدرج</div>
                     <div className="text-lg font-black text-primary mt-0.5">
                       {fmt(currentStats.expectedCashInDrawer)} {shop.currency}
@@ -365,7 +365,7 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
         {/* TAB 3: CLOSE SHIFT (END OF DAY REGISTER CLOSING) */}
         {activeTab === "close" && activeShift && currentStats && (
           <form onSubmit={handleCloseShift} className="space-y-4 py-2">
-            <div className="p-3 rounded-xl bg-muted/40 border space-y-2">
+            <div className="py-1 space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="font-bold">{activeShift.cashierName}</span>
                 <span className="text-muted-foreground">الكاشير المسلّم:</span>
@@ -505,12 +505,12 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
                   return (
                     <div
                       key={s.id}
-                      className="p-3 rounded-xl border bg-card/60 flex items-center justify-between gap-3 text-xs"
+                      className="py-2.5 border-b border-border/40 flex items-center justify-between gap-3 text-xs"
                     >
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-8 gap-1 text-[11px]"
+                        className="h-10 px-3 gap-1.5 text-[11px]"
                         onClick={() => printShiftReport(s, sStats, shop, true)}
                       >
                         <Printer className="w-3.5 h-3.5" />

@@ -451,7 +451,7 @@ export default function AuditLog() {
 
             {viewLog && (
               <div className="space-y-3 py-2 text-xs">
-                <div className="p-3 rounded-xl bg-muted/40 border border-[var(--hairline)] space-y-2">
+                <div className="divide-y divide-border/40 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">عنوان الحركة:</span>
                     <strong className="text-foreground">{viewLog.title}</strong>
@@ -474,19 +474,19 @@ export default function AuditLog() {
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-card border border-[var(--hairline)] space-y-1.5">
+                <div className="space-y-1.5 py-1">
                   <span className="font-bold text-foreground block">بيان وتفاصيل العملية:</span>
                   <p className="text-muted-foreground leading-relaxed">{viewLog.details || "لا توجد تفاصيل إضافية مسجلة."}</p>
                 </div>
 
                 {(viewLog.oldValue !== undefined || viewLog.newValue !== undefined) && (
-                  <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-muted/30 border border-[var(--hairline)]">
+                  <div className="grid grid-cols-2 gap-2 py-1">
                     <div>
-                      <span className="text-muted-foreground block text-[10px]">القيمة السابقة (قبل):</span>
+                      <span className="text-muted-foreground block text-[11px]">القيمة السابقة (قبل):</span>
                       <strong className="font-mono text-rose-500">{String(viewLog.oldValue ?? "—")}</strong>
                     </div>
                     <div>
-                      <span className="text-muted-foreground block text-[10px]">القيمة الجديدة (بعد):</span>
+                      <span className="text-muted-foreground block text-[11px]">القيمة الجديدة (بعد):</span>
                       <strong className="font-mono text-emerald-500">{String(viewLog.newValue ?? "—")}</strong>
                     </div>
                   </div>

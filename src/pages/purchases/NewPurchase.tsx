@@ -505,7 +505,7 @@ export function NewPurchasePage() {
                     </div>
                   </div>
 
-                  <div className="bg-primary/5 rounded-xl p-3.5 flex gap-2.5 text-right border border-primary/20">
+                  <div className="py-1 flex gap-2.5 text-right">
                     <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
                       يتم تحديث رصيد المخزون فورياً وتعديل آخر تكلفة شراء، وإذا تم تحديد سعر بيع سيتم تثبيته في شاشات البيع.

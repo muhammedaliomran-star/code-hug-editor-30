@@ -166,7 +166,7 @@ export function SmartReminderModal({
 
         {/* Quick Channel settings accordion */}
         {showChannelSettings && (
-          <div className="p-3.5 bg-muted/50 border rounded-xl space-y-2.5 text-right">
+          <div className="py-1 space-y-2.5 text-right">
             <div className="text-xs font-bold text-foreground">بيانات الدفع السريع للرسائل:</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>

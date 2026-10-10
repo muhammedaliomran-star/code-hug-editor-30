@@ -543,7 +543,7 @@ function PurchaseDetailModal({
 
         <div className="space-y-4 text-right mt-2">
           {/* Summary Box */}
-          <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-foreground/[0.03] border border-border/40 text-center">
+          <div className="grid grid-cols-3 gap-3 py-1 text-center divide-x divide-x-reverse divide-border/40">
             <div>
               <div className="text-[11px] text-muted-foreground font-semibold">إجمالي الفاتورة</div>
               <div className={cn("text-lg font-black text-primary mt-0.5", blurCls)}>
@@ -619,7 +619,7 @@ function PurchaseDetailModal({
 
           {/* Notes if any */}
           {purchase.notes && (
-            <div className="p-3 rounded-xl bg-foreground/[0.02] border border-border/40 text-xs">
+            <div className="py-1 text-xs border-t border-border/40">
               <span className="font-bold text-foreground">ملاحظات / مرجع: </span>
               <span className="text-muted-foreground">{purchase.notes}</span>
             </div>
@@ -945,7 +945,7 @@ function PrintPurchaseModal({
           </div>
 
           {/* Supplier Info */}
-          <div className="grid grid-cols-2 gap-3 text-xs bg-foreground/[0.02] p-3 rounded-xl border border-border/40">
+          <div className="grid grid-cols-2 gap-3 text-xs py-1 border-t border-border/40">
             <div>
               <span className="text-muted-foreground">المورد: </span>
               <span className="font-bold text-foreground">{supplierName}</span>

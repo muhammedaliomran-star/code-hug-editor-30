@@ -1041,7 +1041,7 @@ export default function StaffAndShifts() {
 
               <div className="space-y-4 py-2 text-xs">
                 {currentShiftLiveStats && (
-                  <div className="p-3 rounded-xl bg-muted/40 border border-border/40 space-y-1.5">
+                  <div className="py-1 space-y-1.5">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">الرصيد المتوقع في الدرج:</span>
                       <strong className="font-mono text-sm text-foreground">
@@ -1078,12 +1078,12 @@ export default function StaffAndShifts() {
                     return (
                       <div
                         className={cn(
-                          "p-2.5 rounded-xl border text-xs font-bold flex items-center justify-between",
+                          "py-2 text-xs font-bold flex items-center justify-between border-t border-border/40",
                           variance === 0
-                            ? "bg-success/10 border-success/30 text-success"
+                            ? "text-success"
                             : variance < 0
-                            ? "bg-danger/10 border-danger/30 text-danger"
-                            : "bg-warning/10 border-warning/30 text-warning"
+                            ? "text-danger"
+                            : "text-warning"
                         )}
                       >
                         <span>نتيجة المطابقة:</span>

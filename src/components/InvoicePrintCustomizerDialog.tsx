@@ -301,7 +301,7 @@ export function InvoicePrintCustomizerDialog({
           </div>
 
           {/* خيارات المحتوى */}
-          <div className="space-y-3 p-3.5 rounded-2xl bg-foreground/[0.025] border border-border/60">
+          <div className="space-y-3 py-1">
             <Label className="text-xs font-bold text-muted-foreground">خيارات وتخصيص المحتوى</Label>
 
             <div className="flex items-center justify-between py-1">

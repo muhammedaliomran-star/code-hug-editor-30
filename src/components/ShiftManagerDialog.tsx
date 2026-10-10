@@ -274,7 +274,7 @@ export function ShiftManagerDialog({ open, onOpenChange, onShiftUpdated }: Shift
           <div>
             {!activeShift ? (
               /* No Active Shift -> Start Shift Form */
-              <div className="p-6 rounded-2xl border border-dashed border-border bg-card/50 flex flex-col items-center text-center gap-4 my-2">
+              <div className="py-4 flex flex-col items-center text-center gap-4 my-2">
                 <div className="p-4 rounded-full bg-amber-500/10 text-amber-500">
                   <Lock className="h-8 w-8" />
                 </div>
@@ -379,11 +379,11 @@ export function ShiftManagerDialog({ open, onOpenChange, onShiftUpdated }: Shift
                 )}
 
                 {/* Close shift form */}
-                <div className="p-4 rounded-2xl border border-border bg-card/60 space-y-3 text-right">
-                  <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                <div className="py-2 space-y-3 text-right border-t border-border/40">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <Lock className="h-4 w-4 text-primary" />
                     <span>تقفيل الوردية ومطابقة الدرج (Z-Report)</span>
-                  </h4>
+                  </h3>
 
                   <div className="grid sm:grid-cols-2 gap-3 items-end">
                     <div>
@@ -458,7 +458,7 @@ export function ShiftManagerDialog({ open, onOpenChange, onShiftUpdated }: Shift
                 return (
                   <div
                     key={s.id}
-                    className="p-3.5 rounded-xl border border-border bg-card/60 flex items-center justify-between gap-3 flex-wrap"
+                    className="py-2.5 border-b border-border/40 flex items-center justify-between gap-3 flex-wrap"
                   >
                     <div className="text-right">
                       <div className="flex items-center gap-2">
@@ -466,7 +466,7 @@ export function ShiftManagerDialog({ open, onOpenChange, onShiftUpdated }: Shift
                         <Badge
                           variant="outline"
                           className={cn(
-                            "text-[10px] h-4 px-1.5",
+                            "text-[11px] h-5 px-1.5",
                             s.status === "open" ? "bg-success/15 text-success border-success/30" : "bg-muted text-muted-foreground"
                           )}
                         >

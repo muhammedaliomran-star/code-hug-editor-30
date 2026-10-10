@@ -925,7 +925,7 @@ export default function Discounts() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-1.5 bg-background/50 p-3 rounded-xl border border-border/30">
+                  <div className="space-y-1.5 py-1">
                     <Label className="text-xs text-muted-foreground">معدل احتساب النقاط</Label>
                     <div className="flex items-center gap-2">
                       <Input
@@ -933,7 +933,7 @@ export default function Discounts() {
                         min="1"
                         value={loyaltyConfig.pointsPer100Egp}
                         onChange={(e) => updateLoyaltyConfig({ pointsPer100Egp: Math.max(1, Number(e.target.value)) })}
-                        className="h-9 font-mono text-center"
+                        className="h-10 font-mono text-center"
                       />
                       <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">
                         نقطة / 100 ج.م
@@ -941,7 +941,7 @@ export default function Discounts() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 bg-background/50 p-3 rounded-xl border border-border/30">
+                  <div className="space-y-1.5 py-1">
                     <Label className="text-xs text-muted-foreground">قيمة النقطة الواحدة عند الاستبدال</Label>
                     <div className="flex items-center gap-2">
                       <Input
@@ -950,7 +950,7 @@ export default function Discounts() {
                         step="0.5"
                         value={loyaltyConfig.pointValueEgp}
                         onChange={(e) => updateLoyaltyConfig({ pointValueEgp: Math.max(0.1, Number(e.target.value)) })}
-                        className="h-9 font-mono text-center"
+                        className="h-10 font-mono text-center"
                       />
                       <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">
                         ج.م لكل نقطة
@@ -958,7 +958,7 @@ export default function Discounts() {
                     </div>
                   </div>
 
-                  <div className="space-y-1.5 bg-background/50 p-3 rounded-xl border border-border/30">
+                  <div className="space-y-1.5 py-1">
                     <Label className="text-xs text-muted-foreground">الحد الأدنى للنقاط للاستبدال</Label>
                     <div className="flex items-center gap-2">
                       <Input
@@ -966,7 +966,7 @@ export default function Discounts() {
                         min="5"
                         value={loyaltyConfig.minPointsToRedeem}
                         onChange={(e) => updateLoyaltyConfig({ minPointsToRedeem: Math.max(5, Number(e.target.value)) })}
-                        className="h-9 font-mono text-center"
+                        className="h-10 font-mono text-center"
                       />
                       <span className="text-xs font-bold text-muted-foreground whitespace-nowrap">
                         نقطة كحد أدنى
@@ -1074,7 +1074,7 @@ export default function Discounts() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="bg-background/50 p-4 rounded-xl border border-border/30 space-y-2">
+                  <div className="py-1 space-y-2">
                     <Label className="text-xs font-bold text-foreground">
                       الحد الأدنى لنسبة هامش الربح المحمي (%)
                     </Label>
@@ -1095,7 +1095,7 @@ export default function Discounts() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-xs leading-relaxed text-muted-foreground">
+                  <div className="py-1 text-xs leading-relaxed text-muted-foreground">
                     <div className="font-bold text-foreground mb-1 flex items-center gap-1.5">
                       <HelpCircle className="w-3.5 h-3.5 text-primary" /> كيف تعمل هذه الميزة؟
                     </div>
@@ -1123,7 +1123,7 @@ export default function Discounts() {
                       type="number"
                       value={simPrice}
                       onChange={(e) => setSimPrice(e.target.value)}
-                      className="h-9 font-mono text-center text-xs"
+                      className="h-10 font-mono text-center text-xs"
                     />
                   </div>
                   <div className="space-y-1">
@@ -1132,7 +1132,7 @@ export default function Discounts() {
                       type="number"
                       value={simCost}
                       onChange={(e) => setSimCost(e.target.value)}
-                      className="h-9 font-mono text-center text-xs"
+                      className="h-10 font-mono text-center text-xs"
                     />
                   </div>
                 </div>
@@ -1141,7 +1141,7 @@ export default function Discounts() {
                   <div className="space-y-1">
                     <Label className="text-[11px] text-muted-foreground">نوع الخصم</Label>
                     <Select value={simDiscType} onValueChange={(v: any) => setSimDiscType(v)}>
-                      <SelectTrigger className="h-9 text-xs">
+                      <SelectTrigger className="h-10 text-xs">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -1156,13 +1156,13 @@ export default function Discounts() {
                       type="number"
                       value={simDiscVal}
                       onChange={(e) => setSimDiscVal(e.target.value)}
-                      className="h-9 font-mono text-center text-xs"
+                      className="h-10 font-mono text-center text-xs"
                     />
                   </div>
                 </div>
 
                 {/* Results Panel */}
-                <div className="rounded-xl border border-border/40 bg-background/60 p-3.5 space-y-2 text-xs">
+                <div className="py-1 space-y-2 text-xs divide-y divide-border/30">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">مبلغ الخصم:</span>
                     <span className="font-mono font-bold text-warning">− {fmt(simResults.discAmt)} ج.م</span>

@@ -62,7 +62,7 @@ export default function BranchDialog() {
             </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl border border-foreground/10 bg-card/50">
+          <div className="flex items-center justify-between py-2 border-b border-border/40">
             <div className="space-y-0.5">
               <Label>تعيين كفرع رئيسي</Label>
               <p className="text-xs text-muted-foreground">يكون المرجع الافتراضي للمخزون والعمليات</p>

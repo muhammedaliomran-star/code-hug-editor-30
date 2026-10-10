@@ -651,7 +651,7 @@ export default function OwnerCockpit() {
                   </div>
 
                   <div className="flex items-center gap-4">
-                    <div className="rounded-2xl border border-danger/30 bg-card px-4 py-2 text-center">
+                    <div className="px-4 py-2 text-center border-s border-danger/30">
                       <span className="text-[11px] text-muted-foreground">إجمالي المتأخرات</span>
                       <div className="text-lg font-black text-danger">
                         {fmt(overdueInvoices.reduce((s, i) => s + i.remaining, 0))} ج.م
@@ -706,7 +706,7 @@ export default function OwnerCockpit() {
                             </span>
                           </div>
 
-                          <div className="rounded-2xl border border-border/40 bg-card/80 p-3">
+                          <div className="py-1">
                             <div className="flex justify-between text-xs">
                               <span className="text-muted-foreground">المبلغ المستحق:</span>
                               <span className="font-extrabold text-foreground">{fmt(remaining)} ج.م</span>
@@ -860,7 +860,7 @@ export default function OwnerCockpit() {
                         )}
                       </div>
 
-                      <div className="space-y-2 rounded-2xl border border-border/40 bg-card/80 p-4">
+                      <div className="space-y-2 py-1">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">مبيعات الفرع:</span>
                           <span className="font-extrabold text-foreground">{fmt(b.sales)} ج.م</span>

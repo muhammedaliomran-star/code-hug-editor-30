@@ -961,7 +961,7 @@ function PurchasesTable({ privacy }: { privacy: boolean }) {
           </DialogHeader>
           {detailFor && (
             <div className="space-y-3 text-right">
-              <div className="flex items-center justify-between rounded-2xl hairline p-3 bg-foreground/[0.03]">
+              <div className="flex items-center justify-between py-2 border-b border-border/40">
                 <Badge variant="outline" className={cn(
                   detailFor.paymentType === "cash"
                     ? "bg-success/10 text-success border-success/30"
@@ -988,7 +988,7 @@ function PurchasesTable({ privacy }: { privacy: boolean }) {
                 </div>
               </div>
               {detailFor.notes && (
-                <div className="rounded-2xl hairline p-3 text-sm">
+                <div className="py-1 text-sm border-t border-border/40">
                   <div className="text-xs text-muted-foreground mb-1">ملاحظات</div>
                   {detailFor.notes}
                 </div>
@@ -1057,7 +1057,7 @@ function SupplierPaymentRow({ payment, blurCls }: { payment: SupplierPayment; bl
 
   return (
     <>
-      <div className="rounded-2xl border border-border/30 bg-foreground/[0.06] p-3 flex items-center justify-between">
+      <div className="py-2 flex items-center justify-between border-b border-border/40">
         <div className="flex items-center gap-2">
           <Wallet className="w-4 h-4 text-muted-foreground" />
           <span className={cn("font-bold text-foreground tabular-nums", blurCls)}>{fmt(payment.amount)} ج.م</span>

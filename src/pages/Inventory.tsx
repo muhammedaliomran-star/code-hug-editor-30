@@ -91,7 +91,6 @@ import {
   Tag,
   Calculator,
 } from "lucide-react";
-import { BezelCard } from "@/components/BezelCard";
 import { CountUp } from "@/components/CountUp";
 import { motion, AnimatePresence } from "framer-motion";
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
@@ -1111,7 +1110,7 @@ function EditDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          <BezelCard innerClassName="p-4">
+          <div className="py-2 border-t border-border/40 first:border-t-0">
             <GroupLabel icon={Tag}>هوية المنتج</GroupLabel>
             <div className="grid gap-3">
               <div className="grid gap-1.5">
@@ -1155,9 +1154,9 @@ function EditDialog({
                 </div>
               </div>
             </div>
-          </BezelCard>
+          </div>
 
-          <BezelCard innerClassName="p-4">
+          <div className="py-2 border-t border-border/40 first:border-t-0">
             <GroupLabel icon={Wallet}>التسعير والكمية</GroupLabel>
             <div className="grid grid-cols-3 gap-3">
               <div className="grid gap-1.5">
@@ -1224,9 +1223,9 @@ function EditDialog({
                 )}
               </div>
             </div>
-          </BezelCard>
+          </div>
 
-          <BezelCard innerClassName="p-4">
+          <div className="py-2 border-t border-border/40 first:border-t-0">
             <GroupLabel icon={ScanLine}>الباركود والمخزون</GroupLabel>
             <div className="grid gap-1.5">
               <Label>الباركود (اختياري)</Label>
@@ -1283,7 +1282,7 @@ function EditDialog({
                 يعتبر المنتج منخفضًا إذا كانت الكمية أقل من هذا الرقم.
               </div>
             </div>
-          </BezelCard>
+          </div>
 
           {reasonRequired && (
             <div className="grid gap-2.5 rounded-2xl border-2 border-warning/30 bg-warning/5 p-3 animate-[fade-in_0.2s_ease-out]">

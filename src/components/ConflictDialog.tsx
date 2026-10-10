@@ -67,7 +67,7 @@ export function ConflictDialog({ conflict, open, onOpenChange, onResolve }: Conf
         </DialogHeader>
 
         <div className="space-y-3 text-sm">
-          <div className="rounded-lg border p-3">
+          <div className="py-2 border-t border-border/40 first:border-t-0">
             <p className="mb-2 font-bold text-primary">تغييراتك (الأقدم):</p>
             {changedFields.slice(0, 5).map((key) => (
               <div key={key} className="flex justify-between">
@@ -80,7 +80,7 @@ export function ConflictDialog({ conflict, open, onOpenChange, onResolve }: Conf
             )}
           </div>
 
-          <div className="rounded-lg border p-3">
+          <div className="py-2 border-t border-border/40 first:border-t-0">
             <p className="mb-2 font-bold text-emerald-600">البيانات الأحدث (السيرفر):</p>
             {changedFields.slice(0, 5).map((key) => (
               <div key={key} className="flex justify-between">

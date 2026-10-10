@@ -83,11 +83,11 @@ export function ViewInvoiceDialog({
           </div>
         </DialogHeader>
 
-        <div className="flex flex-wrap items-center justify-end gap-2 bg-foreground/[0.03] p-2.5 rounded-2xl border border-border/50">
+        <div className="flex flex-wrap items-center justify-end gap-2 py-1">
           <Button size="sm" variant="outline" onClick={() => onOpenCustomPrint?.(inv)} className="gap-1.5 text-xs text-primary border-primary/30 hover:bg-primary/10 font-bold">
             <Printer className="w-3.5 h-3.5" /> تخصيص وطباعة
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onOpenShipment?.(inv)} className="gap-1.5 text-xs text-indigo-600 border-indigo-500/30 hover:bg-indigo-500/10 font-bold">
+            <Button size="sm" variant="outline" onClick={() => onOpenShipment?.(inv)} className="gap-1.5 text-xs text-primary border-primary/30 hover:bg-primary/10 font-bold">
             <Truck className="w-3.5 h-3.5" /> تحويل لشحنة
           </Button>
           <Button size="sm" variant="outline" onClick={() => onOpenShare?.(inv)} className="gap-1.5 text-xs text-success border-success/30 hover:bg-success/10 font-bold">
@@ -96,7 +96,7 @@ export function ViewInvoiceDialog({
           <Button size="sm" variant="outline" onClick={() => onOpenReturn?.(inv)} className="gap-1.5 text-xs text-warning border-warning/30 hover:bg-warning/10 font-bold">
             <Undo2 className="w-3.5 h-3.5" /> مرتجع بضاعة
           </Button>
-          <Button size="sm" variant="outline" onClick={() => onClone?.(inv)} className="gap-1.5 text-xs text-blue-500 border-blue-500/30 hover:bg-blue-500/10 font-bold">
+            <Button size="sm" variant="outline" onClick={() => onClone?.(inv)} className="gap-1.5 text-xs text-muted-foreground hover:text-foreground border-border/50 hover:bg-foreground/[0.05] font-bold">
             <Copy className="w-3.5 h-3.5" /> استنساخ
           </Button>
           <Button size="sm" variant="ghost" onClick={() => onEdit?.(inv)} className="gap-1.5 text-xs text-muted-foreground hover:text-foreground">
@@ -104,20 +104,20 @@ export function ViewInvoiceDialog({
           </Button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-right">
-          <div className="p-3 rounded-2xl bg-card border border-border/60">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-right divide-x divide-x-reverse divide-border/40">
+          <div className="px-1">
             <div className="text-[11px] text-muted-foreground font-medium mb-1">إجمالي الفاتورة</div>
             <div className={cn("text-base font-extrabold tabular-nums", blurCls)}>{fmt(inv.total)} ج.م</div>
           </div>
-          <div className="p-3 rounded-2xl bg-success/5 border border-success/20">
+          <div className="px-1">
             <div className="text-[11px] text-success font-medium mb-1">المسدد</div>
             <div className={cn("text-base font-extrabold text-success tabular-nums", blurCls)}>{fmt(inv.paid)} ج.م</div>
           </div>
-          <div className={cn("p-3 rounded-2xl border", remaining > 0 ? "bg-danger/5 border-danger/20" : "bg-card border-border/60")}>
+          <div className="px-1">
             <div className={cn("text-[11px] font-medium mb-1", remaining > 0 ? "text-danger" : "text-muted-foreground")}>المتبقي المستحق</div>
             <div className={cn("text-base font-extrabold tabular-nums", remaining > 0 ? "text-danger" : "text-success", blurCls)}>{fmt(remaining)} ج.م</div>
           </div>
-          <div className="p-3 rounded-2xl bg-primary/5 border border-primary/20">
+          <div className="px-1">
             <div className="text-[11px] text-primary font-medium mb-1">صافي الربح التقديري</div>
             <div className={cn("text-base font-extrabold text-primary tabular-nums", blurCls)}>{fmt(totalProfit)} ج.م</div>
           </div>
@@ -139,7 +139,7 @@ export function ViewInvoiceDialog({
             <Label className="text-xs font-bold">بنود ومنتجات الفاتورة</Label>
           </div>
           {invItems.length === 0 ? (
-            <div className="text-xs text-muted-foreground p-3 border rounded-xl text-center">
+            <div className="text-xs text-muted-foreground py-4 text-center">
               لا توجد منتجات مفصلة مسجلة في الفاتورة (مبيعات عامة).
             </div>
           ) : (
@@ -189,7 +189,7 @@ export function ViewInvoiceDialog({
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-right text-xs">
-          <div className="p-3 rounded-2xl border border-border/60 space-y-2">
+          <div className="py-1 space-y-2">
             <div className="font-bold text-foreground border-b border-border/40 pb-1 flex items-center justify-end gap-1.5">
               بيانات الدفع والتقسيط
               <CreditCard className="w-3.5 h-3.5 text-primary" />
@@ -212,7 +212,7 @@ export function ViewInvoiceDialog({
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl border border-border/60 space-y-2">
+          <div className="py-1 space-y-2">
             <div className="font-bold text-foreground border-b border-border/40 pb-1 flex items-center justify-end gap-1.5">
               سجل سدادات الفاتورة ({invPayments.length})
               <Wallet className="w-3.5 h-3.5 text-success" />
@@ -235,7 +235,7 @@ export function ViewInvoiceDialog({
         </div>
 
         {inv.notes && (
-          <div className="p-3 rounded-2xl bg-foreground/[0.02] border border-border/50 text-right text-xs">
+          <div className="py-1 text-right text-xs border-t border-border/40">
             <span className="text-muted-foreground font-bold ml-1">ملاحظات:</span>
             <span className="text-foreground">{inv.notes}</span>
           </div>

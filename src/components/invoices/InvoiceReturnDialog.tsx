@@ -88,7 +88,7 @@ export function InvoiceReturnDialog({
           <div className="space-y-2">
             <Label className="text-xs font-bold text-muted-foreground">أصناف الفاتورة المتاحة للإرجاع</Label>
             {invItems.length === 0 ? (
-              <div className="text-xs text-muted-foreground p-3 border rounded-xl text-center">
+              <div className="text-xs text-muted-foreground py-4 text-center">
                 لا توجد أصناف مفصلة لهذه الفاتورة.
               </div>
             ) : (
@@ -170,7 +170,7 @@ export function InvoiceReturnDialog({
             </div>
           </div>
 
-          <div className="rounded-2xl bg-warning/10 border border-warning/30 p-3 flex items-center justify-between">
+          <div className="py-2 border-t border-border/40 flex items-center justify-between">
             <span className="font-extrabold text-warning text-lg tabular-nums">{fmt(totalReturnValue)} ج.م</span>
             <span className="text-xs font-bold text-warning-foreground">إجمالي قيمة المرتجع المسترد:</span>
           </div>

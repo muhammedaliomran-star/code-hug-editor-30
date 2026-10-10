@@ -119,7 +119,7 @@ export function LicenseActivationModal({
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-primary/[0.04] border border-primary/20 text-xs space-y-1">
+          <div className="py-1 text-xs space-y-1">
             <div className="font-bold text-primary flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4" />
               مزايا التفعيل الرسمي:

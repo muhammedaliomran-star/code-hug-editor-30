@@ -146,7 +146,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
 
           <div><Label>المقدم (ج.م)</Label><Input type="number" value={down} onChange={(e) => setDown(e.target.value)} className={blurCls} /></div>
 
-          <div className="rounded-2xl bg-foreground/[0.035] p-3 flex items-center justify-between">
+          <div className="py-1.5 flex items-center justify-between border-t border-border/40">
             <span className={cn("text-primary font-bold", blurCls)}>{fmt(remaining)} ج.م</span>
             <span className="text-sm text-muted-foreground">المبلغ المتبقي للتقسيط:</span>
           </div>
@@ -187,7 +187,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
 
           <div><Label>ملاحظات</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} /></div>
 
-          <div className={cn("rounded-2xl border p-3 text-sm flex items-center justify-between", profit >= 0 ? "border-success/40 bg-success/5" : "border-danger/40 bg-danger/5")}>
+          <div className={cn("py-1.5 text-sm flex items-center justify-between border-t border-border/40")}>
             <span className={cn("font-extrabold", blurCls, profit >= 0 ? "text-success" : "text-danger")}>{fmt(profit)} ج.م</span>
             <span className="text-muted-foreground">صافي الربح المتوقع:</span>
           </div>

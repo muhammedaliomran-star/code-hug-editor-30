@@ -54,12 +54,12 @@ export function PaymentHistoryDialog({
             const m = customerMetrics(invoices, customer);
             return (
               <div className="space-y-3 text-right">
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="rounded-2xl hairline bg-foreground/[0.035] p-2.5">
+                <div className="grid grid-cols-3 gap-2 divide-x divide-x-reverse divide-border/40">
+                  <div className="px-1">
                     <div className="text-[11px] text-muted-foreground">عدد العمليات</div>
                     <div className="font-bold text-lg">{filteredPayments.length}</div>
                   </div>
-                  <div className="rounded-2xl hairline bg-success/10 p-2.5">
+                  <div className="px-1">
                     <div className="text-[11px] text-muted-foreground">إجمالي المسدد</div>
                     <div
                       className={cn("font-bold text-lg text-success", privacy && "privacy-blur")}
@@ -67,7 +67,7 @@ export function PaymentHistoryDialog({
                       {fmt(total)} ج.م
                     </div>
                   </div>
-                  <div className="rounded-2xl hairline bg-danger/10 p-2.5">
+                  <div className="px-1">
                     <div className="text-[11px] text-muted-foreground">المتبقي</div>
                     <div
                       className={cn(

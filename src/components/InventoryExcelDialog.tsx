@@ -220,7 +220,7 @@ export function InventoryExcelDialog({
             </TabsList>
 
             <TabsContent value="export" className="space-y-4 pt-3">
-              <div className="p-4 rounded-2xl bg-emerald-500/[0.05] border border-emerald-500/20 text-xs space-y-2">
+              <div className="py-1 text-xs space-y-2">
                 <div className="font-bold text-emerald-700 dark:text-emerald-400">
                   تصدير ({stockItems.length}) منتج مسجل:
                 </div>
@@ -239,7 +239,7 @@ export function InventoryExcelDialog({
             </TabsContent>
 
             <TabsContent value="import" className="space-y-4 pt-3">
-              <div className="p-3 rounded-2xl bg-foreground/[0.03] border border-foreground/10 flex items-center justify-between text-xs">
+              <div className="py-2 flex items-center justify-between text-xs border-b border-border/40">
                 <div>
                   <div className="font-bold">قالب إكسيل النموذجي:</div>
                   <div className="text-muted-foreground text-[11px]">حمل القالب لتعبئة بياناتك بشكل صحيح</div>
@@ -277,7 +277,7 @@ export function InventoryExcelDialog({
               )}
 
               {importResults && (
-                <div className="p-3.5 rounded-2xl bg-foreground/[0.03] border border-foreground/10 text-xs space-y-1.5">
+                <div className="py-1 text-xs space-y-1.5">
                   <div className="font-bold text-foreground">نتائج الاستيراد:</div>
                   <div className="flex items-center gap-3">
                     <span className="text-success font-bold">✓ نجح: {importResults.success}</span>

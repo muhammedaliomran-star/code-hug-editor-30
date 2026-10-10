@@ -424,7 +424,7 @@ function AlertsPage() {
             </div>
 
             {branchAlerts.length > 0 && (
-              <div className="rounded-2xl border border-primary/25 bg-primary/[0.04] p-4 space-y-2.5">
+              <div className="py-1 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-bold text-primary flex items-center gap-2">
                     <Package className="w-4 h-4" /> نواقص على مستوى الفروع ({branchAlerts.length})
@@ -473,7 +473,7 @@ function AlertsPage() {
                       key={it.id}
                       to="/inventory"
                       className={cn(
-                        "flex items-center justify-between gap-3 rounded-2xl border p-4 transition-all duration-200 hover:shadow-xs",
+                        "flex items-center justify-between gap-3 rounded-2xl border p-4 transition-[border-color,box-shadow,background-color] duration-200 hover:shadow-xs",
                         out
                           ? "border-rose-500/40 bg-rose-500/[0.04] hover:bg-rose-500/[0.08]"
                           : "border-amber-500/40 bg-amber-500/[0.04] hover:bg-amber-500/[0.08]"
@@ -560,7 +560,7 @@ function AlertsPage() {
                       {/* Left Metrics / Indicators */}
                       <div className="flex items-center gap-3 flex-wrap">
                         {/* Days Counter */}
-                        <div className="text-center bg-card rounded-2xl p-3 min-w-[90px] border shadow-2xs">
+                        <div className="text-center min-w-[90px] px-1">
                           <div className={cn("text-2xl font-black font-mono", cardStyles.accent)}>
                             {upcoming ? until : late > 0 ? late : "اليوم"}
                           </div>
@@ -570,7 +570,7 @@ function AlertsPage() {
                         </div>
 
                         {/* Amount Due Box */}
-                        <div className="bg-card rounded-2xl p-3 border shadow-2xs min-w-[130px] text-right">
+                        <div className="min-w-[130px] text-right px-1">
                           <div className="text-[11px] text-muted-foreground font-medium">
                             {upcoming ? "قيمة القسط القريب" : "المبلغ المستحق"}
                           </div>

@@ -1142,7 +1142,7 @@ export default function AdminLicensesPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="p-5 rounded-2xl bg-background border border-foreground/10 space-y-3">
+                  <div className="py-2 space-y-3">
                     <h4 className="font-bold text-sm text-foreground">تصدير نسخة احتياطية (JSON)</h4>
                     <p className="text-xs text-muted-foreground">
                       تنزيل ملف يحتوي على كافة بيانات المشتركين، المفاتيح، وسجلات الدعم والأقساط.
@@ -1156,7 +1156,7 @@ export default function AdminLicensesPage() {
                     </Button>
                   </div>
 
-                  <div className="p-5 rounded-2xl bg-background border border-foreground/10 space-y-3">
+                  <div className="py-2 space-y-3">
                     <h4 className="font-bold text-sm text-foreground">استيراد واستعادة بيانات</h4>
                     <p className="text-xs text-muted-foreground">
                       اختر ملف JSON محفوظ مسبقاً لاستعادة قائمة المشتركين كاملة.
@@ -1388,7 +1388,7 @@ export default function AdminLicensesPage() {
                   </div>
 
                   {/* Step 4: Hardware and Equipment Items (For Invoicing) */}
-                  <div className="space-y-3 p-4 rounded-2xl bg-foreground/[0.02] border border-foreground/10">
+                  <div className="space-y-3 py-1">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs font-bold text-foreground flex items-center gap-2">
                         <Printer className="w-4 h-4 text-primary" />
@@ -1445,7 +1445,7 @@ export default function AdminLicensesPage() {
                   </div>
 
                   {/* Step 5: Installments Plan Option */}
-                  <div className="space-y-3 p-4 rounded-2xl bg-amber-500/[0.02] border border-amber-500/20">
+                  <div className="space-y-3 py-1 border-t border-border/40">
                     <div className="flex items-center justify-between">
                       <div>
                         <Label className="text-xs font-bold text-foreground">تفعيل خطة سداد بالأقساط</Label>

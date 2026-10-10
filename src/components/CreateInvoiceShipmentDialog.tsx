@@ -165,7 +165,7 @@ export function CreateInvoiceShipmentDialog({
 
         <div className="space-y-4 text-right">
           {/* بطاقة ملخص الفاتورة */}
-          <div className="p-3 rounded-2xl bg-foreground/[0.03] border border-border/60 flex items-center justify-between">
+          <div className="py-2 flex items-center justify-between border-b border-border/40">
             <div className="text-left">
               <span className="text-xs text-muted-foreground block">مبلغ التحصيل المقترح (المتبقي):</span>
               <span className="font-extrabold text-sm text-danger tabular-nums">
@@ -332,7 +332,7 @@ export function CreateInvoiceShipmentDialog({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-muted/30 p-3 space-y-1">
+          <div className="py-1 space-y-1 divide-y divide-border/30">
             <div className="flex items-center justify-between text-[11px] font-bold">
               <span>التسعير التلقائي</span>
               <Button

@@ -139,7 +139,7 @@ export function SmartReturnModal({
         </DialogHeader>
 
         {/* Shipment Overview Box */}
-        <div className="p-3 bg-muted/40 rounded-lg border text-xs space-y-1">
+        <div className="py-1 text-xs space-y-1">
           <div className="flex justify-between">
             <span className="text-muted-foreground">رقم الشحنة/التتبع:</span>
             <span className="font-mono font-bold">{shipment.trackingNumber || shipment.id.slice(0, 8)}</span>

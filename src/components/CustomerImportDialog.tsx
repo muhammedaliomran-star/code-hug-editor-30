@@ -283,7 +283,7 @@ export function CustomerImportDialog({
 
         <div className="flex flex-col gap-4 flex-1 overflow-hidden my-2">
           {/* Action header: Template download + Upload trigger */}
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-foreground/[0.03] border border-border/40">
+          <div className="flex flex-wrap items-center justify-between gap-3 py-2 border-b border-border/40">
             <div className="flex items-center gap-2">
               <input
                 ref={fileInputRef}

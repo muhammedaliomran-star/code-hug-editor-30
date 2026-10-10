@@ -101,7 +101,7 @@ export function ParkedBillsModal({ open, onOpenChange, onResume, onSelectBill }:
                   </div>
                 </div>
 
-                <div className="p-2 rounded-xl bg-muted/40 text-xs flex items-center justify-between">
+                <div className="py-1 text-xs flex items-center justify-between">
                   <span className="font-bold font-mono text-primary text-sm">
                     {fmt(bill.total ?? bill.totalAmount ?? 0)} {shop.currency}
                   </span>

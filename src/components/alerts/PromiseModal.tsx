@@ -160,7 +160,7 @@ export function PromiseModal({
 
           {/* Conditional Promise Date & Amount */}
           {outcome === "promise" && (
-            <div className="p-3.5 bg-card/80 border rounded-xl space-y-3">
+            <div className="py-1 space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
                   <Calendar className="w-4 h-4 text-emerald-500" />
