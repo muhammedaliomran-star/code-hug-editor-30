@@ -2,6 +2,7 @@ import * as React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { StatTabs } from "@/components/StatTabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -249,7 +250,7 @@ export function FastBarcodeScanner({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <div className="p-2 rounded-lg bg-foreground/[0.06] text-muted-foreground">
                 <Scan className="h-6 w-6" />
               </div>
               <div>
@@ -271,37 +272,16 @@ export function FastBarcodeScanner({
         </DialogHeader>
 
         {/* Action Mode Switcher */}
-        <div className="grid grid-cols-3 gap-2 mt-2">
-          <Button
-            type="button"
-            variant={actionMode === "dispatch" ? "default" : "outline"}
-            className="flex items-center justify-center gap-2 h-12 text-sm font-bold"
-            onClick={() => setActionMode("dispatch")}
-          >
-            <Truck className="h-4 w-4" />
-            تسليم للمندوب
-          </Button>
-
-          <Button
-            type="button"
-            variant={actionMode === "delivered" ? "default" : "outline"}
-            className="flex items-center justify-center gap-2 h-12 text-sm font-bold"
-            onClick={() => setActionMode("delivered")}
-          >
-            <PackageCheck className="h-4 w-4" />
-            تأكيد التوصيل (ناجح)
-          </Button>
-
-          <Button
-            type="button"
-            variant={actionMode === "return" ? "default" : "outline"}
-            className="flex items-center justify-center gap-2 h-12 text-sm font-bold"
-            onClick={() => setActionMode("return")}
-          >
-            <RotateCcw className="h-4 w-4" />
-            فرز المرتجع السريع
-          </Button>
-        </div>
+        <StatTabs
+          value={actionMode}
+          onChange={(v) => setActionMode(v as ScanActionType)}
+          className="mt-2"
+          options={[
+            { value: "dispatch", label: "تسليم للمندوب", icon: <Truck className="h-4 w-4" /> },
+            { value: "delivered", label: "تأكيد التوصيل (ناجح)", icon: <PackageCheck className="h-4 w-4" /> },
+            { value: "return", label: "فرز المرتجع السريع", icon: <RotateCcw className="h-4 w-4" /> },
+          ]}
+        />
 
         {/* Dispatch Carrier Selector */}
         {actionMode === "dispatch" && (

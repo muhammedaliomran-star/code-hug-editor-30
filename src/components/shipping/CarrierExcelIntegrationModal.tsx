@@ -141,8 +141,8 @@ export function CarrierExcelIntegrationModal({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-5" dir="rtl">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <FileSpreadsheet className="h-6 w-6 text-emerald-600" />
+            <div className="p-2 rounded-lg bg-foreground/[0.06] text-muted-foreground">
+              <FileSpreadsheet className="h-6 w-6" />
             </div>
             <div>
               <DialogTitle className="text-xl font-bold">التكامل مع شركات الشحن عبر الإكسيل</DialogTitle>
