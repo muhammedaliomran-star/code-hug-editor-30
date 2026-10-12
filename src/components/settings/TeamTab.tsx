@@ -238,7 +238,7 @@ export function TeamTab() {
                         {m.displayName}
                         {m.isMe ? " (أنت)" : ""}
                       </div>
-                      <div className="text-[10px] text-muted-foreground">
+                    <div className="text-[11px] text-muted-foreground">
                         آخر ظهور: {relativeTime(m.lastSeenAt)}
                       </div>
                     </div>
@@ -275,7 +275,7 @@ export function TeamTab() {
                         size="icon"
                         variant="ghost"
                         title="إزالة العضو"
-                        className="h-9 w-9 rounded-xl text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors"
+                        className="h-10 w-10 rounded-xl text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors"
                         onClick={() => setRemoving(m.userId)}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -310,7 +310,7 @@ export function TeamTab() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="rounded-xl h-9 text-xs font-bold text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors"
+                      className="rounded-xl h-10 px-3 text-xs font-bold text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors"
                       onClick={async () => {
                         try {
                           await revokeInvite(iv.id);
@@ -341,7 +341,7 @@ export function TeamTab() {
               دعوة عضو جديد لفريق العمل
             </AlertDialogTitle>
             <AlertDialogDescription className="text-right text-xs text-muted-foreground leading-relaxed">
-              سيتم إرسال دعوة رسمية عبر البريد الإلكتروني لتفعيل حساب العضو وتعيين صلاحياته.
+              سيتم إرسال دعوة رسمية عبر البريد الإلكتروني لتفعيل حساب العضو وتعيين صلاحياته. لو الحساب مسجل بالفعل، ستتم إضافته للفريق فوراً بنفس الدور.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-3 text-right">
@@ -352,13 +352,13 @@ export function TeamTab() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="h-11 rounded-2xl bg-foreground/[0.03] border-foreground/10 focus:bg-background transition-all"
+                className="h-11 rounded-2xl bg-foreground/[0.03] border-foreground/10 focus:bg-background transition-[background-color,border-color]"
               />
             </div>
             <div className="space-y-2">
               <Label className="text-xs font-bold">الدور والصلاحية</Label>
               <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as AppRole)}>
-                <SelectTrigger className="h-11 rounded-2xl bg-foreground/[0.03] border-foreground/10 focus:bg-background transition-all font-bold">
+                <SelectTrigger className="h-11 rounded-2xl bg-foreground/[0.03] border-foreground/10 focus:bg-background transition-[background-color,border-color] font-bold">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent dir="rtl">
@@ -382,7 +382,7 @@ export function TeamTab() {
             <Button
               onClick={submitInvite}
               disabled={sending}
-              className="rounded-2xl bg-primary h-12 px-8 font-black text-black transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20"
+              className="rounded-2xl bg-primary h-12 px-8 font-black text-black transition-[transform,background-color,box-shadow] hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/30"
             >
               {sending ? "جاري الإرسال…" : "إرسال الدعوة"}
             </Button>
