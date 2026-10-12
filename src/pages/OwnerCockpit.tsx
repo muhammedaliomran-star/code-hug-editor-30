@@ -35,7 +35,7 @@ import {
   Phone,
   MessageCircle,
   Clock,
-  Sparkles,
+  Telescope,
   GitBranch,
   Package,
   CheckCircle2,
@@ -377,7 +377,7 @@ export default function OwnerCockpit() {
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary/40">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-black/30">
                     <Crown className="h-6 w-6" />
                   </span>
                   <div>
@@ -455,7 +455,7 @@ export default function OwnerCockpit() {
                   { value: "geo", label: "التحليل الجغرافي والشحن", icon: <Compass className="h-4 w-4" /> },
                   { value: "security", label: "الرقابة والأمان", icon: <ShieldCheck className="h-4 w-4" />, count: auditAlerts.length > 0 ? auditAlerts.length : undefined },
                   { value: "branches", label: "أداء الفروع", icon: <GitBranch className="h-4 w-4" />, count: branches.length > 1 ? branches.length : undefined },
-                  { value: "insights", label: "بوصلة الأصناف", icon: <Sparkles className="h-4 w-4" /> },
+                  { value: "insights", label: "بوصلة الأصناف", icon: <Telescope className="h-4 w-4" /> },
                 ]}
               />
             </div>
@@ -588,7 +588,7 @@ export default function OwnerCockpit() {
               {/* Today's Transactions Feed */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-bold text-foreground">آخر فواتير تم إصدارها في الفترة</h3>
+                  <h2 className="text-lg font-bold text-foreground">آخر فواتير تم إصدارها في الفترة</h2>
                   <Link to="/invoices" className="text-xs font-bold text-primary hover:underline">
                     كل الفواتير
                   </Link>
@@ -605,7 +605,7 @@ export default function OwnerCockpit() {
                       return (
                         <div key={inv.id} className="flex items-center justify-between py-3.5">
                           <div className="flex items-center gap-3">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-xs">
+                            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground/[0.06] text-muted-foreground font-bold text-xs">
                               {inv.monthlyInstallment > 0 ? "قسط" : "كاش"}
                             </span>
                             <div>
@@ -641,10 +641,10 @@ export default function OwnerCockpit() {
               <div className="rounded-3xl border border-danger/20 bg-danger/5 p-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-1">
-                    <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                       <AlertTriangle className="h-5 w-5 text-danger" />
                       <span>رادار الأقساط والديون المتعثرة</span>
-                    </h3>
+                    </h2>
                     <p className="text-xs text-muted-foreground">
                       قائمة مرتبة للعملاء المتأخرين عن السداد مع إمكانية التذكير الفوري عبر واتساب بنص رسمي ومهذب
                     </p>
@@ -664,8 +664,8 @@ export default function OwnerCockpit() {
               {/* Overdue List */}
               {overdueInvoices.length === 0 ? (
                 <div className="rounded-3xl border border-border/80 bg-card/60 p-12 text-center">
-                  <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
-                  <h4 className="mt-4 text-base font-bold text-foreground">ممتاز! لا يوجد أي عميل متأخر عن السداد حالياً</h4>
+                  <CheckCircle2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                  <h3 className="mt-4 text-base font-bold text-foreground">ممتاز! لا يوجد أي عميل متأخر عن السداد حالياً</h3>
                   <p className="mt-1 text-xs text-muted-foreground">كل الأقساط مسددة أو في مواعيدها الطبيعية.</p>
                 </div>
               ) : (
@@ -687,9 +687,9 @@ export default function OwnerCockpit() {
                         <div className="space-y-3">
                           <div className="flex items-start justify-between">
                             <div>
-                              <h4 className="text-base font-bold text-foreground">
+                              <p className="text-base font-bold text-foreground">
                                 {cust?.name || "عميل بدون اسم"}
-                              </h4>
+                              </p>
                               <p className="text-xs text-muted-foreground">
                                 فاتورة {invoiceNumber(invoices, inv.id)} — استحقاق {inv.firstDueDate || "غير محدد"}
                               </p>
@@ -769,10 +769,10 @@ export default function OwnerCockpit() {
             <div className="space-y-6">
               <div className="rounded-3xl border border-warning/20 bg-warning/5 p-6">
                 <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-warning" />
                     <span>رادار الرقابة والعمليات الحساسة</span>
-                  </h3>
+                  </h2>
                   <p className="text-xs text-muted-foreground">
                     مراقبة العمليات الاستثنائية التي قد تؤثر على أرباح المحل (خصومات كبيرة، مرتجعات، وسحوبات غير معتادة)
                   </p>
@@ -781,8 +781,8 @@ export default function OwnerCockpit() {
 
               {auditAlerts.length === 0 ? (
                 <div className="rounded-3xl border border-border/80 bg-card/60 p-12 text-center">
-                  <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
-                  <h4 className="mt-4 text-base font-bold text-foreground">كل العمليات تسير بشكل طبيعي</h4>
+                  <CheckCircle2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                  <h3 className="mt-4 text-base font-bold text-foreground">كل العمليات تسير بشكل طبيعي</h3>
                   <p className="mt-1 text-xs text-muted-foreground">لم يتم رصد أي خصومات مبالغ فيها أو حركات غير معتادة.</p>
                 </div>
               ) : (
@@ -835,11 +835,11 @@ export default function OwnerCockpit() {
               {branches.length === 0 ? (
                 <div className="rounded-3xl border border-border/80 bg-card/60 p-12 text-center">
                   <GitBranch className="mx-auto h-12 w-12 text-muted-foreground/60" />
-                  <h4 className="mt-4 text-base font-bold text-foreground">الفرع الرئيسي فقط</h4>
+                  <p className="mt-4 text-base font-bold text-foreground">الفرع الرئيسي فقط</p>
                   <p className="mt-1 text-xs text-muted-foreground">يمكنك إضافة فروع إضافية ومندوبين من صفحة الفروع.</p>
                   <Link
                     to="/branches"
-                    className="mt-4 inline-block rounded-2xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+                    className="mt-4 inline-flex min-h-[40px] items-center rounded-2xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
                   >
                     إدارة الفروع
                   </Link>
@@ -851,7 +851,7 @@ export default function OwnerCockpit() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-5 w-5 text-primary" />
-                          <h4 className="text-base font-bold text-foreground">{b.name}</h4>
+                          <p className="text-base font-bold text-foreground">{b.name}</p>
                         </div>
                         {b.isMain && (
                           <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
@@ -867,7 +867,7 @@ export default function OwnerCockpit() {
                         </div>
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">التحصيل الفعلي:</span>
-                          <span className="font-bold text-emerald-400">{fmt(b.collected)} ج.م</span>
+                          <span className="font-bold text-success">{fmt(b.collected)} ج.م</span>
                         </div>
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">نسبة التحصيل:</span>
@@ -898,8 +898,8 @@ export default function OwnerCockpit() {
               {/* Golden Items */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="h-5 w-5 text-warning" />
-                  <h3 className="text-base font-bold text-foreground">الأصناف الذهبية (الأعلى ربحية)</h3>
+                  <Trophy className="h-5 w-5 text-warning" />
+                  <h2 className="text-base font-bold text-foreground">الأصناف الذهبية (الأعلى ربحية)</h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   الأصناف التي تحقق أعلى عائد ربحي للمحل، ركز عليها عند الشراء من الموردين
@@ -922,7 +922,7 @@ export default function OwnerCockpit() {
                         </div>
 
                         <div className="text-left">
-                          <div className="text-sm font-extrabold text-emerald-400">
+                          <div className="text-sm font-extrabold text-success">
                             +{fmt(item.profit)} ج.م ربح
                           </div>
                           <div className="text-[11px] text-muted-foreground">
@@ -938,8 +938,8 @@ export default function OwnerCockpit() {
               {/* Dead Stock Items */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-rose-400" />
-                  <h3 className="text-base font-bold text-foreground">الأصناف الراكدة (تحتاج تصفية)</h3>
+                  <Package className="h-5 w-5 text-warning" />
+                  <h2 className="text-base font-bold text-foreground">الأصناف الراكدة (تحتاج تصفية)</h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   بضاعة متواجدة بالمخزن ولم تشهد مبيعات مؤخراً، يُنصح بعمل عروض أو تخفيضات عليها
@@ -1030,3 +1030,5 @@ export default function OwnerCockpit() {
     </AppShell>
   );
 }
+
+
