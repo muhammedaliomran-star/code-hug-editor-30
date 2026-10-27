@@ -2,17 +2,11 @@ import React, { useState, useEffect } from "react";
 import { fmt, invoiceNumber } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { FilterChips } from "@/components/FilterChips";
 import {
   ShieldAlert,
   CheckCircle2,
-  XCircle,
-  Clock,
-  User,
-  DollarSign,
-  FileText,
-  AlertTriangle,
-  RotateCcw,
-  Sparkles,
+  Plus,
   Check,
   X,
 } from "lucide-react";
@@ -114,9 +108,9 @@ export function OwnerApprovalsTab() {
 
     saveRequests(updated);
     if (decision === "approved") {
-      toast.success("تم اعتماد الطلب والموافقة عليه رسمياً ✅");
+      toast.success("تم اعتماد الطلب والموافقة عليه رسمياً");
     } else {
-      toast.error("تم رفض الطلب وإبلاغ البائع ❌");
+      toast.error("تم رفض الطلب وإبلاغ البائع");
     }
   };
 
@@ -134,7 +128,7 @@ export function OwnerApprovalsTab() {
     };
 
     saveRequests([newDemo, ...requests]);
-    toast.info("تمت إضافة طلب موافقة تجريبي جديد للاختبار 🔔");
+    toast.info("تمت إضافة طلب موافقة تجريبي جديد للاختبار");
   };
 
   const filteredRequests = requests.filter((r) => {
@@ -147,14 +141,14 @@ export function OwnerApprovalsTab() {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="rounded-3xl border border-warning/20 bg-warning/5 p-6">
+      <div>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5 text-warning" />
-              <span>نظام موافقات واعتمادات المالك (Owner Approvals Center)</span>
-            </h3>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-muted-foreground" />
+              <span className="text-balance">نظام موافقات واعتمادات المالك (Owner Approvals Center)</span>
+            </h2>
+            <p className="max-w-[68ch] text-sm text-muted-foreground">
               الطلبات الإدارية الحساسة التي تتطلب إذن مباشر من صاحب المحل (خصومات كبيرة، إلغاءات، مرتجعات خاصة، ومصروفات كبرى).
             </p>
           </div>
@@ -163,49 +157,37 @@ export function OwnerApprovalsTab() {
             <button
               type="button"
               onClick={handleCreateDemoRequest}
-              className="flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-primary hover:bg-muted transition"
+              className="flex min-h-[40px] items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-xs font-bold text-foreground hover:bg-muted transition-colors"
             >
-              <Sparkles className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               <span>طلب تجريبي جديد</span>
             </button>
 
-            <div className="rounded-2xl border border-warning/30 bg-card px-4 py-2 text-center">
-              <span className="text-[11px] text-muted-foreground">بانتظار موافقتك</span>
-              <div className="text-lg font-black text-warning">{pendingCount} طلبات</div>
+            <div className="rounded-2xl border border-border/80 bg-card px-4 py-2 text-center">
+              <span className="text-xs text-muted-foreground">بانتظار موافقتك</span>
+              <div className="text-lg font-black text-foreground">{pendingCount} طلبات</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2">
-        {[
-          { id: "pending", label: "قيد الانتظار", count: pendingCount },
-          { id: "approved", label: "تمت الموافقة", count: requests.filter((r) => r.status === "approved").length },
-          { id: "rejected", label: "المرفوضة", count: requests.filter((r) => r.status === "rejected").length },
-          { id: "all", label: "الكل", count: requests.length },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id as any)}
-            className={cn(
-              "flex items-center gap-2 rounded-2xl px-4 py-2 text-xs font-bold transition-all border",
-              filter === tab.id
-                ? "bg-foreground text-background border-foreground shadow-sm"
-                : "bg-card/60 text-muted-foreground border-border/80 hover:text-foreground"
-            )}
-          >
-            <span>{tab.label}</span>
-            <span className="rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-extrabold">{tab.count}</span>
-          </button>
-        ))}
-      </div>
+      <FilterChips
+        value={filter}
+        onChange={(v) => setFilter(v as typeof filter)}
+        options={[
+          { value: "pending", label: "قيد الانتظار", count: pendingCount },
+          { value: "approved", label: "تمت الموافقة", count: requests.filter((r) => r.status === "approved").length },
+          { value: "rejected", label: "المرفوضة", count: requests.filter((r) => r.status === "rejected").length },
+          { value: "all", label: "الكل", count: requests.length },
+        ]}
+      />
 
       {/* Requests List */}
       {filteredRequests.length === 0 ? (
         <div className="rounded-3xl border border-border/80 bg-card/60 p-12 text-center">
-          <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-400" />
-          <h4 className="mt-4 text-base font-bold text-foreground">صندوق الطلبات فارغ</h4>
+          <CheckCircle2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <h3 className="mt-4 text-base font-bold text-foreground">صندوق الطلبات فارغ</h3>
           <p className="mt-1 text-xs text-muted-foreground">لا توجد أي طلبات معلقة تتطلب موافقتك في هذا التصنيف.</p>
         </div>
       ) : (
@@ -216,31 +198,13 @@ export function OwnerApprovalsTab() {
             return (
               <div
                 key={req.id}
-                className={cn(
-                  "flex flex-col justify-between rounded-3xl border p-6 space-y-4 shadow-sm transition-all",
-                  req.status === "pending"
-                    ? "border-warning/40 bg-warning/5"
-                    : req.status === "approved"
-                    ? "border-emerald-500/30 bg-card/60"
-                    : "border-border/60 bg-muted/20 opacity-75"
-                )}
+                className="flex flex-col justify-between rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4 shadow-sm"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-[10px] font-black",
-                            req.type === "discount"
-                              ? "bg-primary/20 text-primary"
-                              : req.type === "large_expense"
-                              ? "bg-rose-500/20 text-rose-500"
-                              : req.type === "special_return"
-                              ? "bg-amber-500/20 text-amber-600"
-                              : "bg-blue-500/20 text-blue-500"
-                          )}
-                        >
+                        <span className="inline-flex items-center rounded-full bg-foreground/[0.06] px-2.5 py-0.5 text-xs font-black text-muted-foreground ring-1 ring-border">
                           {req.type === "discount" && "طلب خصم"}
                           {req.type === "large_expense" && "مصروف كبير"}
                           {req.type === "special_return" && "مرتجع استثنائي"}
@@ -250,19 +214,19 @@ export function OwnerApprovalsTab() {
                           {new Date(req.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}
                         </span>
                       </div>
-                      <h4 className="text-base font-bold text-foreground">{req.title}</h4>
+                      <h3 className="text-base font-bold text-foreground">{req.title}</h3>
                     </div>
 
                     <div className="text-left shrink-0">
                       <div className="text-base font-black text-foreground">{fmt(req.amount)} ج.م</div>
                       <span
                         className={cn(
-                          "inline-block rounded-full px-2 py-0.5 text-[10px] font-bold mt-1",
+                          "inline-block rounded-full px-2 py-0.5 text-xs font-bold mt-1",
                           req.status === "pending"
                             ? "bg-warning text-black"
                             : req.status === "approved"
-                            ? "bg-emerald-500 text-white"
-                            : "bg-danger text-white"
+                            ? "bg-success text-black"
+                            : "bg-danger text-black"
                         )}
                       >
                         {req.status === "pending" ? "بانتظار القرار" : req.status === "approved" ? "معتمد" : "مرفوض"}
@@ -270,17 +234,17 @@ export function OwnerApprovalsTab() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-border/40 bg-card/80 p-3.5 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-muted-foreground">
+                  <div className="divide-y divide-border/40 text-xs">
+                    <div className="flex items-center justify-between py-1.5 text-muted-foreground">
                       <span>مقدم الطلب:</span>
                       <strong className="text-foreground">{req.requestedBy}</strong>
                     </div>
-                    <div className="flex items-start justify-between text-muted-foreground">
+                    <div className="flex items-start justify-between py-1.5 text-muted-foreground">
                       <span>السبب والبيان:</span>
                       <span className="text-foreground font-semibold text-right max-w-[70%]">{req.reason}</span>
                     </div>
                     {req.details && (
-                      <div className="border-t border-border/40 pt-1.5 text-[11px] text-muted-foreground">
+                      <div className="py-1.5 text-xs text-muted-foreground">
                         {req.details}
                       </div>
                     )}
@@ -294,14 +258,14 @@ export function OwnerApprovalsTab() {
                       value={actionNotes[req.id] || ""}
                       onChange={(e) => setActionNotes({ ...actionNotes, [req.id]: e.target.value })}
                       placeholder="ملاحظة أو توجيه للبائع (اختياري)..."
-                      className="w-full h-8 rounded-xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
+                      className="w-full h-10 rounded-xl border border-border bg-background px-3 text-xs text-foreground outline-none focus:ring-1 focus:ring-primary"
                     />
 
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => handleDecision(req.id, "approved")}
-                        className="flex items-center justify-center gap-1.5 h-9 rounded-xl bg-emerald-600 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition"
+                        className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-success text-xs font-bold text-black shadow-sm hover:opacity-90 transition"
                       >
                         <Check className="h-4 w-4" />
                         <span>موافقة واعتماد</span>
@@ -310,7 +274,7 @@ export function OwnerApprovalsTab() {
                       <button
                         type="button"
                         onClick={() => handleDecision(req.id, "rejected")}
-                        className="flex items-center justify-center gap-1.5 h-9 rounded-xl bg-rose-600 text-xs font-bold text-white shadow-sm hover:bg-rose-500 transition"
+                        className="flex items-center justify-center gap-1.5 h-10 rounded-xl bg-danger text-xs font-bold text-black shadow-sm hover:opacity-90 transition"
                       >
                         <X className="h-4 w-4" />
                         <span>رفض الطلب</span>
@@ -318,7 +282,7 @@ export function OwnerApprovalsTab() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-[11px] text-muted-foreground pt-1">
+                  <div className="text-xs text-muted-foreground pt-1">
                     القرار: <strong>{req.actionNote || "تم اتخاذ القرار"}</strong> —{" "}
                     {req.actionAt && new Date(req.actionAt).toLocaleDateString("ar-EG")}
                   </div>
