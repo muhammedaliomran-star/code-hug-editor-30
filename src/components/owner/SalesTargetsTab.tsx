@@ -142,27 +142,27 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
     }
 
     setEditingId(null);
-    toast.success("تم تحديث أهداف وعمولة الموظف بنجاح! 🎯");
+    toast.success("تم تحديث أهداف وعمولة الموظف بنجاح!");
   };
 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6">
+      <div>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-warning" />
-              <span>نظام التارجت وحوافز وعمولات البائعين (Commission & Target Tracker)</span>
-            </h3>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-muted-foreground" />
+              <span className="text-balance">نظام التارجت وحوافز وعمولات البائعين (Commission & Target Tracker)</span>
+            </h2>
+            <p className="max-w-[68ch] text-sm text-muted-foreground">
               متابعة تحقيق أهداف المبيعات والتحصيل لكل بائع، واحتساب العمولات والمكافآت المستحقة آلياً.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-primary/30 bg-card px-4 py-2 text-center">
-            <span className="text-[11px] text-muted-foreground">إجمالي العمولات المستحقة هذا الشهر</span>
-            <div className="text-lg font-black text-primary">
+          <div className="rounded-2xl border border-border/80 bg-card px-4 py-2 text-center">
+            <span className="text-xs text-muted-foreground">إجمالي العمولات المستحقة هذا الشهر</span>
+            <div className="text-lg font-black text-foreground">
               {fmt(populatedSellers.reduce((s, i) => s + (i.totalCommission || 0), 0))} ج.م
             </div>
           </div>
@@ -178,12 +178,7 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
           return (
             <div
               key={seller.id}
-              className={cn(
-                "flex flex-col justify-between rounded-3xl border p-6 space-y-5 transition-all shadow-sm",
-                isTopPerformer
-                  ? "border-warning/50 bg-gradient-to-b from-warning/10 via-card/80 to-card/60 ring-2 ring-warning/30"
-                  : "border-border/80 bg-card/60"
-              )}
+              className="flex flex-col justify-between rounded-3xl border border-border/80 bg-card/60 p-6 space-y-5 transition-all shadow-sm"
             >
               <div className="space-y-4">
                 {/* Header info & Badge */}
@@ -192,9 +187,7 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                     <span
                       className={cn(
                         "flex h-11 w-11 items-center justify-center rounded-2xl font-black text-sm",
-                        isTopPerformer
-                          ? "bg-warning text-black shadow-md shadow-warning/30"
-                          : "bg-primary/10 text-primary"
+                        "bg-foreground/[0.06] text-muted-foreground"
                       )}
                     >
                       {isTopPerformer ? <Trophy className="h-5 w-5" /> : <Users className="h-5 w-5" />}
@@ -209,7 +202,7 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                     <button
                       type="button"
                       onClick={() => handleStartEdit(seller)}
-                      className="p-1.5 rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground"
                       title="تعديل التارجت ونسبة العمولة"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
@@ -219,31 +212,31 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
 
                 {isEditing ? (
                   /* Edit Form */
-                  <div className="rounded-2xl border border-primary/30 bg-card/90 p-4 space-y-3">
+                  <div className="rounded-2xl border border-border/80 bg-card/90 p-4 space-y-3">
                     <div>
-                      <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                      <label className="text-xs font-bold text-muted-foreground block mb-1">
                         تارجت المبيعات (ج.م)
                       </label>
                       <input
                         type="number"
                         value={editSalesTarget}
                         onChange={(e) => setEditSalesTarget(Number(e.target.value))}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-bold text-foreground outline-none"
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                      <label className="text-xs font-bold text-muted-foreground block mb-1">
                         تارجت التحصيل (ج.م)
                       </label>
                       <input
                         type="number"
                         value={editCollectionTarget}
                         onChange={(e) => setEditCollectionTarget(Number(e.target.value))}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-bold text-foreground outline-none"
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                      <label className="text-xs font-bold text-muted-foreground block mb-1">
                         نسبة العمولة (%)
                       </label>
                       <input
@@ -251,13 +244,13 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                         step="0.1"
                         value={editCommissionRate}
                         onChange={(e) => setEditCommissionRate(Number(e.target.value))}
-                        className="w-full h-8 rounded-lg border border-border bg-background px-2 text-xs font-bold text-foreground outline-none"
+                        className="w-full h-10 rounded-lg border border-border bg-background px-3 text-xs font-bold text-foreground outline-none"
                       />
                     </div>
                     <button
                       type="button"
                       onClick={() => handleSaveEdit(seller.id)}
-                      className="w-full h-8 rounded-lg bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center gap-1.5"
+                      className="w-full h-10 rounded-lg bg-primary text-xs font-bold text-primary-foreground flex items-center justify-center gap-1.5"
                     >
                       <Check className="h-3.5 w-3.5" />
                       <span>حفظ الإعدادات</span>
@@ -270,18 +263,18 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-muted-foreground flex items-center gap-1">
-                          <Target className="h-3.5 w-3.5 text-primary" />
+                          <Target className="h-3.5 w-3.5 text-muted-foreground" />
                           <span>تارجت المبيعات:</span>
                         </span>
-                        <span className={seller.salesPercent >= 100 ? "text-emerald-500 font-extrabold" : "text-foreground"}>
+                        <span className={seller.salesPercent >= 100 ? "font-extrabold text-foreground" : "text-foreground"}>
                           {seller.salesPercent}% ({fmt(seller.salesAchieved)} / {fmt(seller.salesTarget)} ج.م)
                         </span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                         <div
                           className={cn(
-                            "h-full rounded-full transition-all duration-500",
-                            seller.salesPercent >= 100 ? "bg-emerald-500" : "bg-primary"
+                            "h-full rounded-full transition-[width] duration-500",
+                            seller.salesPercent >= 100 ? "bg-foreground/80" : "bg-foreground/40"
                           )}
                           style={{ width: `${Math.min(100, seller.salesPercent)}%` }}
                         />
@@ -292,18 +285,18 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-xs font-bold">
                         <span className="text-muted-foreground flex items-center gap-1">
-                          <Zap className="h-3.5 w-3.5 text-warning" />
+                          <Zap className="h-3.5 w-3.5 text-muted-foreground" />
                           <span>تارجت التحصيل:</span>
                         </span>
-                        <span className={seller.collectionPercent >= 100 ? "text-emerald-500 font-extrabold" : "text-foreground"}>
+                        <span className={seller.collectionPercent >= 100 ? "font-extrabold text-foreground" : "text-foreground"}>
                           {seller.collectionPercent}% ({fmt(seller.collectionAchieved)} / {fmt(seller.collectionTarget)} ج.م)
                         </span>
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                         <div
                           className={cn(
-                            "h-full rounded-full transition-all duration-500",
-                            seller.collectionPercent >= 100 ? "bg-emerald-500" : "bg-warning"
+                            "h-full rounded-full transition-[width] duration-500",
+                            seller.collectionPercent >= 100 ? "bg-foreground/80" : "bg-foreground/40"
                           )}
                           style={{ width: `${Math.min(100, seller.collectionPercent)}%` }}
                         />
@@ -313,15 +306,15 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                 )}
               </div>
 
-              {/* Commission Summary Box */}
-              <div className="rounded-2xl border border-border/60 bg-card/90 p-4 space-y-2">
-                <div className="flex justify-between items-center text-xs">
+              {/* Commission Summary */}
+              <div className="divide-y divide-border/40 text-xs">
+                <div className="flex justify-between items-center py-2">
                   <span className="text-muted-foreground">نسبة العمولة المعتمدة:</span>
                   <span className="font-bold text-foreground">{seller.commissionRate}%</span>
                 </div>
-                <div className="flex justify-between items-center text-xs border-t border-border/40 pt-2">
+                <div className="flex justify-between items-center py-2">
                   <span className="font-bold text-muted-foreground">العمولة المستحقة للصرف:</span>
-                  <span className="text-base font-black text-emerald-600 dark:text-emerald-400">
+                  <span className="text-base font-black text-foreground">
                     +{fmt(seller.totalCommission)} ج.م
                   </span>
                 </div>
