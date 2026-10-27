@@ -698,7 +698,7 @@ export default function OwnerCockpit() {
                               className={cn(
                                 "rounded-full px-2.5 py-0.5 text-xs font-extrabold",
                                 risk === "high"
-                                  ? "bg-danger text-danger-foreground"
+                                  ? "bg-danger text-black"
                                   : "bg-warning text-black"
                               )}
                             >

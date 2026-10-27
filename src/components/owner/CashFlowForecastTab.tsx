@@ -139,16 +139,16 @@ export function CashFlowForecastTab({
           <div className="space-y-1">
             <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              <span>محاكي التدفق النقدي والتنبؤ بالأشهر القادمة (Cash Flow Horizon)</span>
+              <span className="text-balance">محاكي التدفق النقدي والتنبؤ بالأشهر القادمة (Cash Flow Horizon)</span>
             </h2>
-            <p className="text-xs text-muted-foreground">
+            <p className="max-w-[68ch] text-sm text-muted-foreground">
               توقع السيولة القادمة من الأقساط المجدولة ومقارنتها بالتزامات الموردين والمصروفات لتفادي أي عجز نقدي مسبقاً.
             </p>
           </div>
 
           {/* Collection Sensitivity Slider */}
           <div className="rounded-2xl border border-border/80 bg-card/90 p-3 flex flex-col gap-2 min-w-[260px]">
-            <div className="flex justify-between items-center text-xs">
+            <div className="flex justify-between items-center text-sm">
               <span className="font-bold text-muted-foreground flex items-center gap-1">
                 <Sliders className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>نسبة التحصيل المتوقعة:</span>
@@ -301,7 +301,7 @@ export function CashFlowForecastTab({
                 className={cn(
                   "rounded-full px-2.5 py-0.5 text-xs font-extrabold",
                   m.status === "deficit"
-                    ? "bg-danger text-danger-foreground"
+                    ? "bg-danger text-black"
                     : m.status === "tight"
                     ? "bg-warning text-black"
                     : "bg-success/15 text-success"
