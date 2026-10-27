@@ -178,7 +178,7 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
           return (
             <div
               key={seller.id}
-              className="flex flex-col justify-between rounded-3xl border border-border/80 bg-card/60 p-6 space-y-5 transition-all shadow-sm"
+              className="flex flex-col justify-between rounded-3xl border border-border/80 bg-card/60 p-6 space-y-5 shadow-sm"
             >
               <div className="space-y-4">
                 {/* Header info & Badge */}
@@ -193,7 +193,7 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                       {isTopPerformer ? <Trophy className="h-5 w-5" /> : <Users className="h-5 w-5" />}
                     </span>
                     <div>
-                      <h4 className="text-base font-bold text-foreground">{seller.name}</h4>
+                      <h3 className="text-base font-bold text-foreground">{seller.name}</h3>
                       <span className="text-xs text-muted-foreground">{seller.role}</span>
                     </div>
                   </div>
@@ -272,11 +272,11 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                         <div
-                          className={cn(
-                            "h-full rounded-full transition-[width] duration-500",
-                            seller.salesPercent >= 100 ? "bg-foreground/80" : "bg-foreground/40"
-                          )}
-                          style={{ width: `${Math.min(100, seller.salesPercent)}%` }}
+                          className="h-full w-full rounded-full bg-foreground/60 transition-transform duration-500"
+                          style={{
+                            transform: `scaleX(${Math.min(100, seller.salesPercent) / 100})`,
+                            transformOrigin: "right",
+                          }}
                         />
                       </div>
                     </div>
@@ -294,11 +294,11 @@ export function SalesTargetsTab({ invoices, payments, branches }: SalesTargetsTa
                       </div>
                       <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                         <div
-                          className={cn(
-                            "h-full rounded-full transition-[width] duration-500",
-                            seller.collectionPercent >= 100 ? "bg-foreground/80" : "bg-foreground/40"
-                          )}
-                          style={{ width: `${Math.min(100, seller.collectionPercent)}%` }}
+                          className="h-full w-full rounded-full bg-foreground/60 transition-transform duration-500"
+                          style={{
+                            transform: `scaleX(${Math.min(100, seller.collectionPercent) / 100})`,
+                            transformOrigin: "right",
+                          }}
                         />
                       </div>
                     </div>
