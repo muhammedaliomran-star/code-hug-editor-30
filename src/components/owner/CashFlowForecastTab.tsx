@@ -134,13 +134,13 @@ export function CashFlowForecastTab({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="rounded-3xl border border-primary/20 bg-primary/5 p-6">
+      <div>
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
-            <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
               <span>محاكي التدفق النقدي والتنبؤ بالأشهر القادمة (Cash Flow Horizon)</span>
-            </h3>
+            </h2>
             <p className="text-xs text-muted-foreground">
               توقع السيولة القادمة من الأقساط المجدولة ومقارنتها بالتزامات الموردين والمصروفات لتفادي أي عجز نقدي مسبقاً.
             </p>
@@ -150,10 +150,10 @@ export function CashFlowForecastTab({
           <div className="rounded-2xl border border-border/80 bg-card/90 p-3 flex flex-col gap-2 min-w-[260px]">
             <div className="flex justify-between items-center text-xs">
               <span className="font-bold text-muted-foreground flex items-center gap-1">
-                <Sliders className="h-3.5 w-3.5 text-primary" />
+                <Sliders className="h-3.5 w-3.5 text-muted-foreground" />
                 <span>نسبة التحصيل المتوقعة:</span>
               </span>
-              <span className="font-black text-primary text-sm">{collectionRatePercent}%</span>
+              <span className="font-black text-foreground text-sm">{collectionRatePercent}%</span>
             </div>
             <input
               type="range"
@@ -164,7 +164,7 @@ export function CashFlowForecastTab({
               onChange={(e) => setCollectionRatePercent(Number(e.target.value))}
               className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
             />
-            <div className="flex justify-between text-[10px] text-muted-foreground">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>متحفظ (50%)</span>
               <span>واقعي (85%)</span>
               <span>مثالي (100%)</span>
@@ -175,52 +175,49 @@ export function CashFlowForecastTab({
 
       {/* 3 Overview Metric Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+        <div className="rounded-3xl border border-border/80 bg-card/60 p-5">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>إجمالي التحصيلات المتوقعة (6 أشهر)</span>
-            <ArrowUpRight className="h-4 w-4 text-emerald-500" />
+            <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-2">
+          <div className="text-2xl font-black text-foreground mt-2">
             {fmt(totalProjectedInbound)} ج.م
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             بناءً على نسبة تحصيل {collectionRatePercent}% من الأقساط
           </div>
         </div>
 
-        <div className="rounded-3xl border border-rose-500/30 bg-rose-500/5 p-5">
+        <div className="rounded-3xl border border-border/80 bg-card/60 p-5">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>إجمالي الالتزامات والمصروفات (6 أشهر)</span>
-            <ArrowDownRight className="h-4 w-4 text-rose-500" />
+            <ArrowDownRight className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div className="text-2xl font-black text-rose-600 dark:text-rose-400 mt-2">
+          <div className="text-2xl font-black text-foreground mt-2">
             {fmt(totalProjectedOutbound)} ج.م
           </div>
-          <div className="text-[11px] text-muted-foreground mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             دفعات موردين ومصاريف تشغيل تقديرية
           </div>
         </div>
 
         <div
           className={cn(
-            "rounded-3xl border p-5",
-            totalNetProjected >= 0
-              ? "border-primary/30 bg-primary/5 text-primary"
-              : "border-danger/30 bg-danger/5 text-danger"
+            "rounded-3xl border border-border/80 bg-card/60 p-5 text-foreground",
           )}
         >
-          <div className="flex items-center justify-between text-xs opacity-80">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>صافي الفائض النقدي المتوقع</span>
             {totalNetProjected >= 0 ? (
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+              <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
             ) : (
-              <AlertTriangle className="h-4 w-4 text-danger" />
+              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
           <div className="text-2xl font-black mt-2">
             {totalNetProjected >= 0 ? `+${fmt(totalNetProjected)}` : fmt(totalNetProjected)} ج.م
           </div>
-          <div className="text-[11px] opacity-80 mt-1">
+          <div className="text-xs text-muted-foreground mt-1">
             {totalNetProjected >= 0 ? "السيولة في وضع آمن ومريح" : "تنبيه: يلزم تكثيف التحصيل لتغطية الالتزامات"}
           </div>
         </div>
@@ -228,17 +225,27 @@ export function CashFlowForecastTab({
 
       {/* Chart Visualization */}
       <div className="rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4">
-        <h4 className="text-base font-bold text-foreground flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-primary" />
+        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
           <span>مقارنة التدفقات الشهرية (الداخل مقابل الخارج)</span>
-        </h4>
+        </h3>
 
         <div className="h-72 w-full pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={forecastData} margin={{ top: 10, right: 10, left: 10, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-              <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} />
-              <YAxis stroke="#888888" fontSize={11} tickLine={false} tickFormatter={(v) => `${v / 1000}k`} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                stroke="hsl(var(--muted-foreground))"
+                tickLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                stroke="hsl(var(--muted-foreground))"
+                tickLine={false}
+                tickFormatter={(v) => `${v / 1000}k`}
+              />
               <Tooltip
                 formatter={(value: any, name: any) => [
                   `${fmt(Number(value))} ج.م`,
@@ -248,7 +255,12 @@ export function CashFlowForecastTab({
                     ? "الالتزامات والمصروفات (خارج)"
                     : "صافي السيولة",
                 ]}
-                contentStyle={{ backgroundColor: "#1e293b", borderColor: "#334155", borderRadius: "1rem", color: "#fff" }}
+                contentStyle={{
+                  backgroundColor: "hsl(var(--card))",
+                  borderColor: "hsl(var(--border))",
+                  borderRadius: "1rem",
+                  color: "hsl(var(--foreground))",
+                }}
               />
               <Legend
                 formatter={(value) =>
@@ -259,8 +271,18 @@ export function CashFlowForecastTab({
                     : "صافي السيولة"
                 }
               />
-              <Bar dataKey="effectiveInbound" fill="#10b981" radius={[6, 6, 0, 0]} name="effectiveInbound" />
-              <Bar dataKey="totalOutbound" fill="#f43f5e" radius={[6, 6, 0, 0]} name="totalOutbound" />
+              <Bar
+                dataKey="effectiveInbound"
+                fill="hsl(var(--foreground) / 0.85)"
+                radius={[6, 6, 0, 0]}
+                name="effectiveInbound"
+              />
+              <Bar
+                dataKey="totalOutbound"
+                fill="hsl(var(--muted-foreground) / 0.45)"
+                radius={[6, 6, 0, 0]}
+                name="totalOutbound"
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -271,43 +293,36 @@ export function CashFlowForecastTab({
         {forecastData.map((m) => (
           <div
             key={m.monthKey}
-            className={cn(
-              "rounded-3xl border p-5 space-y-3 shadow-sm",
-              m.status === "deficit"
-                ? "border-danger/40 bg-danger/5"
-                : m.status === "tight"
-                ? "border-warning/40 bg-warning/5"
-                : "border-border/80 bg-card/60"
-            )}
+            className="rounded-3xl border border-border/80 bg-card/60 p-5 space-y-3 shadow-sm"
           >
             <div className="flex items-center justify-between">
               <span className="text-sm font-black text-foreground">{m.label}</span>
               <span
                 className={cn(
-                  "rounded-full px-2.5 py-0.5 text-[10px] font-extrabold",
+                  "rounded-full px-2.5 py-0.5 text-xs font-extrabold",
                   m.status === "deficit"
                     ? "bg-danger text-danger-foreground"
                     : m.status === "tight"
                     ? "bg-warning text-black"
-                    : "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                    : "bg-success/15 text-success"
                 )}
               >
                 {m.status === "deficit" ? "عجز محتمل" : m.status === "tight" ? "سيولة متوازنة" : "فائض سيولة"}
               </span>
             </div>
 
-            <div className="space-y-1.5 rounded-2xl border border-border/40 bg-card/80 p-3 text-xs">
-              <div className="flex justify-between">
+            <div className="divide-y divide-border/40 text-xs">
+              <div className="flex justify-between py-1.5">
                 <span className="text-muted-foreground">أقساط مجدولة:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">+{fmt(m.effectiveInbound)} ج.م</span>
+                <span className="font-bold text-foreground">+{fmt(m.effectiveInbound)} ج.م</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between py-1.5">
                 <span className="text-muted-foreground">دفعات موردين ومصاريف:</span>
-                <span className="font-bold text-rose-500">-{fmt(m.totalOutbound)} ج.م</span>
+                <span className="font-bold text-foreground">-{fmt(m.totalOutbound)} ج.م</span>
               </div>
-              <div className="border-t border-border/40 pt-1.5 flex justify-between font-black">
+              <div className="pt-1.5 flex justify-between font-black">
                 <span className="text-foreground">صافي الشهر:</span>
-                <span className={m.netCashflow >= 0 ? "text-emerald-500" : "text-danger"}>
+                <span className="text-foreground">
                   {m.netCashflow >= 0 ? `+${fmt(m.netCashflow)}` : fmt(m.netCashflow)} ج.م
                 </span>
               </div>
