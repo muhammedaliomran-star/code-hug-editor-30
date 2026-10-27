@@ -98,7 +98,7 @@ function TypeToggle({ value, onChange }: { value: "installment" | "cash"; onChan
           onClick={() => onChange(opt.key)}
           aria-pressed={value === opt.key}
           className={cn(
-            "rounded-[1.1rem] px-3 py-2 text-center transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
+            "rounded-[1.1rem] px-3 py-2 text-center transition-[color,background-color,box-shadow,transform] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
             value === opt.key
               ? "bg-primary/15 text-primary ring-1 ring-primary/40"
               : "text-muted-foreground hover:bg-foreground/[0.04]",

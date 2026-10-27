@@ -171,7 +171,7 @@ export function ShiftCloseoutModal({
                     type="button"
                     onClick={() => setShiftType(s.id as any)}
                     className={cn(
-                      "h-10 rounded-xl text-xs font-bold transition-all border",
+                      "h-10 rounded-xl text-xs font-bold transition-colors border",
                       shiftType === s.id
                         ? "bg-primary text-primary-foreground border-primary shadow-sm"
                         : "bg-card text-muted-foreground border-border hover:text-foreground"

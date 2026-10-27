@@ -676,7 +676,7 @@ export default function OwnerCockpit() {
                       <div
                         key={inv.id}
                         className={cn(
-                          "flex flex-col justify-between rounded-3xl border p-5 transition-all shadow-sm",
+                          "flex flex-col justify-between rounded-3xl border p-5 transition-[box-shadow,transform] duration-300 shadow-sm",
                           risk === "high"
                             ? "border-danger/40 bg-danger/10"
                             : risk === "medium"
@@ -767,13 +767,13 @@ export default function OwnerCockpit() {
           {/* TAB 3: SECURITY & AUDIT RADAR */}
           {activeTab === "security" && (
             <div className="space-y-6">
-              <div className="rounded-3xl border border-warning/20 bg-warning/5 p-6">
+              <div>
                 <div className="space-y-1">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <ShieldCheck className="h-5 w-5 text-warning" />
+                    <ShieldCheck className="h-5 w-5 text-muted-foreground" />
                     <span>رادار الرقابة والعمليات الحساسة</span>
                   </h2>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="max-w-[68ch] text-sm text-muted-foreground">
                     مراقبة العمليات الاستثنائية التي قد تؤثر على أرباح المحل (خصومات كبيرة، مرتجعات، وسحوبات غير معتادة)
                   </p>
                 </div>
@@ -792,18 +792,18 @@ export default function OwnerCockpit() {
                       <div className="flex items-center gap-3">
                         <span
                           className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-2xl font-bold text-sm",
+                            "flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl font-bold text-sm",
                             alert.severity === "danger"
-                              ? "bg-danger/20 text-danger"
+                              ? "bg-danger text-black"
                               : alert.severity === "warning"
-                              ? "bg-warning/20 text-warning"
-                              : "bg-primary/20 text-primary"
+                              ? "bg-warning text-black"
+                              : "bg-foreground/[0.06] text-muted-foreground"
                           )}
                         >
                           {alert.type === "discount" && "%"}
                           {alert.type === "return" && "↩"}
-                          {alert.type === "expense" && "💸"}
-                          {alert.type === "low_stock" && "📦"}
+                          {alert.type === "expense" && <Wallet className="h-4 w-4" />}
+                          {alert.type === "low_stock" && <Package className="h-4 w-4" />}
                         </span>
                         <div>
                           <div className="text-sm font-bold text-foreground">{alert.title}</div>
@@ -816,7 +816,7 @@ export default function OwnerCockpit() {
                         {alert.link && (
                           <Link
                             to={alert.link}
-                            className="rounded-xl border border-border/80 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted"
+                            className="flex min-h-[40px] items-center rounded-xl border border-border/80 bg-card px-3.5 text-xs font-bold text-foreground hover:bg-muted transition-colors"
                           >
                             فحص
                           </Link>

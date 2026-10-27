@@ -4,12 +4,9 @@ import { fmt } from "@/lib/store";
 import { waLink } from "@/lib/whatsapp-templates";
 import { toast } from "sonner";
 import {
-  MessageSquare,
   Copy,
   Check,
   Send,
-  Sparkles,
-  PhoneCall,
   Crown,
 } from "lucide-react";
 
@@ -70,7 +67,7 @@ export function ExecutiveBriefingModal({
 💸 إجمالي المصروفات: *${fmt(stats.totalExpenses)} ج.م*
 
 ━━━━━━━━━━━━━━━━━━━━━
-🎯 *التحصيل ورادار الأقساط:*
+📊 *التحصيل ورادار الأقساط:*
 ⏰ أقساط مستحقة اليوم: *${dueTodayCount} قسط* بإجمالي *${fmt(dueTodayAmount)} ج.م*
 ⚠️ عملاء متأخرين عن السداد: *${overdueCount} عميل* بإجمالي متأخرات *${fmt(overdueAmount)} ج.م*
 👥 إجمالي ديون المحل في السوق: *${fmt(stats.totalReceivables)} ج.م*
@@ -101,11 +98,14 @@ export function ExecutiveBriefingModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl p-6">
         <DialogHeader className="text-right">
-          <DialogTitle className="flex items-center gap-2 text-xl font-black text-foreground">
-            <Crown className="h-6 w-6 text-warning" />
-            <span>الملخص الذكي للمالك (Daily Executive Briefing)</span>
+          <DialogTitle className="flex flex-wrap items-center gap-2 text-xl font-black text-foreground">
+            <Crown className="h-6 w-6 text-muted-foreground" />
+            <span className="text-balance">الملخص الذكي للمالك</span>
+            <span className="text-sm font-bold text-muted-foreground" dir="ltr">
+              (Daily Executive Briefing)
+            </span>
           </DialogTitle>
-          <p className="text-xs text-muted-foreground">
+          <p className="max-w-[68ch] text-sm text-balance text-muted-foreground">
             ملخص نصي فوري وشامل لنبض المحل اليومي مجهز للإرسال المباشر على واتساب أو التليجرام.
           </p>
         </DialogHeader>
@@ -141,14 +141,14 @@ export function ExecutiveBriefingModal({
                 onClick={handleCopy}
                 className="h-10 flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-xs font-bold text-foreground hover:bg-muted transition"
               >
-                {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
                 <span>{copied ? "تم النسخ" : "نسخ النص"}</span>
               </button>
             </div>
           </div>
 
           {/* Report Preview Box */}
-          <div className="relative rounded-2xl border border-border/80 bg-muted/40 p-4 font-mono text-xs leading-relaxed text-foreground whitespace-pre-wrap max-h-72 overflow-y-auto selection:bg-primary/20">
+          <div className="relative max-h-72 overflow-y-auto border-t border-border/40 pt-4 text-xs leading-relaxed text-foreground whitespace-pre-wrap selection:bg-primary/20">
             {generateReportText()}
           </div>
         </div>
