@@ -373,7 +373,7 @@ export default function OwnerCockpit() {
       <PageTransition>
         <div className="space-y-8 pb-12">
           {/* Header */}
-          <div className="rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/10 via-card/80 to-card/60 p-6 shadow-xl backdrop-blur-md">
+          <div>
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
@@ -385,7 +385,7 @@ export default function OwnerCockpit() {
                       <h1 className="text-2xl font-black tracking-tight text-foreground sm:text-3xl">
                         لوحة المالك التنفيذية
                       </h1>
-                      <span className="rounded-full bg-primary/20 px-2.5 py-0.5 text-xs font-bold text-primary">
+                      <span className="rounded-full bg-foreground/[0.06] px-3 py-1 text-xs font-medium text-muted-foreground ring-1 ring-border">
                         سِجلّي Boss
                       </span>
                     </div>
@@ -442,7 +442,7 @@ export default function OwnerCockpit() {
             </div>
 
             {/* Navigation Tabs */}
-            <div className="mt-6 border-t border-border/40 pt-4">
+            <div className="mt-6">
               <StatTabs
                 value={activeTab}
                 onChange={(v) => setActiveTab(v as typeof activeTab)}
@@ -472,7 +472,7 @@ export default function OwnerCockpit() {
                   label="السيولة المحصلة كاش"
                   value={stats.totalCashCollected}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="positive"
+                  tone="neutral"
                   masked={privacy}
                   sub="نقدية جاهزة للاستخدام أو التوريد"
                 />
@@ -482,7 +482,7 @@ export default function OwnerCockpit() {
                   label="صافي الربح الحقيقي"
                   value={stats.netProfit}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone={stats.netProfit >= 0 ? "positive" : "danger"}
+                  tone="neutral"
                   masked={privacy}
                   sub={<>هامش الربح الصافي: <strong className="text-foreground">{stats.profitMargin}%</strong></>}
                 />
@@ -502,7 +502,7 @@ export default function OwnerCockpit() {
                   label="المصروفات والمسحوبات"
                   value={stats.totalExpenses}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="danger"
+                  tone="neutral"
                   masked={privacy}
                   sub={`عدد الحركات: ${filteredExpenses.length} حركة صرف`}
                 />
@@ -524,7 +524,7 @@ export default function OwnerCockpit() {
                       <span>إجمالي المبالغ المستحقة لك في السوق كأقساط ومتبقيات فواتير غير مسددة.</span>
                       <button
                         onClick={() => setActiveTab("debt")}
-                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-foreground underline underline-offset-4"
                       >
                         <span>عرض رادار التحصيل والعملاء المتأخرين</span>
                         <ChevronLeft className="h-4 w-4" />
@@ -552,7 +552,7 @@ export default function OwnerCockpit() {
                       </span>
                       <button
                         onClick={() => setActiveTab("debt")}
-                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-foreground underline underline-offset-4"
                       >
                         <span>إرسال تذكيرات واتساب سريعة</span>
                         <ChevronLeft className="h-4 w-4" />
@@ -568,14 +568,14 @@ export default function OwnerCockpit() {
                   label="تنبيهات الرقابة والمخزن"
                   value={auditAlerts.length}
                   format={(n) => `${Math.round(n)} تنبيهات نشطة`}
-                  tone={auditAlerts.length > 0 ? "danger" : "neutral"}
+                  tone="neutral"
                   masked={privacy}
                   sub={
                     <>
                       <span>عمليات الخصومات الاستثنائية، المرتجعات، وتنبيهات نواقص البضاعة.</span>
                       <button
                         onClick={() => setActiveTab("security")}
-                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline"
+                        className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-foreground underline underline-offset-4"
                       >
                         <span>فحص سجل الرقابة والعمليات</span>
                         <ChevronLeft className="h-4 w-4" />
@@ -589,7 +589,7 @@ export default function OwnerCockpit() {
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-bold text-foreground">آخر فواتير تم إصدارها في الفترة</h2>
-                  <Link to="/invoices" className="text-xs font-bold text-primary hover:underline">
+                  <Link to="/invoices" className="text-xs font-bold text-foreground underline underline-offset-4">
                     كل الفواتير
                   </Link>
                 </div>
@@ -653,7 +653,7 @@ export default function OwnerCockpit() {
                   <div className="flex items-center gap-4">
                     <div className="px-4 py-2 text-center border-s border-danger/30">
                       <span className="text-[11px] text-muted-foreground">إجمالي المتأخرات</span>
-                      <div className="text-lg font-black text-danger">
+                      <div className="text-lg font-black text-foreground">
                         {fmt(overdueInvoices.reduce((s, i) => s + i.remaining, 0))} ج.م
                       </div>
                     </div>
@@ -816,7 +816,7 @@ export default function OwnerCockpit() {
                         {alert.link && (
                           <Link
                             to={alert.link}
-                            className="rounded-xl border border-border/80 bg-card px-3 py-1.5 text-xs font-bold text-primary hover:bg-muted"
+                            className="rounded-xl border border-border/80 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted"
                           >
                             فحص
                           </Link>
@@ -850,11 +850,11 @@ export default function OwnerCockpit() {
                     <div key={b.id} className="rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Building2 className="h-5 w-5 text-primary" />
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
                           <p className="text-base font-bold text-foreground">{b.name}</p>
                         </div>
                         {b.isMain && (
-                          <span className="rounded-full bg-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          <span className="rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-bold text-muted-foreground ring-1 ring-border">
                             الفرع الرئيسي
                           </span>
                         )}
@@ -867,7 +867,7 @@ export default function OwnerCockpit() {
                         </div>
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">التحصيل الفعلي:</span>
-                          <span className="font-bold text-success">{fmt(b.collected)} ج.م</span>
+                          <span className="font-bold text-foreground">{fmt(b.collected)} ج.م</span>
                         </div>
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">نسبة التحصيل:</span>
@@ -881,7 +881,7 @@ export default function OwnerCockpit() {
 
                       <Link
                         to="/branches"
-                        className="block text-center text-xs font-bold text-primary hover:underline"
+                        className="block text-center text-xs font-bold text-foreground underline underline-offset-4"
                       >
                         إدارة الفرع وتعيين الصلاحيات
                       </Link>
@@ -898,7 +898,7 @@ export default function OwnerCockpit() {
               {/* Golden Items */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Trophy className="h-5 w-5 text-warning" />
+                  <Trophy className="h-5 w-5 text-muted-foreground" />
                   <h2 className="text-base font-bold text-foreground">الأصناف الذهبية (الأعلى ربحية)</h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -912,7 +912,7 @@ export default function OwnerCockpit() {
                     {topSellingItems.map((item, idx) => (
                       <div key={item.id} className="flex items-center justify-between py-3">
                         <div className="flex items-center gap-2.5">
-                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-foreground/[0.06] text-xs font-bold text-muted-foreground">
                             {idx + 1}
                           </span>
                           <div>
@@ -922,7 +922,7 @@ export default function OwnerCockpit() {
                         </div>
 
                         <div className="text-left">
-                          <div className="text-sm font-extrabold text-success">
+                          <div className="text-sm font-extrabold text-foreground">
                             +{fmt(item.profit)} ج.م ربح
                           </div>
                           <div className="text-[11px] text-muted-foreground">
@@ -938,7 +938,7 @@ export default function OwnerCockpit() {
               {/* Dead Stock Items */}
               <div className="rounded-3xl border border-border/80 bg-card/60 p-6 space-y-4">
                 <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-warning" />
+                  <Package className="h-5 w-5 text-muted-foreground" />
                   <h2 className="text-base font-bold text-foreground">الأصناف الراكدة (تحتاج تصفية)</h2>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -960,7 +960,7 @@ export default function OwnerCockpit() {
 
                         <Link
                           to="/inventory"
-                          className="rounded-xl border border-border/80 bg-card px-3 py-1.5 text-xs font-bold text-primary hover:bg-muted"
+                          className="rounded-xl border border-border/80 bg-card px-3 py-1.5 text-xs font-bold text-foreground hover:bg-muted"
                         >
                           تعديل السعر / عرض
                         </Link>

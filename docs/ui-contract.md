@@ -59,6 +59,12 @@ print/PDF documents.
 - Brand teal/amber accents, skeleton shimmer, scanner pulse: pinned identity
   and legitimate loading/scanning patterns.
 - Print/PDF output keeps its own physical sizes (excluded domain).
+- Owner cockpit (`/owner`) neutralization pass: header de-carded to a plain
+  band (kills the NESTED CARDS + AI COLOR PALETTE flags), MetricCard tones,
+  inline links, and the brand pill demoted to neutrals. Kept on purpose: the
+  solid teal crown tile, WhatsApp green button, and color-coded severity
+  chips. Extending this demotion to the rest of the pages (Kit-level metric
+  tones) is a separate open decision — scoped to `/owner` for now.
 
 ## Normative rule
 
