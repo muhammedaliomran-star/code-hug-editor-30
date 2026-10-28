@@ -58,6 +58,13 @@ print/PDF documents.
   names a specific element.
 - Brand teal/amber accents, skeleton shimmer, scanner pulse: pinned identity
   and legitimate loading/scanning patterns.
+- POS semantic colors (pay green, refund red, hold amber, brand primary on
+  the Zap tile/buttons/HUD): owner-confirmed operational language on the
+  cashier surface; audit "AI COLOR PALETTE" flags on them are advisory.
+  POS pass (2026-10-29) only raised real defects, all fixed: 40px touch
+  floors (cash input, held-cart restore/delete), 11px kbd floor in the
+  keyboard HUD, muted-text contrast (`/70`, `/80` → full), margin strip
+  bumped to 12px, check-mark removed from the success toast.
 - Print/PDF output keeps its own physical sizes (excluded domain).
 - Owner cockpit (`/owner`) neutralization pass: header de-carded to a plain
   band (kills the NESTED CARDS + AI COLOR PALETTE flags), MetricCard tones,

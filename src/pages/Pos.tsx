@@ -465,7 +465,7 @@ function PosPage() {
         await db.deductStock(deductions);
       }
 
-      toast.success(`تم حفظ فاتورة البيع النقدي ${invoiceCodeStr} بنجاح ✓`);
+      toast.success(`تم حفظ فاتورة البيع النقدي ${invoiceCodeStr} بنجاح`);
 
       const currentCart = [...cart];
       setCompletedInvoice({
@@ -576,7 +576,7 @@ function PosPage() {
         await db.deductStock(deductions);
       }
 
-      toast.success(`تم حفظ فاتورة الدفع المتعدد ${invoiceCodeStr} بنجاح ✓`);
+      toast.success(`تم حفظ فاتورة الدفع المتعدد ${invoiceCodeStr} بنجاح`);
 
       const currentCart = [...cart];
       setCompletedInvoice({
@@ -837,7 +837,7 @@ function PosPage() {
                 <Package className="h-12 w-12 text-muted-foreground/30" />
                 <div>
                   <p className="text-sm font-bold">لم يتم العثور على أي منتجات مطابقة</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
+                  <p className="text-xs text-muted-foreground mt-1">
                     جرب البحث بكلمات أخرى أو أضف منتجات جديدة للمخزن.
                   </p>
                 </div>
@@ -877,7 +877,7 @@ function PosPage() {
                           {p.name}
                         </div>
                         {p.size && (
-                          <span className="inline-block mt-0.5 text-[11px] text-muted-foreground/80 bg-foreground/5 px-1.5 py-0.2 rounded">
+                          <span className="inline-block mt-0.5 text-[11px] font-semibold text-muted-foreground bg-foreground/5 px-1.5 py-0.2 rounded">
                             مقاس: {p.size}
                           </span>
                         )}
@@ -968,7 +968,7 @@ function PosPage() {
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-2 border-2 border-dashed border-border/40 rounded-2xl">
                 <ShoppingCart className="h-10 w-10 text-muted-foreground/30" />
                 <p className="text-xs font-bold">السلة فارغة</p>
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-xs text-muted-foreground">
                   اضغط على الأصناف لإضافتها مباشرة للفاتورة.
                 </p>
               </div>
@@ -1108,7 +1108,7 @@ function PosPage() {
 
               {/* Floor Price Protection / Margin Alert (Hidden if privacy mode active) */}
               {!privacy && cart.length > 0 && (
-                <div className="flex items-center justify-between text-[11px] px-2 py-1 rounded-lg bg-muted/40 border border-border/40">
+                <div className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg bg-muted/40 border border-border/40">
                   <div className="flex items-center gap-1.5">
                     <span className="text-muted-foreground">هامش الربح:</span>
                     <span className={cn("font-bold font-mono", profit >= 0 ? "text-success" : "text-danger")}>
@@ -1116,7 +1116,7 @@ function PosPage() {
                     </span>
                   </div>
                   {profit < 0 && (
-                    <span className="text-[11px] font-bold text-danger flex items-center gap-1">
+                    <span className="text-xs font-bold text-danger flex items-center gap-1">
                       <ShieldAlert className="h-3 w-3" />
                       تنبيه: الخصم نزل عن سعر التكلفة!
                     </span>
@@ -1143,7 +1143,7 @@ function PosPage() {
                   placeholder="المبلغ المدفوع كاش..."
                   value={cashReceived}
                   onChange={(e) => setCashReceived(e.target.value)}
-                  className="h-8 text-xs font-mono text-center rounded-xl bg-background"
+                  className="h-10 text-xs font-mono text-center rounded-xl bg-background"
                 />
                 {change > 0 && (
                   <div className="text-xs font-bold text-success whitespace-nowrap px-2 py-1 bg-success/10 rounded-xl">
@@ -1426,7 +1426,7 @@ function PosPage() {
                       type="button"
                       size="sm"
                       onClick={() => handleRestoreHeld(held)}
-                      className="rounded-xl font-bold h-8 text-xs bg-primary text-primary-foreground gap-1"
+                      className="rounded-xl font-bold h-10 text-xs bg-primary text-primary-foreground gap-1.5 px-3"
                     >
                       <PlayCircle className="h-3.5 w-3.5" />
                       <span>استرجاع</span>
@@ -1436,7 +1436,7 @@ function PosPage() {
                       variant="ghost"
                       size="icon"
                       onClick={() => removeHeld(held.id)}
-                      className="h-8 w-8 rounded-xl text-muted-foreground hover:text-danger"
+                      className="h-10 w-10 rounded-xl text-muted-foreground hover:text-danger"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

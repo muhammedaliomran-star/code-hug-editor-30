@@ -130,7 +130,7 @@ export function PosKeyboardHUD({
                 : "bg-muted/40 border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
-            <kbd className="px-1 py-0.2 rounded bg-background border border-border/80 font-mono font-bold text-[10px] shadow-2xs">
+            <kbd className="px-1 py-0.2 rounded bg-background border border-border/80 font-mono font-bold text-[11px] shadow-2xs">
               {sc.key}
             </kbd>
             <span className="hidden xl:inline">{sc.icon}</span>
