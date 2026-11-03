@@ -40,6 +40,7 @@ import { findStockByBarcode } from "@/lib/store";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivacy } from "@/lib/privacy";
 import { toast } from "sonner";
+import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { cn } from "@/lib/utils";
 import {
   Plus,
