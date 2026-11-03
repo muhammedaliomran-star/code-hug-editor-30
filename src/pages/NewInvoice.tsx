@@ -4,7 +4,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
-import { StockProductPicker } from "@/components/invoices";
 import type { ProductRow } from "@/types";
 
 import {
@@ -46,9 +45,7 @@ import {
   Plus,
   AlertTriangle,
   ShieldAlert,
-  Trash2,
   CalendarIcon,
-  Package,
   ScanLine,
   Receipt,
   Banknote,
@@ -63,13 +60,14 @@ import {
   PauseCircle,
   PlayCircle,
   ShieldCheck,
-  Printer,
-  Layers,
   Search,
 } from "lucide-react";
 import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
+import { InvoiceSummarySidebar } from "@/components/invoices/InvoiceSummarySidebar";
+import { InvoiceMobileActionBar } from "@/components/invoices/InvoiceMobileActionBar";
+import { InvoiceProductRow } from "@/components/invoices/InvoiceProductRow";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
 import { calculateLineFinancials } from "@/lib/financial-engine";
 
@@ -149,16 +147,12 @@ function NewInvoicePage() {
   const blocked = customer && (customer.frozen || customer.status === "defaulter");
 
   const totalCost = products.reduce((s, p) => s + Number(p.cost || 0) * Number(p.quantity || 1), 0);
-  const lineMetrics = (p: ProductRow) => {
-    const lf = calculateLineFinancials({
-      price: Number(p.price || 0),
-      quantity: Number(p.quantity || 1),
-      discountPct: Number(p.discount || 0),
-      taxPct: Number(p.taxPct || 0),
-    });
-    return { gross: lf.gross, discount: lf.discountAmount, tax: lf.taxAmount, total: lf.lineTotal };
-  };
-  const subtotal = products.reduce((s, p) => s + lineMetrics(p).total, 0);
+  const subtotal = products.reduce((s, p) => s + calculateLineFinancials({
+    price: Number(p.price || 0),
+    quantity: Number(p.quantity || 1),
+    discountPct: Number(p.discount || 0),
+    taxPct: Number(p.taxPct || 0),
+  }).lineTotal, 0);
   const discountValue = Math.min(subtotal, Math.max(0, Number(discountAmt || 0)));
   const afterDiscount = Math.max(0, subtotal - discountValue);
   const taxValue = Math.max(0, (afterDiscount * Number(taxPct || 0)) / 100);
@@ -875,174 +869,19 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
 
               <div className="max-h-[52vh] space-y-2 overflow-y-auto rounded-[1.75rem] border border-border/30 p-5 custom-scrollbar">
                 <AnimatePresence initial={false}>
-                  {products.map((p, idx) => {
-                    const s = p.stockId
-                      ? data.stockItems.find((x) => x.id === p.stockId)
-                      : undefined;
-                    const qty = Number(p.quantity || 0);
-                    const metrics = lineMetrics(p);
-                    const lineTotal = metrics.total;
-                    const hasVariants = s && s.variants && s.variants.length > 0;
-
-                    return (
-                      <motion.div
-                        key={p.id}
-                        layout
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
-                        className="divide-y divide-border/30 px-3 py-2.5 rounded-2xl bg-foreground/[0.015] border border-foreground/5"
-                      >
-                        <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_76px_96px_96px_32px]">
-                          <div className="min-w-0">
-                            {idx === 0 && (
-                              <Label className="mb-1 block text-[10px] text-muted-foreground">
-                                اسم المنتج
-                              </Label>
-                            )}
-                            <StockProductPicker
-                              value={p.stockId}
-                              name={p.name}
-                              stockItems={data.stockItems}
-                              onPick={(item) =>
-                                updateProduct(p.id, {
-                                  stockId: item.id,
-                                  name: item.name,
-                                  cost: String(item.lastUnitCost || 0),
-                                  price: p.price || (item.salePrice ? String(item.salePrice) : ""),
-                                })
-                              }
-                              onClear={() => updateProduct(p.id, { stockId: undefined, name: "" })}
-                            />
-                          </div>
-                          <div>
-                            {idx === 0 && (
-                              <Label className="mb-1 block text-[10px] text-muted-foreground">
-                                الكمية
-                              </Label>
-                            )}
-                            <Input
-                              type="number"
-                              min="1"
-                              value={p.quantity}
-                              onChange={(e) => updateProduct(p.id, { quantity: e.target.value })}
-                              className="h-9 bg-white/5 border-white/10 text-center font-bold"
-                            />
-                          </div>
-                          <div>
-                            {idx === 0 && (
-                              <Label className="mb-1 block text-[10px] text-muted-foreground">
-                                التكلفة
-                              </Label>
-                            )}
-                            <Input
-                              type="number"
-                              value={p.cost}
-                              onChange={(e) => updateProduct(p.id, { cost: e.target.value })}
-                              className={cn(
-                                blurCls,
-                                "h-9 bg-white/5 border-white/10 text-center font-bold",
-                              )}
-                              disabled={hideProfits}
-                            />
-                          </div>
-                          <div>
-                            {idx === 0 && (
-                              <Label className="mb-1 block text-[10px] text-muted-foreground">
-                                سعر البيع
-                              </Label>
-                            )}
-                            <Input
-                              type="number"
-                              value={p.price}
-                              onChange={(e) => updateProduct(p.id, { price: e.target.value })}
-                              className="h-9 bg-white/5 border-white/10 text-center font-bold"
-                            />
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => removeProduct(p.id)}
-                              disabled={products.length === 1}
-                              className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-danger/10 hover:text-danger"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* محدد المقاس / اللون (Variants) إذا كان المنتج يحتوي على تنوعات */}
-                        {hasVariants && (
-                          <div className="mt-2 pt-2 flex items-center gap-2">
-                            <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
-                              <Layers className="w-3.5 h-3.5 text-primary" /> المقاس / اللون:
-                            </span>
-                            <Select
-                              value={p.variantId || ""}
-                              onValueChange={(val) => {
-                                const matchedVar = s.variants?.find((v) => v.id === val);
-                                if (matchedVar) {
-                                  updateProduct(p.id, {
-                                    variantId: matchedVar.id,
-                                    name: `${s.name} (${[matchedVar.size, matchedVar.color].filter(Boolean).join(" - ")})`,
-                                    price: String(matchedVar.salePrice || s.salePrice || 0),
-                                    cost: String(matchedVar.costPrice || s.lastUnitCost || 0),
-                                  });
-                                  toast.success(`تم اختيار تنوع: ${matchedVar.size || ""} ${matchedVar.color || ""}`);
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="h-8 text-xs max-w-[220px]">
-                                <SelectValue placeholder="اختر المقاس / اللون..." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {s.variants?.map((v) => (
-                                  <SelectItem key={v.id} value={v.id}>
-                                    {[v.size, v.color].filter(Boolean).join(" / ")} — {v.salePrice} ج.م (متوفر: {v.quantity})
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-
-                        <div className="mt-2 grid grid-cols-1 gap-2 border-t border-border/30 pt-3 sm:grid-cols-[110px_110px_minmax(0,1fr)]">
-                          <div>
-                            <Label className="mb-1 block text-[10px] text-muted-foreground">خصم البند %</Label>
-                            <Input type="number" min="0" max="100" value={p.discount || ""} onChange={(e) => updateProduct(p.id, { discount: e.target.value })} className="h-9 text-center" placeholder="0" />
-                          </div>
-                          <div>
-                            <Label className="mb-1 block text-[10px] text-muted-foreground">ضريبة البند %</Label>
-                            <Input type="number" min="0" value={p.taxPct || ""} onChange={(e) => updateProduct(p.id, { taxPct: e.target.value })} className="h-9 text-center" placeholder="0" />
-                          </div>
-                          <div>
-                            <Label className="mb-1 block text-[10px] text-muted-foreground">السيريال / IMEI (افصل بفاصلة)</Label>
-                            <Input value={p.serialNumbers || ""} onChange={(e) => updateProduct(p.id, { serialNumbers: e.target.value })} className="h-9 font-mono text-xs" dir="ltr" placeholder="3569… , 3569…" />
-                          </div>
-                        </div>
-
-                        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                          <span className="font-bold text-muted-foreground">
-                            الصافي: {fmt(lineTotal)} ج.م
-                            {(metrics.discount > 0 || metrics.tax > 0) && <span className="mr-2 font-normal">(خصم {fmt(metrics.discount)} • ضريبة {fmt(metrics.tax)})</span>}
-                          </span>
-                          {s && (
-                            <span
-                              className={cn(
-                                "flex items-center gap-1",
-                                s.quantity >= qty && qty > 0 ? "text-success" : "text-danger",
-                              )}
-                            >
-                              <Package className="h-3 w-3" /> المتوفر: {s.quantity}
-                            </span>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                  {products.map((p, idx) => (
+                    <InvoiceProductRow
+                      key={p.id}
+                      product={p}
+                      index={idx}
+                      stockItems={data.stockItems}
+                      canRemove={products.length > 1}
+                      hideProfits={hideProfits}
+                      costBlurClass={blurCls}
+                      onUpdate={updateProduct}
+                      onRemove={removeProduct}
+                    />
+                  ))}
                 </AnimatePresence>
               </div>
 
@@ -1647,139 +1486,35 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         </div>
 
         {/* ===== العمود الجانبي ===== */}
-        <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24 lg:self-start">
-          {/* ملخص الفاتورة */}
-          <div className="rounded-[2rem] border border-border/30 p-5 space-y-4 text-right">
-            <div className="flex items-center justify-between">
-              <span
-                className={cn(
-                  "rounded-full border px-3 py-1 text-[10px] font-bold",
-                  blockReason
-                    ? "border-warning/40 bg-warning/10 text-warning"
-                    : "border border-border/30 bg-foreground/[0.06] text-foreground",
-                )}
-              >
-                {blockReason ? "غير مكتملة" : "جاهزة للحفظ"}
-              </span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                ملخص الفاتورة
-              </span>
-            </div>
-
-            <div className="space-y-2 text-sm">
-              <Row
-                label="عدد الأصناف"
-                value={String(products.filter((p) => p.name.trim()).length)}
-              />
-              <Row label="الإجمالي قبل الخصم" value={`${fmt(subtotal)} ج.م`} />
-              {discountValue > 0 && <Row label="الخصم" value={`− ${fmt(discountValue)} ج.م`} />}
-              {taxValue > 0 && (
-                <Row label={`الضريبة (${Number(taxPct || 0)}%)`} value={`${fmt(taxValue)} ج.م`} />
-              )}
-              <Row label="إجمالي الفاتورة" value={`${fmt(totalPrice)} ج.م`} />
-              <Row
-                label={isCashMode ? "المدفوع الآن" : "المقدم"}
-                value={`${fmt(isCashMode ? totalPrice : downNum)} ج.م`}
-              />
-              {!isCashMode && <Row label="المتبقي للتقسيط" value={`${fmt(remaining)} ج.م`} />}
-            </div>
-
-            <div className="rounded-2xl bg-foreground/[0.06] px-4 py-4">
-              <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                {isCashMode ? "المطلوب سداده" : "المقدم الآن"}
-              </span>
-              <div className="flex items-baseline gap-1">
-                <span className="text-4xl font-black leading-none tracking-tighter text-foreground">
-                  {fmt(isCashMode ? totalPrice : downNum)}
-                </span>
-                <span className="text-xs font-bold text-foreground">ج.م</span>
-              </div>
-            </div>
-          </div>
-
-          {/* الإجراءات السريعة */}
-          <div className="rounded-[2rem] border border-border/30 p-5 space-y-3 text-right">
-            <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              الإجراءات
-            </span>
-            {blockReason && <div className="text-[11px] font-bold text-warning">{blockReason}</div>}
-
-            {/* زر بيع نقدي وطباعة إيصال فوري F9 */}
-            <Button
-              type="button"
-              onClick={() => submit(true, true)}
-              disabled={!!blockReason}
-              className="h-14 w-full rounded-2xl bg-success text-success-foreground hover:bg-success/90 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-success/20 transition-all active:scale-[0.98]"
-            >
-              <Printer className="w-5 h-5" />
-              <span>دفع فوري وطباعة إيصال (F9)</span>
-            </Button>
-
-            <Button
-              onClick={() => submit(false, false)}
-              disabled={!!blockReason}
-              className="h-12 w-full rounded-2xl bg-primary text-primary-foreground font-black text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-            >
-              <Plus className="w-4 h-4" />
-              <span>حفظ الفاتورة (Ctrl+S)</span>
-            </Button>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                onClick={handleParkCurrentBill}
-                className="h-11 rounded-2xl border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs font-bold"
-              >
-                <PauseCircle className="w-4 h-4 ml-1" /> تعليق (F4)
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => setParkedModalOpen(true)}
-                className="h-11 rounded-2xl text-xs font-bold"
-              >
-                المعلقة ({parkedBills.length})
-              </Button>
-            </div>
-
-            <Button
-              asChild
-              variant="ghost"
-              className="h-10 w-full rounded-2xl text-xs text-muted-foreground"
-            >
-              <Link to="/invoices">إلغاء والعودة</Link>
-            </Button>
-          </div>
+        <aside className="order-1 lg:order-2 lg:sticky lg:top-24 lg:self-start lg:w-[380px] lg:shrink-0">
+          <InvoiceSummarySidebar
+            itemCount={products.filter((p) => p.name.trim()).length}
+            subtotal={subtotal}
+            discountValue={discountValue}
+            taxPct={taxPct}
+            taxValue={taxValue}
+            totalPrice={totalPrice}
+            downNum={downNum}
+            remaining={remaining}
+            isCashMode={isCashMode}
+            blockReason={blockReason}
+            parkedCount={parkedBills.length}
+            onInstantPrint={() => submit(true, true)}
+            onSave={() => submit(false, false)}
+            onPark={handleParkCurrentBill}
+            onOpenParked={() => setParkedModalOpen(true)}
+          />
         </aside>
       </div>
 
       {/* شريط الإجراءات السفلي — للشاشات الصغيرة */}
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/10 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
-        <div className="flex items-center gap-3">
-          <Button
-            onClick={() => (step < 4 ? setStep(step + 1) : submit(false))}
-            disabled={step === 4 && !!blockReason}
-            className="h-12 flex-1 rounded-2xl font-black"
-          >
-            {step < 4 ? "التالي" : "حفظ الفاتورة"}
-          </Button>
-          <Button
-            onClick={() => submit(true, true)}
-            disabled={!!blockReason}
-            className="h-12 px-3 rounded-2xl bg-success text-success-foreground font-black"
-            title="دفع وطباعة"
-          >
-            <Printer className="w-5 h-5" />
-          </Button>
-          <div className="text-right">
-            <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
-              الإجمالي
-            </span>
-            <span className="text-lg font-black leading-none text-foreground">
-              {fmt(totalPrice)}
-            </span>
-          </div>
-        </div>
-      </div>
+      <InvoiceMobileActionBar
+        step={step}
+        blockReason={blockReason}
+        totalPrice={totalPrice}
+        onNext={() => (step < 4 ? setStep(step + 1) : submit(false))}
+        onInstantPrint={() => submit(true, true)}
+      />
       <div className="h-20 lg:hidden" />
 
       {/* باركود مودال */}
@@ -1811,14 +1546,5 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         }}
       />
     </>
-  );
-}
-
-function Row({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-foreground/5 pb-2 last:border-0 last:pb-0">
-      <span className={cn("font-extrabold text-foreground", valueClass)}>{value}</span>
-      <span className="text-muted-foreground">{label}</span>
-    </div>
   );
 }
