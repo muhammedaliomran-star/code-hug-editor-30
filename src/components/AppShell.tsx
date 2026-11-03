@@ -1,9 +1,8 @@
 import logoMark from "@/assets/logo-mark.png";
 import { Link, useNavigate, useLocation } from "@/lib/router-compat";
 import type { ReactNode } from "react";
-import { LogOut, Undo2, Wallet, GitBranch, Banknote } from "lucide-react";
+import { LogOut, MoreHorizontal, Search, ChevronDown, Crown, AlertTriangle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutGrid, Users, FileText, Bell, Receipt, Truck, Package, BarChart3, Settings, CalendarDays, Warehouse, Store, ClipboardCheck, Crown, Percent, ShieldCheck, UserCheck, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDB, lowStockCount, useShopSettings, isDueSoonOrOverdue } from "@/lib/store";
 import { UserChip } from "@/components/UserChip";
@@ -11,80 +10,43 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { BranchSwitcher } from "@/components/BranchSwitcher";
 import { applyTheme } from "@/lib/theme";
 import { useEffect, useMemo, useState } from "react";
-import { MoreHorizontal, Search } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { useCurrentLicense, type ModulePermissions } from "@/lib/licensing";
-import { useStaffAndShifts, type StaffPermissions, type StaffRole } from "@/lib/staff";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useCurrentLicense } from "@/lib/licensing";
+import { useStaffAndShifts } from "@/lib/staff";
 import { useDeploymentHealth } from "@/lib/health";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import {
+  navGroups,
+  isNavVisible,
+  isItemActive,
+  MOBILE_TAB_ROUTES,
+  type NavGroup,
+  type NavItem,
+} from "@/lib/nav-groups";
 
-type NavItem = {
-  to: string;
-  label: string;
-  icon: typeof LayoutGrid;
-  alertKey?: true;
-  /** License module flag required to show this item */
-  licenseKey?: "allowPos" | "allowInstallments" | "allowWarehouse" | "allowMultiBranch";
-  /** Staff permission flag required to show this item */
-  staffPerm?: "canAccessReports" | "canAccessSettings";
-  /** Staff roles allowed to see this item (omitted = all roles) */
-  roles?: StaffRole[];
-};
-
-// Phase 2: each item declares its license/staff requirement.
-// Items without requirements are visible to everyone.
-const nav: NavItem[] = [
-  { to: "/", label: "لوحة التحكم", icon: LayoutGrid },
-  { to: "/pos", label: "الكاشير (POS)", icon: ShoppingCart, licenseKey: "allowPos" },
-  { to: "/daily", label: "اليومية", icon: CalendarDays },
-  { to: "/customers", label: "العملاء", icon: Users },
-  { to: "/invoices", label: "الفواتير", icon: FileText, licenseKey: "allowInstallments" },
-  { to: "/discounts", label: "العروض والكوبونات", icon: Percent },
-  { to: "/shipping", label: "الشحن", icon: Truck },
-  { to: "/purchases", label: "المشتريات", icon: Truck },
-  { to: "/suppliers", label: "الموردين", icon: Users },
-
-  { to: "/inventory", label: "المنتجات", icon: Package, licenseKey: "allowWarehouse" },
-  { to: "/warehouse", label: "المخزن", icon: Warehouse, licenseKey: "allowWarehouse" },
-  { to: "/branches", label: "الفروع", icon: GitBranch, licenseKey: "allowMultiBranch" },
-  { to: "/staff", label: "فريق العمل والورديات", icon: UserCheck, roles: ["admin", "manager"] },
-  { to: "/returns", label: "المرتجعات", icon: Undo2 },
-  { to: "/cashbox", label: "الصندوق", icon: Wallet },
-  { to: "/payments", label: "الدفعات", icon: Banknote },
-  { to: "/expenses", label: "المصروفات", icon: Receipt },
-  { to: "/alerts", label: "المنبه", icon: Bell, alertKey: true as const },
-  { to: "/reports", label: "التقارير", icon: BarChart3, staffPerm: "canAccessReports" },
-  { to: "/reconciliation", label: "المطابقة", icon: ClipboardCheck },
-  { to: "/audit", label: "سجل الرقابة والتدقيق", icon: ShieldCheck, roles: ["admin"] },
-  { to: "/settings", label: "الإعدادات", icon: Settings, staffPerm: "canAccessSettings" },
-];
-
-function isNavVisible(
-  n: NavItem,
-  modules: ModulePermissions,
-  permissions: StaffPermissions,
-  role: StaffRole,
-): boolean {
-  if (n.licenseKey && modules[n.licenseKey] === false) return false;
-  if (n.staffPerm && permissions[n.staffPerm] !== true) return false;
-  if (n.roles && !n.roles.includes(role)) return false;
-  return true;
-}
-
-// Phase 1 (mobile): 5 core tabs on the bottom bar — the rest live in the "More" sheet.
-const MOBILE_TABS = ["/", "/pos", "/invoices", "/customers", "/shipping"];
-
-function MobileBottomBar({ items, pathname, overdueCount }: { items: NavItem[]; pathname: string; overdueCount: number }) {
+// Phase 1 (mobile): 5 core tabs on the bottom bar — everything else lives in "المزيد".
+function MobileBottomBar({
+  items,
+  groups,
+  pathname,
+  overdueCount,
+}: {
+  items: NavItem[];
+  groups: NavGroup[];
+  pathname: string;
+  overdueCount: number;
+}) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const tabs = items.filter((n) => MOBILE_TABS.includes(n.to));
-  const rest = items.filter((n) => !MOBILE_TABS.includes(n.to));
-  const moreActive = rest.some((n) => (n.to === "/" ? pathname === "/" : pathname.startsWith(n.to)));
+  const tabs = items.filter((n) => MOBILE_TAB_ROUTES.includes(n.to));
+  const moreActive = items.some(
+    (n) => !MOBILE_TAB_ROUTES.includes(n.to) && isItemActive(n, pathname),
+  );
   return (
     <>
       <div className="glass no-scrollbar fixed inset-x-3 bottom-3 z-40 flex overflow-x-auto rounded-[1.5rem] pb-[env(safe-area-inset-bottom)] md:hidden">
         {tabs.map((n) => {
-          const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
+          const active = isItemActive(n, pathname);
           const Icon = n.icon;
           const showBadge = n.alertKey && overdueCount > 0;
           return (
@@ -117,19 +79,19 @@ function MobileBottomBar({ items, pathname, overdueCount }: { items: NavItem[]; 
           المزيد
         </button>
       </div>
-      <MobileMoreSheet items={rest} open={moreOpen} onOpenChange={setMoreOpen} pathname={pathname} overdueCount={overdueCount} />
+      <MobileMoreSheet groups={groups} open={moreOpen} onOpenChange={setMoreOpen} pathname={pathname} overdueCount={overdueCount} />
     </>
   );
 }
 
 function MobileMoreSheet({
-  items,
+  groups,
   open,
   onOpenChange,
   pathname,
   overdueCount,
 }: {
-  items: NavItem[];
+  groups: NavGroup[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pathname: string;
@@ -138,21 +100,11 @@ function MobileMoreSheet({
   const [query, setQuery] = useState("");
   const q = query.trim();
   const filtered = useMemo(
-    () => (q ? items.filter((n) => n.label.includes(q)) : items),
-    [items, q],
+    () => (q ? groups.flatMap((g) => g.items).filter((n) => n.label.includes(q)) : []),
+    [groups, q],
   );
-  // Phase 3: group rare/admin sections under headers (only when not searching).
-  const sections = useMemo(() => {
-    if (q) return [];
-    const by = (routes: string[]) => items.filter((n) => routes.includes(n.to));
-    return [
-      { key: "ops", title: "العمليات اليومية", rows: by(["/daily", "/discounts", "/purchases", "/suppliers", "/returns", "/cashbox", "/payments", "/expenses", "/alerts"]) },
-      { key: "stock", title: "المخزون والفروع", rows: by(["/inventory", "/warehouse", "/branches"]) },
-      { key: "admin", title: "الإدارة", rows: by(["/staff", "/reports", "/reconciliation", "/audit", "/settings"]) },
-    ].filter((s) => s.rows.length > 0);
-  }, [items, q]);
   const renderRow = (n: NavItem) => {
-    const active = pathname.startsWith(n.to);
+    const active = isItemActive(n, pathname);
     const Icon = n.icon;
     const showBadge = n.alertKey && overdueCount > 0;
     return (
@@ -201,11 +153,11 @@ function MobileMoreSheet({
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {sections.map((s) => (
-              <div key={s.key}>
-                <p className="mb-1 px-4 text-xs font-bold text-muted-foreground">{s.title}</p>
+            {groups.map((g) => (
+              <div key={g.key}>
+                <p className="mb-1 px-4 text-xs font-bold text-muted-foreground">{g.label}</p>
                 <div className="flex flex-col gap-1">
-                  {s.rows.map(renderRow)}
+                  {g.items.map(renderRow)}
                 </div>
               </div>
             ))}
@@ -236,10 +188,41 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Phase 2: hide nav items the current license / staff role may not access.
   const { license } = useCurrentLicense();
   const { currentStaff } = useStaffAndShifts();
-  const visibleNav = useMemo(
-    () => nav.filter((n) => isNavVisible(n, license.modules, currentStaff.permissions, currentStaff.role)),
+
+  // Groups are filtered item-by-item; a group whose items are all hidden disappears.
+  const visibleGroups = useMemo(
+    () =>
+      navGroups
+        .map((g) => ({
+          ...g,
+          items: g.items.filter((n) =>
+            isNavVisible(n, license.modules, currentStaff.permissions, currentStaff.role),
+          ),
+        }))
+        .filter((g) => g.items.length > 0),
     [license, currentStaff],
   );
+  const visibleNav = useMemo(() => visibleGroups.flatMap((g) => g.items), [visibleGroups]);
+
+  // Single-open accordion: whichever group owns the current route opens automatically.
+  const activeGroupKey = useMemo(
+    () => visibleGroups.find((g) => g.items.some((n) => isItemActive(n, location.pathname)))?.key ?? null,
+    [visibleGroups, location.pathname],
+  );
+  const [openGroup, setOpenGroup] = useState<string | null>(activeGroupKey);
+  useEffect(() => {
+    if (activeGroupKey) setOpenGroup(activeGroupKey);
+  }, [activeGroupKey]);
+
+  // The mobile sheet mirrors the same groups, minus the routes pinned to the bottom bar.
+  const mobileSheetGroups = useMemo(
+    () =>
+      visibleGroups
+        .map((g) => ({ ...g, items: g.items.filter((n) => !MOBILE_TAB_ROUTES.includes(n.to)) }))
+        .filter((g) => g.items.length > 0),
+    [visibleGroups],
+  );
+
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate("/landing");
@@ -300,33 +283,86 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
 
         <nav className="stagger no-scrollbar -mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1">
-          {visibleNav.map((n) => {
-            const active = n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to);
-            const Icon = n.icon;
-            const showBadge = n.alertKey && overdueCount > 0;
+          {visibleGroups.map((g) => {
+            const GroupIcon = g.icon;
+            const isOpen = openGroup === g.key;
+            const isGroupActive = activeGroupKey === g.key;
+            const groupBadge = g.items.some((n) => n.alertKey) ? overdueCount : 0;
             return (
-              <Link
-                key={n.to}
-                to={n.to}
-                className={cn(
-                  "group relative flex items-center justify-between gap-2 rounded-full px-4 py-2.5 text-sm transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-                  active
-                    ? "bg-primary font-semibold text-primary-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.45)]"
-                    : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-[-3px] hover:shadow-[inset_0_0_0_1px_var(--hairline)]"
-                )}
+              <Collapsible
+                key={g.key}
+                open={isOpen}
+                onOpenChange={(next) => setOpenGroup(next ? g.key : null)}
               >
-                <span className="flex items-center gap-2">
-                  {n.label}
-                  {showBadge && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-danger text-danger-foreground text-[11px] font-bold leading-none">
-                      {overdueCount}
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    aria-controls={`nav-group-${g.key}`}
+                    className={cn(
+                      "group relative flex w-full items-center justify-between gap-2 rounded-full px-4 py-2.5 text-sm transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                      isGroupActive
+                        ? "bg-sidebar-accent/70 font-semibold text-sidebar-foreground"
+                        : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-[-3px] hover:shadow-[inset_0_0_0_1px_var(--hairline)]",
+                    )}
+                  >
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <GroupIcon
+                        className={cn(
+                          "h-4 w-4 shrink-0 transition-colors",
+                          isGroupActive ? "text-primary" : "text-muted-foreground",
+                        )}
+                      />
+                      <span className="truncate">{g.label}</span>
+                      {groupBadge > 0 && (
+                        <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold leading-none text-danger-foreground">
+                          {groupBadge}
+                        </span>
+                      )}
                     </span>
-                  )}
-                </span>
-                <span className="relative">
-                  <Icon className="w-4 h-4" />
-                </span>
-              </Link>
+                    <ChevronDown
+                      className={cn(
+                        "h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-300",
+                        isOpen && "rotate-180",
+                      )}
+                    />
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent
+                  id={`nav-group-${g.key}`}
+                  className="overflow-hidden data-[state=open]:animate-accordion-down"
+                >
+                  <div className="mt-1 flex flex-col gap-1 border-s border-[var(--hairline)] ps-2">
+                    {g.items.map((n) => {
+                      const active = isItemActive(n, location.pathname);
+                      const Icon = n.icon;
+                      const showBadge = n.alertKey && overdueCount > 0;
+                      return (
+                        <Link
+                          key={n.to}
+                          to={n.to}
+                          aria-current={active ? "page" : undefined}
+                          className={cn(
+                            "group relative flex items-center justify-between gap-2 rounded-full px-3 py-2 text-[13px] transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                            active
+                              ? "bg-primary font-semibold text-primary-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.45)]"
+                              : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-[-2px] hover:shadow-[inset_0_0_0_1px_var(--hairline)]",
+                          )}
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="truncate">{n.label}</span>
+                            {showBadge && (
+                              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-danger px-1.5 text-[11px] font-bold leading-none text-danger-foreground">
+                                {overdueCount}
+                              </span>
+                            )}
+                          </span>
+                          <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             );
           })}
         </nav>
@@ -346,7 +382,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       {/* Mobile bottom nav: 5 core tabs + More sheet */}
-      <MobileBottomBar items={visibleNav} pathname={location.pathname} overdueCount={overdueCount} />
+      <MobileBottomBar items={visibleNav} groups={mobileSheetGroups} pathname={location.pathname} overdueCount={overdueCount} />
 
       {/* علامة القمر — ظاهرة دايماً على الموبايل */}
       <div className="fixed left-3 top-3 z-40 md:hidden">
