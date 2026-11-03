@@ -375,7 +375,7 @@ async function assertInvoiceAllowed(inv: {
   }
 }
 
-function invoiceItemFinancials(item: {
+export function invoiceItemFinancials(item: {
   price: number;
   quantity?: number;
   discountPct?: number;
@@ -455,7 +455,7 @@ export const db = {
       stock_item_id: it.stockId ?? null,
     }));
 
-    const { data, error } = await supabase.rpc("create_sale", {
+    const { data, error } = await (supabase.rpc as any)("create_sale", {
       p_customer_id: inv.customerId,
       p_total: inv.total,
       p_down_payment: inv.downPayment,
@@ -581,7 +581,7 @@ export const db = {
     await fetchAll();
   },
   async removeInvoice(id: string) {
-    const { error } = await supabase.rpc("delete_invoice_with_stock", { p_invoice_id: id });
+    const { error } = await (supabase.rpc as any)("delete_invoice_with_stock", { p_invoice_id: id });
     if (error) throw error;
     await fetchAll();
   },
@@ -810,7 +810,7 @@ export const db = {
       .filter((it) => it.stockId && it.quantity > 0)
       .map((it) => ({ stock_item_id: it.stockId, quantity: it.quantity }));
     if (mapped.length === 0) return;
-    const { error } = await supabase.rpc("deduct_stock", { p_items: mapped });
+    const { error } = await (supabase.rpc as any)("deduct_stock", { p_items: mapped });
     if (error) throw error;
     await fetchAll();
   },
