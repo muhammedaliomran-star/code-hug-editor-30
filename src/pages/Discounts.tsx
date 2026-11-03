@@ -717,7 +717,7 @@ export default function Discounts() {
                                 type="button"
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleEditCoupon(coupon.id)}
+                                onClick={() => handleEditCoupon(coupon)}
                                 className="h-10 w-10 text-muted-foreground hover:text-primary"
                               >
                                 <Edit2 className="w-3.5 h-3.5" />
