@@ -18,27 +18,18 @@ export type Database = {
         Row: {
           admin_pin_hash: string
           created_at: string
-          pin_algo: string
-          pin_failed_attempts: number
-          pin_locked_until: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           admin_pin_hash: string
           created_at?: string
-          pin_algo?: string
-          pin_failed_attempts?: number
-          pin_locked_until?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           admin_pin_hash?: string
           created_at?: string
-          pin_algo?: string
-          pin_failed_attempts?: number
-          pin_locked_until?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -780,7 +771,6 @@ export type Database = {
           price: number
           quantity: number
           serial_numbers: string[]
-          stock_item_id: string | null
           tax_amount: number
           tax_pct: number
           updated_at: string
@@ -798,7 +788,6 @@ export type Database = {
           price?: number
           quantity?: number
           serial_numbers?: string[]
-          stock_item_id?: string | null
           tax_amount?: number
           tax_pct?: number
           updated_at?: string
@@ -816,7 +805,6 @@ export type Database = {
           price?: number
           quantity?: number
           serial_numbers?: string[]
-          stock_item_id?: string | null
           tax_amount?: number
           tax_pct?: number
           updated_at?: string
@@ -1843,9 +1831,6 @@ export type Database = {
           logo_url: string | null
           low_stock_threshold: number
           manager_pin: string | null
-          manager_pin_algo: string
-          manager_pin_failed_attempts: number
-          manager_pin_locked_until: string | null
           max_discount_without_pin: number | null
           numerals_format: string
           open_cash_drawer_on_print: boolean
@@ -1892,9 +1877,6 @@ export type Database = {
           logo_url?: string | null
           low_stock_threshold?: number
           manager_pin?: string | null
-          manager_pin_algo?: string
-          manager_pin_failed_attempts?: number
-          manager_pin_locked_until?: string | null
           max_discount_without_pin?: number | null
           numerals_format?: string
           open_cash_drawer_on_print?: boolean
@@ -1941,9 +1923,6 @@ export type Database = {
           logo_url?: string | null
           low_stock_threshold?: number
           manager_pin?: string | null
-          manager_pin_algo?: string
-          manager_pin_failed_attempts?: number
-          manager_pin_locked_until?: string | null
           max_discount_without_pin?: number | null
           numerals_format?: string
           open_cash_drawer_on_print?: boolean
@@ -2641,39 +2620,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      create_sale: {
-        Args: {
-          p_customer_id: string
-          p_discount_amount?: number
-          p_discount_pct?: number
-          p_down_payment?: number
-          p_first_due_date?: string
-          p_invoice_id?: string
-          p_items?: Json
-          p_monthly_installment?: number
-          p_notes?: string
-          p_paid?: number
-          p_status?: string
-          p_tax_amount?: number
-          p_tax_pct?: number
-          p_total: number
-        }
-        Returns: string
-      }
       create_sale_return: {
         Args: { p_invoice_id: string; p_items: Json; p_reason: string }
         Returns: string
       }
       delete_invoice_payment: { Args: { p_payment_id: string }; Returns: Json }
-      delete_invoice_with_stock: { Args: { p_invoice_id: string }; Returns: undefined }
       delete_purchase_with_inventory: {
         Args: { p_purchase_id: string }
         Returns: undefined
       }
-      deduct_stock: {
-        Args: { p_items: Json }
-        Returns: undefined
-      }
+      get_admin_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_courier_board: { Args: { p_token: string }; Returns: Json }
       get_storefront_analytics_summary: {
         Args: { p_from?: string; p_storefront_id: string }
@@ -2750,11 +2706,11 @@ export type Database = {
         Returns: Json
       }
       set_admin_pin: {
-        Args: { _new_pin: string }
+        Args: { _new_pin: string; _user_id: string }
         Returns: undefined
       }
       set_manager_pin: {
-        Args: { _new_pin: string }
+        Args: { _new_pin: string; _user_id: string }
         Returns: undefined
       }
       settle_carrier_collections: {
@@ -2787,11 +2743,11 @@ export type Database = {
         Returns: undefined
       }
       verify_admin_pin: {
-        Args: { _pin: string }
+        Args: { _pin: string; _user_id: string }
         Returns: boolean
       }
       verify_manager_pin: {
-        Args: { _pin: string }
+        Args: { _pin: string; _user_id: string }
         Returns: boolean
       }
       wipe_user_data: { Args: never; Returns: Json }
