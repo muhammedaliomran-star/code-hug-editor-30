@@ -830,6 +830,13 @@ export type Database = {
             referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invoice_items_stock_item_id_fkey"
+            columns: ["stock_item_id"]
+            isOneToOne: false
+            referencedRelation: "stock_items"
+            referencedColumns: ["id"]
+          },
         ]
       }
       invoices: {
@@ -2644,18 +2651,18 @@ export type Database = {
       create_sale: {
         Args: {
           p_customer_id: string
-          p_discount_amount?: number
-          p_discount_pct?: number
-          p_down_payment?: number
-          p_first_due_date?: string
+          p_discount_amount: number
+          p_discount_pct: number
+          p_down_payment: number
+          p_first_due_date: string
           p_invoice_id?: string
-          p_items?: Json
-          p_monthly_installment?: number
-          p_notes?: string
-          p_paid?: number
-          p_status?: string
-          p_tax_amount?: number
-          p_tax_pct?: number
+          p_items: Json
+          p_monthly_installment: number
+          p_notes: string
+          p_paid: number
+          p_status: string
+          p_tax_amount: number
+          p_tax_pct: number
           p_total: number
         }
         Returns: string
@@ -2664,14 +2671,14 @@ export type Database = {
         Args: { p_invoice_id: string; p_items: Json; p_reason: string }
         Returns: string
       }
+      deduct_stock: { Args: { p_items: Json }; Returns: undefined }
       delete_invoice_payment: { Args: { p_payment_id: string }; Returns: Json }
-      delete_invoice_with_stock: { Args: { p_invoice_id: string }; Returns: undefined }
-      delete_purchase_with_inventory: {
-        Args: { p_purchase_id: string }
+      delete_invoice_with_stock: {
+        Args: { p_invoice_id: string }
         Returns: undefined
       }
-      deduct_stock: {
-        Args: { p_items: Json }
+      delete_purchase_with_inventory: {
+        Args: { p_purchase_id: string }
         Returns: undefined
       }
       get_courier_board: { Args: { p_token: string }; Returns: Json }
@@ -2749,14 +2756,8 @@ export type Database = {
         Args: { p_dry_run?: boolean; p_exported_by?: string; p_tables: Json }
         Returns: Json
       }
-      set_admin_pin: {
-        Args: { _new_pin: string }
-        Returns: undefined
-      }
-      set_manager_pin: {
-        Args: { _new_pin: string }
-        Returns: undefined
-      }
+      set_admin_pin: { Args: { _new_pin: string }; Returns: undefined }
+      set_manager_pin: { Args: { _new_pin: string }; Returns: undefined }
       settle_carrier_collections: {
         Args: { p_carrier_id: string }
         Returns: number
@@ -2786,14 +2787,8 @@ export type Database = {
         }
         Returns: undefined
       }
-      verify_admin_pin: {
-        Args: { _pin: string }
-        Returns: boolean
-      }
-      verify_manager_pin: {
-        Args: { _pin: string }
-        Returns: boolean
-      }
+      verify_admin_pin: { Args: { _pin: string }; Returns: boolean }
+      verify_manager_pin: { Args: { _pin: string }; Returns: boolean }
       wipe_user_data: { Args: never; Returns: Json }
     }
     Enums: {

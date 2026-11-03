@@ -22,6 +22,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Trash2, CalendarIcon, Banknote } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { usePrivacy } from "@/lib/privacy";
 
 export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClose: () => void }) {
   const data = useDB();
