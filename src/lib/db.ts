@@ -373,26 +373,7 @@ async function assertInvoiceAllowed(inv: {
   }
 }
 
-async function restoreStockByName(items: Array<{ name: string; quantity: number }>) {
-  const user_id = await uid();
-  const merged = new Map<string, number>();
-  for (const it of items) {
-    const name = (it.name || "").trim();
-    if (!name || !it.quantity) continue;
-    merged.set(name, (merged.get(name) ?? 0) + it.quantity);
-  }
-  for (const [name, qty] of merged) {
-    const { data: existing } = await supabase
-      .from("stock_items").select("id,quantity")
-      .eq("user_id", user_id).eq("name", name).maybeSingle();
-    if (!existing?.id) continue;
-    await supabase.from("stock_items")
-      .update({ quantity: Math.max(0, Number(existing.quantity) + qty) })
-      .eq("id", existing.id);
-  }
-}
-
-function invoiceItemFinancials(item: {
+// ─── DB object ────────────────────────────────────────────────────────────────
   price: number;
   quantity?: number;
   discountPct?: number;
@@ -458,29 +439,39 @@ export const db = {
     if (error) throw error;
     await fetchAll();
   },
-  async addInvoice(inv: Omit<Invoice, "id" | "createdAt" | "paid" | "receiptToken"> & { paid?: number; items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[] }> }) {
+  async addInvoice(inv: Omit<Invoice, "id" | "createdAt" | "paid" | "receiptToken"> & { paid?: number; items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }> }): Promise<string | undefined> {
     const user_id = await uid();
     await assertInvoiceAllowed(inv);
 
-    const { data, error } = await supabase.from("invoices").insert({
-      user_id, customer_id: inv.customerId, total: inv.total, down_payment: inv.downPayment,
-      monthly_installment: inv.monthlyInstallment, first_due_date: inv.firstDueDate,
-      paid: inv.paid ?? inv.downPayment, notes: inv.notes,
-      discount_pct: inv.discountPct ?? 0, discount_amount: inv.discountAmount ?? 0,
-      tax_pct: inv.taxPct ?? 0, tax_amount: inv.taxAmount ?? 0,
-      status: inv.status ?? "pending",
-    }).select("id").single();
+    const items = (inv.items ?? []).map((it) => ({
+      name: it.name,
+      cost: it.cost,
+      price: it.price,
+      quantity: Math.max(1, Math.floor(it.quantity ?? 1)),
+      discount_pct: it.discountPct ?? 0,
+      tax_pct: it.taxPct ?? 0,
+      serial_numbers: it.serialNumbers ?? [],
+      stock_item_id: it.stockId ?? null,
+    }));
+
+    const { data, error } = await supabase.rpc("create_sale", {
+      p_customer_id: inv.customerId,
+      p_total: inv.total,
+      p_down_payment: inv.downPayment,
+      p_monthly_installment: inv.monthlyInstallment,
+      p_first_due_date: inv.firstDueDate,
+      p_notes: inv.notes,
+      p_discount_pct: inv.discountPct ?? 0,
+      p_discount_amount: inv.discountAmount ?? 0,
+      p_tax_pct: inv.taxPct ?? 0,
+      p_tax_amount: inv.taxAmount ?? 0,
+      p_status: inv.status ?? "pending",
+      p_paid: inv.paid,
+      p_items: items,
+    });
     if (error) throw error;
-    if (inv.items && inv.items.length > 0 && data?.id) {
-      const rows = inv.items.map((it) => ({
-        user_id, invoice_id: data.id, name: it.name, cost: it.cost, price: it.price,
-        quantity: Math.max(1, Math.floor(it.quantity ?? 1)),
-        ...invoiceItemFinancials(it),
-      }));
-      const { error: e2 } = await supabase.from("invoice_items").insert(rows);
-      if (e2) throw e2;
-    }
     await fetchAll();
+    return (data as string | undefined) ?? undefined;
   },
   async addInvoiceItem(invoiceId: string, item: { name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[] }) {
     const user_id = await uid();
@@ -564,13 +555,8 @@ export const db = {
     await fetchAll();
   },
   async removeInvoice(id: string) {
-    const { data: items } = await supabase
-      .from("invoice_items").select("name").eq("invoice_id", id);
-    const { error } = await supabase.from("invoices").delete().eq("id", id);
+    const { error } = await supabase.rpc("delete_invoice_with_stock", { p_invoice_id: id });
     if (error) throw error;
-    if (items && items.length > 0) {
-      await restoreStockByName(items.map((it: any) => ({ name: it.name, quantity: 1 })));
-    }
     await fetchAll();
   },
 
@@ -794,19 +780,13 @@ export const db = {
     }
   },
   async deductStock(items: Array<{ stockId: string; quantity: number }>) {
-    for (const it of items) {
-      if (!it.stockId || it.quantity <= 0) continue;
-      const { data: existing } = await supabase
-        .from("stock_items")
-        .select("quantity")
-        .eq("id", it.stockId)
-        .maybeSingle();
-      const current = Number(existing?.quantity ?? 0);
-      const next = Math.max(0, current - it.quantity);
-      await supabase.from("stock_items")
-        .update({ quantity: next })
-        .eq("id", it.stockId);
-    }
+    const mapped = (items ?? [])
+      .filter((it) => it.stockId && it.quantity > 0)
+      .map((it) => ({ stock_item_id: it.stockId, quantity: it.quantity }));
+    if (mapped.length === 0) return;
+    const { error } = await supabase.rpc("deduct_stock", { p_items: mapped });
+    if (error) throw error;
+    await fetchAll();
   },
   async recordSupplierPayment(supplierId: string, amount: number) {
     const user_id = await uid();

@@ -409,60 +409,40 @@ function NewInvoicePage() {
 
     try {
       const userId = await uid();
-      const { data: invData, error: invErr } = await supabase.from("invoices")
-        .insert({
-          user_id: userId,
-          customer_id: customerId,
-          total: t,
-          down_payment: isCash ? t : d,
-          monthly_installment: m,
-          first_due_date: iso,
-          notes: productNotes,
-          paid: isCash ? t : d,
-          discount_pct: Number(discountPct || 0),
-          discount_amount: discountValue,
-          tax_pct: Number(taxPct || 0),
-          tax_amount: taxValue,
-          status: isCash ? "paid" : status,
-        })
-        .select("id")
-        .single();
-
-      if (invErr) throw invErr;
+      const invId = await db.addInvoice({
+        customerId,
+        total: t,
+        downPayment: isCash ? t : d,
+        monthlyInstallment: m,
+        firstDueDate: iso,
+        notes: productNotes,
+        paid: isCash ? t : d,
+        discountPct: Number(discountPct || 0),
+        discountAmount: discountValue,
+        taxPct: Number(taxPct || 0),
+        taxAmount: taxValue,
+        status: isCash ? "paid" : status,
+        items: validProducts.map((p) => ({
+          name: p.name.trim(),
+          cost: Number(p.cost || 0),
+          price: Number(p.price || 0),
+          quantity: Math.max(1, Number(p.quantity || 1)),
+          discountPct: Math.min(100, Math.max(0, Number(p.discount || 0))),
+          taxPct: Math.max(0, Number(p.taxPct || 0)),
+          serialNumbers: (p.serialNumbers || "").split(/[\\n,]+/).map((value) => value.trim()).filter(Boolean),
+          stockId: p.stockId,
+        })),
+      });
+      if (!invId) throw new Error("تعذر إنشاء الفاتورة");
 
       // ختم الفاتورة بالفرع النشط
-      if (invData?.id) linkInvoiceToBranch(invData.id, resolveStampBranchId(data.branches));
-
-      // Add Invoice Items
-      if (validProducts.length > 0 && invData?.id) {
-        const itemRows = validProducts.flatMap((p) => {
-          const qty = Math.max(1, Number(p.quantity || 1));
-          return [
-            {
-              user_id: userId,
-              invoice_id: invData.id,
-              name: p.name.trim(),
-              cost: Number(p.cost || 0),
-              price: Number(p.price || 0),
-              quantity: qty,
-              discount_pct: Math.min(100, Math.max(0, Number(p.discount || 0))),
-              discount_amount: lineMetrics(p).discount,
-              tax_pct: Math.max(0, Number(p.taxPct || 0)),
-              tax_amount: lineMetrics(p).tax,
-              line_total: lineMetrics(p).total,
-              serial_numbers: (p.serialNumbers || "").split(/[\n,]+/).map((value) => value.trim()).filter(Boolean),
-            },
-          ];
-        });
-        const { error: itemsErr } = await supabase.from("invoice_items").insert(itemRows);
-        if (itemsErr) throw itemsErr;
-      }
+      linkInvoiceToBranch(invId, resolveStampBranchId(data.branches));
 
       // Add Shipment if carrier selected
-      if (shippingCarrierId && invData?.id) {
+      if (shippingCarrierId && invId) {
         const { error: shipErr } = await supabase.from("shipments").insert({
-          user_id: await uid(),
-          invoice_id: invData.id,
+          user_id: userId,
+          invoice_id: invId,
           carrier_id: shippingCarrierId,
           zone_id: shippingZoneId || null,
           tracking_number: trackingNumber || null,
@@ -473,11 +453,6 @@ function NewInvoicePage() {
         });
         if (shipErr) throw shipErr;
       }
-
-      const deductions = validProducts
-        .filter((p) => p.stockId)
-        .flatMap((p) => p.stockId ? [{ stockId: p.stockId, quantity: Number(p.quantity || 0) }] : []);
-      if (deductions.length > 0) await db.deductStock(deductions);
 
       playCashSound();
 

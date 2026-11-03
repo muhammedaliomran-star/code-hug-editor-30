@@ -7,7 +7,7 @@ import {
   useDB, db, fmt, customerBalance, useShopSettings, uid,
   findStockByBarcode, type StockItem, type Customer
 } from "@/lib/store";
-import { supabase } from "@/integrations/supabase/client";
+// (supabase import removed — sales now go through db.addInvoice / create_sale RPC)
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -420,56 +420,37 @@ function PosPage() {
       const summary = cart.map((p) => `${p.name}${p.quantity > 1 ? ` ×${p.quantity}` : ""}`).join("، ");
       const itemNotes = `${summary}${notes ? ` — ${notes}` : ""}`;
 
-      // Insert Invoice
-      const { data: invData, error: invErr } = await supabase.from("invoices").insert({
-        user_id: await uid(),
-        customer_id: targetCustId,
+      // Atomic sale: invoice + items + stock deduction + stock movements
+      // happen in one transaction on the server (create_sale RPC).
+      const invId = await db.addInvoice({
+        customerId: targetCustId,
         total: total,
-        down_payment: total,
-        monthly_installment: 0,
-        first_due_date: format(new Date(), "yyyy-MM-dd"),
+        downPayment: total,
+        monthlyInstallment: 0,
+        firstDueDate: format(new Date(), "yyyy-MM-dd"),
         notes: itemNotes,
         paid: total,
-        discount_pct: discountType === "pct" ? Number(discountValue || 0) : 0,
-        discount_amount: discountAmount,
+        discountPct: discountType === "pct" ? Number(discountValue || 0) : 0,
+        discountAmount: discountAmount,
         status: "paid",
-        created_at: new Date().toISOString(),
-      }).select("id, user_id").single();
-
-      if (invErr) throw invErr;
-      if (!invData) throw new Error("تعذر إنشاء الفاتورة");
+        items: cart.map((p) => ({
+          name: p.name,
+          cost: p.cost,
+          price: p.price,
+          quantity: p.quantity,
+          stockId: p.stockId,
+        })),
+      });
+      if (!invId) throw new Error("تعذر إنشاء الفاتورة");
 
       // ختم الفاتورة بالفرع النشط
-      linkInvoiceToBranch(invData.id, resolveStampBranchId(data.branches));
-
-      // Insert Items
-      const itemRows = cart.map((p) => ({
-        user_id: invData.user_id,
-        invoice_id: invData.id,
-        name: p.name,
-        cost: p.cost,
-        price: p.price,
-        quantity: p.quantity,
-      }));
-
-      if (itemRows.length > 0) {
-        const { error: itemsErr } = await supabase.from("invoice_items").insert(itemRows);
-        if (itemsErr) throw itemsErr;
-      }
-
-      // Deduct stock
-      const deductions = cart
-        .filter((p) => p.stockId)
-        .map((p) => ({ stockId: p.stockId!, quantity: p.quantity }));
-      if (deductions.length > 0) {
-        await db.deductStock(deductions);
-      }
+      linkInvoiceToBranch(invId, resolveStampBranchId(data.branches));
 
       toast.success(`تم حفظ فاتورة البيع النقدي ${invoiceCodeStr} بنجاح`);
 
       const currentCart = [...cart];
       setCompletedInvoice({
-        id: invData.id,
+        id: invId,
         code: invoiceCodeStr,
         total: total,
         paid: total,
@@ -531,56 +512,36 @@ function PosPage() {
 
       const isFullyPaid = split.credit === 0;
 
-      // Insert Invoice
-      const { data: invData, error: invErr } = await supabase.from("invoices").insert({
-        user_id: await uid(),
-        customer_id: targetCustId,
+      // Atomic sale (split payment)
+      const invId = await db.addInvoice({
+        customerId: targetCustId,
         total: total,
-        down_payment: split.paidTotal,
-        monthly_installment: 0,
-        first_due_date: format(new Date(), "yyyy-MM-dd"),
+        downPayment: split.paidTotal,
+        monthlyInstallment: 0,
+        firstDueDate: format(new Date(), "yyyy-MM-dd"),
         notes: itemNotes,
         paid: split.paidTotal,
-        discount_pct: discountType === "pct" ? Number(discountValue || 0) : 0,
-        discount_amount: discountAmount,
+        discountPct: discountType === "pct" ? Number(discountValue || 0) : 0,
+        discountAmount: discountAmount,
         status: isFullyPaid ? "paid" : "pending",
-        created_at: new Date().toISOString(),
-      }).select("id, user_id").single();
-
-      if (invErr) throw invErr;
-      if (!invData) throw new Error("تعذر إنشاء الفاتورة");
+        items: cart.map((p) => ({
+          name: p.name,
+          cost: p.cost,
+          price: p.price,
+          quantity: p.quantity,
+          stockId: p.stockId,
+        })),
+      });
+      if (!invId) throw new Error("تعذر إنشاء الفاتورة");
 
       // ختم الفاتورة بالفرع النشط
-      linkInvoiceToBranch(invData.id, resolveStampBranchId(data.branches));
-
-      // Insert Items
-      const itemRows = cart.map((p) => ({
-        user_id: invData.user_id,
-        invoice_id: invData.id,
-        name: p.name,
-        cost: p.cost,
-        price: p.price,
-        quantity: p.quantity,
-      }));
-
-      if (itemRows.length > 0) {
-        const { error: itemsErr } = await supabase.from("invoice_items").insert(itemRows);
-        if (itemsErr) throw itemsErr;
-      }
-
-      // Deduct stock
-      const deductions = cart
-        .filter((p) => p.stockId)
-        .map((p) => ({ stockId: p.stockId!, quantity: p.quantity }));
-      if (deductions.length > 0) {
-        await db.deductStock(deductions);
-      }
+      linkInvoiceToBranch(invId, resolveStampBranchId(data.branches));
 
       toast.success(`تم حفظ فاتورة الدفع المتعدد ${invoiceCodeStr} بنجاح`);
 
       const currentCart = [...cart];
       setCompletedInvoice({
-        id: invData.id,
+        id: invId,
         code: invoiceCodeStr,
         total: total,
         paid: split.paidTotal,
