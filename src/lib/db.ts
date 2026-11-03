@@ -373,7 +373,7 @@ async function assertInvoiceAllowed(inv: {
   }
 }
 
-export function buildInvoiceItem(item: {
+export function invoiceItemFinancials(item: {
   price: number;
   quantity?: number;
   discountPct?: number;
