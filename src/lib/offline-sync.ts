@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { drainOfflineQueue } from "@/lib/offline-queue";
 import { toast } from "sonner";
 
 export interface PendingOfflinePayment {
@@ -121,7 +122,10 @@ export function useNetworkStatus() {
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      void triggerSync();
+      // Replay failed writes first (offline-queue.ts), then pending payments.
+      void drainOfflineQueue()
+        .catch(() => 0)
+        .then(() => triggerSync());
     };
 
     const handleOffline = () => {

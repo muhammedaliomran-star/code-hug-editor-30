@@ -18,18 +18,27 @@ export type Database = {
         Row: {
           admin_pin_hash: string
           created_at: string
+          pin_algo: string
+          pin_failed_attempts: number
+          pin_locked_until: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           admin_pin_hash: string
           created_at?: string
+          pin_algo?: string
+          pin_failed_attempts?: number
+          pin_locked_until?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           admin_pin_hash?: string
           created_at?: string
+          pin_algo?: string
+          pin_failed_attempts?: number
+          pin_locked_until?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1831,6 +1840,9 @@ export type Database = {
           logo_url: string | null
           low_stock_threshold: number
           manager_pin: string | null
+          manager_pin_algo: string
+          manager_pin_failed_attempts: number
+          manager_pin_locked_until: string | null
           max_discount_without_pin: number | null
           numerals_format: string
           open_cash_drawer_on_print: boolean
@@ -1877,6 +1889,9 @@ export type Database = {
           logo_url?: string | null
           low_stock_threshold?: number
           manager_pin?: string | null
+          manager_pin_algo?: string
+          manager_pin_failed_attempts?: number
+          manager_pin_locked_until?: string | null
           max_discount_without_pin?: number | null
           numerals_format?: string
           open_cash_drawer_on_print?: boolean
@@ -1923,6 +1938,9 @@ export type Database = {
           logo_url?: string | null
           low_stock_threshold?: number
           manager_pin?: string | null
+          manager_pin_algo?: string
+          manager_pin_failed_attempts?: number
+          manager_pin_locked_until?: string | null
           max_discount_without_pin?: number | null
           numerals_format?: string
           open_cash_drawer_on_print?: boolean
@@ -2629,7 +2647,6 @@ export type Database = {
         Args: { p_purchase_id: string }
         Returns: undefined
       }
-      get_admin_pin_hash: { Args: { _user_id: string }; Returns: string }
       get_courier_board: { Args: { p_token: string }; Returns: Json }
       get_storefront_analytics_summary: {
         Args: { p_from?: string; p_storefront_id: string }
@@ -2706,11 +2723,11 @@ export type Database = {
         Returns: Json
       }
       set_admin_pin: {
-        Args: { _new_pin: string; _user_id: string }
+        Args: { _new_pin: string }
         Returns: undefined
       }
       set_manager_pin: {
-        Args: { _new_pin: string; _user_id: string }
+        Args: { _new_pin: string }
         Returns: undefined
       }
       settle_carrier_collections: {
@@ -2743,11 +2760,11 @@ export type Database = {
         Returns: undefined
       }
       verify_admin_pin: {
-        Args: { _pin: string; _user_id: string }
+        Args: { _pin: string }
         Returns: boolean
       }
       verify_manager_pin: {
-        Args: { _pin: string; _user_id: string }
+        Args: { _pin: string }
         Returns: boolean
       }
       wipe_user_data: { Args: never; Returns: Json }

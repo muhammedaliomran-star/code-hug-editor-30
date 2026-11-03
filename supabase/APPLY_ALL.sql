@@ -491,14 +491,18 @@ create table public.shop_settings (
 
 grant select, insert, update, delete on public.shop_settings to authenticated;
 grant all on public.shop_settings to service_role;
-grant select on public.shop_settings to anon;
+-- SECURITY: no `anon` grant. The old `grant select ... to anon` +
+-- "Public can read shop settings for receipts" (using (true)) exposed every
+-- merchant's shop_settings (phone, address, tax number, manager_pin hash) to
+-- any anonymous visitor holding the publishable key.
+-- Public receipts are served by getPublicReceipt (service_role), which
+-- bypasses RLS and does not need this.
+revoke all on public.shop_settings from anon;
 
 alter table public.shop_settings enable row level security;
 
 create policy "Users manage own shop settings" on public.shop_settings
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "Public can read shop settings for receipts" on public.shop_settings
-  for select to anon using (true);
 
 create trigger set_updated_at before update on public.shop_settings
   for each row execute function public.update_updated_at_column();

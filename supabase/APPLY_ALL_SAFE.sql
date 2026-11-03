@@ -511,7 +511,8 @@ create table IF NOT EXISTS  public.shop_settings (
 
 grant select, insert, update, delete on public.shop_settings to authenticated;
 grant all on public.shop_settings to service_role;
-grant select on public.shop_settings to anon;
+-- SECURITY: no `anon` access. See migration
+-- 20261103000000_security_phase0_pins_anon.sql.
 
 alter table public.shop_settings enable row level security;
 
@@ -519,8 +520,7 @@ DROP POLICY IF EXISTS "Users manage own shop settings" ON public.shop_settings;
 create policy "Users manage own shop settings" on public.shop_settings
   for all to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
 DROP POLICY IF EXISTS "Public can read shop settings for receipts" ON public.shop_settings;
-create policy "Public can read shop settings for receipts" on public.shop_settings
-  for select to anon using (true);
+revoke all on public.shop_settings from anon;
 
 DROP TRIGGER IF EXISTS set_updated_at ON public.shop_settings;
 create trigger set_updated_at before update on public.shop_settings

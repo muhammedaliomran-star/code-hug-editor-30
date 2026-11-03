@@ -201,8 +201,8 @@ export default function AdminLicensesPage() {
       toast.success("تم تحديث الرقم السري للمشرف العام بنجاح!");
       setChangePinOpen(false);
       setNewPin("");
-    } catch {
-      toast.error("فشل تحديث الرقم السري. حاول مجدداً.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "فشل تحديث الرقم السري. حاول مجدداً.");
     }
   };
 

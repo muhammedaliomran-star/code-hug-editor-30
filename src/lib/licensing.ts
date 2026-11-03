@@ -562,15 +562,13 @@ export function activateLicenseKey(
 }
 
 /**
- * Super Admin Pin Helper — now backed by Supabase
+ * Super Admin Pin Helper — verified server-side.
+ * The RPC derives the account from auth.uid() on the server; the client
+ * never sends a user id (that was the original cross-tenant hole).
  */
 export async function verifySuperAdminPin(pin: string): Promise<boolean> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return false;
-
     const { data, error } = await supabase.rpc("verify_admin_pin", {
-      _user_id: user.id,
       _pin: pin.trim(),
     });
 
@@ -588,12 +586,13 @@ export async function verifySuperAdminPin(pin: string): Promise<boolean> {
 
 export async function setSuperAdminPin(newPin: string): Promise<void> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    const trimmed = newPin.trim();
+    if (!/^\d{4,8}$/.test(trimmed)) {
+      throw new Error("الرقم السري يجب أن يكون من 4 إلى 8 أرقام");
+    }
 
     const { error } = await supabase.rpc("set_admin_pin", {
-      _user_id: user.id,
-      _new_pin: newPin.trim(),
+      _new_pin: trimmed,
     });
 
     if (error) throw error;

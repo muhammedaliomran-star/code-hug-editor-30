@@ -55,16 +55,13 @@ export default defineConfig({
                 cacheableResponse: { statuses: [0, 200] },
               },
             },
-            {
-              // Cache Supabase API responses — NetworkFirst with short TTL
-              urlPattern: /supabase\.co\/rest\/.*/i,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "supabase-api",
-                expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
+            // SECURITY: do NOT cache Supabase REST responses here.
+            // A CacheFirst/NetworkFirst rule on supabase.co/rest/* wrote every
+            // authenticated response into CacheStorage (plain text, survives
+            // sign-out) and keyed it by URL only, so a second account on the
+            // same browser could be served the previous account's data
+            // offline. Offline reads are handled by IndexedDB in db-cache.ts,
+            // which is scoped per user.
           ],
           navigateFallback: "/offline.html",
           navigateFallbackDenylist: [/^\/api\//, /^\/supabase\//],

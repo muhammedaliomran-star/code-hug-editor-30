@@ -192,6 +192,18 @@ function RootComponent() {
   useEffect(() => {
     registerSW({ immediate: true });
   }, []);
+
+  // One-time cleanup: the service worker used to cache every Supabase REST
+  // response in a CacheStorage bucket called "supabase-api" (plain text,
+  // keyed by URL only, surviving sign-out). Workbox does not delete caches
+  // whose runtime rule has been removed, so old installs keep serving
+  // another account's data until we drop it explicitly.
+  useEffect(() => {
+    if (typeof caches === "undefined") return;
+    void caches
+      .delete("supabase-api")
+      .catch(() => false);
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
