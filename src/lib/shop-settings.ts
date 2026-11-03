@@ -147,7 +147,7 @@ export async function saveShopSettings(patch: ShopSettings) {
   // existing PIN untouched (clearing is not supported by the RPC).
   const candidatePin = (patch.managerPin ?? "").trim();
   if (/^\d{4,8}$/.test(candidatePin)) {
-    const { error: pinErr } = await (supabase.rpc as any)("set_manager_pin", {
+    const { error: pinErr } = await supabase.rpc("set_manager_pin", {
       _new_pin: candidatePin,
     });
     if (pinErr) throw pinErr;

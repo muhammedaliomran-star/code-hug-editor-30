@@ -33,7 +33,7 @@ export function getManagerPin(_shop?: Partial<ShopSettings>): string {
 export async function verifyManagerPinAsync(pin: string): Promise<boolean> {
   try {
     // Identity comes from the JWT server-side; never send a user id.
-    const { data, error } = await (supabase.rpc as any)("verify_manager_pin", {
+    const { data, error } = await supabase.rpc("verify_manager_pin", {
       _pin: pin.trim(),
     });
 

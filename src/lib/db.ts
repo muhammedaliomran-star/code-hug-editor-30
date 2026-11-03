@@ -202,7 +202,7 @@ async function fetchAllInner() {
       taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
       lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))) / 100,
       serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [],
-      stockItemId: (r as any).stock_item_id ?? null,
+      stockItemId: r.stock_item_id ?? null,
       createdAt: r.created_at,
     })),
     suppliers: (s.data ?? []).map((r: TableRow<"suppliers">) => ({
@@ -584,7 +584,7 @@ export const db = {
       stock_item_id: it.stockId ?? null,
     }));
 
-    const { data, error } = await (supabase.rpc as any)("create_sale", {
+    const { data, error } = await supabase.rpc("create_sale", {
       p_customer_id: inv.customerId,
       p_total: (inv.total ?? 0) * 100,
       p_down_payment: (inv.downPayment ?? 0) * 100,
@@ -714,7 +714,7 @@ export const db = {
     await fetchAll();
   },
   async removeInvoice(id: string) {
-    const { error } = await (supabase.rpc as any)("delete_invoice_with_stock", { p_invoice_id: id });
+    const { error } = await supabase.rpc("delete_invoice_with_stock", { p_invoice_id: id });
     if (error) throw error;
     await fetchAll();
   },
@@ -828,7 +828,7 @@ export const db = {
   async addPurchase(
     p: Omit<Purchase, "id" | "createdAt"> & { items: Array<{ name: string; unitCost: number; quantity: number }> }
   ) {
-    const { error } = await (supabase as any).rpc("record_purchase_with_inventory", {
+    const { error } = await supabase.rpc("record_purchase_with_inventory", {
       p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
       p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
     });
@@ -943,7 +943,7 @@ export const db = {
       .filter((it) => it.stockId && it.quantity > 0)
       .map((it) => ({ stock_item_id: it.stockId, quantity: it.quantity }));
     if (mapped.length === 0) return;
-    const { error } = await (supabase.rpc as any)("deduct_stock", { p_items: mapped });
+    const { error } = await supabase.rpc("deduct_stock", { p_items: mapped });
     if (error) throw error;
     await fetchAll();
   },

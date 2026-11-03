@@ -1,4 +1,3 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
   Outlet,
@@ -185,7 +184,6 @@ function FabIfAuthed() {
 }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext();
   const hydrated = useHydrated();
   useSyncFromCloud();
 
@@ -205,24 +203,22 @@ function RootComponent() {
       .catch(() => false);
   }, []);
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <ArabicNumerals />
-        <Toaster />
-        <Sonner richColors position="top-center" dir="rtl" />
-        <PrivacyProvider>
-          <AmbientBackground />
-          {hydrated ? (
-            <AnimatePresence mode="wait">
-              <Outlet />
-            </AnimatePresence>
-          ) : (
+    <TooltipProvider>
+      <ArabicNumerals />
+      <Toaster />
+      <Sonner richColors position="top-center" dir="rtl" />
+      <PrivacyProvider>
+        <AmbientBackground />
+        {hydrated ? (
+          <AnimatePresence mode="wait">
             <Outlet />
-          )}
-          <FabIfAuthed />
-        </PrivacyProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+          </AnimatePresence>
+        ) : (
+          <Outlet />
+        )}
+        <FabIfAuthed />
+      </PrivacyProvider>
+    </TooltipProvider>
   );
 }
 
