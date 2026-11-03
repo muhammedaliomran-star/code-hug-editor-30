@@ -175,21 +175,21 @@ async function fetchAllInner() {
       status: r.status as CustomerStatus, customerType: (r.customer_type ?? 'installment') as CustomerType,
       notes: r.notes, frozen: r.frozen,
       address: r.address, joiningDate: r.joining_date,
-      creditLimit: Number(r.credit_limit ?? 0), dueDay: r.due_day ?? 1,
-      openingBalance: Number(r.opening_balance ?? 0), nationalId: r.national_id,
+      creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
+      openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
       createdAt: r.created_at,
     })),
     invoices: (i.data ?? []).map((r: TableRow<"invoices">) => ({
-      id: r.id, customerId: r.customer_id, total: Number(r.total),
-      downPayment: Number(r.down_payment), monthlyInstallment: Number(r.monthly_installment),
-      firstDueDate: r.first_due_date, paid: Number(r.paid), notes: r.notes, createdAt: r.created_at,
-      discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0),
-      taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0),
+      id: r.id, customerId: r.customer_id, total: Number(r.total) / 100,
+      downPayment: Number(r.down_payment) / 100, monthlyInstallment: Number(r.monthly_installment) / 100,
+      firstDueDate: r.first_due_date, paid: Number(r.paid) / 100, notes: r.notes, createdAt: r.created_at,
+      discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0) / 100,
+      taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
       status: (r.status ?? "pending") as InvoiceStatus, invoiceNumber: r.invoice_number, date: r.date || r.created_at,
       receiptToken: r.receipt_token,
     })),
     payments: (p.data ?? []).map((r: TableRow<"payments">) => ({
-      id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount), paidAt: r.paid_at,
+      id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
     })),
     expenses: (e.data ?? []).map((r: TableRow<"expenses">) => ({
       id: r.id, amount: Number(r.amount), category: r.category as ExpenseCategory,
@@ -197,10 +197,10 @@ async function fetchAllInner() {
     })),
     invoiceItems: (ii.data ?? []).map((r: TableRow<"invoice_items">) => ({
       id: r.id, invoiceId: r.invoice_id, name: r.name,
-      cost: Number(r.cost ?? 0), price: Number(r.price ?? 0), quantity: Number(r.quantity ?? 1),
-      discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0),
-      taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0),
-      lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))),
+      cost: Number(r.cost ?? 0) / 100, price: Number(r.price ?? 0) / 100, quantity: Number(r.quantity ?? 1),
+      discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0) / 100,
+      taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
+      lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))) / 100,
       serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [],
       stockItemId: (r as any).stock_item_id ?? null,
       createdAt: r.created_at,
@@ -224,8 +224,8 @@ async function fetchAllInner() {
     stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
       id: r.id, name: r.name,
       quantity: Number(r.quantity ?? 0),
-      lastUnitCost: Number(r.last_unit_cost ?? 0),
-      salePrice: Number(r.sale_price ?? 0),
+      lastUnitCost: Number(r.last_unit_cost ?? 0) / 100,
+      salePrice: Number(r.sale_price ?? 0) / 100,
       barcode: r.barcode ?? null,
       size: r.size ?? null,
       itemType: r.item_type ?? null,
@@ -235,8 +235,8 @@ async function fetchAllInner() {
     warehouseItems: (wh.data ?? []).map((r: TableRow<"warehouse_items">) => ({
       id: r.id, name: r.name,
       quantity: Number(r.quantity ?? 0),
-      unitCost: Number(r.unit_cost ?? 0),
-      salePrice: Number(r.sale_price ?? 0),
+      unitCost: Number(r.unit_cost ?? 0) / 100,
+      salePrice: Number(r.sale_price ?? 0) / 100,
       season: (r.season ?? "all") as WarehouseSeason,
       category: r.category ?? "other",
       notes: r.notes ?? null,
@@ -391,10 +391,10 @@ export function invoiceItemFinancials(item: {
   });
   return {
     discount_pct: lf.discountPct,
-    discount_amount: lf.discountAmount,
+    discount_amount: lf.discountAmount * 100,
     tax_pct: lf.taxPct,
-    tax_amount: lf.taxAmount,
-    line_total: lf.lineTotal,
+    tax_amount: lf.taxAmount * 100,
+    line_total: lf.lineTotal * 100,
     serial_numbers: (item.serialNumbers ?? []).map((value) => value.trim()).filter(Boolean),
   };
 }
@@ -411,8 +411,8 @@ export const db = {
       customer_type: c.customerType ?? 'installment',
       notes: c.notes, frozen: c.frozen,
       address: c.address, joining_date: c.joiningDate,
-      credit_limit: c.creditLimit, due_day: c.dueDay,
-      opening_balance: c.openingBalance,
+      credit_limit: (c.creditLimit ?? 0) * 100, due_day: c.dueDay,
+      opening_balance: (c.openingBalance ?? 0) * 100,
     }).select("id").single();
     if (error) throw error;
     await fetchAll();
@@ -429,9 +429,9 @@ export const db = {
     if (patch.frozen !== undefined) upd.frozen = patch.frozen;
     if (patch.address !== undefined) upd.address = patch.address;
     if (patch.joiningDate !== undefined) upd.joining_date = patch.joiningDate;
-    if (patch.creditLimit !== undefined) upd.credit_limit = patch.creditLimit;
+    if (patch.creditLimit !== undefined) upd.credit_limit = (patch.creditLimit ?? 0) * 100;
     if (patch.dueDay !== undefined) upd.due_day = patch.dueDay;
-    if (patch.openingBalance !== undefined) upd.opening_balance = patch.openingBalance;
+    if (patch.openingBalance !== undefined) upd.opening_balance = (patch.openingBalance ?? 0) * 100;
     const { error } = await supabase.from("customers").update(upd).eq("id", id);
     if (error) throw error;
     await fetchAll();
@@ -458,18 +458,22 @@ export const db = {
 
     const { data, error } = await (supabase.rpc as any)("create_sale", {
       p_customer_id: inv.customerId,
-      p_total: inv.total,
-      p_down_payment: inv.downPayment,
-      p_monthly_installment: inv.monthlyInstallment,
+      p_total: (inv.total ?? 0) * 100,
+      p_down_payment: (inv.downPayment ?? 0) * 100,
+      p_monthly_installment: (inv.monthlyInstallment ?? 0) * 100,
       p_first_due_date: inv.firstDueDate,
       p_notes: inv.notes,
       p_discount_pct: inv.discountPct ?? 0,
-      p_discount_amount: inv.discountAmount ?? 0,
+      p_discount_amount: (inv.discountAmount ?? 0) * 100,
       p_tax_pct: inv.taxPct ?? 0,
-      p_tax_amount: inv.taxAmount ?? 0,
+      p_tax_amount: (inv.taxAmount ?? 0) * 100,
       p_status: inv.status ?? "pending",
-      p_paid: inv.paid,
-      p_items: items,
+      p_paid: (inv.paid ?? inv.downPayment ?? 0) * 100,
+      p_items: items.map((it) => ({
+        ...it,
+        cost: (it.cost ?? 0) * 100,
+        price: (it.price ?? 0) * 100,
+      })),
     });
     if (error) throw error;
     await fetchAll();
@@ -479,7 +483,7 @@ export const db = {
     const user_id = await uid();
     const qty = Math.max(1, Math.floor(item.quantity ?? 1));
     const { error } = await supabase.from("invoice_items").insert({
-      user_id, invoice_id: invoiceId, name: item.name, cost: item.cost, price: item.price,
+      user_id, invoice_id: invoiceId, name: item.name, cost: (item.cost ?? 0) * 100, price: (item.price ?? 0) * 100,
       quantity: qty, ...invoiceItemFinancials(item),
       stock_item_id: item.stockId ?? null,
     });
@@ -496,8 +500,8 @@ export const db = {
   async updateInvoiceItem(id: string, patch: Partial<{ name: string; cost: number; price: number; quantity: number; discountPct: number; taxPct: number; serialNumbers: string[] }>) {
     const upd: any = {};
     if (patch.name !== undefined) upd.name = patch.name;
-    if (patch.cost !== undefined) upd.cost = patch.cost;
-    if (patch.price !== undefined) upd.price = patch.price;
+    if (patch.cost !== undefined) upd.cost = (patch.cost ?? 0) * 100;
+    if (patch.price !== undefined) upd.price = (patch.price ?? 0) * 100;
     if (patch.quantity !== undefined) upd.quantity = Math.max(1, Math.floor(patch.quantity));
     if (patch.discountPct !== undefined) upd.discount_pct = patch.discountPct;
     if (patch.taxPct !== undefined) upd.tax_pct = patch.taxPct;
@@ -589,13 +593,13 @@ export const db = {
 
   async updateInvoice(id: string, patch: Partial<Pick<Invoice, "total" | "downPayment" | "monthlyInstallment" | "firstDueDate" | "notes" | "status" | "paid">>) {
     const upd: any = {};
-    if (patch.total !== undefined) upd.total = patch.total;
-    if (patch.downPayment !== undefined) upd.down_payment = patch.downPayment;
-    if (patch.monthlyInstallment !== undefined) upd.monthly_installment = patch.monthlyInstallment;
+    if (patch.total !== undefined) upd.total = (patch.total ?? 0) * 100;
+    if (patch.downPayment !== undefined) upd.down_payment = (patch.downPayment ?? 0) * 100;
+    if (patch.monthlyInstallment !== undefined) upd.monthly_installment = (patch.monthlyInstallment ?? 0) * 100;
     if (patch.firstDueDate !== undefined) upd.first_due_date = patch.firstDueDate;
     if (patch.notes !== undefined) upd.notes = patch.notes;
     if (patch.status !== undefined) upd.status = patch.status;
-    if (patch.paid !== undefined) upd.paid = patch.paid;
+    if (patch.paid !== undefined) upd.paid = (patch.paid ?? 0) * 100;
     const { error } = await supabase.from("invoices").update(upd).eq("id", id);
     if (error) throw error;
     if (patch.paid === undefined && patch.downPayment !== undefined) {
@@ -620,12 +624,12 @@ export const db = {
     await fetchAll();
   },
   async updateStockCost(stockId: string, cost: number) {
-    const { error } = await supabase.from("stock_items").update({ last_unit_cost: cost }).eq("id", stockId);
+    const { error } = await supabase.from("stock_items").update({ last_unit_cost: (cost ?? 0) * 100 }).eq("id", stockId);
     if (error) throw error;
     await fetchAll();
   },
   async updatePayment(id: string, amount: number) {
-    const { error } = await supabase.rpc("update_invoice_payment", { p_payment_id: id, p_amount: amount });
+    const { error } = await supabase.rpc("update_invoice_payment", { p_payment_id: id, p_amount: (amount ?? 0) * 100 });
     if (error) throw error;
     await fetchAll();
   },
@@ -637,7 +641,7 @@ export const db = {
   async recordPayment(invoiceId: string, amount: number) {
     const { error } = await supabase.rpc("record_invoice_payment", {
       p_invoice_id: invoiceId,
-      p_amount: amount,
+      p_amount: (amount ?? 0) * 100,
       p_payment_id: crypto.randomUUID(),
     });
     if (error) throw error;
@@ -792,7 +796,7 @@ export const db = {
       if (existing?.id) {
         const upd: { quantity: number; last_unit_cost: number; barcode?: string } = {
           quantity: Number(existing.quantity) + it.quantity,
-          last_unit_cost: it.unitCost,
+          last_unit_cost: (it.unitCost ?? 0) * 100,
         };
         if (it.barcode) upd.barcode = it.barcode;
         await supabase.from("stock_items")
@@ -800,7 +804,7 @@ export const db = {
           .eq("id", existing.id);
       } else {
         await supabase.from("stock_items").insert({
-          user_id, name, quantity: it.quantity, last_unit_cost: it.unitCost,
+          user_id, name, quantity: it.quantity, last_unit_cost: (it.unitCost ?? 0) * 100,
           barcode: it.barcode || null,
         });
       }
@@ -843,8 +847,8 @@ export const db = {
     const upd: any = {};
     if (patch.name !== undefined) upd.name = patch.name;
     if (patch.quantity !== undefined) upd.quantity = patch.quantity;
-    if (patch.lastUnitCost !== undefined) upd.last_unit_cost = patch.lastUnitCost;
-    if (patch.salePrice !== undefined) upd.sale_price = patch.salePrice;
+    if (patch.lastUnitCost !== undefined) upd.last_unit_cost = (patch.lastUnitCost ?? 0) * 100;
+    if (patch.salePrice !== undefined) upd.sale_price = (patch.salePrice ?? 0) * 100;
     if (patch.barcode !== undefined) upd.barcode = patch.barcode || null;
     if (patch.size !== undefined) upd.size = patch.size || null;
     if (patch.itemType !== undefined) upd.item_type = patch.itemType || null;
@@ -892,8 +896,8 @@ export const db = {
       user_id,
       name: item.name,
       quantity: item.quantity ?? 0,
-      last_unit_cost: item.lastUnitCost ?? 0,
-      sale_price: item.salePrice ?? 0,
+      last_unit_cost: (item.lastUnitCost ?? 0) * 100,
+      sale_price: (item.salePrice ?? 0) * 100,
       barcode: item.barcode ?? null,
       size: item.size ?? null,
       item_type: item.itemType ?? null,
@@ -914,7 +918,7 @@ export const db = {
       name: item.name,
       quantity: item.quantity ?? 0,
       unit_cost: item.unitCost ?? 0,
-      sale_price: item.salePrice ?? 0,
+      sale_price: (item.salePrice ?? 0) * 100,
       season: item.season ?? "all",
       category: item.category ?? "other",
       notes: item.notes ?? null,
@@ -931,7 +935,7 @@ export const db = {
     if (patch.name !== undefined) upd.name = patch.name;
     if (patch.quantity !== undefined) upd.quantity = patch.quantity;
     if (patch.unitCost !== undefined) upd.unit_cost = patch.unitCost;
-    if (patch.salePrice !== undefined) upd.sale_price = patch.salePrice;
+    if (patch.salePrice !== undefined) upd.sale_price = (patch.salePrice ?? 0) * 100;
     if (patch.season !== undefined) upd.season = patch.season;
     if (patch.category !== undefined) upd.category = patch.category;
     if (patch.notes !== undefined) upd.notes = patch.notes;
