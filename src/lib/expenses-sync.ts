@@ -37,7 +37,7 @@ export async function pushExpenseMeta(expenseId: string, meta: ExpenseMeta): Pro
 export async function pushRecurringExpense(item: RecurringExpense): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  const payload = { id: item.id, user_id, category: item.category, amount: item.amount, description: item.title, frequency: item.frequency === "daily" || item.frequency === "weekly" ? "monthly" : item.frequency, next_due_date: item.nextDueDate, is_active: item.active };
+  const payload = { id: item.id, user_id, category: item.category, amount: (item.amount ?? 0) * 100, description: item.title, frequency: item.frequency === "daily" || item.frequency === "weekly" ? "monthly" : item.frequency, next_due_date: item.nextDueDate, is_active: item.active };
   try { await withRetry(() => table("recurring_expenses").upsert(payload)); } catch { enqueueOffline({ tableName: "recurring_expenses", operation: "upsert", payload }); }
 }
 
@@ -118,7 +118,7 @@ export async function pullExpensesFromCloud(): Promise<boolean> {
     const items: RecurringExpense[] = recurringRes.data.map((r: any) => ({
       id: r.id,
       title: r.description || "",
-      amount: Number(r.amount || 0),
+      amount: Number(r.amount || 0) / 100,
       category: r.category,
       accountId: "acc-cash-main",
       frequency: r.frequency || "monthly",

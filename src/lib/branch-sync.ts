@@ -37,7 +37,7 @@ export async function pushBranchTransfer(transfer: BranchTransfer): Promise<void
 export async function pushBranchShift(shift: BranchShift): Promise<void> {
   const user_id = await uid();
   if (!user_id) return;
-  const payload = { id: shift.id, user_id, shift_number: 0, cashier_name: shift.cashierName, opened_at: shift.openedAt, closed_at: shift.closedAt || null, opening_balance: shift.openingBalance, expected_cash: shift.expectedCash, actual_cash: shift.actualCash, cash_sales: shift.systemCashSales, installment_sales: shift.systemInstallmentsCash, expenses: shift.systemExpenses, variance: shift.variance, status: shift.status, notes: shift.notes || null };
+  const payload = { id: shift.id, user_id, shift_number: 0, cashier_name: shift.cashierName, opened_at: shift.openedAt, closed_at: shift.closedAt || null, opening_balance: (shift.openingBalance ?? 0) * 100, expected_cash: (shift.expectedCash ?? 0) * 100, actual_cash: (shift.actualCash ?? 0) * 100, cash_sales: (shift.systemCashSales ?? 0) * 100, installment_sales: (shift.systemInstallmentsCash ?? 0) * 100, expenses: (shift.systemExpenses ?? 0) * 100, variance: (shift.variance ?? 0) * 100, status: shift.status, notes: shift.notes || null };
   try { await withRetry(() => table("shifts").upsert(payload)); } catch { enqueueOffline({ tableName: "shifts", operation: "upsert", payload }); }
 }
 

@@ -192,7 +192,7 @@ async function fetchAllInner() {
       id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
     })),
     expenses: (e.data ?? []).map((r: TableRow<"expenses">) => ({
-      id: r.id, amount: Number(r.amount), category: r.category as ExpenseCategory,
+      id: r.id, amount: Number(r.amount) / 100, category: r.category as ExpenseCategory,
       expenseDate: r.expense_date, notes: r.notes, createdAt: r.created_at,
     })),
     invoiceItems: (ii.data ?? []).map((r: TableRow<"invoice_items">) => ({
@@ -207,19 +207,19 @@ async function fetchAllInner() {
     })),
     suppliers: (s.data ?? []).map((r: TableRow<"suppliers">) => ({
       id: r.id, name: r.name, contact: r.contact ?? "", notes: r.notes,
-      openingBalance: Number(r.opening_balance ?? 0), nationalId: r.national_id, createdAt: r.created_at,
+      openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id, createdAt: r.created_at,
     })),
     purchases: (pu.data ?? []).map((r: TableRow<"purchases">) => ({
-      id: r.id, supplierId: r.supplier_id, total: Number(r.total),
+      id: r.id, supplierId: r.supplier_id, total: Number(r.total) / 100,
       paymentType: r.payment_type as PurchasePaymentType,
       purchaseDate: r.purchase_date, notes: r.notes, createdAt: r.created_at,
     })),
     purchaseItems: (pi.data ?? []).map((r: TableRow<"purchase_items">) => ({
       id: r.id, purchaseId: r.purchase_id, name: r.name,
-      unitCost: Number(r.unit_cost ?? 0), quantity: Number(r.quantity ?? 1), createdAt: r.created_at,
+      unitCost: Number(r.unit_cost ?? 0) / 100, quantity: Number(r.quantity ?? 1), createdAt: r.created_at,
     })),
     supplierPayments: (sp.data ?? []).map((r: TableRow<"supplier_payments">) => ({
-      id: r.id, supplierId: r.supplier_id, amount: Number(r.amount), paidAt: r.paid_at,
+      id: r.id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
     })),
     stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
       id: r.id, name: r.name,
@@ -244,11 +244,11 @@ async function fetchAllInner() {
     })),
     returns: (rr.data ?? []).map((r: TableRow<"return_records">) => ({
       id: r.id, invoiceId: r.invoice_id, type: r.type as "sale" | "supplier",
-      totalAmount: Number(r.total_amount), reason: r.reason, notes: r.notes, createdAt: r.created_at,
+      totalAmount: Number(r.total_amount) / 100, reason: r.reason, notes: r.notes, createdAt: r.created_at,
     })),
     returnItems: (ri.data ?? []).map((r: TableRow<"return_items">) => ({
       id: r.id, returnId: r.return_id, name: r.name,
-      unitPrice: Number(r.unit_price), quantity: Number(r.quantity), createdAt: r.created_at,
+      unitPrice: Number(r.unit_price) / 100, quantity: Number(r.quantity), createdAt: r.created_at,
     })),
     branches: (br.data ?? []).map((r: TableRow<"branches">) => ({
       id: r.id, name: r.name, location: r.location, phone: r.phone,
@@ -256,7 +256,7 @@ async function fetchAllInner() {
     })),
     paymentVouchers: (pv.data ?? []).map((r: VoucherRow) => ({
       id: r.id, customerId: r.customer_id, supplierId: r.supplier_id,
-      amount: Number(r.amount), type: r.type as "receipt" | "payment",
+      amount: Number(r.amount) / 100, type: r.type as "receipt" | "payment",
       paymentMethod: r.payment_method, description: r.description,
       voucherDate: r.voucher_date, createdAt: r.created_at, partyName: r.party_name, partyPhone: r.party_phone,
     })),
@@ -574,7 +574,7 @@ export const db = {
     const user_id = await uid();
     const { error } = await supabase.from("payment_vouchers").insert({
       user_id, customer_id: v.customerId, supplier_id: v.supplierId,
-      amount: v.amount, type: v.type, payment_method: v.paymentMethod,
+      amount: (v.amount ?? 0) * 100, type: v.type, payment_method: v.paymentMethod,
       description: v.description, voucher_date: v.voucherDate
     });
     if (error) throw error;
@@ -650,7 +650,7 @@ export const db = {
   async addExpense(exp: Omit<Expense, "id" | "createdAt">): Promise<string | undefined> {
     const user_id = await uid();
     const { data, error } = await supabase.from("expenses").insert({
-      user_id, amount: exp.amount, category: exp.category,
+      user_id, amount: (exp.amount ?? 0) * 100, category: exp.category,
       expense_date: exp.expenseDate, notes: exp.notes,
     }).select("id").single();
     if (error) throw error;
@@ -659,7 +659,7 @@ export const db = {
   },
   async updateExpense(id: string, patch: Partial<Omit<Expense, "id" | "createdAt">>) {
     const upd: any = {};
-    if (patch.amount !== undefined) upd.amount = patch.amount;
+    if (patch.amount !== undefined) upd.amount = (patch.amount ?? 0) * 100;
     if (patch.category !== undefined) upd.category = patch.category;
     if (patch.expenseDate !== undefined) upd.expense_date = patch.expenseDate;
     if (patch.notes !== undefined) upd.notes = patch.notes;
@@ -677,7 +677,7 @@ export const db = {
     const user_id = await uid();
     const { error } = await supabase.from("suppliers").insert({
       user_id, name: s.name, contact: s.contact, notes: s.notes,
-      opening_balance: s.openingBalance,
+      opening_balance: (s.openingBalance ?? 0) * 100,
     });
     if (error) throw error;
     await fetchAll();
@@ -687,7 +687,7 @@ export const db = {
     if (patch.name !== undefined) upd.name = patch.name;
     if (patch.contact !== undefined) upd.contact = patch.contact;
     if (patch.notes !== undefined) upd.notes = patch.notes;
-    if (patch.openingBalance !== undefined) upd.opening_balance = patch.openingBalance;
+    if (patch.openingBalance !== undefined) upd.opening_balance = (patch.openingBalance ?? 0) * 100;
     const { error } = await supabase.from("suppliers").update(upd).eq("id", id);
     if (error) throw error;
     await fetchAll();
@@ -701,8 +701,8 @@ export const db = {
     p: Omit<Purchase, "id" | "createdAt"> & { items: Array<{ name: string; unitCost: number; quantity: number }> }
   ) {
     const { error } = await (supabase as any).rpc("record_purchase_with_inventory", {
-      p_supplier_id: p.supplierId, p_total: p.total, p_payment_type: p.paymentType,
-      p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: item.unitCost, quantity: item.quantity })),
+      p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
+      p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
     });
     if (error) throw error;
     await fetchAll();
@@ -822,14 +822,14 @@ export const db = {
   async recordSupplierPayment(supplierId: string, amount: number) {
     const user_id = await uid();
     const { error } = await supabase.from("supplier_payments").insert({
-      user_id, supplier_id: supplierId, amount,
+      user_id, supplier_id: supplierId, amount: (amount ?? 0) * 100,
     });
     if (error) throw error;
     await fetchAll();
   },
   async updateSupplierPayment(id: string, amount: number) {
     if (!(amount > 0)) throw new Error("أدخل مبلغ صحيح");
-    const { error } = await supabase.from("supplier_payments").update({ amount }).eq("id", id);
+    const { error } = await supabase.from("supplier_payments").update({ amount: (amount ?? 0) * 100 }).eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
@@ -961,7 +961,7 @@ export const db = {
       const { error } = await supabase.rpc("create_sale_return", {
         p_invoice_id: r.invoiceId,
         p_reason: r.reason?.trim() || "مرتجع بيع",
-        p_items: r.items.map((item) => ({ name: item.name, unit_price: item.unitPrice, quantity: item.quantity })),
+        p_items: r.items.map((item) => ({ name: item.name, unit_price: (item.unitPrice ?? 0) * 100, quantity: item.quantity })),
       });
       if (error) throw error;
       await fetchAll();
@@ -972,7 +972,7 @@ export const db = {
       user_id,
       invoice_id: r.invoiceId,
       type: r.type,
-      total_amount: r.totalAmount,
+      total_amount: (r.totalAmount ?? 0) * 100,
       reason: r.reason,
       notes: r.notes,
     }).select("id").single();
@@ -985,7 +985,7 @@ export const db = {
         user_id,
         return_id: returnId,
         name: it.name,
-        unit_price: it.unitPrice,
+        unit_price: (it.unitPrice ?? 0) * 100,
         quantity: it.quantity,
       }));
       const { error: e2 } = await supabase.from("return_items").insert(rows);
