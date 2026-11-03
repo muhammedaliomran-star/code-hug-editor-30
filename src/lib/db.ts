@@ -373,7 +373,7 @@ async function assertInvoiceAllowed(inv: {
   }
 }
 
-// ─── DB object ────────────────────────────────────────────────────────────────
+export function buildInvoiceItem(item: {
   price: number;
   quantity?: number;
   discountPct?: number;
