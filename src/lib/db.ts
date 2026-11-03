@@ -296,6 +296,134 @@ async function fetchAllInner() {
   saveCacheToIDB(cache).catch(() => {});
 }
 
+/**
+ * Incremental refresh: fetch only the named tables and merge them into the
+ * in-memory cache instead of re-fetching all 18 tables. Used by the
+ * background sync engine when a subset of tables changed.
+ *
+ * Falls back to a full fetchAll() if an unknown table name is requested or
+ * if any per-table fetch fails, so correctness is never compromised.
+ */
+const TABLE_QUERIES: Record<string, () => Promise<{ data: any; error: any }>> = {
+  customers: () => supabase.from("customers").select("*").order("name"),
+  invoices: () => supabase.from("invoices").select("*").order("created_at", { ascending: false }),
+  payments: () => supabase.from("payments").select("*"),
+  expenses: () => supabase.from("expenses").select("*").order("expense_date", { ascending: false }),
+  invoice_items: () => supabase.from("invoice_items").select("*").order("created_at"),
+  suppliers: () => supabase.from("suppliers").select("*").order("name"),
+  purchases: () => supabase.from("purchases").select("*").order("created_at", { ascending: false }),
+  purchase_items: () => supabase.from("purchase_items").select("*").order("created_at"),
+  supplier_payments: () => supabase.from("supplier_payments").select("*"),
+  stock_items: () => supabase.from("stock_items").select("*").order("name"),
+  warehouse_items: () => supabase.from("warehouse_items").select("*").order("name"),
+  return_records: () => supabase.from("return_records").select("*").order("created_at", { ascending: false }),
+  return_items: () => supabase.from("return_items").select("*").order("created_at"),
+  branches: () => supabase.from("branches").select("*").order("name"),
+  payment_vouchers: () => supabase.from("payment_vouchers").select("*").order("voucher_date", { ascending: false }),
+  shipping_carriers: () => supabase.from("shipping_carriers").select("*").order("name"),
+  shipping_zones: () => supabase.from("shipping_zones").select("*").order("name"),
+  shipments: () => supabase.from("shipments").select("*").order("created_at", { ascending: false }),
+};
+
+function mapTable(name: string, rows: any[]): any[] {
+  switch (name) {
+    case "customers":
+      return rows.map((r: any) => ({
+        id: r.id, name: r.name, phone: r.phone, rating: r.rating,
+        status: r.status, customerType: r.customer_type ?? "installment", notes: r.notes, frozen: r.frozen,
+        address: r.address, joiningDate: r.joining_date,
+        creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
+        openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
+        createdAt: r.created_at,
+      }));
+    case "invoices":
+      return rows.map((r: any) => ({
+        id: r.id, customerId: r.customer_id, total: Number(r.total) / 100,
+        downPayment: Number(r.down_payment) / 100, monthlyInstallment: Number(r.monthly_installment) / 100,
+        firstDueDate: r.first_due_date, paid: Number(r.paid) / 100, notes: r.notes, createdAt: r.created_at,
+        discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0) / 100,
+        taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
+        status: r.status ?? "pending", invoiceNumber: r.invoice_number, date: r.date || r.created_at,
+        receiptToken: r.receipt_token,
+      }));
+    case "payments":
+      return rows.map((r: any) => ({ id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount) / 100, paidAt: r.paid_at }));
+    case "expenses":
+      return rows.map((r: any) => ({ id: r.id, amount: Number(r.amount) / 100, category: r.category, expenseDate: r.expense_date, notes: r.notes, createdAt: r.created_at }));
+    case "invoice_items":
+      return rows.map((r: any) => ({
+        id: r.id, invoiceId: r.invoice_id, name: r.name,
+        cost: Number(r.cost ?? 0) / 100, price: Number(r.price ?? 0) / 100, quantity: Number(r.quantity ?? 1),
+        discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0) / 100,
+        taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
+        lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))) / 100,
+        serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [],
+        stockItemId: r.stock_item_id ?? null, createdAt: r.created_at,
+      }));
+    case "suppliers":
+      return rows.map((r: any) => ({ id: r.id, name: r.name, contact: r.contact ?? "", notes: r.notes, openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id, createdAt: r.created_at }));
+    case "purchases":
+      return rows.map((r: any) => ({ id: r.id, supplierId: r.supplier_id, total: Number(r.total) / 100, paymentType: r.payment_type, purchaseDate: r.purchase_date, notes: r.notes, createdAt: r.created_at }));
+    case "purchase_items":
+      return rows.map((r: any) => ({ id: r.id, purchaseId: r.purchase_id, name: r.name, unitCost: Number(r.unit_cost ?? 0) / 100, quantity: Number(r.quantity ?? 1), createdAt: r.created_at }));
+    case "supplier_payments":
+      return rows.map((r: any) => ({ id: r.id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, paidAt: r.paid_at }));
+    case "stock_items":
+      return rows.map((r: any) => ({ id: r.id, name: r.name, quantity: Number(r.quantity ?? 0), lastUnitCost: Number(r.last_unit_cost ?? 0) / 100, salePrice: Number(r.sale_price ?? 0) / 100, barcode: r.barcode ?? null, size: r.size ?? null, itemType: r.item_type ?? null, minStock: Number(r.min_stock ?? 0), createdAt: r.created_at, updatedAt: r.updated_at }));
+    case "warehouse_items":
+      return rows.map((r: any) => ({ id: r.id, name: r.name, quantity: Number(r.quantity ?? 0), unitCost: Number(r.unit_cost ?? 0) / 100, salePrice: Number(r.sale_price ?? 0) / 100, season: r.season ?? "all", category: r.category ?? "other", notes: r.notes ?? null, createdAt: r.created_at, updatedAt: r.updated_at }));
+    case "return_records":
+      return rows.map((r: any) => ({ id: r.id, invoiceId: r.invoice_id, type: r.type, totalAmount: Number(r.total_amount) / 100, reason: r.reason, notes: r.notes, createdAt: r.created_at }));
+    case "return_items":
+      return rows.map((r: any) => ({ id: r.id, returnId: r.return_id, name: r.name, unitPrice: Number(r.unit_price) / 100, quantity: Number(r.quantity), createdAt: r.created_at }));
+    case "branches":
+      return rows.map((r: any) => ({ id: r.id, name: r.name, location: r.location, phone: r.phone, managerName: r.manager_name, isMain: r.is_main, createdAt: r.created_at }));
+    case "payment_vouchers":
+      return rows.map((r: any) => ({ id: r.id, customerId: r.customer_id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, type: r.type, paymentMethod: r.payment_method, description: r.description, voucherDate: r.voucher_date, createdAt: r.created_at, partyName: r.party_name, partyPhone: r.party_phone }));
+    case "shipping_carriers":
+      return rows.map((r: any) => ({ id: r.id, name: r.name, contactPerson: r.contact_person, phone: r.phone, email: r.email, baseCost: Number(r.base_cost ?? 0), active: r.active !== false, createdAt: r.created_at, courierToken: r.courier_token ?? null }));
+    case "shipping_zones":
+      return rows.map((r: any) => ({ id: r.id, name: r.name, carrierId: r.carrier_id, deliveryCost: Number(r.delivery_cost ?? 0), estimatedDays: r.estimated_days ?? 2, createdAt: r.created_at }));
+    case "shipments":
+      return rows.map((r: any) => ({ id: r.id, invoiceId: r.invoice_id, carrierId: r.carrier_id, zoneId: r.zone_id, trackingNumber: r.tracking_number, status: r.status, recipientName: r.recipient_name, recipientPhone: r.recipient_phone, deliveryAddress: r.delivery_address, actualDeliveryDate: r.actual_delivery_date, processingAt: r.processing_at ?? null, shippedAt: r.shipped_at ?? null, deliveredAt: r.delivered_at ?? null, returnedAt: r.returned_at ?? null, statusUpdatedBy: r.status_updated_by ?? null, shippingCost: Number(r.shipping_cost ?? 0), codAmount: Number(r.cod_amount ?? 0), collectionStatus: r.collection_status ?? "uncollected", collectedAt: r.collected_at ?? null, settledAt: r.settled_at ?? null, weightKg: Number(r.weight_kg ?? 0), pieces: Number(r.pieces ?? 1), expectedDeliveryDate: r.expected_delivery_date ?? null, notes: r.notes, createdAt: r.created_at }));
+    default:
+      return null;
+  }
+}
+
+export async function refreshTables(names: string[]): Promise<void> {
+  if (!names || names.length === 0) return;
+  // Unknown table → fall back to full fetch (safe).
+  if (names.some((n) => !(n in TABLE_QUERIES))) {
+    await fetchAll();
+    return;
+  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const results = await Promise.all(names.map((n) => TABLE_QUERIES[n]()));
+  // If any fetch failed, fall back to full fetchAll.
+  if (results.some((r) => r.error)) {
+    await fetchAll();
+    return;
+  }
+  // Merge into cache.
+  if (!cache) {
+    await fetchAll();
+    return;
+  }
+  const next: any = { ...cache };
+  names.forEach((name, idx) => {
+    const mapped = mapTable(name, results[idx].data ?? []);
+    // map table name → cache key (most are same, except shipping_carriers→carriers, shipping_zones→zones)
+    const key = name === "shipping_carriers" ? "carriers" : name === "shipping_zones" ? "zones" : name === "return_records" ? "returns" : name === "return_items" ? "returnItems" : name === "stock_items" ? "stockItems" : name === "warehouse_items" ? "warehouseItems" : name === "invoice_items" ? "invoiceItems" : name === "supplier_payments" ? "supplierPayments" : name === "payment_vouchers" ? "paymentVouchers" : name;
+    next[key] = mapped;
+  });
+  cache = next as any;
+  loaded = true;
+  notify();
+  saveCacheToIDB(cache).catch(() => {});
+}
+
 export async function invalidateCache() {
   loaded = false;
   await fetchAll();
