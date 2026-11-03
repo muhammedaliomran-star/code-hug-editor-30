@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import { toast } from "sonner";
+import { calculateLineFinancials } from "@/lib/financial-engine";
 
 /** Phase 3 (#17): generated row type for fetchAll mappings. */
 type TableRow<T extends keyof Database["public"]["Tables"]> =
@@ -200,7 +200,9 @@ async function fetchAllInner() {
       discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0),
       taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0),
       lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))),
-      serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [], createdAt: r.created_at,
+      serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [],
+      stockItemId: (r as any).stock_item_id ?? null,
+      createdAt: r.created_at,
     })),
     suppliers: (s.data ?? []).map((r: TableRow<"suppliers">) => ({
       id: r.id, name: r.name, contact: r.contact ?? "", notes: r.notes,
@@ -373,26 +375,25 @@ async function assertInvoiceAllowed(inv: {
   }
 }
 
-// ─── DB object ────────────────────────────────────────────────────────────────
+function invoiceItemFinancials(item: {
   price: number;
   quantity?: number;
   discountPct?: number;
   taxPct?: number;
   serialNumbers?: string[];
 }) {
-  const quantity = Math.max(1, Math.floor(item.quantity ?? 1));
-  const gross = Math.max(0, Number(item.price) * quantity);
-  const discountPct = Math.min(100, Math.max(0, Number(item.discountPct ?? 0)));
-  const discountAmount = gross * discountPct / 100;
-  const taxable = Math.max(0, gross - discountAmount);
-  const taxPct = Math.max(0, Number(item.taxPct ?? 0));
-  const taxAmount = taxable * taxPct / 100;
+  const lf = calculateLineFinancials({
+    price: item.price,
+    quantity: item.quantity,
+    discountPct: item.discountPct,
+    taxPct: item.taxPct,
+  });
   return {
-    discount_pct: discountPct,
-    discount_amount: discountAmount,
-    tax_pct: taxPct,
-    tax_amount: taxAmount,
-    line_total: taxable + taxAmount,
+    discount_pct: lf.discountPct,
+    discount_amount: lf.discountAmount,
+    tax_pct: lf.taxPct,
+    tax_amount: lf.taxAmount,
+    line_total: lf.lineTotal,
     serial_numbers: (item.serialNumbers ?? []).map((value) => value.trim()).filter(Boolean),
   };
 }
@@ -473,13 +474,22 @@ export const db = {
     await fetchAll();
     return (data as string | undefined) ?? undefined;
   },
-  async addInvoiceItem(invoiceId: string, item: { name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[] }) {
+  async addInvoiceItem(invoiceId: string, item: { name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }) {
     const user_id = await uid();
+    const qty = Math.max(1, Math.floor(item.quantity ?? 1));
     const { error } = await supabase.from("invoice_items").insert({
       user_id, invoice_id: invoiceId, name: item.name, cost: item.cost, price: item.price,
-      quantity: Math.max(1, Math.floor(item.quantity ?? 1)), ...invoiceItemFinancials(item),
+      quantity: qty, ...invoiceItemFinancials(item),
+      stock_item_id: item.stockId ?? null,
     });
     if (error) throw error;
+    // deduct stock (quantity only — the insert trigger logs the 'sale' movement)
+    if (item.stockId && qty > 0) {
+      const { data: existing } = await supabase
+        .from("stock_items").select("quantity").eq("id", item.stockId).maybeSingle();
+      const next = Math.max(0, Number(existing?.quantity ?? 0) - qty);
+      await supabase.from("stock_items").update({ quantity: next }).eq("id", item.stockId);
+    }
     await fetchAll();
   },
   async updateInvoiceItem(id: string, patch: Partial<{ name: string; cost: number; price: number; quantity: number; discountPct: number; taxPct: number; serialNumbers: string[] }>) {
@@ -507,8 +517,24 @@ export const db = {
     await fetchAll();
   },
   async removeInvoiceItem(id: string) {
+    // read first so we can restore stock + log a movement
+    const { data: row } = await supabase
+      .from("invoice_items").select("name, quantity, stock_item_id, cost, invoice_id, user_id").eq("id", id).maybeSingle();
     const { error } = await supabase.from("invoice_items").delete().eq("id", id);
     if (error) throw error;
+    if (row?.stock_item_id && row.quantity > 0) {
+      const sid = row.stock_item_id as string;
+      const { data: existing } = await supabase
+        .from("stock_items").select("quantity").eq("id", sid).maybeSingle();
+      const next = Number(existing?.quantity ?? 0) + Number(row.quantity);
+      await supabase.from("stock_items").update({ quantity: next }).eq("id", sid);
+      const user_id = row.user_id;
+      await supabase.from("stock_movements").insert({
+        user_id, stock_item_id: sid, movement_type: "return",
+        quantity: Number(row.quantity), unit_cost: Number(row.cost ?? 0),
+        reference_id: row.invoice_id, notes: "حذف بند فاتورة",
+      });
+    }
     await fetchAll();
   },
 

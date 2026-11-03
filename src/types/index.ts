@@ -135,6 +135,7 @@ export interface InvoiceItem {
   taxAmount: number;
   lineTotal: number;
   serialNumbers: string[];
+  stockItemId?: string | null;
   createdAt: string;
 }
 

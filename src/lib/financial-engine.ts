@@ -232,3 +232,33 @@ export function calculateDueStatus(params: {
     remainingDue,
   };
 }
+
+// ============================================================
+// Per-line financials (single source of truth for invoice items)
+// ============================================================
+export interface LineFinancials {
+  gross: number;
+  discountPct: number;
+  discountAmount: number;
+  taxable: number;
+  taxPct: number;
+  taxAmount: number;
+  lineTotal: number;
+}
+
+export function calculateLineFinancials(params: {
+  price: number;
+  quantity?: number;
+  discountPct?: number;
+  taxPct?: number;
+}): LineFinancials {
+  const quantity = Math.max(1, Math.floor(Number(params.quantity) || 1));
+  const gross = roundCurrency((Number(params.price) || 0) * quantity);
+  const discountPct = Math.min(100, Math.max(0, Number(params.discountPct) || 0));
+  const discountAmount = roundCurrency((gross * discountPct) / 100);
+  const taxable = roundCurrency(Math.max(0, gross - discountAmount));
+  const taxPct = Math.max(0, Number(params.taxPct) || 0);
+  const taxAmount = roundCurrency((taxable * taxPct) / 100);
+  const lineTotal = roundCurrency(taxable + taxAmount);
+  return { gross, discountPct, discountAmount, taxable, taxPct, taxAmount, lineTotal };
+}

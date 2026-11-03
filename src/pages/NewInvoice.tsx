@@ -70,7 +70,7 @@ import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
-import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
+import { calculateLineFinancials } from "@/lib/financial-engine";
 
 export default function Page() {
   return (
@@ -149,11 +149,13 @@ function NewInvoicePage() {
 
   const totalCost = products.reduce((s, p) => s + Number(p.cost || 0) * Number(p.quantity || 1), 0);
   const lineMetrics = (p: ProductRow) => {
-    const gross = Number(p.price || 0) * Number(p.quantity || 1);
-    const discount = gross * Math.min(100, Math.max(0, Number(p.discount || 0))) / 100;
-    const taxable = Math.max(0, gross - discount);
-    const tax = taxable * Math.max(0, Number(p.taxPct || 0)) / 100;
-    return { gross, discount, tax, total: taxable + tax };
+    const lf = calculateLineFinancials({
+      price: Number(p.price || 0),
+      quantity: Number(p.quantity || 1),
+      discountPct: Number(p.discount || 0),
+      taxPct: Number(p.taxPct || 0),
+    });
+    return { gross: lf.gross, discount: lf.discountAmount, tax: lf.taxAmount, total: lf.lineTotal };
   };
   const subtotal = products.reduce((s, p) => s + lineMetrics(p).total, 0);
   const discountValue = Math.min(subtotal, Math.max(0, Number(discountAmt || 0)));

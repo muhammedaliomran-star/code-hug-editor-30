@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { db, fmt, useDB, type Invoice } from "@/lib/store";
 import type { ProductRow } from "@/types";
 
-import { usePrivacy } from "@/lib/privacy";
+import { calculateLineFinancials } from "@/lib/financial-engine";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
     if (inv) {
       const items = data.invoiceItems.filter((it) => it.invoiceId === inv.id);
       const rows: ProductRow[] = items.length > 0
-        ? items.map((it) => ({ id: it.id, name: it.name, cost: String(it.cost), price: String(it.price), quantity: String(it.quantity), discount: String(it.discountPct), taxPct: String(it.taxPct), serialNumbers: it.serialNumbers.join(", ") }))
+        ? items.map((it) => ({ id: it.id, name: it.name, cost: String(it.cost), price: String(it.price), quantity: String(it.quantity), discount: String(it.discountPct), taxPct: String(it.taxPct), serialNumbers: it.serialNumbers.join(", "), stockId: it.stockItemId ?? undefined }))
         : [{ id: crypto.randomUUID(), name: inv.notes || "منتج", cost: "0", price: String(inv.total), quantity: "1" }];
       setProducts(rows);
       setDown(String(inv.downPayment));
@@ -51,11 +51,12 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
   if (!inv) return null;
 
   const totalCost = products.reduce((s, p) => s + Number(p.cost || 0) * Number(p.quantity || 1), 0);
-  const itemNet = (p: ProductRow) => {
-    const gross = Number(p.price || 0) * Number(p.quantity || 1);
-    const afterDiscount = gross * (1 - Math.min(100, Math.max(0, Number(p.discount || 0))) / 100);
-    return Math.max(0, afterDiscount) * (1 + Math.max(0, Number(p.taxPct || 0)) / 100);
-  };
+  const itemNet = (p: ProductRow) => calculateLineFinancials({
+    price: Number(p.price || 0),
+    quantity: Number(p.quantity || 1),
+    discountPct: Number(p.discount || 0),
+    taxPct: Number(p.taxPct || 0),
+  }).lineTotal;
   const totalPrice = products.reduce((s, p) => s + itemNet(p), 0);
   const remaining = Math.max(0, totalPrice - Number(down || 0));
   const profit = totalPrice - totalCost;
@@ -84,7 +85,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
     const keptIds = new Set(valid.filter((p) => existingIds.has(p.id)).map((p) => p.id));
     for (const oldId of existingIds) if (!keptIds.has(oldId)) await db.removeInvoiceItem(oldId);
     for (const p of valid) {
-      const payload = { name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0), quantity: Math.max(1, Math.floor(Number(p.quantity || 1))), discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0), serialNumbers: (p.serialNumbers || "").split(/[,\n]+/).map((value) => value.trim()).filter(Boolean) };
+      const payload = { name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0), quantity: Math.max(1, Math.floor(Number(p.quantity || 1))), discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0), serialNumbers: (p.serialNumbers || "").split(/[,\n]+/).map((value) => value.trim()).filter(Boolean), stockId: p.stockId ?? null };
       if (existingIds.has(p.id)) await db.updateInvoiceItem(p.id, payload);
       else await db.addInvoiceItem(inv.id, payload);
     }
