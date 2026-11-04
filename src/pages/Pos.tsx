@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { format, addMonths } from "date-fns";
+import { format } from "date-fns";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import {
-  useDB, db, fmt, customerBalance, useShopSettings, uid,
+  useDB, db, fmt, useShopSettings,
   findStockByBarcode, type StockItem, type Customer
 } from "@/lib/store";
 // (supabase import removed — sales now go through db.addInvoice / create_sale RPC)
@@ -30,30 +30,20 @@ import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { openWhatsAppReceipt } from "@/lib/whatsapp";
 import { useHeldInvoices, type HeldInvoiceItem } from "@/lib/held-invoices";
 import { ShiftManagerDialog } from "@/components/ShiftManagerDialog";
-import { getActiveShift } from "@/lib/shifts";
 import { linkInvoiceToBranch, resolveStampBranchId } from "@/lib/branch-system";
 import { PosSplitPaymentModal, type SplitPaymentDetail } from "@/components/PosSplitPaymentModal";
 import { PosQuickRefundModal } from "@/components/PosQuickRefundModal";
+import { PosProductTile } from "@/components/pos/PosProductTile";
+import { PosCartItemRow, type PosCartItem } from "@/components/pos/PosCartItemRow";
 import { PosKeyboardHUD } from "@/components/PosKeyboardHUD";
 import { broadcastCustomerDisplay } from "@/lib/customer-display";
 import {
-  Plus, Minus, Trash2, Search, ScanLine, Printer, UserPlus,
-  ArrowRight, Eye, EyeOff, Check, X, PauseCircle,
-  PlayCircle, MessageCircle, AlertTriangle, Package, Zap,
-  Calculator, User, Receipt, Layers, RefreshCw, ShoppingCart,
-  Clock, ShieldAlert, Percent, Tag, Tv, Undo2, HeartHandshake
+  Trash2, Search, ScanLine, Printer, UserPlus,
+  Eye, EyeOff, Check, X, PauseCircle,
+  PlayCircle, MessageCircle, Package, Zap,
+  User, Receipt, Layers, ShoppingCart,
+  Clock, ShieldAlert, Tv, Undo2
 } from "lucide-react";
-
-interface PosCartItem {
-  id: string;
-  stockId?: string;
-  name: string;
-  cost: number;
-  price: number;
-  quantity: number;
-  maxStock?: number;
-  barcode?: string;
-}
 
 export default function PosPageWrapper() {
   return (
@@ -805,78 +795,15 @@ function PosPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
-                {filteredProducts.map((p) => {
-                  const inCartItem = cart.find((it) => it.stockId === p.id);
-                  const isOutOfStock = p.quantity <= 0;
-                  const isLowStock = !isOutOfStock && p.quantity <= (p.minStock || 3);
-
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      disabled={isOutOfStock}
-                      onClick={() => addToCart(p)}
-                      className={cn(
-                        "relative flex flex-col justify-between text-right p-3 rounded-2xl border transition-[border-color,box-shadow,background-color,transform] duration-150 group",
-                        isOutOfStock
-                          ? "bg-muted/30 border-border/30 opacity-50 cursor-not-allowed"
-                          : inCartItem
-                            ? "bg-primary/[0.04] border-primary/40 ring-2 ring-primary/20 shadow-sm"
-                            : "bg-card border-border/50 hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5"
-                      )}
-                    >
-                      {/* In-Cart Badge */}
-                      {inCartItem && (
-                        <span className="absolute top-2 left-2 grid h-6 min-w-[24px] place-items-center rounded-full bg-primary text-primary-foreground font-black text-xs px-1 shadow">
-                          {inCartItem.quantity}
-                        </span>
-                      )}
-
-                      {/* Top Info: Name & Barcode */}
-                      <div>
-                        <div className="font-bold text-xs sm:text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                          {p.name}
-                        </div>
-                        {p.size && (
-                          <span className="inline-block mt-0.5 text-[11px] font-semibold text-muted-foreground bg-foreground/5 px-1.5 py-0.2 rounded">
-                            مقاس: {p.size}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Bottom Info: Price & Stock Status */}
-                      <div className="mt-3 pt-2 border-t border-border/30 flex items-end justify-between gap-1">
-                        <div>
-                          <div className="font-black text-sm sm:text-base font-mono text-primary">
-                            {fmt(p.salePrice || 0)} <span className="text-[11px] font-normal text-muted-foreground">ج.م</span>
-                          </div>
-                          {!privacy && p.lastUnitCost > 0 && (
-                            <div className="text-[11px] text-muted-foreground font-mono">
-                              ت: {fmt(p.lastUnitCost)} ج.م
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Live Stock Indicators */}
-                        <div className="text-left shrink-0">
-                          {isOutOfStock ? (
-                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-md">
-                              نفد
-                            </span>
-                          ) : isLowStock ? (
-                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-warning bg-warning/15 px-1.5 py-0.5 rounded-md">
-                              باقي {p.quantity}
-                            </span>
-                          ) : (
-                              <span className="text-[11px] text-muted-foreground font-medium">
-                              المخزن: <b className="text-foreground">{p.quantity}</b>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                {filteredProducts.map((p) => (
+                  <PosProductTile
+                    key={p.id}
+                    product={p}
+                    inCartQuantity={cart.find((it) => it.stockId === p.id)?.quantity}
+                    privacy={privacy}
+                    onAdd={addToCart}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -934,74 +861,16 @@ function PosPage() {
                 </p>
               </div>
             ) : (
-              cart.map((item) => {
-                const itemTotal = item.price * item.quantity;
-                const isShortage = item.maxStock !== undefined && item.quantity > item.maxStock;
-
-                return (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "p-2.5 rounded-xl border bg-background space-y-1.5 transition-colors",
-                      isShortage ? "border-danger/60 bg-danger/[0.02]" : "border-border/40"
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="font-bold text-xs text-foreground truncate">{item.name}</div>
-                        <div className="text-[11px] text-muted-foreground font-mono">
-                          {fmt(item.price)} ج.م للقطعة
-                        </div>
-                      </div>
-                      <div className="font-black text-xs font-mono text-primary shrink-0">
-                        {fmt(itemTotal)} ج.م
-                      </div>
-                    </div>
-
-                    {isShortage && (
-                      <div className="text-[11px] text-danger font-bold flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3 shrink-0" />
-                        الكمية المطلوبة تتجاوز المخزون ({item.maxStock} متاح)
-                      </div>
-                    )}
-
-                    {/* Quantity & Delete Controls */}
-                    <div className="flex items-center justify-between pt-1 border-t border-border/20">
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, -1)}
-                          className="h-10 w-10 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) => setItemQty(item.id, e.target.value)}
-                          className="h-10 w-14 text-center rounded-lg border border-border/50 text-xs font-black font-mono bg-background"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.id, 1)}
-                          className="h-10 w-10 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-muted-foreground hover:text-danger h-10 w-10 grid place-items-center rounded-lg transition-colors"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+              cart.map((item) => (
+                <PosCartItemRow
+                  key={item.id}
+                  item={item}
+                  onIncrease={() => updateQuantity(item.id, 1)}
+                  onDecrease={() => updateQuantity(item.id, -1)}
+                  onSetQty={(qty) => setItemQty(item.id, qty)}
+                  onRemove={() => removeFromCart(item.id)}
+                />
+              ))
             )}
           </div>
 
