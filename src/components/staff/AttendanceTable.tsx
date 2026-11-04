@@ -65,5 +65,4 @@ export function AttendanceTable({ records }: AttendanceTableProps) {
                   </table>
                 </div>
     );
-  );
 }

@@ -104,5 +104,4 @@ export function ShiftsHistoryTable({ shifts, blurCls, onSelectZReport }: ShiftsH
                   </table>
                 </div>
     );
-  );
 }
