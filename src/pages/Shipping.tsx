@@ -47,6 +47,8 @@ import { ShipmentRowCard } from "@/components/shipping/ShipmentRowCard";
 import { CarrierDueCard } from "@/components/shipping/CarrierDueCard";
 import { CarrierCard } from "@/components/shipping/CarrierCard";
 import { ZoneCard } from "@/components/shipping/ZoneCard";
+import { ShippingAddCarrierDialog } from "@/components/shipping/ShippingAddCarrierDialog";
+import { ShippingAddZoneDialog } from "@/components/shipping/ShippingAddZoneDialog";
 import { statusMap, egp } from "@/components/shipping/shipment-status";
 import { saveCarrierTransaction } from "@/lib/carrier-ledger";
 import { recordCarrierSettlementInTreasury, recordCarrierFeesAsExpense } from "@/lib/shipping-finance";
@@ -977,43 +979,20 @@ export default function Shipping() {
                 ))}
 
                 <Reveal delay={filteredCarriers.length * 0.1}>
-                  <Dialog open={isAddCarrierOpen} onOpenChange={(open) => { setIsAddCarrierOpen(open); if (!open) resetCarrierForm(); }}>
-                    <DialogTrigger asChild>
-                      <button className="group flex h-full min-h-[200px] w-full flex-col items-center justify-center gap-4 rounded-[1.75rem] border-2 border-dashed border-hairline p-8 transition-all hover:border-primary/50 hover:bg-primary/5">
-                        <div className="rounded-full bg-muted p-4 transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-                          <Plus className="h-6 w-6" />
-                        </div>
-                        <span className="font-bold text-muted-foreground transition-colors group-hover:text-primary">إضافة مندوب / شركة شحن</span>
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]" dir="rtl">
-                      <DialogHeader>
-                        <DialogTitle className="text-right">{editCarrier ? "تعديل شركة الشحن" : "إضافة شركة شحن جديدة"}</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <Label>اسم الشركة</Label>
-                          <Input value={carrierName} onChange={(e) => setCarrierName(e.target.value)} placeholder="مثلاً: ارامكس، مندوب خاص..." className="text-right" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>المسئول</Label>
-                          <Input value={carrierContact} onChange={(e) => setCarrierContact(e.target.value)} placeholder="اسم الشخص المسئول" className="text-right" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>رقم الهاتف</Label>
-                          <Input value={carrierPhone} onChange={(e) => setCarrierPhone(e.target.value)} placeholder="رقم الموبايل للتواصل" className="text-right" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>التكلفة الأساسية (ج.م)</Label>
-                          <Input type="number" value={carrierBaseCost} onChange={(e) => setCarrierBaseCost(e.target.value)} className="text-right" />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={() => void handleAddCarrier()} className="h-12 w-full rounded-xl font-bold">حفظ البيانات</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                </Reveal>
+                  <ShippingAddCarrierDialog
+                    open={isAddCarrierOpen}
+                    onOpenChange={(open) => { setIsAddCarrierOpen(open); if (!open) resetCarrierForm(); }}
+                    editCarrier={!!editCarrier}
+                    name={carrierName}
+                    onNameChange={setCarrierName}
+                    contact={carrierContact}
+                    onContactChange={setCarrierContact}
+                    phone={carrierPhone}
+                    onPhoneChange={setCarrierPhone}
+                    baseCost={carrierBaseCost}
+                    onBaseCostChange={setCarrierBaseCost}
+                    onSave={() => void handleAddCarrier()}
+                  />
               </div>
             </TabsContent>
 
@@ -1031,49 +1010,21 @@ export default function Shipping() {
                 ))}
 
                 <Reveal delay={filteredZones.length * 0.1}>
-                  <Dialog open={isAddZoneOpen} onOpenChange={(open) => { setIsAddZoneOpen(open); if (!open) resetZoneForm(); }}>
-                    <DialogTrigger asChild>
-                      <button className="group flex h-full min-h-[200px] w-full flex-col items-center justify-center gap-4 rounded-[1.75rem] border-2 border-dashed border-hairline p-8 transition-all hover:border-amber-500/50 hover:bg-amber-500/5">
-                        <div className="rounded-full bg-muted p-4 transition-colors group-hover:bg-amber-500/10 group-hover:text-amber-500">
-                          <Plus className="h-6 w-6" />
-                        </div>
-                        <span className="font-bold text-muted-foreground transition-colors group-hover:text-amber-500">إضافة منطقة توصيل</span>
-                      </button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[425px]" dir="rtl">
-                      <DialogHeader>
-                        <DialogTitle className="text-right">{editZone ? "تعديل المنطقة" : "إضافة منطقة توصيل"}</DialogTitle>
-                      </DialogHeader>
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <Label>اسم المنطقة</Label>
-                          <Input value={zoneName} onChange={(e) => setZoneName(e.target.value)} placeholder="مثلاً: القاهرة، الجيزة..." className="text-right" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>شركة الشحن</Label>
-                          <Select value={zoneCarrierId} onValueChange={setZoneCarrierId}>
-                            <SelectTrigger className="text-right"><SelectValue placeholder="اختر الشركة" /></SelectTrigger>
-                            <SelectContent>
-                              {carriers.filter((c) => c.active).map((c) => (
-                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>تكلفة التوصيل (ج.م)</Label>
-                          <Input type="number" value={zoneCost} onChange={(e) => setZoneCost(e.target.value)} className="text-right" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>مدة التوصيل (أيام)</Label>
-                          <Input type="number" value={zoneDays} onChange={(e) => setZoneDays(e.target.value)} className="text-right" />
-                        </div>
-                      </div>
-                      <DialogFooter>
-                        <Button onClick={() => void handleAddZone()} className="h-12 w-full rounded-xl font-bold">حفظ المنطقة</Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                  <ShippingAddZoneDialog
+                    open={isAddZoneOpen}
+                    onOpenChange={(open) => { setIsAddZoneOpen(open); if (!open) resetZoneForm(); }}
+                    editZone={!!editZone}
+                    name={zoneName}
+                    onNameChange={setZoneName}
+                    carrierId={zoneCarrierId}
+                    onCarrierIdChange={setZoneCarrierId}
+                    carriers={carriers}
+                    cost={zoneCost}
+                    onCostChange={setZoneCost}
+                    days={zoneDays}
+                    onDaysChange={setZoneDays}
+                    onSave={() => void handleAddZone()}
+                  />
                 </Reveal>
               </div>
             </TabsContent>
