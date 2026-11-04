@@ -90,7 +90,7 @@ export function ShiftsHistoryTable({ shifts, blurCls, onSelectZReport }: ShiftsH
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setSelectedZReportShift(shift)}
+                                onClick={() => onSelectZReport(shift)}
                                 className="h-7 px-2.5 rounded-lg text-[10px] font-bold border-border/40 gap-1"
                               >
                                 <Printer className="w-3 h-3 text-primary" />

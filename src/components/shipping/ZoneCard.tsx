@@ -20,7 +20,7 @@ export function ZoneCard({ zone: z, carrierName, delay, onEdit, onRemove }: Zone
                         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 ring-1 ring-inset ring-amber-500/20">
                           <MapPin className="h-6 w-6" />
                         </div>
-                        <span className="text-[10px] font-bold text-muted-foreground">{carrierById.get(z.carrierId)?.name}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground">{carrierName}</span>
                       </div>
                       <div>
                         <h3 className="text-lg font-bold">{z.name}</h3>
