@@ -11,16 +11,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { usePrivacy } from "@/lib/privacy";
@@ -35,12 +26,16 @@ import { PosSplitPaymentModal, type SplitPaymentDetail } from "@/components/PosS
 import { PosQuickRefundModal } from "@/components/PosQuickRefundModal";
 import { PosProductTile } from "@/components/pos/PosProductTile";
 import { PosCartItemRow, type PosCartItem } from "@/components/pos/PosCartItemRow";
+import { PosQuickAddCustomerDialog } from "@/components/pos/PosQuickAddCustomerDialog";
+import { PosCustomerSelectDialog } from "@/components/pos/PosCustomerSelectDialog";
+import { PosHeldInvoicesDialog } from "@/components/pos/PosHeldInvoicesDialog";
+import { PosCompletedInvoiceDialog } from "@/components/pos/PosCompletedInvoiceDialog";
 import { PosKeyboardHUD } from "@/components/PosKeyboardHUD";
 import { broadcastCustomerDisplay } from "@/lib/customer-display";
 import {
-  Trash2, Search, ScanLine, Printer, UserPlus,
-  Eye, EyeOff, Check, X, PauseCircle,
-  PlayCircle, MessageCircle, Package, Zap,
+  Trash2, Search, ScanLine, UserPlus,
+  Eye, EyeOff, X, PauseCircle,
+  Package, Zap,
   User, Receipt, Layers, ShoppingCart,
   Clock, ShieldAlert, Tv, Undo2
 } from "lucide-react";
@@ -151,6 +146,57 @@ function PosPage() {
   const change = Math.max(0, receivedNum - total);
 
   // Add Product to Cart
+  const handleQuickAddCustomer = async () => {
+    if (!newCustName.trim()) return toast.error("يرجى إدخال اسم العميل");
+    try {
+      const created = await db.addCustomer({
+        name: newCustName.trim(),
+        phone: newCustPhone.trim(),
+        address: newCustAddress.trim(),
+        customerType: "cash",
+      });
+      if (created?.id) setCustomerId(created.id);
+      toast.success(`تم تسجيل واختيار العميل: ${newCustName}`);
+      setQuickCustOpen(false);
+      setNewCustName("");
+      setNewCustPhone("");
+      setNewCustAddress("");
+    } catch (e: any) {
+      toast.error(e?.message || "تعذر إضافة العميل");
+    }
+  };
+
+  const handleCompletedWhatsApp = () => {
+    if (!completedInvoice) return;
+    openWhatsAppReceipt({
+      shopName: shop.shopName || "سِجلّي",
+      shopPhone: shop.phone,
+      invoiceCode: completedInvoice.code,
+      customerName: completedInvoice.customerName,
+      customerPhone: completedInvoice.customerPhone,
+      invoiceDate: completedInvoice.date,
+      isCash: true,
+      total: completedInvoice.total,
+      downPayment: completedInvoice.total,
+      remaining: 0,
+      items: completedInvoice.items.map((i: any) => ({
+        name: i.name,
+        quantity: i.quantity,
+        price: i.price,
+      })),
+    });
+  };
+
+  const handleCompletedPrint = () => {
+    if (!completedInvoice) return;
+    handlePrint(
+      completedInvoice.code,
+      completedInvoice.items,
+      completedInvoice.total,
+      completedInvoice.paid,
+      completedInvoice.customerName
+    );
+  };
   const addToCart = (product: StockItem) => {
     if (product.quantity <= 0) {
       toast.error(`المنتج "${product.name}" نفد من المخزون!`);
@@ -1077,228 +1123,41 @@ function PosPage() {
       />
 
       {/* Quick Add Customer Dialog */}
-      <Dialog open={quickCustOpen} onOpenChange={setQuickCustOpen}>
-        <DialogContent className="max-w-md rounded-3xl text-right" dir="rtl">
-          <DialogHeader className="text-right">
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <UserPlus className="h-5 w-5 text-primary" />
-              تسجيل عميل جديد سريع
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              أدخل بيانات العميل ليتم اختياره فورياً للفاتورة الحالية.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-bold">اسم العميل *</Label>
-              <Input
-                value={newCustName}
-                onChange={(e) => setNewCustName(e.target.value)}
-                placeholder="مثال: محمد أحمد"
-                className="h-10 rounded-xl"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-bold">رقم الهاتف</Label>
-              <Input
-                value={newCustPhone}
-                onChange={(e) => setNewCustPhone(e.target.value)}
-                placeholder="010XXXXXXXX"
-                dir="ltr"
-                className="h-10 rounded-xl font-mono text-right"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-bold">العنوان أو المنطقة</Label>
-              <Input
-                value={newCustAddress}
-                onChange={(e) => setNewCustAddress(e.target.value)}
-                placeholder="مثال: وسط البلد"
-                className="h-10 rounded-xl"
-              />
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setQuickCustOpen(false)}
-              className="rounded-xl text-xs"
-            >
-              إلغاء
-            </Button>
-            <Button
-              type="button"
-              onClick={async () => {
-                if (!newCustName.trim()) return toast.error("يرجى إدخال اسم العميل");
-                try {
-                  const created = await db.addCustomer({
-                    name: newCustName.trim(),
-                    phone: newCustPhone.trim(),
-                    address: newCustAddress.trim(),
-                    customerType: "cash",
-                  });
-                  if (created?.id) {
-                    setCustomerId(created.id);
-                  }
-                  toast.success(`تم تسجيل واختيار العميل: ${newCustName}`);
-                  setQuickCustOpen(false);
-                  setNewCustName("");
-                  setNewCustPhone("");
-                  setNewCustAddress("");
-                } catch (e: any) {
-                  toast.error(e?.message || "تعذر إضافة العميل");
-                }
-              }}
-              className="rounded-xl text-xs font-bold bg-primary text-primary-foreground"
-            >
-              حفظ واختيار العميل
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PosQuickAddCustomerDialog
+        open={quickCustOpen}
+        onOpenChange={setQuickCustOpen}
+        name={newCustName}
+        onNameChange={setNewCustName}
+        phone={newCustPhone}
+        onPhoneChange={setNewCustPhone}
+        address={newCustAddress}
+        onAddressChange={setNewCustAddress}
+        onSubmit={handleQuickAddCustomer}
+      />
 
       {/* Customer Selection Modal */}
-      <Dialog open={custSelectOpen} onOpenChange={setCustSelectOpen}>
-        <DialogContent className="max-w-md rounded-3xl text-right" dir="rtl">
-          <DialogHeader className="text-right">
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              اختيار العميل
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <Input
-              value={customerSearch}
-              onChange={(e) => setCustomerSearch(e.target.value)}
-              placeholder="ابحث بالاسم أو رقم الهاتف..."
-              className="h-10 rounded-xl text-xs"
-            />
-            <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
-              <button
-                type="button"
-                onClick={() => {
-                  setCustomerId("");
-                  setCustSelectOpen(false);
-                }}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-foreground/5 text-right font-bold text-xs"
-              >
-                <span>عميل نقدي سريع (افتراضي)</span>
-                <Badge variant="secondary" className="text-[11px]">كاش</Badge>
-              </button>
-              {data.customers
-                .filter(
-                  (c) =>
-                    !customerSearch.trim() ||
-                    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
-                    c.phone?.includes(customerSearch)
-                )
-                .map((c) => (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => {
-                      setCustomerId(c.id);
-                      setCustSelectOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-foreground/5 text-right transition-colors"
-                  >
-                    <div>
-                      <div className="font-bold text-xs text-foreground">{c.name}</div>
-                      {c.phone && <div className="text-[11px] text-muted-foreground font-mono" dir="ltr">{c.phone}</div>}
-                    </div>
-                    <CustomerTypeBadge type={c.customerType} />
-                  </button>
-                ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PosCustomerSelectDialog
+        open={custSelectOpen}
+        onOpenChange={setCustSelectOpen}
+        customers={data.customers}
+        search={customerSearch}
+        onSearchChange={setCustomerSearch}
+        onSelect={(id) => {
+          setCustomerId(id);
+          setCustSelectOpen(false);
+        }}
+      />
 
       {/* Held Invoices Modal */}
-      <Dialog open={heldModalOpen} onOpenChange={setHeldModalOpen}>
-        <DialogContent className="max-w-lg rounded-3xl text-right" dir="rtl">
-          <DialogHeader className="text-right">
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <PauseCircle className="h-5 w-5 text-warning" />
-              الفواتير المعلقة ({heldCount})
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              قائمة بسلات المشتريات المعلقة مؤقتاً. يمكنك استرجاع أي سلة لإكمال البيع.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-72 overflow-y-auto space-y-2 py-2 custom-scrollbar">
-            {heldList.length === 0 ? (
-              <div className="p-8 text-center text-xs text-muted-foreground space-y-1">
-                <PauseCircle className="h-8 w-8 text-muted-foreground/30 mx-auto" />
-                <p>لا توجد أي فواتير معلقة حالياً.</p>
-              </div>
-            ) : (
-              heldList.map((held) => (
-                <div
-                  key={held.id}
-                  className="p-3 rounded-2xl border border-border/50 bg-background flex items-center justify-between gap-2"
-                >
-                  <div className="min-w-0">
-                    <div className="font-bold text-xs text-foreground flex items-center gap-2">
-                      <span>{held.customerName || "عميل نقدي"}</span>
-                      <span className="text-[11px] text-muted-foreground font-mono">
-                        {format(new Date(held.createdAt), "HH:mm - dd/MM")}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-muted-foreground mt-0.5">
-                      {held.items.length} أصناف • إجمالي: <b className="text-primary font-mono">{fmt(held.total)} ج.م</b>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => handleRestoreHeld(held)}
-                      className="rounded-xl font-bold h-10 text-xs bg-primary text-primary-foreground gap-1.5 px-3"
-                    >
-                      <PlayCircle className="h-3.5 w-3.5" />
-                      <span>استرجاع</span>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeHeld(held.id)}
-                      className="h-10 w-10 rounded-xl text-muted-foreground hover:text-danger"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {heldList.length > 0 && (
-            <DialogFooter className="justify-between sm:justify-between">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={clearAll}
-                className="text-xs text-danger hover:bg-danger/10"
-              >
-                مسح كل المعلق
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setHeldModalOpen(false)}
-                className="rounded-xl text-xs"
-              >
-                إغلاق
-              </Button>
-            </DialogFooter>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PosHeldInvoicesDialog
+        open={heldModalOpen}
+        onOpenChange={setHeldModalOpen}
+        heldList={heldList}
+        heldCount={heldCount}
+        onRestore={handleRestoreHeld}
+        onRemove={removeHeld}
+        onClearAll={clearAll}
+      />
 
       {/* Shift Manager Dialog (Z-Report) */}
       <ShiftManagerDialog
@@ -1307,85 +1166,13 @@ function PosPage() {
       />
 
       {/* Invoice Completed Modal (Print + WhatsApp) */}
-      <Dialog open={!!completedInvoice} onOpenChange={(open) => !open && setCompletedInvoice(null)}>
-        <DialogContent className="max-w-md rounded-3xl text-right" dir="rtl">
-          <DialogHeader className="text-right">
-            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-success">
-              <Check className="h-6 w-6 rounded-full bg-success/15 p-1 text-success" />
-              تم حفظ فاتورة البيع {completedInvoice?.code} بنجاح!
-            </DialogTitle>
-            <DialogDescription className="text-xs">
-              المبلغ المسدد نقداً: <b className="text-foreground font-mono">{fmt(completedInvoice?.total || 0)} ج.م</b>
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-3 space-y-2">
-            <div className="py-1 text-xs space-y-1">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">العميل:</span>
-                <span className="font-bold text-foreground">{completedInvoice?.customerName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">عدد الأصناف:</span>
-                <span className="font-bold font-mono">{completedInvoice?.items.length}</span>
-              </div>
-              <div className="flex justify-between font-bold text-primary pt-1 border-t border-border/30">
-                <span>الإجمالي المدفوع:</span>
-                <span className="font-mono">{fmt(completedInvoice?.total || 0)} ج.م</span>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            {/* WhatsApp Button */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                if (!completedInvoice) return;
-                openWhatsAppReceipt({
-                  shopName: shop.shopName || "سِجلّي",
-                  shopPhone: shop.phone,
-                  invoiceCode: completedInvoice.code,
-                  customerName: completedInvoice.customerName,
-                  customerPhone: completedInvoice.customerPhone,
-                  invoiceDate: completedInvoice.date,
-                  isCash: true,
-                  total: completedInvoice.total,
-                  downPayment: completedInvoice.total,
-                  remaining: 0,
-                  items: completedInvoice.items.map((i) => ({
-                    name: i.name,
-                    quantity: i.quantity,
-                    price: i.price,
-                  })),
-                });
-              }}
-              className="rounded-xl border-success/40 text-success hover:bg-success/10 font-bold text-xs gap-1.5 flex-1"
-            >
-              <MessageCircle className="h-4 w-4" />
-              <span>إرسال واتساب</span>
-            </Button>
-
-            {/* Print Button */}
-            <Button
-              type="button"
-              onClick={() => {
-                if (!completedInvoice) return;
-                handlePrint(
-                  completedInvoice.code,
-                  completedInvoice.items,
-                  completedInvoice.total,
-                  completedInvoice.paid,
-                  completedInvoice.customerName
-                );
-              }}
-              className="rounded-xl font-bold text-xs gap-1.5 flex-1 bg-primary text-primary-foreground"
-            >
-              <Printer className="h-4 w-4" />
-              <span>طباعة الإيصال</span>
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <PosCompletedInvoiceDialog
+        open={!!completedInvoice}
+        onClose={() => setCompletedInvoice(null)}
+        completedInvoice={completedInvoice}
+        onWhatsApp={handleCompletedWhatsApp}
+        onPrint={handleCompletedPrint}
+      />
 
       {/* Split Payment Modal (F6) */}
       <PosSplitPaymentModal
