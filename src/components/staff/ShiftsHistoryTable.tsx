@@ -13,7 +13,7 @@ export interface ShiftsHistoryTableProps {
 
 export function ShiftsHistoryTable({ shifts, blurCls, onSelectZReport }: ShiftsHistoryTableProps) {
   return (
-              {shifts.length === 0 ? (
+    shifts.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl border border-dashed border-border/60 bg-card/30">
                   <Clock className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
                   <h3 className="font-bold text-sm text-foreground">لا توجد ورديات مسجلة حتى الآن</h3>
@@ -90,7 +90,7 @@ export function ShiftsHistoryTable({ shifts, blurCls, onSelectZReport }: ShiftsH
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => setSelectedZReportShift(shift)}
+                                onClick={() => onSelectZReport(shift)}
                                 className="h-7 px-2.5 rounded-lg text-[10px] font-bold border-border/40 gap-1"
                               >
                                 <Printer className="w-3 h-3 text-primary" />
@@ -103,6 +103,6 @@ export function ShiftsHistoryTable({ shifts, blurCls, onSelectZReport }: ShiftsH
                     </tbody>
                   </table>
                 </div>
-              )}
+    )
   );
 }
