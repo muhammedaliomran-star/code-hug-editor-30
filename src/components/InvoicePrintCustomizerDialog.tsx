@@ -267,7 +267,7 @@ export function InvoicePrintCustomizerDialog({
             <Label className="text-xs font-bold text-muted-foreground">نوع وحجم الإيصال</Label>
             <RadioGroup
               value={paperFormat}
-              onValueChange={(val: any) => setPaperFormat(val)}
+              onValueChange={(val: string) => setPaperFormat(val)}
               className="grid grid-cols-2 gap-2.5"
             >
               <label

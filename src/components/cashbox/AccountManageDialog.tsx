@@ -48,7 +48,7 @@ export function AccountManageDialog() {
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">نوع الحساب</Label>
-              <Select value={newAccType} onValueChange={(v: any) => setNewAccType(v)}>
+              <Select value={newAccType} onValueChange={(v: string) => setNewAccType(v)}>
                 <SelectTrigger className="h-9 rounded-xl text-xs">
                   <SelectValue />
                 </SelectTrigger>

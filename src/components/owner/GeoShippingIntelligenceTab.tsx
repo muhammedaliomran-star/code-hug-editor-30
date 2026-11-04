@@ -187,7 +187,7 @@ export function GeoShippingIntelligenceTab({
                   tickLine={false}
                 />
                 <Tooltip
-                  formatter={(v: any) => [`${fmt(Number(v))} ج.م`, "حجم المبيعات"]}
+                  formatter={(v: number) => [`${fmt(Number(v))} ج.م`, "حجم المبيعات"]}
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     borderColor: "hsl(var(--border))",
@@ -224,7 +224,7 @@ export function GeoShippingIntelligenceTab({
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(v: any) => [`${fmt(Number(v))} ج.م`, "المبيعات"]}
+                  formatter={(v: number) => [`${fmt(Number(v))} ج.م`, "المبيعات"]}
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     borderColor: "hsl(var(--border))",

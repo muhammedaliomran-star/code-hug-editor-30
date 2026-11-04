@@ -6,6 +6,10 @@ import {
   fmt,
   StockItem,
   useShopSettings,
+  Invoice,
+  Expense,
+  Payment,
+  ShopSettings,
 } from "@/lib/store";
 import {
   calculateBranchStockValuation,
@@ -34,6 +38,8 @@ import {
   BranchTransfer,
   BranchTransferItem,
   BranchStaffMember,
+  BranchRemittance,
+  BranchShift,
   getExpensesForBranch,
   linkExpenseToBranch,
   saveBranchProfile,
@@ -44,15 +50,15 @@ import {
 export interface BranchesContextValue {
   // DB data
   branches: Branch[];
-  addBranch: (...args: any[]) => Promise<any>;
-  updateBranch: (...args: any[]) => Promise<void>;
+  addBranch: (b: Omit<Branch, "id" | "createdAt">) => Promise<{ id: string } | null>;
+  updateBranch: (id: string, patch: Partial<Branch>) => Promise<void>;
   removeBranch: (id: string) => void;
   stockItems: StockItem[];
-  invoices: any[];
-  expenses: any[];
-  payments: any[];
+  invoices: Invoice[];
+  expenses: Expense[];
+  payments: Payment[];
   loading: boolean;
-  shopSettings: any;
+  shopSettings: ShopSettings;
   cur: string;
 
   // Navigation
@@ -103,8 +109,8 @@ export interface BranchesContextValue {
   handleCancelTransfer: (id: string) => void;
 
   // Cashbox / Remittance / Shift state
-  remittances: any[];
-  shifts: any[];
+  remittances: BranchRemittance[];
+  shifts: BranchShift[];
   isRemittanceOpen: boolean;
   setIsRemittanceOpen: (open: boolean) => void;
   isZReportOpen: boolean;

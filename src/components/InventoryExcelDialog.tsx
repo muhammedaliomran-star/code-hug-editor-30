@@ -207,7 +207,7 @@ export function InventoryExcelDialog({
         </DialogHeader>
 
         <div className="space-y-4 my-2 text-right">
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+          <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v)} className="w-full">
             <TabsList className="grid grid-cols-2 h-10 rounded-2xl bg-foreground/[0.04] p-1">
               <TabsTrigger value="export" className="rounded-xl text-xs font-bold gap-1.5">
                 <Download className="w-3.5 h-3.5" />

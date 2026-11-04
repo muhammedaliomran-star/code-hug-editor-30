@@ -36,7 +36,7 @@ import {
   EyeOff,
   PauseCircle,
 } from "lucide-react";
-import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
+import { useParkedBills, playScanSound, playCashSound, type ParkedBill } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
 import { InvoiceSummarySidebar } from "@/components/invoices/InvoiceSummarySidebar";
@@ -332,7 +332,7 @@ function NewInvoicePage() {
     reset();
   };
 
-  const handleResumeParkedBill = (bill: any) => {
+  const handleResumeParkedBill = (bill: ParkedBill) => {
     if (bill.customerId) setCustomerId(bill.customerId);
     if (bill.saleType) setSaleType(bill.saleType);
     if (bill.notes) setNotes(bill.notes);
@@ -761,7 +761,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                         splitElectronic={splitElectronic}
                         onSplitElectronicChange={setSplitElectronic}
                         splitMethod={splitMethod}
-                        onSplitMethodChange={setSplitMethod}
+                        onSplitMethodChange={(v) => setSplitMethod(v as any)}
                         splitRef={splitRef}
                         onSplitRefChange={setSplitRef}
                         splitTotal={splitTotal}

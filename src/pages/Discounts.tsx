@@ -874,7 +874,7 @@ export default function Discounts() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[11px] text-muted-foreground">نوع الخصم</Label>
-                    <Select value={simDiscType} onValueChange={(v: any) => setSimDiscType(v)}>
+                    <Select value={simDiscType} onValueChange={(v: string) => setSimDiscType(v)}>
                       <SelectTrigger className="h-10 text-xs">
                         <SelectValue />
                       </SelectTrigger>

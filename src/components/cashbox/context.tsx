@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from "react";
 import { toast } from "sonner";
-import { useDB, fmt, useShopSettings, db } from "@/lib/store";
+import { useDB, fmt, useShopSettings, db, type ShopSettings } from "@/lib/store";
 import { encodeExpenseNotes } from "@/lib/expenses-system";
 import {
   TreasuryAccount,
@@ -33,7 +33,7 @@ interface CashboxContextValue {
   payments: any[];
   loading: boolean;
   cur: string;
-  shopSettings: any;
+  shopSettings: ShopSettings;
   activeTab: string;
   setActiveTab: (v: string) => void;
   accounts: TreasuryAccount[];

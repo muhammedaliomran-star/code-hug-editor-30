@@ -102,7 +102,7 @@ export default function Reconciliation() {
         return;
       }
       if (rows) {
-        setMovements(rows.map((r: any) => ({ stock_item_id: r.stock_item_id, quantity: Number(r.quantity ?? 0) })));
+        setMovements(rows.map((r: { stock_item_id: string; quantity: number | null }) => ({ stock_item_id: r.stock_item_id, quantity: Number(r.quantity ?? 0) })));
       }
     } catch (e) {
       console.error("[stock_movements] Unexpected error:", e);
@@ -263,7 +263,7 @@ export default function Reconciliation() {
     } else if (finding.targetType === "stock_item") {
       navigate({ to: "/inventory" });
     } else if (finding.targetType === "shipment") {
-      navigate({ to: "/shipping" as any });
+      navigate({ to: "/shipping" });
     } else if (finding.targetType === "return") {
       navigate({ to: "/returns" });
     }

@@ -153,7 +153,7 @@ export function CarrierExcelIntegrationModal({
           </div>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="mt-2">
+        <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v)} className="mt-2">
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="export" className="gap-2 font-bold">
               <Download className="h-4 w-4" />

@@ -15,13 +15,13 @@ export interface DiscountCouponDialogProps {
   formTitle: string;
   onFormTitleChange: (v: string) => void;
   formType: string;
-  onFormTypeChange: (v: any) => void;
+  onFormTypeChange: (v: string) => void;
   formValue: string;
   onFormValueChange: (v: string) => void;
   formMinOrder: string;
   onFormMinOrderChange: (v: string) => void;
   formCustomerEligibility: string;
-  onFormCustomerEligibilityChange: (v: any) => void;
+  onFormCustomerEligibilityChange: (v: string) => void;
   formHasMaxUsage: boolean;
   onFormHasMaxUsageChange: (v: boolean) => void;
   formMaxUsage: string;
@@ -88,7 +88,7 @@ export function DiscountCouponDialog({
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">نوع الخصم</Label>
-                  <Select value={formType} onValueChange={(v: any) => onFormTypeChange(v)}>
+                  <Select value={formType} onValueChange={(v: string) => onFormTypeChange(v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -129,7 +129,7 @@ export function DiscountCouponDialog({
                   <Label className="text-xs">الفئة المستهدفة</Label>
                   <Select
                     value={formCustomerEligibility}
-                    onValueChange={(v: any) => onFormCustomerEligibilityChange(v)}
+                    onValueChange={(v: string) => onFormCustomerEligibilityChange(v)}
                   >
                     <SelectTrigger>
                       <SelectValue />

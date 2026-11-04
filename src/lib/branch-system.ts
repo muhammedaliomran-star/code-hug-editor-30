@@ -11,7 +11,7 @@
  */
 
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
-import { fmt, StockItem, Invoice, Expense, Payment, Branch } from "@/lib/store";
+import { fmt, StockItem, Invoice, Expense, Payment, Branch, type ShopSettings } from "@/lib/store";
 
 // ==================== 1. الأنواع والنماذج (Types & Interfaces) ====================
 
@@ -462,7 +462,7 @@ export function printBranchTransferNote(
   transfer: BranchTransfer,
   fromBranch?: Branch,
   toBranch?: Branch,
-  shopSettings?: any
+  shopSettings?: ShopSettings
 ): void {
   const cur = shopSettings?.currency || "ج.م";
   const totalSentUnits = transfer.items.reduce((s, i) => s + i.sentQty, 0);
@@ -743,7 +743,7 @@ export function closeBranchShift(params: {
 export function printBranchShiftZReport(
   shift: BranchShift,
   branch?: Branch,
-  shopSettings?: any,
+  shopSettings?: ShopSettings,
   paper: "thermal" | "A4" = "thermal"
 ): void {
   const cur = shopSettings?.currency || "ج.م";

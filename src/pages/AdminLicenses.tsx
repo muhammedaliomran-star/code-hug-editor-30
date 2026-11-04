@@ -210,7 +210,7 @@ export default function AdminLicensesPage() {
     ]);
   };
 
-  const updateHardwareRow = (id: string, field: keyof HardwareItem, val: any) => {
+  const updateHardwareRow = (id: string, field: keyof HardwareItem, val: HardwareItem[keyof HardwareItem]) => {
     setHardwareItems(
       hardwareItems.map((h) => (h.id === id ? { ...h, [field]: val } : h))
     );
@@ -710,7 +710,7 @@ export default function AdminLicensesPage() {
           </div>
 
           {/* Main Navigation Tabs */}
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={(v: string) => setActiveTab(v)} className="space-y-6">
             <StatTabs
               value={activeTab}
               onChange={setActiveTab}
@@ -918,7 +918,7 @@ export default function AdminLicensesPage() {
                         <Label className="text-[11px] text-muted-foreground">نوع الاشتراك</Label>
                         <Select
                           value={billingCycle}
-                          onValueChange={(v: any) => {
+                          onValueChange={(v: string) => {
                             setBillingCycle(v);
                             if (v === "monthly") setCustomDays(30);
                             if (v === "yearly") setCustomDays(365);

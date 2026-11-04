@@ -156,7 +156,7 @@ export function ExpenseAnalyticsTab() {
                 <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} />
                 <Tooltip
-                  formatter={(val: any) => [`${fmt(Number(val))} ج.م`, "المصروفات"]}
+                  formatter={(val: number) => [`${fmt(Number(val))} ج.م`, "المصروفات"]}
                   labelFormatter={(label) => `شهر: ${label}`}
                   contentStyle={{ direction: "rtl", borderRadius: "12px", border: "1px solid #e2e8f0" }}
                 />
@@ -201,7 +201,7 @@ export function ExpenseAnalyticsTab() {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(val: any) => [`${fmt(Number(val))} ج.م`, "المبلغ"]}
+                    formatter={(val: number) => [`${fmt(Number(val))} ج.م`, "المبلغ"]}
                     contentStyle={{ direction: "rtl", borderRadius: "12px" }}
                   />
                   <Legend wrapperStyle={{ fontSize: "11px", direction: "rtl" }} />

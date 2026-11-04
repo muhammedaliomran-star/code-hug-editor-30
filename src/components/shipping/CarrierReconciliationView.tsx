@@ -566,7 +566,7 @@ export function CarrierReconciliationView({
               <Label className="text-xs">طريقة الاستلام:</Label>
               <Select
                 value={paymentMethod}
-                onValueChange={(v: any) => setPaymentMethod(v)}
+                onValueChange={(v: string) => setPaymentMethod(v)}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
