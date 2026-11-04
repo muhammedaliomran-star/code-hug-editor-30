@@ -21,9 +21,11 @@ import { ActionButton } from "@/components/ActionButton";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { FilterChips } from "@/components/FilterChips";
+import { CouponCard } from "@/components/discounts/CouponCard";
+import { QtyOfferCard } from "@/components/discounts/QtyOfferCard";
+import { BundleOfferCard } from "@/components/discounts/BundleOfferCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
@@ -58,26 +60,17 @@ import {
   Search,
   Copy,
   Check,
-  Edit2,
-  Trash2,
-  Sparkles,
   Calculator,
-  Calendar,
   Layers,
   TrendingDown,
   Gift,
-  CheckCircle2,
-  AlertCircle,
   HelpCircle,
-  FileText,
   Share2,
   MessageCircle,
   ShieldCheck,
   ShieldAlert,
   Coins,
   PackagePlus,
-  Users,
-  Sliders,
   Award,
 } from "lucide-react";
 
@@ -553,191 +546,18 @@ export default function Discounts() {
                 </div>
               ) : (
                 <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredCoupons.map((coupon) => {
-                    const status = getCouponStatus(coupon);
-                    const usagePct =
-                      coupon.maxUsage !== null && coupon.maxUsage > 0
-                        ? Math.min(100, (coupon.usedCount / coupon.maxUsage) * 100)
-                        : 0;
-
-                    return (
-                      <div
-                        key={coupon.id}
-                        className={cn(
-                          "group relative flex flex-col justify-between rounded-2xl p-4 transition-all duration-300 border bg-card/80 hover:shadow-md hover:border-primary/40",
-                          status.status === "inactive" && "opacity-75 bg-muted/20",
-                          status.status === "expired" && "border-warning/30",
-                          coupon.isLoyaltyReward && "border-warning/50 bg-warning/[0.02]"
-                        )}
-                      >
-                        {/* Card Header */}
-                        <div>
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex items-center gap-1.5">
-                              <span
-                                className={cn(
-                                  "px-2.5 py-1 rounded-xl font-mono text-sm font-black tracking-wider flex items-center gap-1.5 border shadow-2xs",
-                                  coupon.discountType === "percentage"
-                                    ? "bg-primary/10 text-primary border-primary/20"
-                                    : "bg-warning/10 text-warning border-warning/20"
-                                )}
-                              >
-                                {coupon.code}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => copyCouponCode(coupon.code)}
-                                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
-                                title="نسخ الكود"
-                              >
-                                {copiedCode === coupon.code ? (
-                                  <Check className="w-3.5 h-3.5 text-success" />
-                                ) : (
-                                  <Copy className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                              {coupon.isLoyaltyReward && (
-                                <Badge variant="outline" className="text-[11px] bg-warning/10 text-warning border-warning/30 gap-1 py-0.5">
-                                  <Award className="w-2.5 h-2.5" /> مكافأة ولاء
-                                </Badge>
-                              )}
-                              <Badge
-                                variant="outline"
-                                className={cn(
-                                  "text-[11px] font-bold py-0.5",
-                                  status.color === "success" && "bg-success/10 text-success border-success/30",
-                                  status.color === "warning" && "bg-warning/10 text-warning border-warning/30",
-                                  status.color === "danger" && "bg-danger/10 text-danger border-danger/30",
-                                  status.color === "muted" && "bg-muted text-muted-foreground border-border/40"
-                                )}
-                              >
-                                {status.label}
-                              </Badge>
-                            </div>
-                          </div>
-
-                          <h2 className="font-bold text-sm text-foreground line-clamp-1">{coupon.title}</h2>
-
-                          <div className="mt-2 flex items-baseline gap-2">
-                            <span className="text-xl font-black text-foreground font-mono">
-                              {coupon.discountType === "percentage"
-                                ? `خصم ${coupon.discountValue}%`
-                                : `خصم ${fmt(coupon.discountValue)} ج.م`}
-                            </span>
-                            {coupon.minOrderValue > 0 && (
-                              <span className="text-[11px] text-muted-foreground">
-                                (حد أدنى: {fmt(coupon.minOrderValue)} ج.م)
-                              </span>
-                            )}
-                          </div>
-
-                          {coupon.notes && (
-                            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
-                              {coupon.notes}
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Card Footer Info */}
-                        <div className="mt-4 pt-3 border-t border-border/30 space-y-2.5 text-xs text-muted-foreground">
-                          {/* Usage Count Progress */}
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span>
-                              الاستخدام: <strong className="text-foreground font-mono">{coupon.usedCount}</strong>
-                              {coupon.maxUsage !== null && (
-                                <span> من {coupon.maxUsage}</span>
-                              )}
-                            </span>
-                            {coupon.maxUsage !== null && (
-                              <span className="font-mono text-[11px] text-muted-foreground">{usagePct.toFixed(0)}%</span>
-                            )}
-                          </div>
-
-                          {coupon.maxUsage !== null && (
-                            <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden">
-                              <div
-                                className={cn(
-                                  "h-full rounded-full transition-all",
-                                  usagePct >= 100 ? "bg-danger" : usagePct > 70 ? "bg-warning" : "bg-primary"
-                                )}
-                                style={{ width: `${usagePct}%` }}
-                              />
-                            </div>
-                          )}
-
-                          {/* Validity Date */}
-                          <div className="flex items-center justify-between text-[11px]">
-                            <span className="flex items-center gap-1 text-muted-foreground">
-                              <Calendar className="w-3 h-3" />
-                              {coupon.endsAt
-                                ? `ينتهي: ${new Date(coupon.endsAt).toLocaleDateString("ar-EG")}`
-                                : "مفتوح بدون تاريخ انتهاء"}
-                            </span>
-
-                            {coupon.customerEligibility !== "all" && (
-                                <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
-                                {coupon.customerEligibility === "vip"
-                                  ? "مميزين VIP"
-                                  : coupon.customerEligibility === "cash"
-                                  ? "دفع نقدي"
-                                  : "عملاء أقساط"}
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Quick Actions */}
-                          <div className="flex items-center justify-between pt-1 border-t border-border/20">
-                            {/* WhatsApp Share Button */}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleOpenWhatsAppShare(coupon)}
-                              className="h-10 px-3 rounded-lg text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 border-emerald-500/30 gap-1.5"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
-                              واتساب
-                            </Button>
-
-                            <div className="flex items-center gap-1">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => toggleCouponStatus(coupon.id)}
-                                className="h-10 px-3 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-                              >
-                                {coupon.active ? "تعطيل" : "تفعيل"}
-                              </Button>
-
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditCoupon(coupon)}
-                                className="h-10 w-10 text-muted-foreground hover:text-primary"
-                              >
-                                <Edit2 className="w-3.5 h-3.5" />
-                              </Button>
-
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => setDeleteTargetCouponId(coupon.id)}
-                                className="h-10 w-10 text-muted-foreground hover:text-danger"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {filteredCoupons.map((coupon) => (
+                    <CouponCard
+                      key={coupon.id}
+                      coupon={coupon}
+                      copiedCode={copiedCode}
+                      onCopy={copyCouponCode}
+                      onWhatsAppShare={handleOpenWhatsAppShare}
+                      onToggleStatus={toggleCouponStatus}
+                      onEdit={handleEditCoupon}
+                      onDelete={setDeleteTargetCouponId}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -770,50 +590,12 @@ export default function Discounts() {
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {qtyOffers.map((offer) => (
-                    <div
+                    <QtyOfferCard
                       key={offer.id}
-                      className={cn(
-                        "rounded-xl border p-4 flex flex-col justify-between transition-all bg-background/50",
-                        offer.active ? "border-border/60 hover:border-primary/40" : "opacity-60 bg-muted/20"
-                      )}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-primary/10 text-primary border border-primary/20">
-                            {offer.minQuantity} قطع فأكثر
-                          </span>
-                          <span className="text-base font-black text-foreground font-mono">
-                            خصم {offer.discountPercentage}%
-                          </span>
-                        </div>
-                        <h2 className="font-bold text-sm">{offer.title}</h2>
-                        {offer.notes && <p className="text-xs text-muted-foreground mt-1">{offer.notes}</p>}
-                      </div>
-
-                      <div className="flex items-center justify-between mt-4 pt-2 border-t border-border/20 text-xs">
-                        <span className={offer.active ? "text-success font-medium" : "text-muted-foreground"}>
-                          {offer.active ? "مفعّل تلقائياً" : "معطّل"}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditQtyOffer(offer)}
-                            className="h-7 w-7 text-muted-foreground hover:text-primary"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteTargetQtyId(offer.id)}
-                            className="h-7 w-7 text-muted-foreground hover:text-danger"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                      offer={offer}
+                      onEdit={handleEditQtyOffer}
+                      onDelete={setDeleteTargetQtyId}
+                    />
                   ))}
                 </div>
               </div>
@@ -842,58 +624,12 @@ export default function Discounts() {
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {bundles.map((bundle) => (
-                    <div
+                    <BundleOfferCard
                       key={bundle.id}
-                      className={cn(
-                        "rounded-xl border p-4 flex flex-col justify-between transition-all bg-background/50",
-                        bundle.active ? "border-border/60 hover:border-primary/40" : "opacity-60 bg-muted/20"
-                      )}
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-muted-foreground">خصم الباقة:</span>
-                          <span className="text-base font-black text-warning font-mono">
-                            − {fmt(bundle.discountAmount)} ج.م
-                          </span>
-                        </div>
-                        <h2 className="font-bold text-sm">{bundle.title}</h2>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {bundle.itemKeywords.map((kw, i) => (
-                            <span
-                              key={i}
-                              className="px-2 py-0.5 rounded-md bg-muted/70 text-[11px] font-bold text-foreground border border-border/30"
-                            >
-                              + {kw}
-                            </span>
-                          ))}
-                        </div>
-                        {bundle.notes && <p className="text-xs text-muted-foreground mt-2">{bundle.notes}</p>}
-                      </div>
-
-                      <div className="flex items-center justify-between mt-4 pt-2 border-t border-border/20 text-xs">
-                        <span className={bundle.active ? "text-success font-medium" : "text-muted-foreground"}>
-                          {bundle.active ? "مفعّل تلقائياً" : "معطّل"}
-                        </span>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleEditBundle(bundle)}
-                            className="h-7 w-7 text-muted-foreground hover:text-primary"
-                          >
-                            <Edit2 className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteTargetBundleId(bundle.id)}
-                            className="h-7 w-7 text-muted-foreground hover:text-danger"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
+                      bundle={bundle}
+                      onEdit={handleEditBundle}
+                      onDelete={setDeleteTargetBundleId}
+                    />
                   ))}
                 </div>
               </div>
