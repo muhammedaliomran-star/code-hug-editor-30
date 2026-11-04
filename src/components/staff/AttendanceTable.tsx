@@ -9,7 +9,7 @@ export interface AttendanceTableProps {
 
 export function AttendanceTable({ records }: AttendanceTableProps) {
   return (
-              {records.length === 0 ? (
+    records.length === 0 ? (
                 <div className="p-12 text-center rounded-2xl border border-dashed border-border/60 bg-card/30">
                   <Timer className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
                   <h3 className="font-bold text-sm text-foreground">لا توجد سجلات حضور وانصراف بعد</h3>
