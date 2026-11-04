@@ -590,7 +590,7 @@ export const db = {
       p_down_payment: (inv.downPayment ?? 0) * 100,
       p_monthly_installment: (inv.monthlyInstallment ?? 0) * 100,
       p_first_due_date: inv.firstDueDate as string,
-      p_notes: inv.notes,
+      p_notes: inv.notes ?? "",
       p_discount_pct: inv.discountPct ?? 0,
       p_discount_amount: (inv.discountAmount ?? 0) * 100,
       p_tax_pct: inv.taxPct ?? 0,
@@ -830,7 +830,7 @@ export const db = {
   ) {
     const { error } = await supabase.rpc("record_purchase_with_inventory", {
       p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
-      p_purchase_date: p.purchaseDate as string, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
+      p_purchase_date: p.purchaseDate as string, p_notes: p.notes ?? "", p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
     });
     if (error) throw error;
     await fetchAll();
