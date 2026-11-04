@@ -262,12 +262,12 @@ async function fetchAllInner() {
     })),
     carriers: (sc.data ?? []).map((r: CarrierRow) => ({
       id: r.id, name: r.name, contactPerson: r.contact_person, phone: r.phone,
-      email: r.email, baseCost: Number(r.base_cost ?? 0), active: r.active !== false, createdAt: r.created_at,
+      email: r.email, baseCost: Number(r.base_cost ?? 0) / 100, active: r.active !== false, createdAt: r.created_at,
       courierToken: r.courier_token ?? null,
     })),
     zones: (sz.data ?? []).map((r: TableRow<"shipping_zones">) => ({
       id: r.id, name: r.name, carrierId: r.carrier_id,
-      deliveryCost: Number(r.delivery_cost ?? 0), estimatedDays: r.estimated_days ?? 2, createdAt: r.created_at,
+      deliveryCost: Number(r.delivery_cost ?? 0) / 100, estimatedDays: r.estimated_days ?? 2, createdAt: r.created_at,
     })),
     shipments: (sh.data ?? []).map((r: TableRow<"shipments">) => ({
       id: r.id, invoiceId: r.invoice_id, carrierId: r.carrier_id, zoneId: r.zone_id,
@@ -277,8 +277,8 @@ async function fetchAllInner() {
       processingAt: r.processing_at ?? null, shippedAt: r.shipped_at ?? null,
       deliveredAt: r.delivered_at ?? null, returnedAt: r.returned_at ?? null,
       statusUpdatedBy: r.status_updated_by ?? null,
-      shippingCost: Number(r.shipping_cost ?? 0),
-      codAmount: Number(r.cod_amount ?? 0),
+      shippingCost: Number(r.shipping_cost ?? 0) / 100,
+      codAmount: Number(r.cod_amount ?? 0) / 100,
       collectionStatus: (r.collection_status ?? "uncollected") as ShipmentCollectionStatus,
       collectedAt: r.collected_at ?? null,
       settledAt: r.settled_at ?? null,
@@ -381,11 +381,11 @@ function mapTable(name: string, rows: any[]): any[] | null {
     case "payment_vouchers":
       return rows.map((r: any) => ({ id: r.id, customerId: r.customer_id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, type: r.type, paymentMethod: r.payment_method, description: r.description, voucherDate: r.voucher_date, createdAt: r.created_at, partyName: r.party_name, partyPhone: r.party_phone }));
     case "shipping_carriers":
-      return rows.map((r: any) => ({ id: r.id, name: r.name, contactPerson: r.contact_person, phone: r.phone, email: r.email, baseCost: Number(r.base_cost ?? 0), active: r.active !== false, createdAt: r.created_at, courierToken: r.courier_token ?? null }));
+      return rows.map((r: any) => ({ id: r.id, name: r.name, contactPerson: r.contact_person, phone: r.phone, email: r.email, baseCost: Number(r.base_cost ?? 0) / 100, active: r.active !== false, createdAt: r.created_at, courierToken: r.courier_token ?? null }));
     case "shipping_zones":
-      return rows.map((r: any) => ({ id: r.id, name: r.name, carrierId: r.carrier_id, deliveryCost: Number(r.delivery_cost ?? 0), estimatedDays: r.estimated_days ?? 2, createdAt: r.created_at }));
+      return rows.map((r: any) => ({ id: r.id, name: r.name, carrierId: r.carrier_id, deliveryCost: Number(r.delivery_cost ?? 0) / 100, estimatedDays: r.estimated_days ?? 2, createdAt: r.created_at }));
     case "shipments":
-      return rows.map((r: any) => ({ id: r.id, invoiceId: r.invoice_id, carrierId: r.carrier_id, zoneId: r.zone_id, trackingNumber: r.tracking_number, status: r.status, recipientName: r.recipient_name, recipientPhone: r.recipient_phone, deliveryAddress: r.delivery_address, actualDeliveryDate: r.actual_delivery_date, processingAt: r.processing_at ?? null, shippedAt: r.shipped_at ?? null, deliveredAt: r.delivered_at ?? null, returnedAt: r.returned_at ?? null, statusUpdatedBy: r.status_updated_by ?? null, shippingCost: Number(r.shipping_cost ?? 0), codAmount: Number(r.cod_amount ?? 0), collectionStatus: r.collection_status ?? "uncollected", collectedAt: r.collected_at ?? null, settledAt: r.settled_at ?? null, weightKg: Number(r.weight_kg ?? 0), pieces: Number(r.pieces ?? 1), expectedDeliveryDate: r.expected_delivery_date ?? null, notes: r.notes, createdAt: r.created_at }));
+      return rows.map((r: any) => ({ id: r.id, invoiceId: r.invoice_id, carrierId: r.carrier_id, zoneId: r.zone_id, trackingNumber: r.tracking_number, status: r.status, recipientName: r.recipient_name, recipientPhone: r.recipient_phone, deliveryAddress: r.delivery_address, actualDeliveryDate: r.actual_delivery_date, processingAt: r.processing_at ?? null, shippedAt: r.shipped_at ?? null, deliveredAt: r.delivered_at ?? null, returnedAt: r.returned_at ?? null, statusUpdatedBy: r.status_updated_by ?? null, shippingCost: Number(r.shipping_cost ?? 0) / 100, codAmount: Number(r.cod_amount ?? 0) / 100, collectionStatus: r.collection_status ?? "uncollected", collectedAt: r.collected_at ?? null, settledAt: r.settled_at ?? null, weightKg: Number(r.weight_kg ?? 0), pieces: Number(r.pieces ?? 1), expectedDeliveryDate: r.expected_delivery_date ?? null, notes: r.notes, createdAt: r.created_at }));
     default:
       return null;
   }
@@ -1130,7 +1130,7 @@ export const db = {
     const user_id = await uid();
     const { error } = await supabase.from("shipping_carriers").insert({
       user_id, name: c.name, contact_person: c.contactPerson, phone: c.phone,
-      email: c.email, base_cost: c.baseCost, active: c.active
+      email: c.email, base_cost: c.baseCost * 100, active: c.active
     });
     if (error) throw error;
     await fetchAll();
@@ -1141,7 +1141,7 @@ export const db = {
     if (patch.contactPerson !== undefined) upd.contact_person = patch.contactPerson;
     if (patch.phone !== undefined) upd.phone = patch.phone;
     if (patch.email !== undefined) upd.email = patch.email;
-    if (patch.baseCost !== undefined) upd.base_cost = patch.baseCost;
+    if (patch.baseCost !== undefined) upd.base_cost = patch.baseCost * 100;
     if (patch.active !== undefined) upd.active = patch.active;
     const { error } = await supabase.from("shipping_carriers").update(upd).eq("id", id);
     if (error) throw error;
@@ -1151,7 +1151,7 @@ export const db = {
     const user_id = await uid();
     const { error } = await supabase.from("shipping_zones").insert({
       user_id, name: z.name, carrier_id: z.carrierId,
-      delivery_cost: z.deliveryCost, estimated_days: z.estimatedDays,
+      delivery_cost: z.deliveryCost * 100, estimated_days: z.estimatedDays,
     });
     if (error) throw error;
     await fetchAll();
@@ -1160,7 +1160,7 @@ export const db = {
     const upd: any = {};
     if (patch.name !== undefined) upd.name = patch.name;
     if (patch.carrierId !== undefined) upd.carrier_id = patch.carrierId;
-    if (patch.deliveryCost !== undefined) upd.delivery_cost = patch.deliveryCost;
+    if (patch.deliveryCost !== undefined) upd.delivery_cost = patch.deliveryCost * 100;
     if (patch.estimatedDays !== undefined) upd.estimated_days = patch.estimatedDays;
     const { error } = await supabase.from("shipping_zones").update(upd).eq("id", id);
     if (error) throw error;
@@ -1182,8 +1182,8 @@ export const db = {
     if (error) throw error;
     const created = Array.isArray(data) ? data[0] : data;
     const moneyPatch: any = {};
-    if (s.shippingCost) moneyPatch.shipping_cost = s.shippingCost;
-    if (s.codAmount) moneyPatch.cod_amount = s.codAmount;
+    if (s.shippingCost) moneyPatch.shipping_cost = s.shippingCost * 100;
+    if (s.codAmount) moneyPatch.cod_amount = s.codAmount * 100;
     if (s.weightKg) moneyPatch.weight_kg = s.weightKg;
     if (s.pieces) moneyPatch.pieces = s.pieces;
     if (s.expectedDeliveryDate) moneyPatch.expected_delivery_date = s.expectedDeliveryDate;
@@ -1204,8 +1204,8 @@ export const db = {
     if (patch.recipientName !== undefined) upd.recipient_name = patch.recipientName;
     if (patch.recipientPhone !== undefined) upd.recipient_phone = patch.recipientPhone;
     if (patch.deliveryAddress !== undefined) upd.delivery_address = patch.deliveryAddress;
-    if (patch.shippingCost !== undefined) upd.shipping_cost = patch.shippingCost;
-    if (patch.codAmount !== undefined) upd.cod_amount = patch.codAmount;
+    if (patch.shippingCost !== undefined) upd.shipping_cost = patch.shippingCost * 100;
+    if (patch.codAmount !== undefined) upd.cod_amount = patch.codAmount * 100;
     if (patch.weightKg !== undefined) upd.weight_kg = patch.weightKg;
     if (patch.pieces !== undefined) upd.pieces = patch.pieces;
     if (patch.expectedDeliveryDate !== undefined) upd.expected_delivery_date = patch.expectedDeliveryDate;
