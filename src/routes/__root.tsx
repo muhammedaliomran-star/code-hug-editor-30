@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import type { QueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 
 import appCss from "../styles.css?url";

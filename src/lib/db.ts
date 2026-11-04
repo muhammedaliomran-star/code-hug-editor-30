@@ -323,9 +323,9 @@ const TABLE_QUERIES: Record<string, () => Promise<{ data: any; error: any }>> = 
   shipping_carriers: () => supabase.from("shipping_carriers").select("*").order("name"),
   shipping_zones: () => supabase.from("shipping_zones").select("*").order("name"),
   shipments: () => supabase.from("shipments").select("*").order("created_at", { ascending: false }),
-};
+} as unknown as Record<string, () => Promise<{ data: any; error: any }>>;
 
-function mapTable(name: string, rows: any[]): any[] {
+function mapTable(name: string, rows: any[]): any[] | null {
   switch (name) {
     case "customers":
       return rows.map((r: any) => ({
@@ -589,7 +589,7 @@ export const db = {
       p_total: (inv.total ?? 0) * 100,
       p_down_payment: (inv.downPayment ?? 0) * 100,
       p_monthly_installment: (inv.monthlyInstallment ?? 0) * 100,
-      p_first_due_date: inv.firstDueDate,
+      p_first_due_date: inv.firstDueDate as string,
       p_notes: inv.notes,
       p_discount_pct: inv.discountPct ?? 0,
       p_discount_amount: (inv.discountAmount ?? 0) * 100,
@@ -830,7 +830,7 @@ export const db = {
   ) {
     const { error } = await supabase.rpc("record_purchase_with_inventory", {
       p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
-      p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
+      p_purchase_date: p.purchaseDate as string, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
     });
     if (error) throw error;
     await fetchAll();
