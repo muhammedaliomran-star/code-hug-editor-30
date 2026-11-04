@@ -31,7 +31,7 @@ export function InvoiceCustomerStep({
   onSelectDefaultCashCustomer,
 }: InvoiceCustomerStepProps) {
   return (
-          {step === 1 && (
+          step === 1 && (
             <div className="space-y-4">
               {/* العميل */}
               <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-2">
@@ -143,6 +143,6 @@ export function InvoiceCustomerStep({
                 </div>
               </div>
             </div>
-          )}
+          )
   );
 }

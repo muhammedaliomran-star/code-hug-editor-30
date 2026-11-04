@@ -12,7 +12,7 @@ export interface InvoiceProfitCardProps {
 
 export function InvoiceProfitCard({ hideProfits, blurCls, totalCost, totalPrice, profit, profitPct }: InvoiceProfitCardProps) {
   return (
-              {!hideProfits && (
+              !hideProfits && (
                 <div className="rounded-[2rem] border border-border/30 p-5 space-y-4 animate-[fade-in_0.2s_ease-out]">
                   <div className="grid grid-cols-2 gap-y-6 gap-x-4 divide-y divide-border/30">
                     <div className="space-y-1">
@@ -76,6 +76,6 @@ export function InvoiceProfitCard({ hideProfits, blurCls, totalCost, totalPrice,
                     </div>
                   </div>
                 </div>
-              )}
+              )
   );
 }
