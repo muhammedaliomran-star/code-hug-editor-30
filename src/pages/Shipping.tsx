@@ -6,9 +6,9 @@ import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { ActionButton } from "@/components/ActionButton";
 import {
-  Truck, Search, Plus, MapPin, Building2, PackageCheck, Clock, Pencil, Trash2, ExternalLink,
-  ShieldAlert, CalendarDays, Printer, FileText, Wallet, BarChart3, MessageCircle, CheckCheck, AlertTriangle,
-  Link2, RefreshCw, Undo2,
+  Truck, Search, Plus, MapPin, Building2, PackageCheck, Clock, ExternalLink,
+  ShieldAlert, CalendarDays, Printer, Wallet, BarChart3, MessageCircle, AlertTriangle,
+  Undo2,
 } from "lucide-react";
 import { buildCourierLink, freshCourierToken } from "@/lib/courier-token";
 import { useDB, db, useShopSettings, ShipmentStatus, type Shipment, type ShipmentCarrier, type ShippingZone } from "@/lib/store";
@@ -43,6 +43,11 @@ import { SmartReturnModal } from "@/components/shipping/SmartReturnModal";
 import { CarrierReconciliationView } from "@/components/shipping/CarrierReconciliationView";
 import { CarrierExcelIntegrationModal } from "@/components/shipping/CarrierExcelIntegrationModal";
 import { WhatsAppMenu } from "@/components/shipping/WhatsAppMenu";
+import { ShipmentRowCard } from "@/components/shipping/ShipmentRowCard";
+import { CarrierDueCard } from "@/components/shipping/CarrierDueCard";
+import { CarrierCard } from "@/components/shipping/CarrierCard";
+import { ZoneCard } from "@/components/shipping/ZoneCard";
+import { statusMap, egp } from "@/components/shipping/shipment-status";
 import { saveCarrierTransaction } from "@/lib/carrier-ledger";
 import { recordCarrierSettlementInTreasury, recordCarrierFeesAsExpense } from "@/lib/shipping-finance";
 import { QrCode, Calculator, FileSpreadsheet, Smartphone } from "lucide-react";
@@ -60,31 +65,6 @@ type ShipmentNotification = {
   resolved_at: string | null;
   created_at: string;
 };
-
-const statusMap: Record<string, { label: string; color: string }> = {
-  pending: { label: "قيد الانتظار", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  processing: { label: "جاري التجهيز", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  shipped: { label: "تم الشحن", color: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" },
-  delivered: { label: "تم التوصيل", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  returned: { label: "مرتجع", color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
-  cancelled: { label: "ملغي", color: "bg-slate-500/10 text-slate-500 border-slate-500/20" },
-};
-
-const collectionMap: Record<string, { label: string; color: string }> = {
-  uncollected: { label: "لم يُحصّل", color: "bg-slate-500/10 text-slate-500" },
-  collected: { label: "محصّل مع المندوب", color: "bg-amber-500/10 text-amber-500" },
-  settled: { label: "مُسوّى", color: "bg-emerald-500/10 text-emerald-500" },
-};
-
-const egp = (n: number) => `${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })} ج.م`;
-
-function allowedShipmentStatuses(status: ShipmentStatus): ShipmentStatus[] {
-  if (status === "pending") return ["pending", "processing", "cancelled"];
-  if (status === "processing") return ["processing", "shipped", "cancelled"];
-  if (status === "shipped") return ["shipped", "delivered", "returned"];
-  if (status === "delivered") return ["delivered", "returned"];
-  return [status];
-}
 
 const daysBetween = (a: string, b: string) => Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 
@@ -938,77 +918,19 @@ export default function Shipping() {
                   />
                 ) : (
                   filteredShipments.map((s, i) => (
-                    <Reveal key={s.id} delay={Math.min(i, 8) * 0.05}>
-                      <BezelCard className="plate group flex flex-wrap items-center gap-2 p-3 sm:gap-4 sm:p-5 lg:gap-6">
-                        <Checkbox checked={selected.has(s.id)} onCheckedChange={() => toggleSelect(s.id)} aria-label="تحديد الشحنة" className="h-5 w-5" />
-                        <div className={`h-10 w-1.5 rounded-full sm:h-12 ${statusMap[s.status]?.color.split(" ")[0]}`} />
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                            <span className="text-base font-bold sm:text-lg">#{s.trackingNumber || "بدون رقم"}</span>
-
-                            <span className={`rounded-full border px-3 py-0.5 text-[11px] font-bold ${statusMap[s.status]?.color}`}>
-                              {statusMap[s.status]?.label}
-                            </span>
-                            {(() => {
-                              const sla = slaOf(s);
-                              if (sla.state === "closed" || sla.state === "on_time") return null;
-                              return (
-                                <span className={`rounded-full px-3 py-0.5 text-[11px] font-bold ${sla.state === "late" ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-600"}`}>
-                                  {sla.label}
-                                </span>
-                              );
-                            })()}
-                            {s.codAmount > 0 && (
-                              <span className={`rounded-full px-3 py-0.5 text-[11px] font-bold ${collectionMap[s.collectionStatus]?.color}`}>
-                                {collectionMap[s.collectionStatus]?.label}
-                              </span>
-                            )}
-                          </div>
-                          <p className="truncate text-xs font-medium text-muted-foreground sm:text-sm">{s.recipientName} • {s.recipientPhone}</p>
-                          {s.invoiceId && (
-                            <Link to="/invoices" search={{ invoice: s.invoiceId } as never} className="inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                              <ExternalLink className="h-3 w-3" /> فاتورة مرتبطة
-                            </Link>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-[11px] font-medium text-muted-foreground sm:text-sm">التحصيل</p>
-                          <p className={`text-sm font-bold ${blurCls}`}>{egp(s.codAmount)}</p>
-                        </div>
-                        <div className="hidden text-right sm:block">
-                          <p className="text-xs font-medium text-muted-foreground sm:text-sm">التكلفة</p>
-                          <p className={`text-sm font-bold ${blurCls}`}>{egp(s.shippingCost)}</p>
-                        </div>
-                        <div className="hidden text-right lg:block">
-                          <p className="text-sm font-medium text-muted-foreground">التاريخ</p>
-                          <p className="text-sm font-bold">{format(new Date(s.createdAt), "dd MMMM yyyy", { locale: ar })}</p>
-                        </div>
-                        <div className="flex w-full items-center gap-1.5 border-t border-hairline pt-2 sm:w-auto sm:border-0 sm:pt-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="إشعارات وقوالب واتساب التلقائية"
-                            className="h-11 w-11 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 sm:h-9 sm:w-9"
-                            onClick={() => setWhatsappModalShipment(s)}
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-9 sm:w-9" title="بوليصة شحن" onClick={() => labelFor(s)}>
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-11 w-11 sm:h-9 sm:w-9" title="تفاصيل" onClick={() => setDetail(s)}>
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Select value={s.status} onValueChange={(val) => void handleStatusChange(s.id, val as ShipmentStatus)}>
-                            <SelectTrigger className="h-11 flex-1 rounded-xl text-xs font-bold sm:h-9 sm:w-[130px] sm:flex-none"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {allowedShipmentStatuses(s.status).map((status) => <SelectItem key={status} value={status}>{statusMap[status]?.label ?? status}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                      </BezelCard>
-                    </Reveal>
+                    <ShipmentRowCard
+                      key={s.id}
+                      shipment={s}
+                      delay={Math.min(i, 8) * 0.05}
+                      checked={selected.has(s.id)}
+                      sla={slaOf(s)}
+                      blurCls={blurCls}
+                      onToggle={() => toggleSelect(s.id)}
+                      onWhatsApp={() => setWhatsappModalShipment(s)}
+                      onPrintLabel={() => labelFor(s)}
+                      onDetail={() => setDetail(s)}
+                      onStatusChange={(status) => void handleStatusChange(s.id, status)}
+                    />
                   ))
                 )}
               </div>
@@ -1027,30 +949,14 @@ export default function Shipping() {
             <TabsContent value="dues">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {carrierStats.map((st, i) => (
-                  <Reveal key={st.carrier.id} delay={i * 0.08}>
-                    <BezelCard className="plate space-y-4 p-6">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-bold">{st.carrier.name}</h3>
-                        <Wallet className="h-5 w-5 text-amber-500" />
-                      </div>
-                      <div className="rounded-2xl bg-amber-500/5 p-4">
-                        <p className="text-xs font-medium text-muted-foreground">محصّل ولم يُسلَّم بعد</p>
-                        <p className={`mt-1 text-2xl font-bold text-amber-500 ${blurCls}`}>{egp(st.due)}</p>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-hairline pt-3 text-sm">
-                        <span className="text-muted-foreground">عدد الشحنات</span>
-                        <span className="font-bold">{st.count}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button className="flex-1" disabled={st.due <= 0} onClick={() => void handleSettle(st.carrier.id, st.due)}>
-                          <CheckCheck className="ml-2 h-4 w-4" /> تسوية
-                        </Button>
-                        <Button variant="outline" onClick={() => manifestFor(st.carrier)} title="مانيفست اليوم">
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </BezelCard>
-                  </Reveal>
+                  <CarrierDueCard
+                    key={st.carrier.id}
+                    stat={st}
+                    delay={i * 0.08}
+                    blurCls={blurCls}
+                    onSettle={() => void handleSettle(st.carrier.id, st.due)}
+                    onManifest={() => manifestFor(st.carrier)}
+                  />
                 ))}
               </div>
             </TabsContent>
@@ -1058,44 +964,16 @@ export default function Shipping() {
             <TabsContent value="carriers">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredCarriers.map((c, i) => (
-                  <Reveal key={c.id} delay={i * 0.1}>
-                    <BezelCard className="plate space-y-4 p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
-                          <Building2 className="h-6 w-6" />
-                        </div>
-                        <span className={`rounded-full px-2 py-1 text-[11px] font-bold ${c.active ? "bg-success/10 text-success" : "bg-danger/10 text-danger"}`}>
-                          {c.active ? "نشط" : "غير نشط"}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold">{c.name}</h3>
-                        <p className="text-sm text-muted-foreground">{c.contactPerson || "لا يوجد مسئول اتصال"}</p>
-                        {c.phone && <p className="mt-1 text-xs text-muted-foreground">{c.phone}</p>}
-                      </div>
-                      <div className="flex items-center justify-between border-t border-hairline pt-4 text-sm">
-                        <span className="text-muted-foreground">التكلفة الأساسية</span>
-                        <span className="font-bold">{c.baseCost} ج.م</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 [&_button]:h-11 sm:[&_button]:h-9">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditCarrier(c)}>
-                          <Pencil className="h-4 w-4" /> تعديل
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => manifestFor(c)} title="مانيفست">
-                          <Printer className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => void copyPortalLink(c)} title="نسخ رابط بوابة المندوب">
-                          <Link2 className="h-4 w-4" /> رابط المندوب
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => void rotatePortalToken(c)} title="إصدار رمز دخول جديد وإبطال القديم">
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => void toggleCarrierActive(c)}>
-                          {c.active ? "إيقاف" : "تفعيل"}
-                        </Button>
-                      </div>
-                    </BezelCard>
-                  </Reveal>
+                  <CarrierCard
+                    key={c.id}
+                    carrier={c}
+                    delay={i * 0.1}
+                    onEdit={() => openEditCarrier(c)}
+                    onManifest={() => manifestFor(c)}
+                    onCopyPortal={() => void copyPortalLink(c)}
+                    onRotateToken={() => void rotatePortalToken(c)}
+                    onToggleActive={() => void toggleCarrierActive(c)}
+                  />
                 ))}
 
                 <Reveal delay={filteredCarriers.length * 0.1}>
@@ -1142,32 +1020,14 @@ export default function Shipping() {
             <TabsContent value="zones">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredZones.map((z, i) => (
-                  <Reveal key={z.id} delay={i * 0.1}>
-                    <BezelCard className="plate space-y-4 p-6">
-                      <div className="flex items-center justify-between">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 ring-1 ring-inset ring-amber-500/20">
-                          <MapPin className="h-6 w-6" />
-                        </div>
-                        <span className="text-[10px] font-bold text-muted-foreground">{carrierById.get(z.carrierId)?.name}</span>
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-bold">{z.name}</h3>
-                        <p className="text-sm text-muted-foreground">مدة التوصيل: {z.estimatedDays} أيام</p>
-                      </div>
-                      <div className="flex items-center justify-between border-t border-hairline pt-4 text-sm">
-                        <span className="text-muted-foreground">تكلفة التوصيل</span>
-                        <span className="font-bold text-primary">{z.deliveryCost} ج.م</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2 [&_button]:h-11 sm:[&_button]:h-9">
-                        <Button variant="outline" size="sm" className="flex-1" onClick={() => openEditZone(z)}>
-                          <Pencil className="h-4 w-4" /> تعديل
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => void handleRemoveZone(z)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </BezelCard>
-                  </Reveal>
+                  <ZoneCard
+                    key={z.id}
+                    zone={z}
+                    carrierName={carrierById.get(z.carrierId)?.name}
+                    delay={i * 0.1}
+                    onEdit={() => openEditZone(z)}
+                    onRemove={() => void handleRemoveZone(z)}
+                  />
                 ))}
 
                 <Reveal delay={filteredZones.length * 0.1}>
