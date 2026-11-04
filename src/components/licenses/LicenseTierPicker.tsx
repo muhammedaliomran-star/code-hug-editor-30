@@ -1,3 +1,4 @@
+import { Label } from "@/components/ui/label";
 import { TIER_CONFIG, type LicenseTier } from "@/lib/licensing";
 
 export interface LicenseTierPickerProps {
