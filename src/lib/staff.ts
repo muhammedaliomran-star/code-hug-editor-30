@@ -206,6 +206,19 @@ function saveStorage<T>(key: string, value: T) {
   }
 }
 
+/** صف عمولة شهري محسوب للعرض (يشتق من useStaffAndShifts). */
+export type StaffCommission = {
+  staff: StaffMember;
+  shiftsCount: number;
+  totalMonthSales: number;
+  totalInvoices: number;
+  totalHours: number;
+  commissionRate: number;
+  commissionEarned: number;
+  baseSalary: number;
+  totalPayout: number;
+};
+
 export function useStaffAndShifts() {
   const [staffList, setStaffList] = useState<StaffMember[]>(() =>
     loadStorage(STORAGE_KEY_STAFF, DEFAULT_STAFF)
@@ -318,7 +331,7 @@ export function useStaffAndShifts() {
   }, [currentOpenShift, invoices, expenses]);
 
   // Calculate Monthly Staff Commissions and Performance Metrics
-  const staffCommissions = useMemo(() => {
+  const staffCommissions = useMemo<StaffCommission[]>(() => {
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
