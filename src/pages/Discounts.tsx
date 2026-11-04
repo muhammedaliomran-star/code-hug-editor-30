@@ -22,18 +22,15 @@ import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { FilterChips } from "@/components/FilterChips";
 import { CouponCard } from "@/components/discounts/CouponCard";
+import { DiscountCouponDialog } from "@/components/discounts/DiscountCouponDialog";
+import { DiscountQtyOfferDialog } from "@/components/discounts/DiscountQtyOfferDialog";
+import { DiscountBundleOfferDialog } from "@/components/discounts/DiscountBundleOfferDialog";
+import { DiscountWhatsAppShareDialog } from "@/components/discounts/DiscountWhatsAppShareDialog";
 import { QtyOfferCard } from "@/components/discounts/QtyOfferCard";
 import { BundleOfferCard } from "@/components/discounts/BundleOfferCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,15 +55,12 @@ import {
   Percent,
   Plus,
   Search,
-  Copy,
   Check,
   Calculator,
   Layers,
   TrendingDown,
   Gift,
   HelpCircle,
-  Share2,
-  MessageCircle,
   ShieldCheck,
   ShieldAlert,
   Coins,
@@ -392,6 +386,10 @@ export default function Discounts() {
   };
 
   // WhatsApp Share Trigger
+  const handleExecuteWhatsAppSend = (coupon: PromoCoupon) => {
+    executeWhatsAppSend(coupon);
+    setWhatsappModalCoupon(null);
+  };
   const handleOpenWhatsAppShare = (c: PromoCoupon) => {
     setWhatsappModalCoupon(c);
   };
@@ -947,347 +945,75 @@ export default function Discounts() {
         </div>
 
         {/* DIALOG 1: CREATE / EDIT COUPON */}
-        <Dialog open={isOpenCouponModal} onOpenChange={setIsOpenCouponModal}>
-          <DialogContent className="max-w-md p-6">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <Tag className="w-4 h-4 text-primary" />
-                {editingCoupon ? "تعديل كود الخصم" : "إنشاء كود خصم جديد"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <Label className="text-xs">كود الخصم (Promo Code)</Label>
-                <div className="flex gap-2">
-                  <Input
-                    value={formCode}
-                    onChange={(e) => setFormCode(e.target.value.toUpperCase())}
-                    placeholder="مثال: SUMMER20"
-                    className="font-mono uppercase font-bold text-center tracking-wider text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      const random = `SALE${Math.floor(10 + Math.random() * 90)}`;
-                      setFormCode(random);
-                    }}
-                    className="text-xs px-3 font-medium shrink-0"
-                  >
-                    توليد كود
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">اسم أو عنوان العرض</Label>
-                <Input
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  placeholder="مثال: خصم الصيف 20%"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">نوع الخصم</Label>
-                  <Select value={formType} onValueChange={(v: any) => setFormType(v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
-                      <SelectItem value="fixed">مبلغ ثابت (ج.م)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">
-                    القيمة {formType === "percentage" ? "(%)" : "(ج.م)"}
-                  </Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formValue}
-                    onChange={(e) => setFormValue(e.target.value)}
-                    className="font-mono text-center font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">الحد الأدنى للفاتورة (ج.م)</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    value={formMinOrder}
-                    onChange={(e) => setFormMinOrder(e.target.value)}
-                    className="font-mono text-center"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">الفئة المستهدفة</Label>
-                  <Select
-                    value={formCustomerEligibility}
-                    onValueChange={(v: any) => setFormCustomerEligibility(v)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">جميع العملاء</SelectItem>
-                      <SelectItem value="cash">الدفع الفوري فقط</SelectItem>
-                      <SelectItem value="installment">عملاء الأقساط</SelectItem>
-                      <SelectItem value="vip">كبار العملاء (VIP)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2 border-t border-border/30 pt-3">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs">تحديد سقف لمرات الاستخدام؟</Label>
-                  <Switch checked={formHasMaxUsage} onCheckedChange={setFormHasMaxUsage} />
-                </div>
-                {formHasMaxUsage && (
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formMaxUsage}
-                    onChange={(e) => setFormMaxUsage(e.target.value)}
-                    placeholder="مثال: 50 مرة"
-                    className="font-mono text-center"
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 border-t border-border/30 pt-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">تاريخ البدء</Label>
-                  <Input
-                    type="date"
-                    value={formStartsAt}
-                    onChange={(e) => setFormStartsAt(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">تاريخ الانتهاء (اختياري)</Label>
-                  <Input
-                    type="date"
-                    value={formEndsAt}
-                    onChange={(e) => setFormEndsAt(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">ملاحظات داخلية (اختياري)</Label>
-                <Input
-                  value={formNotes}
-                  onChange={(e) => setFormNotes(e.target.value)}
-                  placeholder="ملاحظات لإدارة المحل..."
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsOpenCouponModal(false)} className="text-xs">
-                إلغاء
-              </Button>
-              <Button onClick={handleSaveCoupon} className="text-xs font-bold bg-primary text-primary-foreground">
-                {editingCoupon ? "حفظ التعديلات" : "إنشاء الكوبون"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DiscountCouponDialog
+          open={isOpenCouponModal}
+          onOpenChange={setIsOpenCouponModal}
+          editing={!!editingCoupon}
+          formCode={formCode}
+          onFormCodeChange={setFormCode}
+          formTitle={formTitle}
+          onFormTitleChange={setFormTitle}
+          formType={formType}
+          onFormTypeChange={setFormType}
+          formValue={formValue}
+          onFormValueChange={setFormValue}
+          formMinOrder={formMinOrder}
+          onFormMinOrderChange={setFormMinOrder}
+          formCustomerEligibility={formCustomerEligibility}
+          onFormCustomerEligibilityChange={setFormCustomerEligibility}
+          formHasMaxUsage={formHasMaxUsage}
+          onFormHasMaxUsageChange={setFormHasMaxUsage}
+          formMaxUsage={formMaxUsage}
+          onFormMaxUsageChange={setFormMaxUsage}
+          formStartsAt={formStartsAt}
+          onFormStartsAtChange={setFormStartsAt}
+          formEndsAt={formEndsAt}
+          onFormEndsAtChange={setFormEndsAt}
+          formNotes={formNotes}
+          onFormNotesChange={setFormNotes}
+          onSave={handleSaveCoupon}
+        />
 
         {/* DIALOG 2: QUANTITY TIER OFFER */}
-        <Dialog open={isOpenQtyModal} onOpenChange={setIsOpenQtyModal}>
-          <DialogContent className="max-w-md p-6">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <Layers className="w-4 h-4 text-primary" />
-                {editingQtyOffer ? "تعديل عرض الكميات" : "إضافة عرض كميات جديد"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <Label className="text-xs">عنوان العرض</Label>
-                <Input
-                  value={qtyTitle}
-                  onChange={(e) => setQtyTitle(e.target.value)}
-                  placeholder="مثال: خصم 10% عند شراء 3 قطع فأكثر"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">الحد الأدنى للكمية (قطع)</Label>
-                  <Input
-                    type="number"
-                    min="2"
-                    value={qtyMinCount}
-                    onChange={(e) => setQtyMinCount(e.target.value)}
-                    className="font-mono text-center font-bold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">نسبة الخصم (%)</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="100"
-                    value={qtyPct}
-                    onChange={(e) => setQtyPct(e.target.value)}
-                    className="font-mono text-center font-bold"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">ملاحظات توضيحية</Label>
-                <Input
-                  value={qtyNotes}
-                  onChange={(e) => setQtyNotes(e.target.value)}
-                  placeholder="مثال: يطبق تلقائياً على أي صنف بالكمية المحددة"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsOpenQtyModal(false)} className="text-xs">
-                إلغاء
-              </Button>
-              <Button onClick={handleSaveQtyOffer} className="text-xs font-bold bg-primary text-primary-foreground">
-                حفظ العرض
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DiscountQtyOfferDialog
+          open={isOpenQtyModal}
+          onOpenChange={setIsOpenQtyModal}
+          editing={!!editingQtyOffer}
+          title={qtyTitle}
+          onTitleChange={setQtyTitle}
+          minCount={qtyMinCount}
+          onMinCountChange={setQtyMinCount}
+          pct={qtyPct}
+          onPctChange={setQtyPct}
+          notes={qtyNotes}
+          onNotesChange={setQtyNotes}
+          onSave={handleSaveQtyOffer}
+        />
 
         {/* DIALOG 3: BUNDLE OFFER */}
-        <Dialog open={isOpenBundleModal} onOpenChange={setIsOpenBundleModal}>
-          <DialogContent className="max-w-md p-6">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <PackagePlus className="w-4 h-4 text-primary" />
-                {editingBundle ? "تعديل باقة العرض" : "إضافة باقة مجمعة جديدة"}
-              </DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <Label className="text-xs">اسم الباقة</Label>
-                <Input
-                  value={bundleTitle}
-                  onChange={(e) => setBundleTitle(e.target.value)}
-                  placeholder="مثال: باقة الهاتف + الشاحن السريع"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">الكلمات المفتاحية للأصناف المطلوبة (مفصولة بفاصلة)</Label>
-                <Input
-                  value={bundleKeywords}
-                  onChange={(e) => setBundleKeywords(e.target.value)}
-                  placeholder="مثال: هاتف, شاحن"
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  عند وجود صنف يحتوي الكلمة الأولى وصنف يحتوي الكلمة الثانية في نفس الفاتورة، يُطبق الخصم تلقائياً.
-                </p>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">مبلغ الخصم الإجمالي للباقة (ج.م)</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={bundleDiscount}
-                  onChange={(e) => setBundleDiscount(e.target.value)}
-                  className="font-mono text-center font-bold"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">ملاحظات (اختياري)</Label>
-                <Input
-                  value={bundleNotes}
-                  onChange={(e) => setBundleNotes(e.target.value)}
-                  placeholder="ملاحظات..."
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsOpenBundleModal(false)} className="text-xs">
-                إلغاء
-              </Button>
-              <Button onClick={handleSaveBundle} className="text-xs font-bold bg-primary text-primary-foreground">
-                حفظ الباقة
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DiscountBundleOfferDialog
+          open={isOpenBundleModal}
+          onOpenChange={setIsOpenBundleModal}
+          editing={!!editingBundle}
+          title={bundleTitle}
+          onTitleChange={setBundleTitle}
+          keywords={bundleKeywords}
+          onKeywordsChange={setBundleKeywords}
+          discount={bundleDiscount}
+          onDiscountChange={setBundleDiscount}
+          notes={bundleNotes}
+          onNotesChange={setBundleNotes}
+          onSave={handleSaveBundle}
+        />
 
         {/* DIALOG 4: WHATSAPP PROMO CAMPAIGN MODAL */}
-        <Dialog open={!!whatsappModalCoupon} onOpenChange={(open) => !open && setWhatsappModalCoupon(null)}>
-          <DialogContent className="max-w-md p-6">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2 text-emerald-600">
-                <MessageCircle className="w-5 h-5" />
-                مشاركة العرض عبر رسالة واتساب
-              </DialogTitle>
-            </DialogHeader>
-
-            {whatsappModalCoupon && (
-              <div className="space-y-4 text-xs">
-                <p className="text-muted-foreground leading-relaxed">
-                  تم تجهيز نص دعائي مصمم وجاهز للإرسال للعملاء أو المجموعات للترويج لكود الخصم:
-                </p>
-
-                {/* Message Preview Box */}
-                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-3.5 space-y-2 whitespace-pre-wrap font-sans text-xs text-foreground leading-relaxed">
-                  {generatePromoWhatsAppText(whatsappModalCoupon, shop.shopName || "سِجلّي")}
-                </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        generatePromoWhatsAppText(whatsappModalCoupon, shop.shopName || "سِجلّي")
-                      );
-                      toast.success("تم نسخ نص الرسالة بالكامل بنجاح ✓");
-                    }}
-                    className="flex-1 text-xs gap-1.5"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    نسخ نص الرسالة
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      executeWhatsAppSend(whatsappModalCoupon);
-                      setWhatsappModalCoupon(null);
-                    }}
-                    className="flex-1 text-xs font-bold gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
-                  >
-                    <Share2 className="w-3.5 h-3.5" />
-                    فتح واتساب وإرسال
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <DiscountWhatsAppShareDialog
+          open={!!whatsappModalCoupon}
+          onClose={() => setWhatsappModalCoupon(null)}
+          coupon={whatsappModalCoupon}
+          shopName={shop.shopName || "سِجلّي"}
+          onExecuteSend={handleExecuteWhatsAppSend}
+        />
 
         {/* DELETE CONFIRMATIONS */}
         <AlertDialog open={!!deleteTargetCouponId} onOpenChange={(open) => !open && setDeleteTargetCouponId(null)}>
