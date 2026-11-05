@@ -392,7 +392,7 @@ function ExpensesPage() {
       {/* Modern Segmented Navigation Tabs */}
       <Tabs
         value={activeTab}
-        onValueChange={(v: string) => setActiveTab(v)}
+        onValueChange={(v: any) => setActiveTab(v)}
         className="w-full mb-6"
       >
         <StatTabs

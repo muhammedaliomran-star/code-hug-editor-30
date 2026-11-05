@@ -23,10 +23,10 @@ export const getPublicReceipt = createServerFn({ method: "GET" })
       invoice: {
         number: invoice.id.slice(0, 6).toUpperCase(),
         createdAt: invoice.created_at,
-        total: Number(invoice.total), paid: Number(invoice.paid),
-        downPayment: Number(invoice.down_payment), monthlyInstallment: Number(invoice.monthly_installment),
-        firstDueDate: invoice.first_due_date, discountAmount: Number(invoice.discount_amount),
-        taxAmount: Number(invoice.tax_amount), status: invoice.status,
+        total: Number(invoice.total) / 100, paid: Number(invoice.paid) / 100,
+        downPayment: Number(invoice.down_payment) / 100, monthlyInstallment: Number(invoice.monthly_installment) / 100,
+        firstDueDate: invoice.first_due_date, discountAmount: Number(invoice.discount_amount) / 100,
+        taxAmount: Number(invoice.tax_amount) / 100, status: invoice.status,
       },
       customer: { name: invoice.customers?.name ?? "عميل" },
       shop: {
@@ -36,10 +36,10 @@ export const getPublicReceipt = createServerFn({ method: "GET" })
         footerNote: settings?.footer_note || null,
       },
       items: invoice.invoice_items.map((item) => ({
-        name: item.name, price: Number(item.price), quantity: Number(item.quantity),
-        discountPct: Number(item.discount_pct), discountAmount: Number(item.discount_amount),
-        taxPct: Number(item.tax_pct), taxAmount: Number(item.tax_amount),
-        lineTotal: Number(item.line_total), serialNumbers: item.serial_numbers,
+        name: item.name, price: Number(item.price) / 100, quantity: Number(item.quantity),
+        discountPct: Number(item.discount_pct), discountAmount: Number(item.discount_amount) / 100,
+        taxPct: Number(item.tax_pct), taxAmount: Number(item.tax_amount) / 100,
+        lineTotal: Number(item.line_total) / 100, serialNumbers: item.serial_numbers,
       })),
     };
   });

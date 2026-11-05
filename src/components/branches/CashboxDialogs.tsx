@@ -56,7 +56,7 @@ export function RemittanceDialog() {
             <Label className="text-xs">الجهة المحول إليها *</Label>
             <Select
               value={remittanceDest}
-              onValueChange={(val: string) => {
+              onValueChange={(val: any) => {
                 setRemittanceDest(val);
                 setRemittanceDestName(val === "main_vault" ? "الخزينة المركزية (المقر العام)" : "الحساب البنكي للشركة");
               }}

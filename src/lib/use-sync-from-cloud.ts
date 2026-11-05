@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from "react";
 import { useAuth } from "@/lib/store";
 import { syncAllTables, syncSummary, SYNC_INTERVAL } from "@/lib/sync-engine";
-import { invalidateCache, refreshTables } from "@/lib/db";
+import { invalidateCache } from "@/lib/db";
 import { drainOfflineQueue, getOfflineQueueCount } from "@/lib/offline-queue";
 import { syncOfflinePayments } from "@/lib/offline-sync";
 import { toast } from "sonner";
@@ -62,8 +62,7 @@ export function useSyncFromCloud() {
       const total = Object.values(results).reduce((a, b) => a + b, 0);
       if (total > 0) {
         console.log(`[CloudSync] ${summary}`);
-        const changedTables = Object.keys(results).filter((t) => results[t] > 0);
-        await refreshTables(changedTables);
+        await invalidateCache();
       }
     } catch (e) {
       console.error("[CloudSync] Background sync failed:", e);

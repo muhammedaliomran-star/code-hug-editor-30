@@ -362,7 +362,7 @@ export function CustomerImportExportModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={tab} onValueChange={(v: string) => setTab(v)} className="w-full">
+        <Tabs value={tab} onValueChange={(v: any) => setTab(v)} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="export" className="gap-2 font-bold">
               <FileDown className="h-4 w-4" />

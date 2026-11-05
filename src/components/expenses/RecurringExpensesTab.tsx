@@ -425,7 +425,7 @@ export function RecurringExpensesTab() {
 
               <div>
                 <Label className="text-xs font-bold">دورية التكرار</Label>
-                <Select value={frequency} onValueChange={(v: string) => setFrequency(v)}>
+                <Select value={frequency} onValueChange={(v: any) => setFrequency(v)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>

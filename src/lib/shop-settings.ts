@@ -139,20 +139,6 @@ export async function saveShopSettings(patch: ShopSettings) {
     { onConflict: "user_id" },
   );
   if (error) throw error;
-
-  // Manager PIN is verified server-side (set_manager_pin RPC, owner-only,
-  // bcrypt, 4-8 digits). It is intentionally NOT part of the shop_settings
-  // upsert above so the (hashed) PIN never travels in the settings payload.
-  // Only set it when the user typed a valid PIN; an empty field keeps the
-  // existing PIN untouched (clearing is not supported by the RPC).
-  const candidatePin = (patch.managerPin ?? "").trim();
-  if (/^\d{4,8}$/.test(candidatePin)) {
-    const { error: pinErr } = await supabase.rpc("set_manager_pin", {
-      _new_pin: candidatePin,
-    });
-    if (pinErr) throw pinErr;
-  }
-
   await fetchShopSettings();
 }
 

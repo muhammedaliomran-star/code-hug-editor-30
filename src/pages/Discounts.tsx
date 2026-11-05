@@ -21,16 +21,17 @@ import { ActionButton } from "@/components/ActionButton";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { FilterChips } from "@/components/FilterChips";
-import { CouponCard } from "@/components/discounts/CouponCard";
-import { DiscountCouponDialog } from "@/components/discounts/DiscountCouponDialog";
-import { DiscountQtyOfferDialog } from "@/components/discounts/DiscountQtyOfferDialog";
-import { DiscountBundleOfferDialog } from "@/components/discounts/DiscountBundleOfferDialog";
-import { DiscountWhatsAppShareDialog } from "@/components/discounts/DiscountWhatsAppShareDialog";
-import { QtyOfferCard } from "@/components/discounts/QtyOfferCard";
-import { BundleOfferCard } from "@/components/discounts/BundleOfferCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,16 +56,28 @@ import {
   Percent,
   Plus,
   Search,
+  Copy,
   Check,
+  Edit2,
+  Trash2,
+  Sparkles,
   Calculator,
+  Calendar,
   Layers,
   TrendingDown,
   Gift,
+  CheckCircle2,
+  AlertCircle,
   HelpCircle,
+  FileText,
+  Share2,
+  MessageCircle,
   ShieldCheck,
   ShieldAlert,
   Coins,
   PackagePlus,
+  Users,
+  Sliders,
   Award,
 } from "lucide-react";
 
@@ -386,10 +399,6 @@ export default function Discounts() {
   };
 
   // WhatsApp Share Trigger
-  const handleExecuteWhatsAppSend = (coupon: PromoCoupon) => {
-    executeWhatsAppSend(coupon);
-    setWhatsappModalCoupon(null);
-  };
   const handleOpenWhatsAppShare = (c: PromoCoupon) => {
     setWhatsappModalCoupon(c);
   };
@@ -544,18 +553,191 @@ export default function Discounts() {
                 </div>
               ) : (
                 <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
-                  {filteredCoupons.map((coupon) => (
-                    <CouponCard
-                      key={coupon.id}
-                      coupon={coupon}
-                      copiedCode={copiedCode}
-                      onCopy={copyCouponCode}
-                      onWhatsAppShare={handleOpenWhatsAppShare}
-                      onToggleStatus={toggleCouponStatus}
-                      onEdit={handleEditCoupon}
-                      onDelete={setDeleteTargetCouponId}
-                    />
-                  ))}
+                  {filteredCoupons.map((coupon) => {
+                    const status = getCouponStatus(coupon);
+                    const usagePct =
+                      coupon.maxUsage !== null && coupon.maxUsage > 0
+                        ? Math.min(100, (coupon.usedCount / coupon.maxUsage) * 100)
+                        : 0;
+
+                    return (
+                      <div
+                        key={coupon.id}
+                        className={cn(
+                          "group relative flex flex-col justify-between rounded-2xl p-4 transition-all duration-300 border bg-card/80 hover:shadow-md hover:border-primary/40",
+                          status.status === "inactive" && "opacity-75 bg-muted/20",
+                          status.status === "expired" && "border-warning/30",
+                          coupon.isLoyaltyReward && "border-warning/50 bg-warning/[0.02]"
+                        )}
+                      >
+                        {/* Card Header */}
+                        <div>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-1.5">
+                              <span
+                                className={cn(
+                                  "px-2.5 py-1 rounded-xl font-mono text-sm font-black tracking-wider flex items-center gap-1.5 border shadow-2xs",
+                                  coupon.discountType === "percentage"
+                                    ? "bg-primary/10 text-primary border-primary/20"
+                                    : "bg-warning/10 text-warning border-warning/20"
+                                )}
+                              >
+                                {coupon.code}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => copyCouponCode(coupon.code)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-all"
+                                title="نسخ الكود"
+                              >
+                                {copiedCode === coupon.code ? (
+                                  <Check className="w-3.5 h-3.5 text-success" />
+                                ) : (
+                                  <Copy className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              {coupon.isLoyaltyReward && (
+                                <Badge variant="outline" className="text-[11px] bg-warning/10 text-warning border-warning/30 gap-1 py-0.5">
+                                  <Award className="w-2.5 h-2.5" /> مكافأة ولاء
+                                </Badge>
+                              )}
+                              <Badge
+                                variant="outline"
+                                className={cn(
+                                  "text-[11px] font-bold py-0.5",
+                                  status.color === "success" && "bg-success/10 text-success border-success/30",
+                                  status.color === "warning" && "bg-warning/10 text-warning border-warning/30",
+                                  status.color === "danger" && "bg-danger/10 text-danger border-danger/30",
+                                  status.color === "muted" && "bg-muted text-muted-foreground border-border/40"
+                                )}
+                              >
+                                {status.label}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          <h2 className="font-bold text-sm text-foreground line-clamp-1">{coupon.title}</h2>
+
+                          <div className="mt-2 flex items-baseline gap-2">
+                            <span className="text-xl font-black text-foreground font-mono">
+                              {coupon.discountType === "percentage"
+                                ? `خصم ${coupon.discountValue}%`
+                                : `خصم ${fmt(coupon.discountValue)} ج.م`}
+                            </span>
+                            {coupon.minOrderValue > 0 && (
+                              <span className="text-[11px] text-muted-foreground">
+                                (حد أدنى: {fmt(coupon.minOrderValue)} ج.م)
+                              </span>
+                            )}
+                          </div>
+
+                          {coupon.notes && (
+                            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+                              {coupon.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Card Footer Info */}
+                        <div className="mt-4 pt-3 border-t border-border/30 space-y-2.5 text-xs text-muted-foreground">
+                          {/* Usage Count Progress */}
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span>
+                              الاستخدام: <strong className="text-foreground font-mono">{coupon.usedCount}</strong>
+                              {coupon.maxUsage !== null && (
+                                <span> من {coupon.maxUsage}</span>
+                              )}
+                            </span>
+                            {coupon.maxUsage !== null && (
+                              <span className="font-mono text-[11px] text-muted-foreground">{usagePct.toFixed(0)}%</span>
+                            )}
+                          </div>
+
+                          {coupon.maxUsage !== null && (
+                            <div className="w-full bg-muted/60 h-1.5 rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  usagePct >= 100 ? "bg-danger" : usagePct > 70 ? "bg-warning" : "bg-primary"
+                                )}
+                                style={{ width: `${usagePct}%` }}
+                              />
+                            </div>
+                          )}
+
+                          {/* Validity Date */}
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="flex items-center gap-1 text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              {coupon.endsAt
+                                ? `ينتهي: ${new Date(coupon.endsAt).toLocaleDateString("ar-EG")}`
+                                : "مفتوح بدون تاريخ انتهاء"}
+                            </span>
+
+                            {coupon.customerEligibility !== "all" && (
+                                <span className="px-1.5 py-0.5 rounded bg-muted/60 text-[11px] font-medium">
+                                {coupon.customerEligibility === "vip"
+                                  ? "مميزين VIP"
+                                  : coupon.customerEligibility === "cash"
+                                  ? "دفع نقدي"
+                                  : "عملاء أقساط"}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Quick Actions */}
+                          <div className="flex items-center justify-between pt-1 border-t border-border/20">
+                            {/* WhatsApp Share Button */}
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenWhatsAppShare(coupon)}
+                              className="h-10 px-3 rounded-lg text-[11px] font-bold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 border-emerald-500/30 gap-1.5"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                              واتساب
+                            </Button>
+
+                            <div className="flex items-center gap-1">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleCouponStatus(coupon.id)}
+                                className="h-10 px-3 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                              >
+                                {coupon.active ? "تعطيل" : "تفعيل"}
+                              </Button>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleEditCoupon(coupon)}
+                                className="h-10 w-10 text-muted-foreground hover:text-primary"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </Button>
+
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setDeleteTargetCouponId(coupon.id)}
+                                className="h-10 w-10 text-muted-foreground hover:text-danger"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -588,12 +770,50 @@ export default function Discounts() {
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {qtyOffers.map((offer) => (
-                    <QtyOfferCard
+                    <div
                       key={offer.id}
-                      offer={offer}
-                      onEdit={handleEditQtyOffer}
-                      onDelete={setDeleteTargetQtyId}
-                    />
+                      className={cn(
+                        "rounded-xl border p-4 flex flex-col justify-between transition-all bg-background/50",
+                        offer.active ? "border-border/60 hover:border-primary/40" : "opacity-60 bg-muted/20"
+                      )}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-primary/10 text-primary border border-primary/20">
+                            {offer.minQuantity} قطع فأكثر
+                          </span>
+                          <span className="text-base font-black text-foreground font-mono">
+                            خصم {offer.discountPercentage}%
+                          </span>
+                        </div>
+                        <h2 className="font-bold text-sm">{offer.title}</h2>
+                        {offer.notes && <p className="text-xs text-muted-foreground mt-1">{offer.notes}</p>}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4 pt-2 border-t border-border/20 text-xs">
+                        <span className={offer.active ? "text-success font-medium" : "text-muted-foreground"}>
+                          {offer.active ? "مفعّل تلقائياً" : "معطّل"}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditQtyOffer(offer)}
+                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteTargetQtyId(offer.id)}
+                            className="h-7 w-7 text-muted-foreground hover:text-danger"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -622,12 +842,58 @@ export default function Discounts() {
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {bundles.map((bundle) => (
-                    <BundleOfferCard
+                    <div
                       key={bundle.id}
-                      bundle={bundle}
-                      onEdit={handleEditBundle}
-                      onDelete={setDeleteTargetBundleId}
-                    />
+                      className={cn(
+                        "rounded-xl border p-4 flex flex-col justify-between transition-all bg-background/50",
+                        bundle.active ? "border-border/60 hover:border-primary/40" : "opacity-60 bg-muted/20"
+                      )}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-muted-foreground">خصم الباقة:</span>
+                          <span className="text-base font-black text-warning font-mono">
+                            − {fmt(bundle.discountAmount)} ج.م
+                          </span>
+                        </div>
+                        <h2 className="font-bold text-sm">{bundle.title}</h2>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {bundle.itemKeywords.map((kw, i) => (
+                            <span
+                               key={`${kw}-${i}`}
+                              className="px-2 py-0.5 rounded-md bg-muted/70 text-[11px] font-bold text-foreground border border-border/30"
+                            >
+                              + {kw}
+                            </span>
+                          ))}
+                        </div>
+                        {bundle.notes && <p className="text-xs text-muted-foreground mt-2">{bundle.notes}</p>}
+                      </div>
+
+                      <div className="flex items-center justify-between mt-4 pt-2 border-t border-border/20 text-xs">
+                        <span className={bundle.active ? "text-success font-medium" : "text-muted-foreground"}>
+                          {bundle.active ? "مفعّل تلقائياً" : "معطّل"}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditBundle(bundle)}
+                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteTargetBundleId(bundle.id)}
+                            className="h-7 w-7 text-muted-foreground hover:text-danger"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -874,7 +1140,7 @@ export default function Discounts() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label className="text-[11px] text-muted-foreground">نوع الخصم</Label>
-                    <Select value={simDiscType} onValueChange={(v: string) => setSimDiscType(v)}>
+                    <Select value={simDiscType} onValueChange={(v: any) => setSimDiscType(v)}>
                       <SelectTrigger className="h-10 text-xs">
                         <SelectValue />
                       </SelectTrigger>
@@ -945,75 +1211,347 @@ export default function Discounts() {
         </div>
 
         {/* DIALOG 1: CREATE / EDIT COUPON */}
-        <DiscountCouponDialog
-          open={isOpenCouponModal}
-          onOpenChange={setIsOpenCouponModal}
-          editing={!!editingCoupon}
-          formCode={formCode}
-          onFormCodeChange={setFormCode}
-          formTitle={formTitle}
-          onFormTitleChange={setFormTitle}
-          formType={formType}
-          onFormTypeChange={setFormType}
-          formValue={formValue}
-          onFormValueChange={setFormValue}
-          formMinOrder={formMinOrder}
-          onFormMinOrderChange={setFormMinOrder}
-          formCustomerEligibility={formCustomerEligibility}
-          onFormCustomerEligibilityChange={setFormCustomerEligibility}
-          formHasMaxUsage={formHasMaxUsage}
-          onFormHasMaxUsageChange={setFormHasMaxUsage}
-          formMaxUsage={formMaxUsage}
-          onFormMaxUsageChange={setFormMaxUsage}
-          formStartsAt={formStartsAt}
-          onFormStartsAtChange={setFormStartsAt}
-          formEndsAt={formEndsAt}
-          onFormEndsAtChange={setFormEndsAt}
-          formNotes={formNotes}
-          onFormNotesChange={setFormNotes}
-          onSave={handleSaveCoupon}
-        />
+        <Dialog open={isOpenCouponModal} onOpenChange={setIsOpenCouponModal}>
+          <DialogContent className="max-w-md p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <Tag className="w-4 h-4 text-primary" />
+                {editingCoupon ? "تعديل كود الخصم" : "إنشاء كود خصم جديد"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <Label className="text-xs">كود الخصم (Promo Code)</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={formCode}
+                    onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+                    placeholder="مثال: SUMMER20"
+                    className="font-mono uppercase font-bold text-center tracking-wider text-sm"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const random = `SALE${Math.floor(10 + Math.random() * 90)}`;
+                      setFormCode(random);
+                    }}
+                    className="text-xs px-3 font-medium shrink-0"
+                  >
+                    توليد كود
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">اسم أو عنوان العرض</Label>
+                <Input
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="مثال: خصم الصيف 20%"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">نوع الخصم</Label>
+                  <Select value={formType} onValueChange={(v: any) => setFormType(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
+                      <SelectItem value="fixed">مبلغ ثابت (ج.م)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">
+                    القيمة {formType === "percentage" ? "(%)" : "(ج.م)"}
+                  </Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formValue}
+                    onChange={(e) => setFormValue(e.target.value)}
+                    className="font-mono text-center font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">الحد الأدنى للفاتورة (ج.م)</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={formMinOrder}
+                    onChange={(e) => setFormMinOrder(e.target.value)}
+                    className="font-mono text-center"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">الفئة المستهدفة</Label>
+                  <Select
+                    value={formCustomerEligibility}
+                    onValueChange={(v: any) => setFormCustomerEligibility(v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">جميع العملاء</SelectItem>
+                      <SelectItem value="cash">الدفع الفوري فقط</SelectItem>
+                      <SelectItem value="installment">عملاء الأقساط</SelectItem>
+                      <SelectItem value="vip">كبار العملاء (VIP)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2 border-t border-border/30 pt-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs">تحديد سقف لمرات الاستخدام؟</Label>
+                  <Switch checked={formHasMaxUsage} onCheckedChange={setFormHasMaxUsage} />
+                </div>
+                {formHasMaxUsage && (
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formMaxUsage}
+                    onChange={(e) => setFormMaxUsage(e.target.value)}
+                    placeholder="مثال: 50 مرة"
+                    className="font-mono text-center"
+                  />
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 border-t border-border/30 pt-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">تاريخ البدء</Label>
+                  <Input
+                    type="date"
+                    value={formStartsAt}
+                    onChange={(e) => setFormStartsAt(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">تاريخ الانتهاء (اختياري)</Label>
+                  <Input
+                    type="date"
+                    value={formEndsAt}
+                    onChange={(e) => setFormEndsAt(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">ملاحظات داخلية (اختياري)</Label>
+                <Input
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="ملاحظات لإدارة المحل..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsOpenCouponModal(false)} className="text-xs">
+                إلغاء
+              </Button>
+              <Button onClick={handleSaveCoupon} className="text-xs font-bold bg-primary text-primary-foreground">
+                {editingCoupon ? "حفظ التعديلات" : "إنشاء الكوبون"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* DIALOG 2: QUANTITY TIER OFFER */}
-        <DiscountQtyOfferDialog
-          open={isOpenQtyModal}
-          onOpenChange={setIsOpenQtyModal}
-          editing={!!editingQtyOffer}
-          title={qtyTitle}
-          onTitleChange={setQtyTitle}
-          minCount={qtyMinCount}
-          onMinCountChange={setQtyMinCount}
-          pct={qtyPct}
-          onPctChange={setQtyPct}
-          notes={qtyNotes}
-          onNotesChange={setQtyNotes}
-          onSave={handleSaveQtyOffer}
-        />
+        <Dialog open={isOpenQtyModal} onOpenChange={setIsOpenQtyModal}>
+          <DialogContent className="max-w-md p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <Layers className="w-4 h-4 text-primary" />
+                {editingQtyOffer ? "تعديل عرض الكميات" : "إضافة عرض كميات جديد"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <Label className="text-xs">عنوان العرض</Label>
+                <Input
+                  value={qtyTitle}
+                  onChange={(e) => setQtyTitle(e.target.value)}
+                  placeholder="مثال: خصم 10% عند شراء 3 قطع فأكثر"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">الحد الأدنى للكمية (قطع)</Label>
+                  <Input
+                    type="number"
+                    min="2"
+                    value={qtyMinCount}
+                    onChange={(e) => setQtyMinCount(e.target.value)}
+                    className="font-mono text-center font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs">نسبة الخصم (%)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={qtyPct}
+                    onChange={(e) => setQtyPct(e.target.value)}
+                    className="font-mono text-center font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">ملاحظات توضيحية</Label>
+                <Input
+                  value={qtyNotes}
+                  onChange={(e) => setQtyNotes(e.target.value)}
+                  placeholder="مثال: يطبق تلقائياً على أي صنف بالكمية المحددة"
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsOpenQtyModal(false)} className="text-xs">
+                إلغاء
+              </Button>
+              <Button onClick={handleSaveQtyOffer} className="text-xs font-bold bg-primary text-primary-foreground">
+                حفظ العرض
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* DIALOG 3: BUNDLE OFFER */}
-        <DiscountBundleOfferDialog
-          open={isOpenBundleModal}
-          onOpenChange={setIsOpenBundleModal}
-          editing={!!editingBundle}
-          title={bundleTitle}
-          onTitleChange={setBundleTitle}
-          keywords={bundleKeywords}
-          onKeywordsChange={setBundleKeywords}
-          discount={bundleDiscount}
-          onDiscountChange={setBundleDiscount}
-          notes={bundleNotes}
-          onNotesChange={setBundleNotes}
-          onSave={handleSaveBundle}
-        />
+        <Dialog open={isOpenBundleModal} onOpenChange={setIsOpenBundleModal}>
+          <DialogContent className="max-w-md p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <PackagePlus className="w-4 h-4 text-primary" />
+                {editingBundle ? "تعديل باقة العرض" : "إضافة باقة مجمعة جديدة"}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <Label className="text-xs">اسم الباقة</Label>
+                <Input
+                  value={bundleTitle}
+                  onChange={(e) => setBundleTitle(e.target.value)}
+                  placeholder="مثال: باقة الهاتف + الشاحن السريع"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">الكلمات المفتاحية للأصناف المطلوبة (مفصولة بفاصلة)</Label>
+                <Input
+                  value={bundleKeywords}
+                  onChange={(e) => setBundleKeywords(e.target.value)}
+                  placeholder="مثال: هاتف, شاحن"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  عند وجود صنف يحتوي الكلمة الأولى وصنف يحتوي الكلمة الثانية في نفس الفاتورة، يُطبق الخصم تلقائياً.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">مبلغ الخصم الإجمالي للباقة (ج.م)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  value={bundleDiscount}
+                  onChange={(e) => setBundleDiscount(e.target.value)}
+                  className="font-mono text-center font-bold"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">ملاحظات (اختياري)</Label>
+                <Input
+                  value={bundleNotes}
+                  onChange={(e) => setBundleNotes(e.target.value)}
+                  placeholder="ملاحظات..."
+                />
+              </div>
+            </div>
+
+            <DialogFooter className="gap-2 mt-4">
+              <Button variant="outline" onClick={() => setIsOpenBundleModal(false)} className="text-xs">
+                إلغاء
+              </Button>
+              <Button onClick={handleSaveBundle} className="text-xs font-bold bg-primary text-primary-foreground">
+                حفظ الباقة
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* DIALOG 4: WHATSAPP PROMO CAMPAIGN MODAL */}
-        <DiscountWhatsAppShareDialog
-          open={!!whatsappModalCoupon}
-          onClose={() => setWhatsappModalCoupon(null)}
-          coupon={whatsappModalCoupon}
-          shopName={shop.shopName || "سِجلّي"}
-          onExecuteSend={handleExecuteWhatsAppSend}
-        />
+        <Dialog open={!!whatsappModalCoupon} onOpenChange={(open) => !open && setWhatsappModalCoupon(null)}>
+          <DialogContent className="max-w-md p-6">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2 text-emerald-600">
+                <MessageCircle className="w-5 h-5" />
+                مشاركة العرض عبر رسالة واتساب
+              </DialogTitle>
+            </DialogHeader>
+
+            {whatsappModalCoupon && (
+              <div className="space-y-4 text-xs">
+                <p className="text-muted-foreground leading-relaxed">
+                  تم تجهيز نص دعائي مصمم وجاهز للإرسال للعملاء أو المجموعات للترويج لكود الخصم:
+                </p>
+
+                {/* Message Preview Box */}
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-3.5 space-y-2 whitespace-pre-wrap font-sans text-xs text-foreground leading-relaxed">
+                  {generatePromoWhatsAppText(whatsappModalCoupon, shop.shopName || "سِجلّي")}
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        generatePromoWhatsAppText(whatsappModalCoupon, shop.shopName || "سِجلّي")
+                      );
+                      toast.success("تم نسخ نص الرسالة بالكامل بنجاح ✓");
+                    }}
+                    className="flex-1 text-xs gap-1.5"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    نسخ نص الرسالة
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      executeWhatsAppSend(whatsappModalCoupon);
+                      setWhatsappModalCoupon(null);
+                    }}
+                    className="flex-1 text-xs font-bold gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    فتح واتساب وإرسال
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* DELETE CONFIRMATIONS */}
         <AlertDialog open={!!deleteTargetCouponId} onOpenChange={(open) => !open && setDeleteTargetCouponId(null)}>

@@ -568,7 +568,7 @@ export function activateLicenseKey(
  */
 export async function verifySuperAdminPin(pin: string): Promise<boolean> {
   try {
-    const { data, error } = await supabase.rpc("verify_admin_pin", {
+    const { data, error } = await (supabase.rpc as any)("verify_admin_pin", {
       _pin: pin.trim(),
     });
 
@@ -591,7 +591,7 @@ export async function setSuperAdminPin(newPin: string): Promise<void> {
       throw new Error("الرقم السري يجب أن يكون من 4 إلى 8 أرقام");
     }
 
-    const { error } = await supabase.rpc("set_admin_pin", {
+    const { error } = await (supabase.rpc as any)("set_admin_pin", {
       _new_pin: trimmed,
     });
 

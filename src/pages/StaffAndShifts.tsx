@@ -13,6 +13,7 @@ import {
   type StaffMember,
   type StaffRole,
   type ShiftRecord,
+  type AttendanceRecord,
   ROLE_DEFAULT_PERMISSIONS,
 } from "@/lib/staff";
 import { Button } from "@/components/ui/button";
@@ -48,28 +49,33 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
-import { CommissionCard } from "@/components/staff/CommissionCard";
-import { AttendanceTable } from "@/components/staff/AttendanceTable";
-import { ShiftsHistoryTable } from "@/components/staff/ShiftsHistoryTable";
-import { StaffCard } from "@/components/staff/StaffCard";
 import { EmptyState } from "@/components/EmptyState";
 import {
   Users,
   ShieldCheck,
   Clock,
+  KeyRound,
   Plus,
   Play,
   Square,
   Printer,
+  FileSpreadsheet,
+  AlertTriangle,
   CheckCircle2,
   Lock,
+  Unlock,
   Coins,
   Receipt,
   UserCheck,
   Calendar,
   CreditCard,
+  Edit2,
+  Trash2,
+  DollarSign,
   TrendingUp,
+  ArrowRightLeft,
   Search,
+  Percent,
   Timer,
   LogIn,
   LogOut,
@@ -594,7 +600,49 @@ export default function StaffAndShifts() {
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {staffCommissions.map((comm) => (
-                  <CommissionCard key={comm.staff.id} commission={comm} />
+                  <div
+                    key={comm.staff.id}
+                    className="p-4 rounded-2xl border border-border/40 bg-card/60 space-y-3 hover:border-primary/40 transition-all"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-bold text-sm text-foreground">{comm.staff.name}</h4>
+                        <span className="text-xs text-muted-foreground">{comm.staff.branchName || "الفرع الرئيسي"}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-bold font-mono">
+                        نسبة العمولة: {comm.commissionRate}%
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-1.5 p-3 rounded-xl bg-background/50 border border-border/30 text-xs font-mono">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground font-sans">مبيعات الشهر الحالية:</span>
+                        <strong className="text-foreground">{fmt(comm.totalMonthSales)} ج.م</strong>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground font-sans">عدد الفواتير المنجزة:</span>
+                        <span>{comm.totalInvoices} فاتورة</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground font-sans">ساعات العمل في الورديات:</span>
+                        <span>{comm.totalHours} ساعة</span>
+                      </div>
+                      <div className="flex justify-between text-success font-bold pt-1.5 border-t border-border/20">
+                        <span className="font-sans">العمولة المستحقة:</span>
+                        <span>+{fmt(comm.commissionEarned)} ج.م</span>
+                      </div>
+                      {comm.baseSalary > 0 && (
+                        <div className="flex justify-between text-muted-foreground">
+                          <span className="font-sans">الراتب الأساسي:</span>
+                          <span>{fmt(comm.baseSalary)} ج.م</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between text-sm font-black text-primary pt-1.5 border-t border-border/20">
+                        <span className="font-sans">إجمالي المستحق:</span>
+                        <span>{fmt(comm.totalPayout)} ج.م</span>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -615,7 +663,62 @@ export default function StaffAndShifts() {
                 </div>
               </div>
 
-              <AttendanceTable records={filteredAttendance} />
+              {filteredAttendance.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl border border-dashed border-border/60 bg-card/30">
+                  <Timer className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+                  <h3 className="font-bold text-sm text-foreground">لا توجد سجلات حضور وانصراف بعد</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    يمكن للموظف تسجيل الحضور والانصراف بضغطة زر واحدة من الشريط العلوي يومياً.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-border/40 bg-card/60">
+                  <table className="w-full text-xs text-right">
+                    <thead>
+                      <tr className="border-b border-border/30 text-muted-foreground bg-muted/20">
+                        <th className="p-3 font-bold">التاريخ</th>
+                        <th className="p-3 font-bold">الموظف</th>
+                        <th className="p-3 font-bold">الفرع</th>
+                        <th className="p-3 font-bold">وقت الحضور (Clock-In)</th>
+                        <th className="p-3 font-bold">وقت الانصراف (Clock-Out)</th>
+                        <th className="p-3 font-bold">إجمالي الساعات</th>
+                        <th className="p-3 font-bold">الحالة</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/20">
+                      {filteredAttendance.map((rec) => (
+                        <tr key={rec.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-3 font-mono font-bold text-foreground">{rec.date}</td>
+                          <td className="p-3 font-medium text-foreground">{rec.staffName}</td>
+                          <td className="p-3 text-muted-foreground">{rec.branchName}</td>
+                          <td className="p-3 font-mono text-emerald-600">
+                            {new Date(rec.clockIn).toLocaleTimeString("ar-EG")}
+                          </td>
+                          <td className="p-3 font-mono text-muted-foreground">
+                            {rec.clockOut ? new Date(rec.clockOut).toLocaleTimeString("ar-EG") : "— قيد الدوام —"}
+                          </td>
+                          <td className="p-3 font-mono font-bold">
+                            {rec.totalHours ? `${rec.totalHours} ساعة` : "—"}
+                          </td>
+                          <td className="p-3">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] py-0.5",
+                                rec.status === "completed"
+                                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                  : "bg-primary/10 text-primary border-primary/30"
+                              )}
+                            >
+                              {rec.status === "completed" ? "دوام مكتمل" : "حاضر بالعمل"}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -634,7 +737,97 @@ export default function StaffAndShifts() {
                 </div>
               </div>
 
-              <ShiftsHistoryTable shifts={filteredShifts} blurCls={blurCls} onSelectZReport={setSelectedZReportShift} />
+              {filteredShifts.length === 0 ? (
+                <div className="p-12 text-center rounded-2xl border border-dashed border-border/60 bg-card/30">
+                  <Clock className="w-10 h-10 mx-auto text-muted-foreground/50 mb-3" />
+                  <h3 className="font-bold text-sm text-foreground">لا توجد ورديات مسجلة حتى الآن</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    عند إغلاق أي وردية كاشير، سيتم حفظ تقرير الـ Z-Report المفصل هنا تلقائياً.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-2xl border border-border/40 bg-card/60">
+                  <table className="w-full text-xs text-right">
+                    <thead>
+                      <tr className="border-b border-border/30 text-muted-foreground bg-muted/20">
+                        <th className="p-3 font-bold">الوردية</th>
+                        <th className="p-3 font-bold">الكاشير</th>
+                        <th className="p-3 font-bold">تاريخ البدء / الإغلاق</th>
+                        <th className="p-3 font-bold">المبيعات</th>
+                        <th className="p-3 font-bold">الدرج الفعلي</th>
+                        <th className="p-3 font-bold">العجز / الزيادة</th>
+                        <th className="p-3 font-bold text-left">تقرير Z</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/20">
+                      {filteredShifts.map((shift) => {
+                        const isOver = shift.cashVariance > 0;
+                        const isShort = shift.cashVariance < 0;
+
+                        return (
+                          <tr key={shift.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="p-3 font-bold font-mono">
+                              #{shift.shiftNumber}
+                              {shift.status === "open" && (
+                                <Badge variant="outline" className="mr-2 text-[9px] bg-success/10 text-success border-success/30">
+                                  نشطة حالياً
+                                </Badge>
+                              )}
+                            </td>
+
+                            <td className="p-3 font-medium text-foreground">
+                              {shift.staffName}
+                              <span className="block text-[10px] text-muted-foreground">{shift.branchName}</span>
+                            </td>
+
+                            <td className="p-3 text-[11px] text-muted-foreground">
+                              <div>من: {new Date(shift.openedAt).toLocaleString("ar-EG")}</div>
+                              {shift.closedAt && (
+                                <div>إلى: {new Date(shift.closedAt).toLocaleString("ar-EG")}</div>
+                              )}
+                            </td>
+
+                            <td className={cn("p-3 font-mono font-bold", blurCls)}>
+                              {fmt(shift.totalGrossSales)} ج.م
+                              <span className="block text-[10px] text-muted-foreground font-normal">
+                                ({shift.invoicesCount} فواتير)
+                              </span>
+                            </td>
+
+                            <td className={cn("p-3 font-mono font-bold text-foreground", blurCls)}>
+                              {fmt(shift.actualClosingCash)} ج.م
+                            </td>
+
+                            <td className="p-3 font-mono">
+                              {shift.status === "open" ? (
+                                <span className="text-muted-foreground text-[10px]">— قيد التشغيل —</span>
+                              ) : isShort ? (
+                                <span className="text-danger font-bold">عجز {fmt(Math.abs(shift.cashVariance))} ج.م</span>
+                              ) : isOver ? (
+                                <span className="text-success font-bold">زيادة {fmt(shift.cashVariance)} ج.م</span>
+                              ) : (
+                                <span className="text-success font-bold">مطابق تماماً ✓</span>
+                              )}
+                            </td>
+
+                            <td className="p-3 text-left">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSelectedZReportShift(shift)}
+                                className="h-7 px-2.5 rounded-lg text-[10px] font-bold border-border/40 gap-1"
+                              >
+                                <Printer className="w-3 h-3 text-primary" />
+                                Z-Report
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -662,16 +855,108 @@ export default function StaffAndShifts() {
                     hint="أضف أول موظف لتبدأ إدارة الورديات والعمولات."
                     className="sm:col-span-2 lg:col-span-3"
                   />
-                ) : staffList.map((st) => (
-                  <StaffCard
-                    key={st.id}
-                    staff={st}
-                    isCurrent={st.id === currentStaff.id}
-                    canDelete={staffList.length > 1}
-                    onEdit={() => handleEditStaff(st)}
-                    onDelete={() => setDeleteTargetStaffId(st.id)}
-                  />
-                ))}
+                ) : staffList.map((st) => {
+                  const isAdmin = st.role === "admin";
+                  const isManager = st.role === "manager";
+
+                  return (
+                    <div
+                      key={st.id}
+                      className="p-4 rounded-2xl border border-border/40 bg-card/60 flex flex-col justify-between hover:border-primary/40 transition-all"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div>
+                            <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                              {st.name}
+                              {st.id === currentStaff.id && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] bg-primary/10 text-primary font-mono">
+                                  أنت
+                                </span>
+                              )}
+                            </h4>
+                            <span className="text-xs text-muted-foreground">{st.phone}</span>
+                          </div>
+
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "text-[10px] font-bold py-0.5",
+                              isAdmin
+                                ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                : isManager
+                                ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                : "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                            )}
+                          >
+                            {isAdmin ? "مدير عام" : isManager ? "مشرف فرع" : "كاشير"}
+                          </Badge>
+                        </div>
+
+                        {/* Permissions & Commission Info */}
+                        <div className="space-y-1.5 my-3 pt-2 border-t border-border/20 text-xs">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">نسبة العمولة:</span>
+                            <span className="font-mono font-bold text-primary">{st.commissionRatePct || 0}%</span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">تعديل سعر البيع بالفاتورة:</span>
+                            <span className={st.permissions.canChangePrice ? "text-success font-bold" : "text-danger"}>
+                              {st.permissions.canChangePrice ? "مسموح" : "ممنوع 🔒"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">رؤية التكلفة وهامش الربح:</span>
+                            <span className={st.permissions.canViewCostAndProfit ? "text-success font-bold" : "text-danger"}>
+                              {st.permissions.canViewCostAndProfit ? "مسموح" : "مخفي 🔒"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">حذف الفواتير:</span>
+                            <span className={st.permissions.canDeleteInvoice ? "text-success font-bold" : "text-danger"}>
+                              {st.permissions.canDeleteInvoice ? "مسموح" : "ممنوع 🔒"}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">أقصى نسبة خصم مسموحة:</span>
+                            <span className="font-mono font-bold text-primary">{st.permissions.maxDiscountPct}%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border/20">
+                        <span className="text-[10px] text-muted-foreground">
+                          رمز PIN: <strong className="font-mono">{st.pinCode ? "••••" : "غير محدد"}</strong>
+                        </span>
+
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditStaff(st)}
+                            className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </Button>
+                          {staffList.length > 1 && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteTargetStaffId(st.id)}
+                              className="h-7 w-7 text-muted-foreground hover:text-danger"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

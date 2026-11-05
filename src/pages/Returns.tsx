@@ -46,7 +46,7 @@ function ReturnsPage() {
   const [returnType, setReturnType] = useState<"sale" | "supplier">("sale");
   const [invoiceId, setInvoiceId] = useState("");
   const [reason, setReason] = useState("");
-  const [items, setItems] = useState<Array<{ name: string; unitPrice: number; quantity: number }>>([]);
+  const [items, setItems] = useState<Array<{ id: string; name: string; unitPrice: number; quantity: number }>>([]);
   const [newItem, setNewItem] = useState({ name: "", unitPrice: 0, quantity: 1 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,7 +73,7 @@ function ReturnsPage() {
 
   const addItem = () => {
     if (!newItem.name || newItem.quantity <= 0) return;
-    setItems([...items, newItem]);
+    setItems([...items, { ...newItem, id: (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `it-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`) }]);
     setNewItem({ name: "", unitPrice: 0, quantity: 1 });
   };
 
@@ -189,10 +189,10 @@ function ReturnsPage() {
                           exit={{ opacity: 0, scale: 0.95 }}
                           className="bg-muted/20 rounded-2xl p-5 space-y-3 ring-1 ring-inset ring-[var(--hairline)]"
                         >
-                          {items.map((it, idx) => (
-                            <div key={idx} className="flex justify-between items-center text-sm border-b border-[var(--hairline)]/50 pb-3 last:border-0">
+                          {items.map((it) => (
+                            <div key={it.id} className="flex justify-between items-center text-sm border-b border-[var(--hairline)]/50 pb-3 last:border-0">
                               <div className="flex items-center gap-3">
-                                <button onClick={() => setItems(items.filter((_, i) => i !== idx))} className="w-10 h-10 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
+                                <button onClick={() => setItems(items.filter((x) => x.id !== it.id))} className="w-10 h-10 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
                                 <div className="text-left">
                                   <span className={cn("font-black text-numeric text-primary block", blurCls)}>{fmt(it.unitPrice * it.quantity)} <span className="text-xs">ج.م</span></span>
                                 </div>

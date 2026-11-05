@@ -1,17 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { format } from "date-fns";
+import { format, addMonths } from "date-fns";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageTransition } from "@/components/PageTransition";
 import {
-  useDB, db, fmt, useShopSettings,
+  useDB, db, fmt, customerBalance, useShopSettings, uid,
   findStockByBarcode, type StockItem, type Customer
 } from "@/lib/store";
 // (supabase import removed — sales now go through db.addInvoice / create_sale RPC)
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { usePrivacy } from "@/lib/privacy";
@@ -21,24 +30,30 @@ import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { openWhatsAppReceipt } from "@/lib/whatsapp";
 import { useHeldInvoices, type HeldInvoiceItem } from "@/lib/held-invoices";
 import { ShiftManagerDialog } from "@/components/ShiftManagerDialog";
+import { getActiveShift } from "@/lib/shifts";
 import { linkInvoiceToBranch, resolveStampBranchId } from "@/lib/branch-system";
 import { PosSplitPaymentModal, type SplitPaymentDetail } from "@/components/PosSplitPaymentModal";
 import { PosQuickRefundModal } from "@/components/PosQuickRefundModal";
-import { PosProductTile } from "@/components/pos/PosProductTile";
-import { PosCartItemRow, type PosCartItem } from "@/components/pos/PosCartItemRow";
-import { PosQuickAddCustomerDialog } from "@/components/pos/PosQuickAddCustomerDialog";
-import { PosCustomerSelectDialog } from "@/components/pos/PosCustomerSelectDialog";
-import { PosHeldInvoicesDialog } from "@/components/pos/PosHeldInvoicesDialog";
-import { PosCompletedInvoiceDialog } from "@/components/pos/PosCompletedInvoiceDialog";
 import { PosKeyboardHUD } from "@/components/PosKeyboardHUD";
 import { broadcastCustomerDisplay } from "@/lib/customer-display";
 import {
-  Trash2, Search, ScanLine, UserPlus,
-  Eye, EyeOff, X, PauseCircle,
-  Package, Zap,
-  User, Receipt, Layers, ShoppingCart,
-  Clock, ShieldAlert, Tv, Undo2
+  Plus, Minus, Trash2, Search, ScanLine, Printer, UserPlus,
+  ArrowRight, Eye, EyeOff, Check, X, PauseCircle,
+  PlayCircle, MessageCircle, AlertTriangle, Package, Zap,
+  Calculator, User, Receipt, Layers, RefreshCw, ShoppingCart,
+  Clock, ShieldAlert, Percent, Tag, Tv, Undo2, HeartHandshake
 } from "lucide-react";
+
+interface PosCartItem {
+  id: string;
+  stockId?: string;
+  name: string;
+  cost: number;
+  price: number;
+  quantity: number;
+  maxStock?: number;
+  barcode?: string;
+}
 
 export default function PosPageWrapper() {
   return (
@@ -146,57 +161,6 @@ function PosPage() {
   const change = Math.max(0, receivedNum - total);
 
   // Add Product to Cart
-  const handleQuickAddCustomer = async () => {
-    if (!newCustName.trim()) return toast.error("يرجى إدخال اسم العميل");
-    try {
-      const created = await db.addCustomer({
-        name: newCustName.trim(),
-        phone: newCustPhone.trim(),
-        address: newCustAddress.trim(),
-        customerType: "cash",
-      });
-      if (created?.id) setCustomerId(created.id);
-      toast.success(`تم تسجيل واختيار العميل: ${newCustName}`);
-      setQuickCustOpen(false);
-      setNewCustName("");
-      setNewCustPhone("");
-      setNewCustAddress("");
-    } catch (e: any) {
-      toast.error(e?.message || "تعذر إضافة العميل");
-    }
-  };
-
-  const handleCompletedWhatsApp = () => {
-    if (!completedInvoice) return;
-    openWhatsAppReceipt({
-      shopName: shop.shopName || "سِجلّي",
-      shopPhone: shop.phone,
-      invoiceCode: completedInvoice.code,
-      customerName: completedInvoice.customerName,
-      customerPhone: completedInvoice.customerPhone,
-      invoiceDate: completedInvoice.date,
-      isCash: true,
-      total: completedInvoice.total,
-      downPayment: completedInvoice.total,
-      remaining: 0,
-      items: completedInvoice.items.map((i: any) => ({
-        name: i.name,
-        quantity: i.quantity,
-        price: i.price,
-      })),
-    });
-  };
-
-  const handleCompletedPrint = () => {
-    if (!completedInvoice) return;
-    handlePrint(
-      completedInvoice.code,
-      completedInvoice.items,
-      completedInvoice.total,
-      completedInvoice.paid,
-      completedInvoice.customerName
-    );
-  };
   const addToCart = (product: StockItem) => {
     if (product.quantity <= 0) {
       toast.error(`المنتج "${product.name}" نفد من المخزون!`);
@@ -841,15 +805,78 @@ function PosPage() {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
-                {filteredProducts.map((p) => (
-                  <PosProductTile
-                    key={p.id}
-                    product={p}
-                    inCartQuantity={cart.find((it) => it.stockId === p.id)?.quantity}
-                    privacy={privacy}
-                    onAdd={addToCart}
-                  />
-                ))}
+                {filteredProducts.map((p) => {
+                  const inCartItem = cart.find((it) => it.stockId === p.id);
+                  const isOutOfStock = p.quantity <= 0;
+                  const isLowStock = !isOutOfStock && p.quantity <= (p.minStock || 3);
+
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      disabled={isOutOfStock}
+                      onClick={() => addToCart(p)}
+                      className={cn(
+                        "relative flex flex-col justify-between text-right p-3 rounded-2xl border transition-[border-color,box-shadow,background-color,transform] duration-150 group",
+                        isOutOfStock
+                          ? "bg-muted/30 border-border/30 opacity-50 cursor-not-allowed"
+                          : inCartItem
+                            ? "bg-primary/[0.04] border-primary/40 ring-2 ring-primary/20 shadow-sm"
+                            : "bg-card border-border/50 hover:border-primary/50 hover:shadow-md hover:-translate-y-0.5"
+                      )}
+                    >
+                      {/* In-Cart Badge */}
+                      {inCartItem && (
+                        <span className="absolute top-2 left-2 grid h-6 min-w-[24px] place-items-center rounded-full bg-primary text-primary-foreground font-black text-xs px-1 shadow">
+                          {inCartItem.quantity}
+                        </span>
+                      )}
+
+                      {/* Top Info: Name & Barcode */}
+                      <div>
+                        <div className="font-bold text-xs sm:text-sm text-foreground line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                          {p.name}
+                        </div>
+                        {p.size && (
+                          <span className="inline-block mt-0.5 text-[11px] font-semibold text-muted-foreground bg-foreground/5 px-1.5 py-0.2 rounded">
+                            مقاس: {p.size}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Bottom Info: Price & Stock Status */}
+                      <div className="mt-3 pt-2 border-t border-border/30 flex items-end justify-between gap-1">
+                        <div>
+                          <div className="font-black text-sm sm:text-base font-mono text-primary">
+                            {fmt(p.salePrice || 0)} <span className="text-[11px] font-normal text-muted-foreground">ج.م</span>
+                          </div>
+                          {!privacy && p.lastUnitCost > 0 && (
+                            <div className="text-[11px] text-muted-foreground font-mono">
+                              ت: {fmt(p.lastUnitCost)} ج.م
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Live Stock Indicators */}
+                        <div className="text-left shrink-0">
+                          {isOutOfStock ? (
+                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-danger bg-danger/10 px-1.5 py-0.5 rounded-md">
+                              نفد
+                            </span>
+                          ) : isLowStock ? (
+                              <span className="inline-flex items-center gap-0.5 text-[11px] font-bold text-warning bg-warning/15 px-1.5 py-0.5 rounded-md">
+                              باقي {p.quantity}
+                            </span>
+                          ) : (
+                              <span className="text-[11px] text-muted-foreground font-medium">
+                              المخزن: <b className="text-foreground">{p.quantity}</b>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -907,16 +934,74 @@ function PosPage() {
                 </p>
               </div>
             ) : (
-              cart.map((item) => (
-                <PosCartItemRow
-                  key={item.id}
-                  item={item}
-                  onIncrease={() => updateQuantity(item.id, 1)}
-                  onDecrease={() => updateQuantity(item.id, -1)}
-                  onSetQty={(qty) => setItemQty(item.id, qty)}
-                  onRemove={() => removeFromCart(item.id)}
-                />
-              ))
+              cart.map((item) => {
+                const itemTotal = item.price * item.quantity;
+                const isShortage = item.maxStock !== undefined && item.quantity > item.maxStock;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "p-2.5 rounded-xl border bg-background space-y-1.5 transition-colors",
+                      isShortage ? "border-danger/60 bg-danger/[0.02]" : "border-border/40"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-bold text-xs text-foreground truncate">{item.name}</div>
+                        <div className="text-[11px] text-muted-foreground font-mono">
+                          {fmt(item.price)} ج.م للقطعة
+                        </div>
+                      </div>
+                      <div className="font-black text-xs font-mono text-primary shrink-0">
+                        {fmt(itemTotal)} ج.م
+                      </div>
+                    </div>
+
+                    {isShortage && (
+                      <div className="text-[11px] text-danger font-bold flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3 shrink-0" />
+                        الكمية المطلوبة تتجاوز المخزون ({item.maxStock} متاح)
+                      </div>
+                    )}
+
+                    {/* Quantity & Delete Controls */}
+                    <div className="flex items-center justify-between pt-1 border-t border-border/20">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, -1)}
+                          className="h-10 w-10 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          value={item.quantity}
+                          onChange={(e) => setItemQty(item.id, e.target.value)}
+                          className="h-10 w-14 text-center rounded-lg border border-border/50 text-xs font-black font-mono bg-background"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.id, 1)}
+                          className="h-10 w-10 rounded-lg bg-foreground/[0.06] text-foreground hover:bg-foreground/10 grid place-items-center transition-colors"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                        className="text-muted-foreground hover:text-danger h-10 w-10 grid place-items-center rounded-lg transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 
@@ -1123,41 +1208,228 @@ function PosPage() {
       />
 
       {/* Quick Add Customer Dialog */}
-      <PosQuickAddCustomerDialog
-        open={quickCustOpen}
-        onOpenChange={setQuickCustOpen}
-        name={newCustName}
-        onNameChange={setNewCustName}
-        phone={newCustPhone}
-        onPhoneChange={setNewCustPhone}
-        address={newCustAddress}
-        onAddressChange={setNewCustAddress}
-        onSubmit={handleQuickAddCustomer}
-      />
+      <Dialog open={quickCustOpen} onOpenChange={setQuickCustOpen}>
+        <DialogContent className="max-w-md rounded-3xl text-right" dir="rtl">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              تسجيل عميل جديد سريع
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              أدخل بيانات العميل ليتم اختياره فورياً للفاتورة الحالية.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">اسم العميل *</Label>
+              <Input
+                value={newCustName}
+                onChange={(e) => setNewCustName(e.target.value)}
+                placeholder="مثال: محمد أحمد"
+                className="h-10 rounded-xl"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">رقم الهاتف</Label>
+              <Input
+                value={newCustPhone}
+                onChange={(e) => setNewCustPhone(e.target.value)}
+                placeholder="010XXXXXXXX"
+                dir="ltr"
+                className="h-10 rounded-xl font-mono text-right"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">العنوان أو المنطقة</Label>
+              <Input
+                value={newCustAddress}
+                onChange={(e) => setNewCustAddress(e.target.value)}
+                placeholder="مثال: وسط البلد"
+                className="h-10 rounded-xl"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setQuickCustOpen(false)}
+              className="rounded-xl text-xs"
+            >
+              إلغاء
+            </Button>
+            <Button
+              type="button"
+              onClick={async () => {
+                if (!newCustName.trim()) return toast.error("يرجى إدخال اسم العميل");
+                try {
+                  const created = await db.addCustomer({
+                    name: newCustName.trim(),
+                    phone: newCustPhone.trim(),
+                    address: newCustAddress.trim(),
+                    customerType: "cash",
+                  });
+                  if (created?.id) {
+                    setCustomerId(created.id);
+                  }
+                  toast.success(`تم تسجيل واختيار العميل: ${newCustName}`);
+                  setQuickCustOpen(false);
+                  setNewCustName("");
+                  setNewCustPhone("");
+                  setNewCustAddress("");
+                } catch (e: any) {
+                  toast.error(e?.message || "تعذر إضافة العميل");
+                }
+              }}
+              className="rounded-xl text-xs font-bold bg-primary text-primary-foreground"
+            >
+              حفظ واختيار العميل
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Customer Selection Modal */}
-      <PosCustomerSelectDialog
-        open={custSelectOpen}
-        onOpenChange={setCustSelectOpen}
-        customers={data.customers}
-        search={customerSearch}
-        onSearchChange={setCustomerSearch}
-        onSelect={(id) => {
-          setCustomerId(id);
-          setCustSelectOpen(false);
-        }}
-      />
+      <Dialog open={custSelectOpen} onOpenChange={setCustSelectOpen}>
+        <DialogContent className="max-w-md rounded-3xl text-right" dir="rtl">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              اختيار العميل
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <Input
+              value={customerSearch}
+              onChange={(e) => setCustomerSearch(e.target.value)}
+              placeholder="ابحث بالاسم أو رقم الهاتف..."
+              className="h-10 rounded-xl text-xs"
+            />
+            <div className="max-h-60 overflow-y-auto space-y-1 custom-scrollbar">
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerId("");
+                  setCustSelectOpen(false);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-foreground/5 text-right font-bold text-xs"
+              >
+                <span>عميل نقدي سريع (افتراضي)</span>
+                <Badge variant="secondary" className="text-[11px]">كاش</Badge>
+              </button>
+              {data.customers
+                .filter(
+                  (c) =>
+                    !customerSearch.trim() ||
+                    c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                    c.phone?.includes(customerSearch)
+                )
+                .map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setCustomerId(c.id);
+                      setCustSelectOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-2.5 rounded-xl hover:bg-foreground/5 text-right transition-colors"
+                  >
+                    <div>
+                      <div className="font-bold text-xs text-foreground">{c.name}</div>
+                      {c.phone && <div className="text-[11px] text-muted-foreground font-mono" dir="ltr">{c.phone}</div>}
+                    </div>
+                    <CustomerTypeBadge type={c.customerType} />
+                  </button>
+                ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Held Invoices Modal */}
-      <PosHeldInvoicesDialog
-        open={heldModalOpen}
-        onOpenChange={setHeldModalOpen}
-        heldList={heldList}
-        heldCount={heldCount}
-        onRestore={handleRestoreHeld}
-        onRemove={removeHeld}
-        onClearAll={clearAll}
-      />
+      <Dialog open={heldModalOpen} onOpenChange={setHeldModalOpen}>
+        <DialogContent className="max-w-lg rounded-3xl text-right" dir="rtl">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <PauseCircle className="h-5 w-5 text-warning" />
+              الفواتير المعلقة ({heldCount})
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              قائمة بسلات المشتريات المعلقة مؤقتاً. يمكنك استرجاع أي سلة لإكمال البيع.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-72 overflow-y-auto space-y-2 py-2 custom-scrollbar">
+            {heldList.length === 0 ? (
+              <div className="p-8 text-center text-xs text-muted-foreground space-y-1">
+                <PauseCircle className="h-8 w-8 text-muted-foreground/30 mx-auto" />
+                <p>لا توجد أي فواتير معلقة حالياً.</p>
+              </div>
+            ) : (
+              heldList.map((held) => (
+                <div
+                  key={held.id}
+                  className="p-3 rounded-2xl border border-border/50 bg-background flex items-center justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <div className="font-bold text-xs text-foreground flex items-center gap-2">
+                      <span>{held.customerName || "عميل نقدي"}</span>
+                      <span className="text-[11px] text-muted-foreground font-mono">
+                        {format(new Date(held.createdAt), "HH:mm - dd/MM")}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5">
+                      {held.items.length} أصناف • إجمالي: <b className="text-primary font-mono">{fmt(held.total)} ج.م</b>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => handleRestoreHeld(held)}
+                      className="rounded-xl font-bold h-10 text-xs bg-primary text-primary-foreground gap-1.5 px-3"
+                    >
+                      <PlayCircle className="h-3.5 w-3.5" />
+                      <span>استرجاع</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeHeld(held.id)}
+                      className="h-10 w-10 rounded-xl text-muted-foreground hover:text-danger"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {heldList.length > 0 && (
+            <DialogFooter className="justify-between sm:justify-between">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={clearAll}
+                className="text-xs text-danger hover:bg-danger/10"
+              >
+                مسح كل المعلق
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setHeldModalOpen(false)}
+                className="rounded-xl text-xs"
+              >
+                إغلاق
+              </Button>
+            </DialogFooter>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Shift Manager Dialog (Z-Report) */}
       <ShiftManagerDialog
@@ -1166,13 +1438,85 @@ function PosPage() {
       />
 
       {/* Invoice Completed Modal (Print + WhatsApp) */}
-      <PosCompletedInvoiceDialog
-        open={!!completedInvoice}
-        onClose={() => setCompletedInvoice(null)}
-        completedInvoice={completedInvoice}
-        onWhatsApp={handleCompletedWhatsApp}
-        onPrint={handleCompletedPrint}
-      />
+      <Dialog open={!!completedInvoice} onOpenChange={(open) => !open && setCompletedInvoice(null)}>
+        <DialogContent className="max-w-md rounded-3xl text-right" dir="rtl">
+          <DialogHeader className="text-right">
+            <DialogTitle className="text-lg font-bold flex items-center gap-2 text-success">
+              <Check className="h-6 w-6 rounded-full bg-success/15 p-1 text-success" />
+              تم حفظ فاتورة البيع {completedInvoice?.code} بنجاح!
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              المبلغ المسدد نقداً: <b className="text-foreground font-mono">{fmt(completedInvoice?.total || 0)} ج.م</b>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-3 space-y-2">
+            <div className="py-1 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">العميل:</span>
+                <span className="font-bold text-foreground">{completedInvoice?.customerName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">عدد الأصناف:</span>
+                <span className="font-bold font-mono">{completedInvoice?.items.length}</span>
+              </div>
+              <div className="flex justify-between font-bold text-primary pt-1 border-t border-border/30">
+                <span>الإجمالي المدفوع:</span>
+                <span className="font-mono">{fmt(completedInvoice?.total || 0)} ج.م</span>
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {/* WhatsApp Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                if (!completedInvoice) return;
+                openWhatsAppReceipt({
+                  shopName: shop.shopName || "سِجلّي",
+                  shopPhone: shop.phone,
+                  invoiceCode: completedInvoice.code,
+                  customerName: completedInvoice.customerName,
+                  customerPhone: completedInvoice.customerPhone,
+                  invoiceDate: completedInvoice.date,
+                  isCash: true,
+                  total: completedInvoice.total,
+                  downPayment: completedInvoice.total,
+                  remaining: 0,
+                  items: completedInvoice.items.map((i) => ({
+                    name: i.name,
+                    quantity: i.quantity,
+                    price: i.price,
+                  })),
+                });
+              }}
+              className="rounded-xl border-success/40 text-success hover:bg-success/10 font-bold text-xs gap-1.5 flex-1"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>إرسال واتساب</span>
+            </Button>
+
+            {/* Print Button */}
+            <Button
+              type="button"
+              onClick={() => {
+                if (!completedInvoice) return;
+                handlePrint(
+                  completedInvoice.code,
+                  completedInvoice.items,
+                  completedInvoice.total,
+                  completedInvoice.paid,
+                  completedInvoice.customerName
+                );
+              }}
+              className="rounded-xl font-bold text-xs gap-1.5 flex-1 bg-primary text-primary-foreground"
+            >
+              <Printer className="h-4 w-4" />
+              <span>طباعة الإيصال</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Split Payment Modal (F6) */}
       <PosSplitPaymentModal

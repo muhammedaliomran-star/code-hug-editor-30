@@ -191,7 +191,7 @@ export function NewPurchasePage() {
             s.name.trim().toLowerCase() === trimmedName.toLowerCase()
           );
           if (matchedStock) {
-            const patch: Parameters<typeof db.updateStockItem>[1] = {};
+            const patch: any = {};
             if (salePriceNum > 0) patch.salePrice = salePriceNum;
             if (barcodeVal) patch.barcode = barcodeVal;
             try {

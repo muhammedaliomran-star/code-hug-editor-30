@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
   Outlet,
@@ -7,7 +8,6 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import type { QueryClient } from "@tanstack/react-query";
 import { AnimatePresence } from "framer-motion";
 
 import appCss from "../styles.css?url";
@@ -185,6 +185,7 @@ function FabIfAuthed() {
 }
 
 function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
   const hydrated = useHydrated();
   useSyncFromCloud();
 
@@ -204,22 +205,24 @@ function RootComponent() {
       .catch(() => false);
   }, []);
   return (
-    <TooltipProvider>
-      <ArabicNumerals />
-      <Toaster />
-      <Sonner richColors position="top-center" dir="rtl" />
-      <PrivacyProvider>
-        <AmbientBackground />
-        {hydrated ? (
-          <AnimatePresence mode="wait">
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <ArabicNumerals />
+        <Toaster />
+        <Sonner richColors position="top-center" dir="rtl" />
+        <PrivacyProvider>
+          <AmbientBackground />
+          {hydrated ? (
+            <AnimatePresence mode="wait">
+              <Outlet />
+            </AnimatePresence>
+          ) : (
             <Outlet />
-          </AnimatePresence>
-        ) : (
-          <Outlet />
-        )}
-        <FabIfAuthed />
-      </PrivacyProvider>
-    </TooltipProvider>
+          )}
+          <FabIfAuthed />
+        </PrivacyProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
   );
 }
 

@@ -54,7 +54,7 @@ export function LedgerTab() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto justify-end">
-          <Select value={dateRangeFilter} onValueChange={(v: string) => setDateRangeFilter(v)}>
+          <Select value={dateRangeFilter} onValueChange={(v: any) => setDateRangeFilter(v)}>
             <SelectTrigger className="h-9 w-32 rounded-xl text-xs font-semibold">
               <Calendar className="h-3.5 w-3.5 ml-1 opacity-60" />
               <SelectValue />
@@ -67,7 +67,7 @@ export function LedgerTab() {
             </SelectContent>
           </Select>
 
-          <Select value={typeFilter} onValueChange={(v: string) => setTypeFilter(v)}>
+          <Select value={typeFilter} onValueChange={(v: any) => setTypeFilter(v)}>
             <SelectTrigger className="h-9 w-32 rounded-xl text-xs font-semibold">
               <Filter className="h-3.5 w-3.5 ml-1 opacity-60" />
               <SelectValue />

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
+import { StockProductPicker } from "@/components/invoices";
 import type { ProductRow } from "@/types";
 
 import {
@@ -13,6 +14,8 @@ import {
   customerBalance,
   useShopSettings,
   uid,
+  type ProductVariant,
+  type SplitPaymentDetail,
 } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { linkInvoiceToBranch, resolveStampBranchId } from "@/lib/branch-system";
@@ -20,7 +23,19 @@ import { linkInvoiceToBranch, resolveStampBranchId } from "@/lib/branch-system";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { findStockByBarcode } from "@/lib/store";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivacy } from "@/lib/privacy";
@@ -29,27 +44,32 @@ import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { cn } from "@/lib/utils";
 import {
   Plus,
+  AlertTriangle,
+  ShieldAlert,
+  Trash2,
+  CalendarIcon,
+  Package,
   ScanLine,
   Receipt,
+  Banknote,
   ArrowRight,
   Eye,
   EyeOff,
+  Truck,
+  Undo2,
+  Lightbulb,
+  CreditCard,
+  Smartphone,
   PauseCircle,
+  PlayCircle,
+  ShieldCheck,
+  Printer,
+  Layers,
+  Search,
 } from "lucide-react";
-import { useParkedBills, playScanSound, playCashSound, type ParkedBill } from "@/lib/pos";
+import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
-import { InvoiceSummarySidebar } from "@/components/invoices/InvoiceSummarySidebar";
-import { InvoiceMobileActionBar } from "@/components/invoices/InvoiceMobileActionBar";
-import { InvoiceProductRow } from "@/components/invoices/InvoiceProductRow";
-import { CashierShortcutsBar } from "@/components/invoices/CashierShortcutsBar";
-import { InvoiceStepsBar } from "@/components/invoices/InvoiceStepsBar";
-import { InvoiceCustomerStep } from "@/components/invoices/InvoiceCustomerStep";
-import { InvoiceDiscountTaxCard } from "@/components/invoices/InvoiceDiscountTaxCard";
-import { InvoiceShippingStep } from "@/components/invoices/InvoiceShippingStep";
-import { CashPaymentPanel } from "@/components/invoices/CashPaymentPanel";
-import { InstallmentsPaymentPanel } from "@/components/invoices/InstallmentsPaymentPanel";
-import { InvoiceProfitCard } from "@/components/invoices/InvoiceProfitCard";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
 import { calculateLineFinancials } from "@/lib/financial-engine";
 
@@ -129,12 +149,16 @@ function NewInvoicePage() {
   const blocked = customer && (customer.frozen || customer.status === "defaulter");
 
   const totalCost = products.reduce((s, p) => s + Number(p.cost || 0) * Number(p.quantity || 1), 0);
-  const subtotal = products.reduce((s, p) => s + calculateLineFinancials({
-    price: Number(p.price || 0),
-    quantity: Number(p.quantity || 1),
-    discountPct: Number(p.discount || 0),
-    taxPct: Number(p.taxPct || 0),
-  }).lineTotal, 0);
+  const lineMetrics = (p: ProductRow) => {
+    const lf = calculateLineFinancials({
+      price: Number(p.price || 0),
+      quantity: Number(p.quantity || 1),
+      discountPct: Number(p.discount || 0),
+      taxPct: Number(p.taxPct || 0),
+    });
+    return { gross: lf.gross, discount: lf.discountAmount, tax: lf.taxAmount, total: lf.lineTotal };
+  };
+  const subtotal = products.reduce((s, p) => s + lineMetrics(p).total, 0);
   const discountValue = Math.min(subtotal, Math.max(0, Number(discountAmt || 0)));
   const afterDiscount = Math.max(0, subtotal - discountValue);
   const taxValue = Math.max(0, (afterDiscount * Number(taxPct || 0)) / 100);
@@ -262,32 +286,6 @@ function NewInvoicePage() {
     return { balance, limit, wouldExceed };
   }, [customer, data.invoices, remaining]);
 
-  const handleCustomerChange = (v: string) => {
-    setCustomerId(v);
-    const c = data.customers.find((x) => x.id === v);
-    if (c?.customerType === "cash") {
-      setSaleType("cash");
-      setDown("0");
-      setMonthly("");
-      setCount("");
-    } else if (c) {
-      setSaleType("installments");
-      if (!date) setDate(addMonths(new Date(), 1));
-    }
-  };
-
-  const handleSaleTypeChange = (key: "cash" | "installments") => {
-    const locked = key === "installments" && customer?.customerType === "cash";
-    if (locked) {
-      toast.error(
-        "هذا عميل فوري (نقدي) — غيّر نوع العميل لقسط أولًا لو عايز تقسيط",
-      );
-      return;
-    }
-    setSaleType(key);
-    if (key === "installments" && !date) setDate(addMonths(new Date(), 1));
-    if (key === "cash") setDown("0");
-  };
   const addProduct = () =>
     setProducts((p) => [
       ...p,
@@ -332,7 +330,7 @@ function NewInvoicePage() {
     reset();
   };
 
-  const handleResumeParkedBill = (bill: ParkedBill) => {
+  const handleResumeParkedBill = (bill: any) => {
     if (bill.customerId) setCustomerId(bill.customerId);
     if (bill.saleType) setSaleType(bill.saleType);
     if (bill.notes) setNotes(bill.notes);
@@ -615,25 +613,209 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
       />
 
       {/* شريط الاختصارات السريعة للكاشير */}
-      <CashierShortcutsBar onSelectDefaultCashCustomer={selectDefaultCashCustomer} />
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-foreground/[0.03] border border-foreground/5 text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-bold text-foreground flex items-center gap-1">
+            <Lightbulb className="w-3.5 h-3.5 text-primary" /> اختصارات الكاشير:
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 font-mono">
+            F1 عميل فوري
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 font-mono">
+            F2 تركيز الباركود
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 font-mono">
+            F4 تعليق الفاتورة
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-foreground/5 border border-foreground/10 font-mono">
+            F8 استرجاع المعلقة
+          </span>
+          <span className="px-2 py-0.5 rounded-md bg-success/20 text-success border border-success/30 font-mono font-bold">
+            F9 بيع وطباعة سريعة
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={selectDefaultCashCustomer}
+            className="text-[11px] font-bold text-primary hover:underline"
+          >
+            اختيار عميل فوري سريع
+          </button>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ===== العمود الرئيسي ===== */}
         <div className="order-2 space-y-4 text-right lg:order-1">
           {/* الخطوات */}
-          <InvoiceStepsBar step={step} productCount={products.filter((p) => p.name.trim()).length} onStepChange={setStep} />
+          <div className="plate flex items-center gap-1.5 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-1.5">
+            {[
+              { n: 1, label: "العميل والنوع" },
+              { n: 2, label: `المنتجات والباركود (${products.length})` },
+              { n: 3, label: "الشحن" },
+              { n: 4, label: "الدفع والأقساط" },
+            ].map((s) => (
+              <button
+                key={s.n}
+                type="button"
+                onClick={() => setStep(s.n)}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  step === s.n
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-foreground/[0.05]",
+                )}
+              >
+                <span
+                  className={cn(
+                    "grid h-5 w-5 shrink-0 place-items-center rounded-full text-[10px] font-black",
+                    step === s.n ? "bg-foreground text-background" : "bg-foreground/10",
+                  )}
+                >
+                  {s.n}
+                </span>
+                <span className="truncate">{s.label}</span>
+              </button>
+            ))}
+          </div>
 
-          <InvoiceCustomerStep
-            customers={data.customers}
-            customerId={customerId}
-            onCustomerChange={handleCustomerChange}
-            customer={customer}
-            customerInfo={customerInfo}
-            blocked={blocked}
-            saleType={saleType}
-            onSaleTypeChange={handleSaleTypeChange}
-            onSelectDefaultCashCustomer={selectDefaultCashCustomer}
-          />
+          {step === 1 && (
+            <div className="space-y-4">
+              {/* العميل */}
+              <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-2">
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={selectDefaultCashCustomer}
+                    className="text-xs text-primary font-bold hover:underline"
+                  >
+                    + اختيار عميل فوري سريع (F1)
+                  </button>
+                  <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    العميل
+                  </Label>
+                </div>
+                <Select
+                  value={customerId}
+                  onValueChange={(v) => {
+                    setCustomerId(v);
+                    const c = data.customers.find((x) => x.id === v);
+                    if (c?.customerType === "cash") {
+                      setSaleType("cash");
+                      setDown("0");
+                      setMonthly("");
+                      setCount("");
+                    } else if (c) {
+                      setSaleType("installments");
+                      if (!date) setDate(addMonths(new Date(), 1));
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر العميل" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {data.customers.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name} — {c.customerType === "cash" ? "فوري" : "قسط"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {customer && customerInfo && (
+                  <div className="flex flex-wrap items-center gap-2 animate-[fade-in_0.2s_ease-out]">
+                    <CustomerTypeBadge type={customer.customerType} />
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "gap-1 font-bold",
+                        customerInfo.balance > 0
+                          ? "bg-danger/10 text-danger border-danger/40"
+                          : "bg-foreground/[0.06] text-foreground ring-border",
+                      )}
+                    >
+                      مديونية حالية: {fmt(customerInfo.balance)} ج.م
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="bg-foreground/[0.06] text-muted-foreground ring-border font-bold"
+                    >
+                      سقف الائتمان:{" "}
+                      {customerInfo.limit > 0 ? `${fmt(customerInfo.limit)} ج.م` : "بدون حد"}
+                    </Badge>
+                    {customerInfo.wouldExceed && (
+                      <Badge
+                        variant="outline"
+                        className="bg-warning/15 text-warning border-warning/40 gap-1"
+                      >
+                        <ShieldAlert className="w-3 h-3" /> سيتجاوز السقف الائتماني
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {blocked && (
+                <div className="rounded-2xl border-2 border-danger/40 bg-danger/10 p-3 text-sm text-danger flex items-start gap-2 animate-[scale-in_0.2s_ease-out]">
+                  <AlertTriangle className="w-4 h-4 mt-0.5" />
+                  <div>
+                    هذا العميل {customer?.frozen ? "مجمد" : "مماطل"}. النظام لا يسمح بفتح فاتورة
+                    جديدة قبل تسوية حسابه.
+                  </div>
+                </div>
+              )}
+
+              {/* نوع الفاتورة */}
+              <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-3">
+                <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  نوع الفاتورة
+                </Label>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { key: "installments" as const, label: "أقساط", hint: "دفع على دفعات شهرية" },
+                    { key: "cash" as const, label: "فوري (نقدي)", hint: "سداد كامل الآن" },
+                  ].map((opt) => {
+                    const active = saleType === opt.key;
+                    const locked = opt.key === "installments" && customer?.customerType === "cash";
+                    return (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        disabled={locked}
+                        onClick={() => {
+                          if (locked) {
+                            toast.error(
+                              "هذا عميل فوري (نقدي) — غيّر نوع العميل لقسط أولًا لو عايز تقسيط",
+                            );
+                            return;
+                          }
+                          setSaleType(opt.key);
+                          if (opt.key === "installments" && !date)
+                            setDate(addMonths(new Date(), 1));
+                          if (opt.key === "cash") setDown("0");
+                        }}
+                        aria-pressed={active}
+                        className={cn(
+                          "relative flex flex-col items-center justify-center rounded-2xl p-4 transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                          active
+                            ? "bg-foreground text-background"
+                            : "bg-white/[0.03] text-muted-foreground hover:bg-white/[0.06]",
+                          locked && "cursor-not-allowed opacity-40 hover:bg-transparent",
+                        )}
+                      >
+                        <span className="text-lg font-black mb-1">{opt.label}</span>
+                        <span className="text-[10px] font-medium opacity-60 leading-tight">
+                          {locked ? "غير متاح لعميل فوري" : opt.hint}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {step === 2 && (
             <div className="space-y-3">
@@ -693,51 +875,364 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
 
               <div className="max-h-[52vh] space-y-2 overflow-y-auto rounded-[1.75rem] border border-border/30 p-5 custom-scrollbar">
                 <AnimatePresence initial={false}>
-                  {products.map((p, idx) => (
-                    <InvoiceProductRow
-                      key={p.id}
-                      product={p}
-                      index={idx}
-                      stockItems={data.stockItems}
-                      canRemove={products.length > 1}
-                      hideProfits={hideProfits}
-                      costBlurClass={blurCls}
-                      onUpdate={updateProduct}
-                      onRemove={removeProduct}
-                    />
-                  ))}
+                  {products.map((p, idx) => {
+                    const s = p.stockId
+                      ? data.stockItems.find((x) => x.id === p.stockId)
+                      : undefined;
+                    const qty = Number(p.quantity || 0);
+                    const metrics = lineMetrics(p);
+                    const lineTotal = metrics.total;
+                    const hasVariants = s && s.variants && s.variants.length > 0;
+
+                    return (
+                      <motion.div
+                        key={p.id}
+                        layout
+                        initial={{ opacity: 0, y: -6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.25, ease: [0.32, 0.72, 0, 1] }}
+                        className="divide-y divide-border/30 px-3 py-2.5 rounded-2xl bg-foreground/[0.015] border border-foreground/5"
+                      >
+                        <div className="grid grid-cols-1 items-end gap-2 sm:grid-cols-[minmax(0,1fr)_76px_96px_96px_32px]">
+                          <div className="min-w-0">
+                            {idx === 0 && (
+                              <Label className="mb-1 block text-[10px] text-muted-foreground">
+                                اسم المنتج
+                              </Label>
+                            )}
+                            <StockProductPicker
+                              value={p.stockId}
+                              name={p.name}
+                              stockItems={data.stockItems}
+                              onPick={(item) =>
+                                updateProduct(p.id, {
+                                  stockId: item.id,
+                                  name: item.name,
+                                  cost: String(item.lastUnitCost || 0),
+                                  price: p.price || (item.salePrice ? String(item.salePrice) : ""),
+                                })
+                              }
+                              onClear={() => updateProduct(p.id, { stockId: undefined, name: "" })}
+                            />
+                          </div>
+                          <div>
+                            {idx === 0 && (
+                              <Label className="mb-1 block text-[10px] text-muted-foreground">
+                                الكمية
+                              </Label>
+                            )}
+                            <Input
+                              type="number"
+                              min="1"
+                              value={p.quantity}
+                              onChange={(e) => updateProduct(p.id, { quantity: e.target.value })}
+                              className="h-9 bg-white/5 border-white/10 text-center font-bold"
+                            />
+                          </div>
+                          <div>
+                            {idx === 0 && (
+                              <Label className="mb-1 block text-[10px] text-muted-foreground">
+                                التكلفة
+                              </Label>
+                            )}
+                            <Input
+                              type="number"
+                              value={p.cost}
+                              onChange={(e) => updateProduct(p.id, { cost: e.target.value })}
+                              className={cn(
+                                blurCls,
+                                "h-9 bg-white/5 border-white/10 text-center font-bold",
+                              )}
+                              disabled={hideProfits}
+                            />
+                          </div>
+                          <div>
+                            {idx === 0 && (
+                              <Label className="mb-1 block text-[10px] text-muted-foreground">
+                                سعر البيع
+                              </Label>
+                            )}
+                            <Input
+                              type="number"
+                              value={p.price}
+                              onChange={(e) => updateProduct(p.id, { price: e.target.value })}
+                              className="h-9 bg-white/5 border-white/10 text-center font-bold"
+                            />
+                          </div>
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => removeProduct(p.id)}
+                              disabled={products.length === 1}
+                              className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* محدد المقاس / اللون (Variants) إذا كان المنتج يحتوي على تنوعات */}
+                        {hasVariants && (
+                          <div className="mt-2 pt-2 flex items-center gap-2">
+                            <span className="text-xs font-bold text-muted-foreground flex items-center gap-1">
+                              <Layers className="w-3.5 h-3.5 text-primary" /> المقاس / اللون:
+                            </span>
+                            <Select
+                              value={p.variantId || ""}
+                              onValueChange={(val) => {
+                                const matchedVar = s.variants?.find((v) => v.id === val);
+                                if (matchedVar) {
+                                  updateProduct(p.id, {
+                                    variantId: matchedVar.id,
+                                    name: `${s.name} (${[matchedVar.size, matchedVar.color].filter(Boolean).join(" - ")})`,
+                                    price: String(matchedVar.salePrice || s.salePrice || 0),
+                                    cost: String(matchedVar.costPrice || s.lastUnitCost || 0),
+                                  });
+                                  toast.success(`تم اختيار تنوع: ${matchedVar.size || ""} ${matchedVar.color || ""}`);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs max-w-[220px]">
+                                <SelectValue placeholder="اختر المقاس / اللون..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {s.variants?.map((v) => (
+                                  <SelectItem key={v.id} value={v.id}>
+                                    {[v.size, v.color].filter(Boolean).join(" / ")} — {v.salePrice} ج.م (متوفر: {v.quantity})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+
+                        <div className="mt-2 grid grid-cols-1 gap-2 border-t border-border/30 pt-3 sm:grid-cols-[110px_110px_minmax(0,1fr)]">
+                          <div>
+                            <Label className="mb-1 block text-[10px] text-muted-foreground">خصم البند %</Label>
+                            <Input type="number" min="0" max="100" value={p.discount || ""} onChange={(e) => updateProduct(p.id, { discount: e.target.value })} className="h-9 text-center" placeholder="0" />
+                          </div>
+                          <div>
+                            <Label className="mb-1 block text-[10px] text-muted-foreground">ضريبة البند %</Label>
+                            <Input type="number" min="0" value={p.taxPct || ""} onChange={(e) => updateProduct(p.id, { taxPct: e.target.value })} className="h-9 text-center" placeholder="0" />
+                          </div>
+                          <div>
+                            <Label className="mb-1 block text-[10px] text-muted-foreground">السيريال / IMEI (افصل بفاصلة)</Label>
+                            <Input value={p.serialNumbers || ""} onChange={(e) => updateProduct(p.id, { serialNumbers: e.target.value })} className="h-9 font-mono text-xs" dir="ltr" placeholder="3569… , 3569…" />
+                          </div>
+                        </div>
+
+                        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                          <span className="font-bold text-muted-foreground">
+                            الصافي: {fmt(lineTotal)} ج.م
+                            {(metrics.discount > 0 || metrics.tax > 0) && <span className="mr-2 font-normal">(خصم {fmt(metrics.discount)} • ضريبة {fmt(metrics.tax)})</span>}
+                          </span>
+                          {s && (
+                            <span
+                              className={cn(
+                                "flex items-center gap-1",
+                                s.quantity >= qty && qty > 0 ? "text-success" : "text-danger",
+                              )}
+                            >
+                              <Package className="h-3 w-3" /> المتوفر: {s.quantity}
+                            </span>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
 
               {/* الخصم والضريبة */}
-              <InvoiceDiscountTaxCard
-                subtotal={subtotal}
-                taxPct={taxPct}
-                onTaxPctChange={setTaxPct}
-                discountPct={discountPct}
-                onDiscountPctChange={setDiscountPct}
-                discountAmt={discountAmt}
-                onDiscountAmtChange={setDiscountAmt}
-                discountValue={discountValue}
-                taxValue={taxValue}
-                totalPrice={totalPrice}
-              />
+              <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span
+                    className={cn(
+                      "text-xs font-bold",
+                      discountValue > 0 ? "text-foreground" : "text-muted-foreground/50",
+                    )}
+                  >
+                    − {fmt(discountValue)} ج.م
+                  </span>
+                  <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    الخصم
+                  </Label>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-muted-foreground">بالنسبة %</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      max="100"
+                      placeholder="0"
+                      value={discountPct}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setDiscountPct(v);
+                        const pct = Math.min(100, Math.max(0, Number(v || 0)));
+                        setDiscountAmt(v === "" ? "" : String(Math.round((subtotal * pct) / 100)));
+                      }}
+                      className="h-11 rounded-2xl border-white/10 bg-white/[0.04] text-center"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-muted-foreground">بالمبلغ (ج.م)</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={discountAmt}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setDiscountAmt(v);
+                        const amt = Math.max(0, Number(v || 0));
+                        setDiscountPct(
+                          v === "" || subtotal <= 0 ? "" : ((amt / subtotal) * 100).toFixed(1),
+                        );
+                      }}
+                      className="h-11 rounded-2xl border-white/10 bg-white/[0.04] text-center"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {[5, 10, 15].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => {
+                        setDiscountPct(String(n));
+                        setDiscountAmt(String(Math.round((subtotal * n) / 100)));
+                      }}
+                      className="rounded-xl bg-white/[0.05] px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/80 hover:bg-foreground/[0.06] hover:text-foreground active:scale-95"
+                    >
+                      {n}%
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDiscountPct("");
+                      setDiscountAmt("");
+                    }}
+                    className="rounded-xl bg-white/[0.05] px-4 py-2 text-[10px] font-black tracking-widest text-muted-foreground/80 hover:bg-danger/10 hover:text-danger active:scale-95"
+                  >
+                    مسح
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 border-t border-white/5 pt-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] text-muted-foreground">معدل الضريبة %</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={taxPct}
+                      onChange={(e) => setTaxPct(e.target.value)}
+                      className="h-11 rounded-2xl border-white/10 bg-white/[0.04] text-center"
+                    />
+                  </div>
+                  <div className="flex flex-col justify-end gap-2 text-[11px]">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">{fmt(subtotal)} ج.م</span>
+                      <span className="text-muted-foreground">الإجمالي قبل الخصم</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold">{fmt(taxValue)} ج.م</span>
+                      <span className="text-muted-foreground">قيمة الضريبة</span>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                      <span className="text-base font-black text-foreground">
+                        {fmt(totalPrice)} ج.م
+                      </span>
+                      <span className="text-muted-foreground">الإجمالي النهائي</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
-          <InvoiceShippingStep
-            carriers={data.carriers}
-            zones={data.zones}
-            shippingCarrierId={shippingCarrierId}
-            onCarrierChange={setShippingCarrierId}
-            shippingZoneId={shippingZoneId}
-            onZoneChange={setShippingZoneId}
-            shippingAddress={shippingAddress}
-            onAddressChange={setShippingAddress}
-            trackingNumber={trackingNumber}
-            onTrackingChange={setTrackingNumber}
-            customerAddress={customer?.address}
-          />
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-6">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge className="gap-1.5 border border-border/30 bg-foreground/[0.06] px-3 py-1 text-muted-foreground">
+                    <Truck className="h-3.5 w-3.5" /> تفاصيل الشحن
+                  </Badge>
+                  <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    اختياري
+                  </Label>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-xs">شركة الشحن</Label>
+                    <Select value={shippingCarrierId} onValueChange={setShippingCarrierId}>
+                      <SelectTrigger className="h-11 rounded-2xl border-white/10 bg-white/[0.04]">
+                        <SelectValue placeholder="اختر الشركة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.carriers
+                          .filter((c: any) => c.active)
+                          .map((c: any) => (
+                            <SelectItem key={c.id} value={c.id}>
+                              {c.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">المنطقة / المحافظة</Label>
+                    <Select
+                      value={shippingZoneId}
+                      onValueChange={setShippingZoneId}
+                      disabled={!shippingCarrierId}
+                    >
+                      <SelectTrigger className="h-11 rounded-2xl border-white/10 bg-white/[0.04]">
+                        <SelectValue placeholder="اختر المنطقة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {data.zones
+                          .filter((z: any) => z.carrierId === shippingCarrierId)
+                          .map((z: any) => (
+                            <SelectItem key={z.id} value={z.id}>
+                              {z.name} ({z.deliveryCost} ج.م)
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">عنوان التوصيل</Label>
+                  <Input
+                    value={shippingAddress}
+                    onChange={(e) => setShippingAddress(e.target.value)}
+                    placeholder={customer?.address || "اكتب العنوان هنا..."}
+                    className="h-11 rounded-2xl border-white/10 bg-white/[0.04]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">رقم التتبع (إن وجد)</Label>
+                  <Input
+                    value={trackingNumber}
+                    onChange={(e) => setTrackingNumber(e.target.value)}
+                    placeholder="رقم البوليصة"
+                    className="h-11 rounded-2xl border-white/10 bg-white/[0.04]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {step === 4 && (
             <div className="space-y-4">
@@ -752,26 +1247,165 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
                       className="space-y-4"
                     >
-                      <CashPaymentPanel
-                        totalPrice={totalPrice}
-                        enableSplitPayment={enableSplitPayment}
-                        onEnableSplitPaymentChange={setEnableSplitPayment}
-                        splitCash={splitCash}
-                        onSplitCashChange={setSplitCash}
-                        splitElectronic={splitElectronic}
-                        onSplitElectronicChange={setSplitElectronic}
-                        splitMethod={splitMethod}
-                        onSplitMethodChange={(v) => setSplitMethod(v as any)}
-                        splitRef={splitRef}
-                        onSplitRefChange={setSplitRef}
-                        splitTotal={splitTotal}
-                        splitDiff={splitDiff}
-                        cashPaid={cashPaid}
-                        onCashPaidChange={setCashPaid}
-                        cashPaidNum={cashPaidNum}
-                        cashShort={cashShort}
-                        change={change}
-                      />
+                      <div className="flex items-center justify-between gap-3">
+                        <Badge className="gap-1.5 border border-border/30 bg-foreground/[0.06] px-3 py-1 text-muted-foreground">
+                          <Banknote className="h-3.5 w-3.5" /> بيع نقدي
+                        </Badge>
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          تفاصيل السداد
+                        </Label>
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-3 rounded-2xl bg-foreground/[0.06] px-4 py-3">
+                        <span className="text-[clamp(1.25rem,4vw,1.75rem)] font-extrabold leading-none tracking-tight text-foreground">
+                          {fmt(totalPrice)} ج.م
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          المطلوب دفعه الآن
+                        </span>
+                      </div>
+
+                      {/* خيار الدفع المجزأ (Split Payment) */}
+                      <div className="p-3.5 rounded-2xl bg-foreground/[0.02] border border-foreground/5 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-bold flex items-center gap-2">
+                            <CreditCard className="w-4 h-4 text-primary" />
+                            تعدد طرق الدفع (الدفع المجزأ: كاش + إلكتروني)
+                          </div>
+                          <Switch
+                            checked={enableSplitPayment}
+                            onCheckedChange={setEnableSplitPayment}
+                          />
+                        </div>
+
+                        {enableSplitPayment && (
+                          <div className="space-y-3 pt-2 border-t border-foreground/5 animate-[fade-in_0.2s_ease-out]">
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center gap-1.5">
+                                  <Banknote className="w-3.5 h-3.5 text-success" /> المبلغ النقدي (كاش)
+                                </Label>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  value={splitCash}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSplitCash(val);
+                                    const c = Number(val || 0);
+                                    if (totalPrice > c) {
+                                      setSplitElectronic(String(Math.round(totalPrice - c)));
+                                    }
+                                  }}
+                                  className="font-bold"
+                                />
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label className="text-xs flex items-center gap-1.5">
+                                  <Smartphone className="w-3.5 h-3.5 text-primary" /> المبلغ الإلكتروني
+                                </Label>
+                                <Input
+                                  type="number"
+                                  placeholder="0"
+                                  value={splitElectronic}
+                                  onChange={(e) => setSplitElectronic(e.target.value)}
+                                  className="font-bold"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid sm:grid-cols-2 gap-3">
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">طريقة التحصيل الإلكتروني</Label>
+                                <Select
+                                  value={splitMethod}
+                                  onValueChange={(v) => setSplitMethod(v as any)}
+                                >
+                                  <SelectTrigger className="h-10">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="instapay">انستاباي (InstaPay)</SelectItem>
+                                    <SelectItem value="vodafone_cash">فودافون كاش / محفظة ذكية</SelectItem>
+                                    <SelectItem value="visa">فيزا / ماستركارد (POS Card)</SelectItem>
+                                    <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                <Label className="text-xs">الرقم المرجعي / هاتف المحفظة</Label>
+                                <Input
+                                  value={splitRef}
+                                  onChange={(e) => setSplitRef(e.target.value)}
+                                  placeholder="رقم العملية أو الهاتف..."
+                                  className="h-10 text-xs"
+                                />
+                              </div>
+                            </div>
+
+                            <div className={cn(
+                              "p-2 rounded-xl text-xs font-bold flex items-center justify-between",
+                              splitDiff < 0.01 ? "bg-success/10 text-success" : "bg-warning/10 text-warning"
+                            )}>
+                              <span>مجموع الدفع: {fmt(splitTotal)} ج.م</span>
+                              <span>{splitDiff < 0.01 ? "المبلغ متطابق تماماً ✓" : `فرق: ${fmt(splitDiff)} ج.م`}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {!enableSplitPayment && (
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                            المبلغ المستلم من العميل (ج.م)
+                          </Label>
+                          <Input
+                            type="number"
+                            value={cashPaid}
+                            onChange={(e) => setCashPaid(e.target.value)}
+                            placeholder={`${totalPrice || 0}`}
+                          />
+                          <div className="flex flex-wrap gap-1.5">
+                            {[totalPrice, 50, 100, 200, 500]
+                              .filter((v, i, a) => v > 0 && a.indexOf(v) === i)
+                              .map((v, i) => (
+                                <button
+                                  key={`${v}-${i}`}
+                                  type="button"
+                                  onClick={() =>
+                                    setCashPaid(String(i === 0 ? v : Number(cashPaid || 0) + v))
+                                  }
+                                  className="rounded-full bg-foreground/[0.05] px-3 py-1 text-[11px] font-bold text-muted-foreground hover:bg-foreground/[0.08] hover:text-foreground active:scale-[0.96]"
+                                >
+                                  {i === 0 ? "المبلغ بالظبط" : `+ ${fmt(v)}`}
+                                </button>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {!enableSplitPayment && cashPaidNum > 0 && (
+                        <div
+                          className={cn(
+                            "flex items-baseline justify-between gap-3 rounded-2xl px-4 py-3",
+                            cashShort > 0 ? "bg-warning/10" : "bg-success/10",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "text-[clamp(1.1rem,3.5vw,1.5rem)] font-extrabold leading-none tracking-tight",
+                              cashShort > 0 ? "text-warning" : "text-success",
+                            )}
+                          >
+                            {fmt(cashShort > 0 ? cashShort : change)} ج.م
+                          </span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                            {cashShort > 0 ? "ناقص من المبلغ" : "الفكّة للعميل"}
+                          </span>
+                        </div>
+                      )}
                     </motion.div>
                   ) : (
                     <motion.div
@@ -782,21 +1416,125 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                       transition={{ duration: 0.35, ease: [0.32, 0.72, 0, 1] }}
                       className="space-y-4"
                     >
-                      <InstallmentsPaymentPanel
-                        totalPrice={totalPrice}
-                        down={down}
-                        onDownChange={setDown}
-                        remaining={remaining}
-                        count={count}
-                        onCountChange={setCount}
-                        monthly={monthly}
-                        onMonthlyChange={setMonthly}
-                        date={date}
-                        onDateChange={setDate}
-                        schedule={schedule}
-                        totalDue={totalDue}
-                        countNum={countNum}
-                      />
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          المقدم (ج.م)
+                        </Label>
+                        <Input
+                          type="number"
+                          value={down}
+                          onChange={(e) => setDown(e.target.value)}
+                        />
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {[
+                            { pct: 0, label: "بدون مقدم" },
+                            { pct: 10, label: "10%" },
+                            { pct: 25, label: "25%" },
+                            { pct: 50, label: "50%" },
+                          ].map((btn) => (
+                            <button
+                              key={btn.pct}
+                              type="button"
+                              onClick={() =>
+                                setDown(String(Math.round((totalPrice * btn.pct) / 100)))
+                              }
+                              className="rounded-xl bg-white/[0.05] px-4 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/80 hover:bg-foreground/[0.08] hover:text-foreground active:scale-95"
+                            >
+                              {btn.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-baseline justify-between gap-3 rounded-2xl bg-foreground/[0.06] px-4 py-3">
+                        <span className="text-[clamp(1.25rem,4vw,1.75rem)] font-extrabold leading-none tracking-tight text-foreground">
+                          {fmt(remaining)} ج.م
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                          المتبقي للتقسيط
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div>
+                          <Label className="text-xs">عدد الأقساط</Label>
+                          <Input
+                            type="number"
+                            value={count}
+                            onChange={(e) => setCount(e.target.value)}
+                            placeholder="مثال: 6"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">القسط الشهري (ج.م)</Label>
+                          <Input
+                            type="number"
+                            value={monthly}
+                            onChange={(e) => setMonthly(e.target.value)}
+                            className={cn(countNum > 0 && "border-border/30")}
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">تاريخ أول قسط</Label>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className={cn(
+                                  "w-full justify-between font-normal text-right",
+                                  !date && "text-muted-foreground",
+                                )}
+                              >
+                                {date ? (
+                                  <span dir="ltr">{format(date, "dd/MM/yyyy")}</span>
+                                ) : (
+                                  <span>DD/MM/YYYY</span>
+                                )}
+                                <CalendarIcon className="h-4 w-4 opacity-60" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={setDate}
+                                initialFocus
+                                className={cn("p-3 pointer-events-auto")}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      </div>
+
+                      {schedule.length > 0 && (
+                        <div className="space-y-2 rounded-2xl border border-border/30 p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-bold text-muted-foreground">
+                              إجمالي المستحق:{" "}
+                              <span className="text-foreground">{fmt(totalDue)} ج.م</span>
+                            </span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                              معاينة جدول الأقساط
+                            </span>
+                          </div>
+                          <div className="max-h-52 space-y-1 overflow-y-auto pl-1 custom-scrollbar">
+                            {schedule.map((row) => (
+                              <div
+                                key={row.n}
+                                className="flex items-center justify-between rounded-xl bg-background/60 px-3 py-1.5 text-xs"
+                              >
+                                <span className="font-extrabold text-foreground">
+                                  {fmt(row.amount)} ج.م
+                                </span>
+                                <span className="text-muted-foreground">
+                                  قسط {row.n} —{" "}
+                                  <span dir="ltr">{format(row.due, "dd/MM/yyyy")}</span>
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -817,14 +1555,71 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
               </div>
 
               {/* تتبع الربح (مخفي في وضع أمان الكاشير أو الخصوصية) */}
-              <InvoiceProfitCard
-                hideProfits={hideProfits}
-                blurCls={blurCls}
-                totalCost={totalCost}
-                totalPrice={totalPrice}
-                profit={profit}
-                profitPct={profitPct}
-              />
+              {!hideProfits && (
+                <div className="rounded-[2rem] border border-border/30 p-5 space-y-4 animate-[fade-in_0.2s_ease-out]">
+                  <div className="grid grid-cols-2 gap-y-6 gap-x-4 divide-y divide-border/30">
+                    <div className="space-y-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                        إجمالي التكلفة
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span className={cn("text-xl font-bold tracking-tight", blurCls)}>
+                          {fmt(totalCost)}
+                        </span>
+                        <span className="text-[10px] font-bold text-muted-foreground/40">ج.م</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                        إجمالي سعر البيع
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-bold tracking-tight">{fmt(totalPrice)}</span>
+                        <span className="text-[10px] font-bold text-muted-foreground/40">ج.م</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1 pt-4 border-t border-border/30">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                        صافي الربح
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span
+                          className={cn(
+                            "text-3xl font-black tracking-tighter",
+                            blurCls,
+                            profit > 0
+                              ? "text-success"
+                              : profit < 0
+                                ? "text-danger"
+                                : "text-muted-foreground",
+                          )}
+                        >
+                          {fmt(profit)}
+                        </span>
+                        <span className="text-xs font-bold text-muted-foreground/40">ج.م</span>
+                      </div>
+                    </div>
+                    <div className="space-y-1 pt-4 border-t border-border/30">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60">
+                        نسبة الربح
+                      </span>
+                      <span
+                        className={cn(
+                          "block text-3xl font-black tracking-tighter",
+                          blurCls,
+                          profit > 0
+                            ? "text-success"
+                            : profit < 0
+                              ? "text-danger"
+                              : "text-muted-foreground",
+                        )}
+                      >
+                        {profitPct.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -852,35 +1647,139 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         </div>
 
         {/* ===== العمود الجانبي ===== */}
-        <aside className="order-1 lg:order-2 lg:sticky lg:top-24 lg:self-start lg:w-[380px] lg:shrink-0">
-          <InvoiceSummarySidebar
-            itemCount={products.filter((p) => p.name.trim()).length}
-            subtotal={subtotal}
-            discountValue={discountValue}
-            taxPct={taxPct}
-            taxValue={taxValue}
-            totalPrice={totalPrice}
-            downNum={downNum}
-            remaining={remaining}
-            isCashMode={isCashMode}
-            blockReason={blockReason}
-            parkedCount={parkedBills.length}
-            onInstantPrint={() => submit(true, true)}
-            onSave={() => submit(false, false)}
-            onPark={handleParkCurrentBill}
-            onOpenParked={() => setParkedModalOpen(true)}
-          />
+        <aside className="order-1 space-y-4 lg:order-2 lg:sticky lg:top-24 lg:self-start">
+          {/* ملخص الفاتورة */}
+          <div className="rounded-[2rem] border border-border/30 p-5 space-y-4 text-right">
+            <div className="flex items-center justify-between">
+              <span
+                className={cn(
+                  "rounded-full border px-3 py-1 text-[10px] font-bold",
+                  blockReason
+                    ? "border-warning/40 bg-warning/10 text-warning"
+                    : "border border-border/30 bg-foreground/[0.06] text-foreground",
+                )}
+              >
+                {blockReason ? "غير مكتملة" : "جاهزة للحفظ"}
+              </span>
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                ملخص الفاتورة
+              </span>
+            </div>
+
+            <div className="space-y-2 text-sm">
+              <Row
+                label="عدد الأصناف"
+                value={String(products.filter((p) => p.name.trim()).length)}
+              />
+              <Row label="الإجمالي قبل الخصم" value={`${fmt(subtotal)} ج.م`} />
+              {discountValue > 0 && <Row label="الخصم" value={`− ${fmt(discountValue)} ج.م`} />}
+              {taxValue > 0 && (
+                <Row label={`الضريبة (${Number(taxPct || 0)}%)`} value={`${fmt(taxValue)} ج.م`} />
+              )}
+              <Row label="إجمالي الفاتورة" value={`${fmt(totalPrice)} ج.م`} />
+              <Row
+                label={isCashMode ? "المدفوع الآن" : "المقدم"}
+                value={`${fmt(isCashMode ? totalPrice : downNum)} ج.م`}
+              />
+              {!isCashMode && <Row label="المتبقي للتقسيط" value={`${fmt(remaining)} ج.م`} />}
+            </div>
+
+            <div className="rounded-2xl bg-foreground/[0.06] px-4 py-4">
+              <span className="mb-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                {isCashMode ? "المطلوب سداده" : "المقدم الآن"}
+              </span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-black leading-none tracking-tighter text-foreground">
+                  {fmt(isCashMode ? totalPrice : downNum)}
+                </span>
+                <span className="text-xs font-bold text-foreground">ج.م</span>
+              </div>
+            </div>
+          </div>
+
+          {/* الإجراءات السريعة */}
+          <div className="rounded-[2rem] border border-border/30 p-5 space-y-3 text-right">
+            <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              الإجراءات
+            </span>
+            {blockReason && <div className="text-[11px] font-bold text-warning">{blockReason}</div>}
+
+            {/* زر بيع نقدي وطباعة إيصال فوري F9 */}
+            <Button
+              type="button"
+              onClick={() => submit(true, true)}
+              disabled={!!blockReason}
+              className="h-14 w-full rounded-2xl bg-success text-success-foreground hover:bg-success/90 font-black text-base flex items-center justify-center gap-2 shadow-lg shadow-success/20 transition-all active:scale-[0.98]"
+            >
+              <Printer className="w-5 h-5" />
+              <span>دفع فوري وطباعة إيصال (F9)</span>
+            </Button>
+
+            <Button
+              onClick={() => submit(false, false)}
+              disabled={!!blockReason}
+              className="h-12 w-full rounded-2xl bg-primary text-primary-foreground font-black text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            >
+              <Plus className="w-4 h-4" />
+              <span>حفظ الفاتورة (Ctrl+S)</span>
+            </Button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                onClick={handleParkCurrentBill}
+                className="h-11 rounded-2xl border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs font-bold"
+              >
+                <PauseCircle className="w-4 h-4 ml-1" /> تعليق (F4)
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setParkedModalOpen(true)}
+                className="h-11 rounded-2xl text-xs font-bold"
+              >
+                المعلقة ({parkedBills.length})
+              </Button>
+            </div>
+
+            <Button
+              asChild
+              variant="ghost"
+              className="h-10 w-full rounded-2xl text-xs text-muted-foreground"
+            >
+              <Link to="/invoices">إلغاء والعودة</Link>
+            </Button>
+          </div>
         </aside>
       </div>
 
       {/* شريط الإجراءات السفلي — للشاشات الصغيرة */}
-      <InvoiceMobileActionBar
-        step={step}
-        blockReason={blockReason}
-        totalPrice={totalPrice}
-        onNext={() => (step < 4 ? setStep(step + 1) : submit(false))}
-        onInstantPrint={() => submit(true, true)}
-      />
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/10 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => (step < 4 ? setStep(step + 1) : submit(false))}
+            disabled={step === 4 && !!blockReason}
+            className="h-12 flex-1 rounded-2xl font-black"
+          >
+            {step < 4 ? "التالي" : "حفظ الفاتورة"}
+          </Button>
+          <Button
+            onClick={() => submit(true, true)}
+            disabled={!!blockReason}
+            className="h-12 px-3 rounded-2xl bg-success text-success-foreground font-black"
+            title="دفع وطباعة"
+          >
+            <Printer className="w-5 h-5" />
+          </Button>
+          <div className="text-right">
+            <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              الإجمالي
+            </span>
+            <span className="text-lg font-black leading-none text-foreground">
+              {fmt(totalPrice)}
+            </span>
+          </div>
+        </div>
+      </div>
       <div className="h-20 lg:hidden" />
 
       {/* باركود مودال */}
@@ -912,5 +1811,14 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         }}
       />
     </>
+  );
+}
+
+function Row({ label, value, valueClass }: { label: string; value: string; valueClass?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-foreground/5 pb-2 last:border-0 last:pb-0">
+      <span className={cn("font-extrabold text-foreground", valueClass)}>{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+    </div>
   );
 }

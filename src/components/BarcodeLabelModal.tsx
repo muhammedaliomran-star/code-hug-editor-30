@@ -293,7 +293,7 @@ export function BarcodeLabelModal({ open, onOpenChange, product }: BarcodeLabelM
 
           <div>
             <Label className="text-xs font-semibold">نوع الورق والطابعة</Label>
-            <Select value={paperType} onValueChange={(v: string) => setPaperType(v)}>
+            <Select value={paperType} onValueChange={(v: any) => setPaperType(v)}>
               <SelectTrigger className="mt-1 rounded-xl">
                 <SelectValue />
               </SelectTrigger>

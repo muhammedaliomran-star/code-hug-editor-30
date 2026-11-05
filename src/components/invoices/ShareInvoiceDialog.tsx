@@ -1,4 +1,4 @@
-import { fmt, type Invoice, type Customer, type InvoiceItem, type ShopSettings } from "@/lib/store";
+import { fmt, type Invoice, type Customer, type InvoiceItem } from "@/lib/store";
 import { isoToDDMMYYYY } from "@/lib/date-utils";
 import { toArabicDigits } from "@/lib/arabic-digits";
 import { Button } from "@/components/ui/button";
@@ -24,7 +24,7 @@ export function ShareInvoiceDialog({
   inv: Invoice | null;
   customer: Customer | null;
   items: InvoiceItem[];
-  shopSettings: ShopSettings;
+  shopSettings: any;
   onClose: () => void;
 }) {
   if (!inv || !customer) return null;

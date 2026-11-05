@@ -9,7 +9,7 @@
  */
 
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
-import { fmt, Invoice, Expense, Payment, type ShopSettings } from "@/lib/store";
+import { fmt, Invoice, Expense, Payment } from "@/lib/store";
 
 export type AccountType = "cash" | "ewallet" | "bank" | "pos" | "petty";
 
@@ -578,7 +578,7 @@ export function printCashStatementPdf(params: {
   totalOutflow: number;
   netBalance: number;
   dateRangeLabel: string;
-  shopSettings?: ShopSettings;
+  shopSettings?: any;
 }): void {
   const cur = params.shopSettings?.currency || "ج.م";
 
