@@ -993,6 +993,7 @@ export default function Shipping() {
                     onBaseCostChange={setCarrierBaseCost}
                     onSave={() => void handleAddCarrier()}
                   />
+                </Reveal>
               </div>
             </TabsContent>
 
