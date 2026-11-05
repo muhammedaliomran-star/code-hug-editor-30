@@ -14,6 +14,18 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "vendor-charts": ["recharts"],
+            "vendor-excel": ["xlsx"],
+            "vendor-scanner": ["@zxing/browser", "@zxing/library"],
+            "vendor-motion": ["framer-motion"],
+          },
+        },
+      },
+    },
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
@@ -24,7 +36,9 @@ export default defineConfig({
           // bundle can keep serving itself while any tab stays open.
           skipWaiting: true,
           clientsClaim: true,
+          maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,woff,ttf}"],
+          globIgnores: ["**/*.map", "**/assets/*.png", "**/icon-512.png"],
           runtimeCaching: [
             {
               // Cache Google Fonts stylesheets
