@@ -236,7 +236,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="fixed inset-0 z-[-1] ambient-mesh opacity-80" />
       {/* Sidebar */}
       <aside className="sticky top-0 hidden h-screen w-[17.5rem] shrink-0 flex-col gap-8 p-4 md:flex">
-        <div className="glass flex h-full min-h-0 flex-col gap-6 overflow-hidden rounded-[1.75rem] p-5">
+        <div className="glass flex h-full min-h-0 flex-col gap-4 overflow-hidden rounded-[1.75rem] p-4">
         <div className="flex items-center gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
             <img src={logoMark} alt="" width={28} height={28} className="h-7 w-7 object-contain" />
@@ -252,34 +252,28 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BranchSwitcher className="w-full justify-between" />
         </div>
 
-        {/* Pinned Executive Launcher: Owner Companion App */}
+        {/* Pinned Executive Launcher: Owner Companion App — compact single row */}
         <Link
           to="/owner"
           className={cn(
-            "group relative flex items-center justify-between gap-3 rounded-2xl p-3 border transition-[background-color,border-color,box-shadow] duration-300",
+            "group flex items-center gap-2.5 rounded-full px-3 py-2 text-[13px] transition-[background-color,color,transform] duration-300",
             location.pathname.startsWith("/owner")
-              ? "bg-amber-500/15 border-amber-500/40 text-amber-300 shadow-sm"
-              : "bg-card/70 border-border/80 text-foreground hover:bg-card hover:border-amber-500/30"
+              ? "bg-amber-500/15 font-semibold text-amber-300"
+              : "text-foreground hover:bg-card/80"
           )}
         >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className={cn(
-              "grid h-9 w-9 shrink-0 place-items-center rounded-xl transition-colors",
-              location.pathname.startsWith("/owner")
-                ? "bg-amber-500 text-black font-bold shadow-sm"
-                : "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20"
-            )}>
-              <Crown className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 text-right">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-bold truncate">تطبيق المالك</span>
-                <span className="inline-block rounded-md bg-amber-500/20 px-1 py-0.2 text-[11px] font-extrabold text-amber-400">Boss</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground truncate">لوحة الإدارة والقرارات</p>
-            </div>
-          </div>
-          <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" title="جاهز للعمل" />
+          <span className={cn(
+            "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
+            location.pathname.startsWith("/owner")
+              ? "bg-amber-500 text-black"
+              : "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20"
+          )}>
+            <Crown className="h-3.5 w-3.5" />
+          </span>
+          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+            <span className="truncate font-bold">تطبيق المالك</span>
+            <span className="shrink-0 rounded bg-amber-500/20 px-1 text-[10px] font-extrabold text-amber-400">Boss</span>
+          </span>
         </Link>
 
         <nav className="stagger no-scrollbar -mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1">
@@ -299,7 +293,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                     type="button"
                     aria-controls={`nav-group-${g.key}`}
                     className={cn(
-                      "group relative flex w-full items-center justify-between gap-2 rounded-full px-4 py-2.5 text-sm transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                      "group relative flex w-full items-center justify-between gap-2 rounded-full px-3.5 py-2 text-sm transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
                       isGroupActive
                         ? "bg-sidebar-accent/70 font-semibold text-sidebar-foreground"
                         : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-[-3px] hover:shadow-[inset_0_0_0_1px_var(--hairline)]",
@@ -342,7 +336,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                           to={n.to}
                           aria-current={active ? "page" : undefined}
                           className={cn(
-                            "group relative flex items-center justify-between gap-2 rounded-full px-3 py-2 text-[13px] transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                            "group relative flex items-center justify-between gap-2 rounded-full px-3 py-1.5 text-[13px] transition-[transform,box-shadow,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
                             active
                               ? "bg-primary font-semibold text-primary-foreground shadow-[0_4px_12px_-6px_hsl(0_0%_0%/0.45)]"
                               : "text-sidebar-foreground/65 hover:bg-sidebar-accent/70 hover:text-sidebar-foreground hover:translate-x-[-2px] hover:shadow-[inset_0_0_0_1px_var(--hairline)]",
@@ -366,14 +360,18 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="mt-0 flex shrink-0 flex-col gap-2 border-t border-[var(--hairline)] pt-3">
-          <UserChip />
-          <div className="flex items-center justify-between gap-2 px-2 py-1.5">
-            <span className="text-xs text-muted-foreground">وضع الليل / النهار</span>
-            <ThemeToggle className="h-9 w-9" />
+        {/* Footer: single compact row — avatar + theme + logout */}
+        <div className="mt-0 flex shrink-0 items-center gap-2 border-t border-[var(--hairline)] pt-3">
+          <div className="min-w-0 flex-1">
+            <UserChip />
           </div>
-          <button onClick={signOut} className="press flex items-center justify-between gap-2 rounded-full px-4 py-2.5 text-sm text-muted-foreground transition-[background-color,color,transform] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-destructive/10 hover:text-destructive">
-            <span>تسجيل الخروج</span>
+          <ThemeToggle className="h-8 w-8 shrink-0" />
+          <button
+            onClick={signOut}
+            aria-label="تسجيل الخروج"
+            title="تسجيل الخروج"
+            className="press grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-[background-color,color] duration-300 hover:bg-destructive/10 hover:text-destructive"
+          >
             <LogOut className="h-4 w-4" />
           </button>
         </div>
