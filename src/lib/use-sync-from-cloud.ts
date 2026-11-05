@@ -61,7 +61,7 @@ export function useSyncFromCloud() {
       const summary = syncSummary(results);
       const total = Object.values(results).reduce((a, b) => a + b, 0);
       if (total > 0) {
-        console.log(`[CloudSync] ${summary}`);
+        if (import.meta.env.DEV) console.log(`[CloudSync] ${summary}`);
         await invalidateCache();
       }
     } catch (e) {

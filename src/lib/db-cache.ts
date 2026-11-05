@@ -21,16 +21,21 @@ import type {
 } from "@/types";
 
 const DB_NAME = "segilly-cache";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "app-cache";
 const CACHE_KEY = "db-state";
+// Bump this when CachedDBState shape changes; old caches are discarded.
+const CACHE_SCHEMA_VERSION = 2;
 
 let dbPromise: Promise<IDBPDatabase> | null = null;
 
 function getDB() {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion) {
+        if (oldVersion < 2 && db.objectStoreNames.contains(STORE_NAME)) {
+          db.deleteObjectStore(STORE_NAME);
+        }
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           db.createObjectStore(STORE_NAME);
         }
@@ -60,6 +65,7 @@ export interface CachedDBState {
   zones: ShippingZone[];
   shipments: Shipment[];
   savedAt: number;
+  schemaVersion?: number;
 }
 
 /**
@@ -69,7 +75,7 @@ export interface CachedDBState {
 export async function saveCacheToIDB(state: Omit<CachedDBState, "savedAt">): Promise<void> {
   try {
     const db = await getDB();
-    await db.put(STORE_NAME, { ...state, savedAt: Date.now() }, CACHE_KEY);
+    await db.put(STORE_NAME, { ...state, savedAt: Date.now(), schemaVersion: CACHE_SCHEMA_VERSION }, CACHE_KEY);
   } catch (e) {
     console.warn("[IDB] Failed to save cache:", e);
   }
@@ -84,6 +90,11 @@ export async function loadCacheFromIDB(): Promise<CachedDBState | null> {
     const db = await getDB();
     const state = await db.get(STORE_NAME, CACHE_KEY);
     if (!state) return null;
+    // Discard caches written by an older schema version.
+    if (state.schemaVersion !== CACHE_SCHEMA_VERSION) {
+      await db.delete(STORE_NAME, CACHE_KEY);
+      return null;
+    }
     // Expire cache after 7 days
     if (Date.now() - state.savedAt > 7 * 24 * 60 * 60 * 1000) {
       await db.delete(STORE_NAME, CACHE_KEY);

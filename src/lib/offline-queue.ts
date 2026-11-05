@@ -5,6 +5,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 
 export interface OfflineQueueItem {
   id: string;
@@ -34,9 +35,10 @@ const CONFLICT_TARGETS: Record<string, string> = {
   loyalty_config: "user_id",
 };
 
+
 function readQueue(): OfflineQueueItem[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = safeGetItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -44,11 +46,7 @@ function readQueue(): OfflineQueueItem[] {
 }
 
 function writeQueue(items: OfflineQueueItem[]): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
-  } catch {
-    // storage full — drop oldest
-  }
+  safeSetItem(STORAGE_KEY, JSON.stringify(items.slice(0, MAX_ITEMS)));
 }
 
 /**
