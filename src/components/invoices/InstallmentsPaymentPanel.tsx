@@ -40,6 +40,7 @@ export function InstallmentsPaymentPanel({
   countNum,
 }: InstallmentsPaymentPanelProps) {
   return (
+    <>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                           المقدم (ج.م)
@@ -159,5 +160,6 @@ export function InstallmentsPaymentPanel({
                           </div>
                         </div>
                       )}
+    </>
   );
 }

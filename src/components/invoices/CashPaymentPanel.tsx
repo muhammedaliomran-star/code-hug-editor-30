@@ -49,6 +49,7 @@ export function CashPaymentPanel({
   change,
 }: CashPaymentPanelProps) {
   return (
+    <>
                       <div className="flex items-center justify-between gap-3">
                         <Badge className="gap-1.5 border border-border/30 bg-foreground/[0.06] px-3 py-1 text-muted-foreground">
                           <Banknote className="h-3.5 w-3.5" /> بيع نقدي
@@ -208,5 +209,6 @@ export function CashPaymentPanel({
                           </span>
                         </div>
                       )}
+    </>
   );
 }
