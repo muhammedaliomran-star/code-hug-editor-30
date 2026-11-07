@@ -16,13 +16,6 @@ export default defineConfig({
   vite: {
     build: {
       rollupOptions: {
-        output: {
-          manualChunks: {
-            "vendor-excel": ["xlsx"],
-            "vendor-scanner": ["@zxing/browser", "@zxing/library"],
-            "vendor-motion": ["framer-motion"],
-          },
-        },
       },
     },
     plugins: [
