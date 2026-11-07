@@ -95,7 +95,8 @@ function DailyPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(urlSearch.statusFilter ?? "all");
   const [activeTab, setActiveTab] = useState<ActiveTab>(urlSearch.activeTab ?? "invoices");
   const PAGE_SIZE = 25;
-  const [page, setPage] = useState(1);\n  const [noteTick, setNoteTick] = useState(0);
+  const [page, setPage] = useState(1);
+  const [noteTick, setNoteTick] = useState(0);
   const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
 
   const [openExpense, setOpenExpense] = useState(false);
@@ -119,7 +120,13 @@ function DailyPage() {
     });
     setPage(1);
   }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, quickPreset, navigate]);
-  const [note, setNote] = useState("");\n  const latestNoteRef = useRef(note);\n  latestNoteRef.current = note;\n  const prevPeriodRef = useRef({ from, to, note });\n  if (prevPeriodRef.current.from === from && prevPeriodRef.current.to === to) {\n    prevPeriodRef.current.note = note;\n  }
+  const [note, setNote] = useState("");
+  const latestNoteRef = useRef(note);
+  latestNoteRef.current = note;
+  const prevPeriodRef = useRef({ from, to, note });
+  if (prevPeriodRef.current.from === from && prevPeriodRef.current.to === to) {
+    prevPeriodRef.current.note = note;
+  }
 
   useEffect(() => {
     // 1) instant from localStorage (offline / first paint)
