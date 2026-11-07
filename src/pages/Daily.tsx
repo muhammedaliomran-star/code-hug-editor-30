@@ -117,8 +117,8 @@ function DailyPage() {
       },
       replace: true,
     });
-    });
     setPage(1);
+  }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, quickPreset, navigate]);
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -149,7 +149,7 @@ function DailyPage() {
     let timer: any = null;
     (async () => {
       try {
-        const { supabase } = await import("@/lib/supabase");
+        const { supabase } = await import("@/integrations/supabase/client");
         const { data } = await supabase.auth.getUser();
         const uid = data?.user?.id;
         if (!uid) return;
@@ -1107,7 +1107,14 @@ function DailyPage() {
         </div>
       </div>
 
-      <ViewInvoiceDialog\n        inv={viewingInvoice}\n        customer={viewingInvoice ? customerById.get(viewingInvoice.customerId) ?? null : null}\n        items={invoiceItems}\n        payments={payments}\n        onClose={() => setViewingInvoice(null)}\n      />\n      <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
+      <ViewInvoiceDialog
+        inv={viewingInvoice}
+        customer={viewingInvoice ? customerById.get(viewingInvoice.customerId) ?? null : null}
+        items={invoiceItems}
+        payments={payments}
+        onClose={() => setViewingInvoice(null)}
+      />
+      <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
     </>
   );
 }
