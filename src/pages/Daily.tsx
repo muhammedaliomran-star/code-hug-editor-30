@@ -34,9 +34,8 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Plus, Eye, EyeOff, Download, Search, FileSpreadsheet, FileText, Receipt,
-  Coins, Wallet, CheckCircle2, ChevronDown, TrendingUp, Pencil, Trash2,
-  ArrowDownRight, ArrowUpRight, Clock, RotateCcw, DollarSign, Calendar,
-  CreditCard, Sparkles, Filter, Layers, ListFilter
+  Coins, Wallet, CheckCircle2, ChevronDown, Pencil, Trash2,
+  ArrowDownRight, ArrowUpRight, Clock, RotateCcw
 } from "lucide-react";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 
@@ -79,7 +78,7 @@ function escapeHtml(s: string): string {
 }
 
 function DailyPage() {
-  const { invoices, customers, expenses, payments, returns, invoiceItems } = useDB();
+  const { invoices, customers, expenses, payments, returns, invoiceItems, loading: dbLoading } = useDB();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const { privacy, toggle } = usePrivacy();
   const masked = privacy;
@@ -187,6 +186,8 @@ function DailyPage() {
           .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("expenses"), 400); })
           .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("return_records"), 400); })
           .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => { setNoteTick((n) => n + 1); }, 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("customers"), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("invoice_items"), 400); })
           .subscribe();
       } catch { /* ignore */ }
     })();
@@ -639,7 +640,6 @@ function DailyPage() {
               </ActionButton>
             </div>
 
-            {/* filters moved to dedicated filter bar below */}
           </div>
         }
       />
@@ -728,6 +728,14 @@ function DailyPage() {
         )}
       </BezelCard>
 
+
+      {dbLoading && rows.length === 0 && periodPayments.length === 0 && (
+        <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0,1,2,3].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-2xl bg-foreground/[0.06]" />
+          ))}
+        </div>
+      )}
 
       {/* مؤشرات التدفق المالي — معادلة الدرج الصافية */}
       <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">

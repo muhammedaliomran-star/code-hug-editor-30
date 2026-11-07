@@ -304,6 +304,8 @@ export async function invalidateCache(table?: string) {
     payments: { cacheKey: "payments", fetch: () => supabase.from("payments").select("*") },
     expenses: { cacheKey: "expenses", fetch: () => supabase.from("expenses").select("*").order("expense_date", { ascending: false }) },
     return_records: { cacheKey: "returns", fetch: () => supabase.from("return_records").select("*").order("created_at", { ascending: false }) },
+    customers: { cacheKey: "customers", fetch: () => supabase.from("customers").select("*").order("name") },
+    invoice_items: { cacheKey: "invoiceItems", fetch: () => supabase.from("invoice_items").select("*").order("created_at") },
   };
   const entry = table ? dailyMap[table] : undefined;
   if (!entry) {
