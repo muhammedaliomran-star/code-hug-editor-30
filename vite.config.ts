@@ -14,18 +14,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            "vendor-charts": ["recharts"],
-            "vendor-excel": ["xlsx"],
-            "vendor-scanner": ["@zxing/browser", "@zxing/library"],
-            "vendor-motion": ["framer-motion"],
-          },
-        },
-      },
-    },
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
