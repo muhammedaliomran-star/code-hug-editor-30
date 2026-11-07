@@ -6,12 +6,14 @@ export function PageHeader({
   action,
   icon,
   eyebrow,
+  badge,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   icon?: ReactNode;
   eyebrow?: string;
+  badge?: ReactNode;
 }) {
   return (
     <header className="relative mb-12 grid grid-cols-[minmax(0,1fr)] gap-6 md:mb-16 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:justify-between">
@@ -25,6 +27,7 @@ export function PageHeader({
         <h1 className="text-title flex w-full items-center justify-start gap-3 text-right text-foreground">
           <span className="min-w-0 text-balance">{title}</span>
           {icon && <span className="shrink-0 opacity-90">{icon}</span>}
+          {badge && <span className="shrink-0">{badge}</span>}
         </h1>
         {subtitle && (
           <p className="text-lede mt-3 max-w-prose text-right">{subtitle}</p>

@@ -70,13 +70,27 @@ function DashboardInner() {
       <PageHeader
         title="لوحة التحكم الرئيسية"
         subtitle="مركز القيادة والرقابة اللحظية على الخزينة، الديون، المخزون، المبيعات والشحن."
+        badge={
+          <Link
+            to="/reconciliation"
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ring-1 ring-inset ring-[var(--hairline)] transition-[background-color,box-shadow]",
+              reconciliationSummary.healthScore >= 90
+                ? "bg-success/10 text-success hover:bg-success/15"
+                : "bg-warning/10 text-warning hover:bg-warning/15",
+            )}
+          >
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>المطابقة {reconciliationSummary.healthScore}%</span>
+          </Link>
+        }
         action={
-          <div className="flex flex-col gap-2">
-            {/* الصف الأول: التطبيق المالك + فلاتر الوقت */}
+          <div className="flex flex-col gap-2.5">
+            {/* الصف الأول: وحدة واحدة — Boss + Segmented filter */}
             <div className="flex flex-wrap items-center gap-2">
               <Link
                 to="/owner"
-                className="island-btn group bg-foreground/[0.05] text-amber-300 ring-1 ring-border hover:bg-foreground/[0.09] font-bold"
+                className="island-btn group h-9 bg-foreground/[0.05] text-amber-300 ring-1 ring-border hover:bg-foreground/[0.09] font-bold"
               >
                 <span>تطبيق المالك (سِجلّي Boss)</span>
                 <span className="island-btn-icon text-amber-400">
@@ -85,6 +99,7 @@ function DashboardInner() {
               </Link>
 
               <FilterChips
+                variant="segmented"
                 options={[
                   { value: "today", label: "اليوم" },
                   { value: "7d", label: "7 أيام" },
@@ -122,8 +137,8 @@ function DashboardInner() {
               )}
             </div>
 
-            {/* الصف الثاني: التقرير + أدوات العرض (أيقونات) + المطابقة */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* الصف الثاني: شريط أدوات واحد — PDF + icon group pill */}
+            <div className="flex items-center gap-2">
               <ActionButton
                 onClick={handleExportExecutiveReport}
                 title="تصدير الموجز التنفيذي للوحة التحكم PDF"
@@ -132,38 +147,24 @@ function DashboardInner() {
                 <span className="hidden sm:inline">تقرير تنفيذي (PDF)</span>
               </ActionButton>
 
-              <ActionButton
-                tone="surface"
-                onClick={() => setCustomizationOpen(true)}
-                title="تخصيص وترتيب البطاقات"
-                aria-label="تخصيص وترتيب البطاقات"
-                className="[padding-inline-start:0.4rem]!"
-                icon={<SlidersHorizontal className="h-4 w-4" />}
-              />
-
-              <ActionButton
-                tone="surface"
-                onClick={toggle}
-                title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
-                aria-label={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
-                className="[padding-inline-start:0.4rem]!"
-                icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              />
-
-              <Link
-                to="/reconciliation"
-                className={cn(
-                  "island-btn group ring-1 ring-border transition-[background-color,box-shadow]",
-                  reconciliationSummary.healthScore >= 90
-                    ? "bg-foreground/[0.05] text-success hover:bg-foreground/[0.09]"
-                    : "bg-foreground/[0.05] text-warning hover:bg-foreground/[0.09]"
-                )}
-              >
-                <span>المطابقة {reconciliationSummary.healthScore}%</span>
-                <span className="island-btn-icon">
-                  <ShieldCheck className="h-4 w-4" />
-                </span>
-              </Link>
+              <div className="flex items-center rounded-full bg-foreground/[0.04] p-1 ring-1 ring-inset ring-[var(--hairline)]">
+                <ActionButton
+                  tone="surface"
+                  onClick={() => setCustomizationOpen(true)}
+                  title="تخصيص وترتيب البطاقات"
+                  aria-label="تخصيص وترتيب البطاقات"
+                  className="h-8 w-8 [padding-inline-start:0.4rem]!"
+                  icon={<SlidersHorizontal className="h-4 w-4" />}
+                />
+                <ActionButton
+                  tone="surface"
+                  onClick={toggle}
+                  title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                  aria-label={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                  className="h-8 w-8 [padding-inline-start:0.4rem]!"
+                  icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                />
+              </div>
             </div>
           </div>
         }
