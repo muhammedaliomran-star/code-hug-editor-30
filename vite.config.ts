@@ -14,10 +14,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    build: {
-      rollupOptions: {
-      },
-    },
     plugins: [
       VitePWA({
         registerType: "autoUpdate",
