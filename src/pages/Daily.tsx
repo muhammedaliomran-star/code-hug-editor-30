@@ -346,44 +346,42 @@ function DailyPage() {
         eyebrow="تشغيل يومي • رصد التدفقات النقدية اللحظية"
         title="اليومية"
         subtitle={`${rangeLabel} — ملخص المبيعات، التحصيلات، المصروفات، وصافي نقدية الخزينة.`}
+        actionWidth="md:max-w-[46rem] lg:max-w-[52rem]"
         action={
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <ActionButton tone="surface" icon={<Download className="h-4 w-4" />}>
-                  <span className="inline-flex items-center gap-1">
-                    تصدير <ChevronDown className="h-3.5 w-3.5 opacity-70" />
-                  </span>
-                </ActionButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="text-right">
-                <DropdownMenuItem onClick={exportCSV}>
-                  <FileSpreadsheet className="me-2 h-4 w-4" /> ملف Excel / CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={exportPDF}>
-                  <FileText className="me-2 h-4 w-4" /> تقرير PDF
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <ActionButton
-              tone="surface"
-              onClick={toggle}
-              icon={masked ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            >
-              {masked ? "إظهار الأرقام" : "إخفاء الأرقام"}
-            </ActionButton>
-            <ActionButton onClick={() => setOpenExpense(true)} icon={<Plus className="h-4 w-4" />}>
-              إضافة مصروف
-            </ActionButton>
-          </>
-        }
-      />
+          <div className="flex w-full flex-col gap-3">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <ActionButton tone="surface" icon={<Download className="h-4 w-4" />}>
+                    <span className="inline-flex items-center gap-1">
+                      تصدير <ChevronDown className="h-3.5 w-3.5 opacity-70" />
+                    </span>
+                  </ActionButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="text-right">
+                  <DropdownMenuItem onClick={exportCSV}>
+                    <FileSpreadsheet className="me-2 h-4 w-4" /> ملف Excel / CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportPDF}>
+                    <FileText className="me-2 h-4 w-4" /> تقرير PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <ActionButton
+                tone="surface"
+                onClick={toggle}
+                icon={masked ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              >
+                {masked ? "إظهار الأرقام" : "إخفاء الأرقام"}
+              </ActionButton>
+              <ActionButton onClick={() => setOpenExpense(true)} icon={<Plus className="h-4 w-4" />}>
+                إضافة مصروف
+              </ActionButton>
+            </div>
 
-      {/* شريط الفترات السريعة والفلترة */}
-      <Reveal className="sticky-search-bar mb-6">
-        <BezelCard variant="flat" innerClassName="p-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-            <FilterChips<QuickPreset>
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <FilterChips<QuickPreset>
+                variant="segmented"
                 value={quickPreset}
                 onChange={setQuickDate}
                 options={[
@@ -393,75 +391,75 @@ function DailyPage() {
                   { value: "this-month", label: "هذا الشهر" },
                 ]}
               />
+              {filtersActive && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="press rounded-full px-3 py-1 text-[11px] font-semibold text-muted-foreground ring-1 ring-inset ring-[var(--hairline)] hover:text-foreground"
+                >
+                  مسح الفلاتر
+                </button>
+              )}
+            </div>
 
-            {filtersActive && (
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="press rounded-full px-3 py-1 text-[11px] font-semibold text-muted-foreground ring-1 ring-inset ring-[var(--hairline)] hover:text-foreground"
-              >
-                مسح الفلاتر
-              </button>
-            )}
-
-           </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <label className="block text-right">
-              <MetricLabel className="mb-1.5 text-xs">من تاريخ</MetricLabel>
-              <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
-            </label>
-            <label className="block text-right">
-              <MetricLabel className="mb-1.5 text-xs">إلى تاريخ</MetricLabel>
-              <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
-            </label>
-            <label className="block text-right">
-              <MetricLabel className="mb-1.5 text-xs">بحث سريع</MetricLabel>
-              <div className="relative">
-                <Search className="pointer-events-none absolute end-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="اسم العميل أو رقم الفاتورة"
-                  className="pe-8 h-9 text-xs"
-                />
-              </div>
-            </label>
-            <label className="block text-right">
-              <Select value={customerId} onValueChange={setCustomerId}>
-                <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
-                <SelectContent dir="rtl">
-                  <SelectItem value="all">كل العملاء</SelectItem>
-                  {customers.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="block text-right">
-              <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
-                <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent dir="rtl">
-                  <SelectItem value="all">كل الأنواع (فوري + قسط)</SelectItem>
-                  <SelectItem value="installment">قسط فقط</SelectItem>
-                  <SelectItem value="cash">فوري فقط</SelectItem>
-                </SelectContent>
-              </Select>
-            </label>
-            <label className="block text-right">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
-                <SelectContent dir="rtl">
-                  <SelectItem value="all">كل الحالات</SelectItem>
-                  <SelectItem value="paid">مسدّدة بالكامل</SelectItem>
-                  <SelectItem value="partial">مسدّدة جزئياً</SelectItem>
-                  <SelectItem value="unpaid">غير مسدّدة</SelectItem>
-                </SelectContent>
-              </Select>
-            </label>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <label className="block text-right">
+                <MetricLabel className="mb-1.5 text-xs">من تاريخ</MetricLabel>
+                <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
+              </label>
+              <label className="block text-right">
+                <MetricLabel className="mb-1.5 text-xs">إلى تاريخ</MetricLabel>
+                <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
+              </label>
+              <label className="block text-right">
+                <MetricLabel className="mb-1.5 text-xs">بحث سريع</MetricLabel>
+                <div className="relative">
+                  <Search className="pointer-events-none absolute end-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="اسم العميل أو رقم الفاتورة"
+                    className="pe-8 h-9 text-xs"
+                  />
+                </div>
+              </label>
+              <label className="block text-right">
+                <Select value={customerId} onValueChange={setCustomerId}>
+                  <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
+                  <SelectContent dir="rtl">
+                    <SelectItem value="all">كل العملاء</SelectItem>
+                    {customers.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="block text-right">
+                <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
+                  <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent dir="rtl">
+                    <SelectItem value="all">كل الأنواع (فوري + قسط)</SelectItem>
+                    <SelectItem value="installment">قسط فقط</SelectItem>
+                    <SelectItem value="cash">فوري فقط</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+              <label className="block text-right">
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                  <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent dir="rtl">
+                    <SelectItem value="all">كل الحالات</SelectItem>
+                    <SelectItem value="paid">مسدّدة بالكامل</SelectItem>
+                    <SelectItem value="partial">مسدّدة جزئياً</SelectItem>
+                    <SelectItem value="unpaid">غير مسدّدة</SelectItem>
+                  </SelectContent>
+                </Select>
+              </label>
+            </div>
           </div>
-        </BezelCard>
-      </Reveal>
+        }
+      />
+
 
       {/* مؤشرات التدفق المالي — معادلة الدرج الصافية */}
       <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">

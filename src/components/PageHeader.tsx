@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 export function PageHeader({
   title,
@@ -7,6 +8,7 @@ export function PageHeader({
   icon,
   eyebrow,
   badge,
+  actionWidth,
 }: {
   title: string;
   subtitle?: string;
@@ -14,6 +16,7 @@ export function PageHeader({
   icon?: ReactNode;
   eyebrow?: string;
   badge?: ReactNode;
+  actionWidth?: string;
 }) {
   return (
     <header className="relative mb-12 grid grid-cols-[minmax(0,1fr)] gap-6 md:mb-16 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:justify-between">
@@ -33,7 +36,7 @@ export function PageHeader({
           <p className="text-lede mt-3 max-w-prose text-right">{subtitle}</p>
         )}
       </div>
-      <div className="order-2 flex max-w-full flex-wrap items-center gap-2 md:max-w-[34rem] md:justify-end">{action}</div>
+      <div className={cn("order-2 flex max-w-full flex-wrap items-center gap-2 md:justify-end", actionWidth ?? "md:max-w-[34rem]")} >{action}</div>
     </header>
   );
 }
