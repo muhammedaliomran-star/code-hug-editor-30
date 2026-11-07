@@ -69,71 +69,74 @@ function DashboardInner() {
         title="لوحة التحكم الرئيسية"
         subtitle="مركز القيادة والرقابة اللحظية على الخزينة، الديون، المخزون، المبيعات والشحن."
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              to="/owner"
-              className="island-btn group bg-foreground/[0.05] text-amber-300 ring-1 ring-border hover:bg-foreground/[0.09] font-bold"
-            >
-              <span>تطبيق المالك (سِجلّي Boss)</span>
-              <span className="island-btn-icon text-amber-400">
-                <Crown className="h-4 w-4" />
-              </span>
-            </Link>
+          <div className="flex flex-col gap-2">
+            {/* الصف الأول: التطبيق المالك + فلاتر الوقت */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/owner"
+                className="island-btn group bg-foreground/[0.05] text-amber-300 ring-1 ring-border hover:bg-foreground/[0.09] font-bold"
+              >
+                <span>تطبيق المالك (سِجلّي Boss)</span>
+                <span className="island-btn-icon text-amber-400">
+                  <Crown className="h-4 w-4" />
+                </span>
+              </Link>
 
-            <FilterChips
-        options={[
-          { value: "today", label: "اليوم" },
-          { value: "7d", label: "7 أيام" },
-          { value: "month", label: "الشهر" },
-          { value: "all", label: "الكل" },
-        ]}
-        value={timeRange}
-        onChange={setTimeRange}
-        className="mt-2"
-      />
+              <FilterChips
+                options={[
+                  { value: "today", label: "اليوم" },
+                  { value: "7d", label: "7 أيام" },
+                  { value: "month", label: "الشهر" },
+                  { value: "all", label: "الكل" },
+                ]}
+                value={timeRange}
+                onChange={setTimeRange}
+              />
+            </div>
 
-            <ActionButton
-              tone="surface"
-              onClick={() => setCustomizationOpen(true)}
-              title="تخصيص وترتيب البطاقات"
-              icon={<SlidersHorizontal className="h-4 w-4" />}
-            >
-              <span className="hidden sm:inline">تخصيص العرض</span>
-            </ActionButton>
+            {/* الصف الثاني: التقرير + أدوات العرض (أيقونات) + المطابقة */}
+            <div className="flex flex-wrap items-center gap-2">
+              <ActionButton
+                onClick={handleExportExecutiveReport}
+                title="تصدير الموجز التنفيذي للوحة التحكم PDF"
+                icon={<Printer className="h-4 w-4" />}
+              >
+                <span className="hidden sm:inline">تقرير تنفيذي (PDF)</span>
+              </ActionButton>
 
-            <ActionButton
-              onClick={handleExportExecutiveReport}
-              title="تصدير الموجز التنفيذي للوحة التحكم PDF"
-              icon={<Printer className="h-4 w-4" />}
-            >
-              <span className="hidden sm:inline">تقرير تنفيذي (PDF)</span>
-            </ActionButton>
+              <ActionButton
+                tone="surface"
+                onClick={() => setCustomizationOpen(true)}
+                title="تخصيص وترتيب البطاقات"
+                aria-label="تخصيص وترتيب البطاقات"
+                className="[padding-inline-start:0.4rem]!"
+                icon={<SlidersHorizontal className="h-4 w-4" />}
+              />
 
-            <ActionButton
-              tone="surface"
-              onClick={toggle}
-              title="إخفاء الأرقام"
-              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            >
-              <span className="hidden sm:inline">
-                {privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
-              </span>
-            </ActionButton>
+              <ActionButton
+                tone="surface"
+                onClick={toggle}
+                title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                aria-label={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                className="[padding-inline-start:0.4rem]!"
+                icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              />
 
-            <Link
-              to="/reconciliation"
-              className={cn(
-                "island-btn group ring-1 ring-border transition-[background-color,box-shadow]",
-                reconciliationSummary.healthScore >= 90
-                  ? "bg-foreground/[0.05] text-success hover:bg-foreground/[0.09]"
-                  : "bg-foreground/[0.05] text-warning hover:bg-foreground/[0.09]"
-              )}
-            >
-              <span>المطابقة {reconciliationSummary.healthScore}%</span>
-              <span className="island-btn-icon">
-                <ShieldCheck className="h-4 w-4" />
-              </span>
-            </Link>
+              <Link
+                to="/reconciliation"
+                className={cn(
+                  "island-btn group ring-1 ring-border transition-[background-color,box-shadow]",
+                  reconciliationSummary.healthScore >= 90
+                    ? "bg-foreground/[0.05] text-success hover:bg-foreground/[0.09]"
+                    : "bg-foreground/[0.05] text-warning hover:bg-foreground/[0.09]"
+                )}
+              >
+                <span>المطابقة {reconciliationSummary.healthScore}%</span>
+                <span className="island-btn-icon">
+                  <ShieldCheck className="h-4 w-4" />
+                </span>
+              </Link>
+            </div>
           </div>
         }
       />

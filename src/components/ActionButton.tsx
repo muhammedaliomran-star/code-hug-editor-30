@@ -23,7 +23,7 @@ export const ActionButton = React.forwardRef<
     )}
     {...props}
   >
-    <span className="ps-1">{children}</span>
+    {children != null && <span className="ps-1">{children}</span>}
     {icon && <span className="island-btn-icon">{icon}</span>}
   </button>
 ));
