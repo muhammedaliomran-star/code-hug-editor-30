@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Plus, Eye, EyeOff, Download, Search, FileSpreadsheet, FileText, Receipt,
-  Coins, Wallet, CheckCircle2, ChevronDown, TrendingUp,
+  Coins, Wallet, CheckCircle2, ChevronDown, TrendingUp, Pencil, Trash2,
   ArrowDownRight, ArrowUpRight, Clock, RotateCcw, DollarSign, Calendar,
   CreditCard, Sparkles, Filter, Layers, ListFilter
 } from "lucide-react";
@@ -48,8 +48,11 @@ export default function Page() {
   );
 }
 
-const todayISO = () => new Date().toISOString().slice(0, 10);
-const noteKey = (d: string) => `segilly:daily-note:${d}`;
+const todayISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+const noteKey = (f: string, t: string) => `segilly:daily-note:${f}_${t}`;
 
 type TypeFilter = "all" | "installment" | "cash";
 type StatusFilter = "all" | "paid" | "partial" | "unpaid";
@@ -87,35 +90,39 @@ function DailyPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("invoices");
 
   const [openExpense, setOpenExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<any>(null);
   const [note, setNote] = useState("");
 
   useEffect(() => {
-    try { setNote(localStorage.getItem(noteKey(from)) ?? ""); } catch { setNote(""); }
-  }, [from]);
+    try { setNote(localStorage.getItem(noteKey(from, to)) ?? ""); } catch { setNote(""); }
+  }, [from, to]);
 
   // Quick Preset Date Selectors
   type QuickPreset = "today" | "yesterday" | "this-week" | "this-month";
   const [quickPreset, setQuickPreset] = useState<QuickPreset>("today");
+  const toISO = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
   const setQuickDate = (preset: QuickPreset) => {
     setQuickPreset(preset);
     const today = new Date();
-    const tIso = today.toISOString().slice(0, 10);
-    
+    const tIso = toISO(today);
+
     if (preset === "today") {
       setFrom(tIso);
       setTo(tIso);
     } else if (preset === "yesterday") {
       const y = new Date();
       y.setDate(y.getDate() - 1);
-      const yIso = y.toISOString().slice(0, 10);
-      setFrom(yIso);
-      setTo(yIso);
+      setFrom(toISO(y));
+      setTo(toISO(y));
     } else if (preset === "this-week") {
       const w = new Date();
       const dayOfWeek = w.getDay(); // 0 is Sunday, 6 is Saturday
-      const diff = w.getDate() - dayOfWeek + (dayOfWeek === 6 ? 0 : -1); // approximate start of week
-      const startW = new Date(w.setDate(diff));
-      setFrom(startW.toISOString().slice(0, 10));
+      const diff = w.getDate() - dayOfWeek + (dayOfWeek === 6 ? 0 : -1); // approximate start of week (Saturday)
+      const startW = new Date(w);
+      startW.setDate(diff);
+      setFrom(toISO(startW));
       setTo(tIso);
     } else if (preset === "this-month") {
       const mStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-01`;
@@ -328,6 +335,9 @@ function DailyPage() {
     setCustomerId("all");
     setTypeFilter("all");
     setStatusFilter("all");
+    setQuickPreset("today");
+    setFrom(todayISO());
+    setTo(todayISO());
   };
 
   const money = (n: number) => `${fmt(n)} ج.م`;
@@ -337,7 +347,7 @@ function DailyPage() {
 
   const saveNote = () => {
     try {
-      localStorage.setItem(noteKey(from), note);
+      localStorage.setItem(noteKey(from, to), note);
       toast.success("تم حفظ ملاحظة اليوم");
     } catch {
       toast.error("مش قادر يحفظ الملاحظة على الجهاز");
@@ -345,44 +355,116 @@ function DailyPage() {
   };
 
   const exportCSV = () => {
-    const headers = ["رقم", "الوقت", "العميل", "الإجمالي", "مدفوع", "متبقي", "نوع", "الحالة"];
-    const body = rows.map((inv) => {
-      const c = customerById.get(inv.customerId);
-      const isCash = (c?.customerType ?? "installment") === "cash";
-      return [
-        invoiceNumber(invoices, inv.id),
-        new Date(inv.createdAt).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-        c?.name ?? "—",
-        inv.total, inv.paid, Math.max(0, inv.total - inv.paid),
-        isCash ? "فوري" : "قسط",
-        statusMeta[invStatus(inv)].label,
-      ];
-    });
-    const csv = "\uFEFF" + [headers, ...body, ["", "الإجمالي", "", stats.sales, stats.totalCollectedActual, stats.remaining, "", ""]]
+    let headers: string[] = [];
+    let body: any[][] = [];
+    let filename = `daily-${from}_${to}.csv`;
+
+    if (activeTab === "invoices") {
+      headers = ["رقم", "التاريخ", "الوقت", "العميل", "الإجمالي", "مدفوع", "متبقي", "نوع", "الحالة"];
+      body = rows.map((inv) => {
+        const c = customerById.get(inv.customerId);
+        const isCash = (c?.customerType ?? "installment") === "cash";
+        const d = new Date(inv.createdAt);
+        return [
+          invoiceNumber(invoices, inv.id),
+          d.toLocaleDateString("en-CA"),
+          d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          c?.name ?? "—",
+          inv.total, inv.paid, Math.max(0, inv.total - inv.paid),
+          isCash ? "فوري" : "قسط",
+          statusMeta[invStatus(inv)].label,
+        ];
+      });
+    } else if (activeTab === "payments") {
+      headers = ["التاريخ", "الوقت", "العميل", "الفاتورة", "المبلغ", "ملاحظات"];
+      body = periodPayments.map((p) => {
+        const d = new Date(p.paidAt);
+        return [
+          d.toLocaleDateString("en-CA"),
+          d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+          p.customer?.name ?? "—",
+          p.invoice ? invoiceNumber(invoices, p.invoice.id) : "—",
+          p.amount,
+          p.notes ?? "",
+        ];
+      });
+    } else if (activeTab === "expenses") {
+      headers = ["التاريخ", "التصنيف", "المبلغ", "ملاحظات"];
+      body = periodExpensesList.map((e) => [
+        e.expenseDate,
+        expenseCategoryLabel(e.category),
+        e.amount,
+        e.notes ?? "",
+      ]);
+    } else if (activeTab === "returns") {
+      headers = ["التاريخ", "العميل", "الفاتورة", "المبلغ", "السبب"];
+      body = periodReturnsList.map((r) => [
+        r.createdAt.slice(0, 10),
+        r.customer?.name ?? "—",
+        r.invoice ? invoiceNumber(invoices, r.invoice.id) : "—",
+        r.totalAmount,
+        r.reason ?? "",
+      ]);
+    }
+
+    const csv = "\uFEFF" + [headers, ...body]
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
-    a.href = url; a.download = `daily-${from}_${to}.csv`; a.click();
+    a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
     toast.success("تم تصدير اليومية");
   };
 
   const exportPDF = () => {
-    const rowsHtml = rows.map((inv, i) => {
-      const c = customerById.get(inv.customerId);
-      const isCash = (c?.customerType ?? "installment") === "cash";
-      return `<tr><td>${i + 1}</td><td>${escapeHtml(invoiceNumber(invoices, inv.id))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)} ج.م</td><td class="num">${fmt(inv.paid)} ج.م</td><td class="num due">${fmt(Math.max(0, inv.total - inv.paid))} ج.م</td><td>${isCash ? "فوري" : "قسط"}</td><td>${escapeHtml(statusMeta[invStatus(inv)].label)}</td></tr>`;
-    }).join("");
+    let thead = "";
+    let tbody = "";
+    let colspan = 8;
+    const tabTitle =
+      activeTab === "invoices" ? "فواتير الفترة" :
+      activeTab === "payments" ? "التحصيلات والأقساط المستلمة" :
+      activeTab === "expenses" ? "المصروفات اليومية" : "المرتجعات";
+
+    if (activeTab === "invoices") {
+      thead = "<tr><th>م</th><th>رقم</th><th>العميل</th><th>الإجمالي</th><th>مدفوع</th><th>متبقي</th><th>نوع</th><th>الحالة</th></tr>";
+      tbody = rows.map((inv, i) => {
+        const c = customerById.get(inv.customerId);
+        const isCash = (c?.customerType ?? "installment") === "cash";
+        return `<tr><td>${i + 1}</td><td>${escapeHtml(invoiceNumber(invoices, inv.id))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)} ج.م</td><td class="num">${fmt(inv.paid)} ج.م</td><td class="num due">${fmt(Math.max(0, inv.total - inv.paid))} ج.م</td><td>${isCash ? "فوري" : "قسط"}</td><td>${escapeHtml(statusMeta[invStatus(inv)].label)}</td></tr>`;
+      }).join("");
+      colspan = 8;
+    } else if (activeTab === "payments") {
+      thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th></tr>";
+      tbody = periodPayments.map((p, i) => {
+        const d = new Date(p.paidAt);
+        return `<tr><td>${i + 1}</td><td>${d.toLocaleDateString("en-CA")} ${d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</td><td>${escapeHtml(p.customer?.name ?? "—")}</td><td>${p.invoice ? escapeHtml(invoiceNumber(invoices, p.invoice.id)) : "—"}</td><td class="num">${fmt(p.amount)} ج.م</td></tr>`;
+      }).join("");
+      colspan = 5;
+    } else if (activeTab === "expenses") {
+      thead = "<tr><th>م</th><th>التاريخ</th><th>التصنيف</th><th>المبلغ</th><th>ملاحظات</th></tr>";
+      tbody = periodExpensesList.map((e, i) =>
+        `<tr><td>${i + 1}</td><td>${escapeHtml(e.expenseDate)}</td><td>${escapeHtml(expenseCategoryLabel(e.category))}</td><td class="num">${fmt(e.amount)} ج.م</td><td>${escapeHtml(e.notes ?? "—")}</td></tr>`
+      ).join("");
+      colspan = 5;
+    } else if (activeTab === "returns") {
+      thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th><th>السبب</th></tr>";
+      tbody = periodReturnsList.map((r, i) =>
+        `<tr><td>${i + 1}</td><td>${r.createdAt.slice(0, 10)}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`
+      ).join("");
+      colspan = 6;
+    }
+
+    const emptyRow = `<tr><td colspan="${colspan}">لا توجد حركة في الفترة</td></tr>`;
     const html = pdfDocument({
-      docTitle: "اليومية — سِجلّي",
+      docTitle: `اليومية — ${tabTitle}`,
       badge: "تشغيل يومي",
-      title: "اليومية",
+      title: `اليومية — ${tabTitle}`,
       lede: rangeLabel,
       meta: [{ label: "الفترة", value: `${from} — ${to}` }],
       body: `
-        <table><thead><tr><th>م</th><th>رقم</th><th>العميل</th><th>الإجمالي</th><th>مدفوع</th><th>متبقي</th><th>نوع</th><th>الحالة</th></tr></thead>
-        <tbody>${rowsHtml || `<tr><td colspan="8">لا توجد حركة في الفترة</td></tr>`}</tbody></table>
+        <table><thead>${thead}</thead>
+        <tbody>${tbody || emptyRow}</tbody></table>
         <p>إجمالي المبيعات: ${fmt(stats.sales)} ج.م — المحصّل الفعلي: ${fmt(stats.totalCollectedActual)} ج.م — المصروفات: ${fmt(stats.periodExpenses)} ج.م — المرتجعات: ${fmt(stats.periodReturnsTotal)} ج.م — حركات خزينة: ${fmt(stats.manualIn - stats.manualOut)} ج.م — صافي الدرج: ${fmt(stats.netCashDrawer)} ج.م</p>
       `,
     });
@@ -423,7 +505,7 @@ function DailyPage() {
               >
                 {masked ? "إظهار الأرقام" : "إخفاء الأرقام"}
               </ActionButton>
-              <ActionButton onClick={() => setOpenExpense(true)} icon={<Plus className="h-4 w-4" />}>
+              <ActionButton onClick={() => { setEditingExpense(null); setOpenExpense(true); }} icon={<Plus className="h-4 w-4" />}>
                 إضافة مصروف
               </ActionButton>
               <span className="mx-1 h-6 w-px bg-[var(--hairline)]" />
@@ -503,6 +585,9 @@ function DailyPage() {
                 </Select>
               </label>
             </div>
+            {from && to && from > to && (
+              <p className="text-xs font-bold text-danger">⚠️ تاريخ "من" يجب أن يكون قبل "إلى"</p>
+            )}
           </div>
         }
       />
@@ -721,12 +806,13 @@ function DailyPage() {
                         <th className="p-3">التصنيف</th>
                         <th className="p-3">المبلغ</th>
                         <th className="p-3">ملاحظات وبيان</th>
+                        <th className="p-3">إجراءات</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--hairline)]">
                       {periodExpensesList.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
                             لا توجد مصروفات مسجلة في هذا النطاق الزمني
                           </td>
                         </tr>
@@ -743,6 +829,34 @@ function DailyPage() {
                               -{money(exp.amount)}
                             </td>
                             <td className="p-3 text-muted-foreground">{exp.notes || "—"}</td>
+                            <td className="p-3">
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => { setEditingExpense(exp); setOpenExpense(true); }}
+                                  className="press rounded-lg p-1.5 text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground"
+                                  title="تعديل"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    if (!confirm("حذف هذا المصروف؟")) return;
+                                    try {
+                                      await db.removeExpense(exp.id);
+                                      toast.success("تم حذف المصروف");
+                                    } catch (err: any) {
+                                      toast.error(err?.message || "خطأ في الحذف");
+                                    }
+                                  }}
+                                  className="press rounded-lg p-1.5 text-muted-foreground hover:bg-danger/10 hover:text-danger"
+                                  title="حذف"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))
                       )}
@@ -872,7 +986,7 @@ function DailyPage() {
         </div>
       </div>
 
-      <ExpenseFormModal open={openExpense} onOpenChange={setOpenExpense} editing={null} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
+      <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
     </>
   );
 }
