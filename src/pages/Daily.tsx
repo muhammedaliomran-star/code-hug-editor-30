@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useSearch, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,7 +10,7 @@ import { MetricCard, MetricLabel } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
 import { FilterChips } from "@/components/FilterChips";
 import { StatTabs } from "@/components/StatTabs";
-import { EmptyState } from "@/components/EmptyState";
+
 import { Reveal } from "@/components/Reveal";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { Input } from "@/components/ui/input";
@@ -95,7 +95,7 @@ function DailyPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(urlSearch.statusFilter ?? "all");
   const [activeTab, setActiveTab] = useState<ActiveTab>(urlSearch.activeTab ?? "invoices");
   const PAGE_SIZE = 25;
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1);\n  const [noteTick, setNoteTick] = useState(0);
   const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
 
   const [openExpense, setOpenExpense] = useState(false);
@@ -119,7 +119,7 @@ function DailyPage() {
     });
     setPage(1);
   }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, quickPreset, navigate]);
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState("");\n  const latestNoteRef = useRef(note);\n  latestNoteRef.current = note;\n  const prevPeriodRef = useRef({ from, to, note });\n  if (prevPeriodRef.current.from === from && prevPeriodRef.current.to === to) {\n    prevPeriodRef.current.note = note;\n  }
 
   useEffect(() => {
     // 1) instant from localStorage (offline / first paint)
@@ -136,7 +136,27 @@ function DailyPage() {
       } catch { /* offline / table missing — keep local */ }
     })();
     return () => { cancelled = true; };
+  }, [from, to, noteTick]);
+
+  // Flush the previous period's note before switching periods (prevents data loss)
+  useEffect(() => {
+    const prev = prevPeriodRef.current;
+    if (prev.from !== from || prev.to !== to) {
+      const n = prev.note;
+      try { localStorage.setItem(noteKey(prev.from, prev.to), n); } catch { /* ignore */ }
+      db.saveDailyNote(prev.from, prev.to, n).catch(() => { /* offline */ });
+    }
+    prevPeriodRef.current = { from, to, note: latestNoteRef.current };
   }, [from, to]);
+
+  // Autosave note (debounced) for the current period
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try { localStorage.setItem(noteKey(from, to), note); } catch { /* ignore */ }
+      db.saveDailyNote(from, to, note).catch(() => { /* offline */ });
+    }, 800);
+    return () => clearTimeout(t);
+  }, [note]);
 
   // تحديث رصيد الخزينة من السحابة (تقليل التأخر)
   useEffect(() => {
@@ -159,6 +179,7 @@ function DailyPage() {
           .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
           .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
           .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => { invalidateCache(); setNoteTick((n) => n + 1); }, 400); })
           .subscribe();
       } catch { /* ignore */ }
     })();
@@ -364,7 +385,7 @@ function DailyPage() {
     const transfers = getInternalTransfers();
     let manualIn = 0, manualOut = 0;
     for (const tx of manualTxs) {
-      const tDay = (tx.date || tx.createdAt).slice(0, 10);
+      const tDay = tx.date ? tx.date : new Date(tx.createdAt).toLocaleDateString("en-CA");
       if (from && tDay < from) continue;
       if (to && tDay > to) continue;
       if (tx.type === "in") manualIn += tx.amount;
@@ -420,6 +441,11 @@ function DailyPage() {
     activeTab === "payments" ? periodPayments.length :
     activeTab === "expenses" ? periodExpensesList.length : periodReturnsList.length;
   const totalPages = Math.max(1, Math.ceil(activeListLen / PAGE_SIZE));
+
+  // Clamp current page when data shrinks (e.g. realtime refresh / filter change)
+  useEffect(() => {
+    setPage((p) => Math.min(Math.max(1, p), totalPages));
+  }, [totalPages]);
 
   const filtersActive =
     !!search.trim() || customerId !== "all" || typeFilter !== "all" || statusFilter !== "all";
@@ -496,7 +522,7 @@ function DailyPage() {
     } else if (activeTab === "returns") {
       headers = ["التاريخ", "العميل", "الفاتورة", "المبلغ", "السبب"];
       body = periodReturnsList.map((r) => [
-        r.createdAt.slice(0, 10),
+        new Date(r.createdAt).toLocaleDateString("en-CA"),
         r.customer?.name ?? "—",
         r.invoice ? invoiceNumber(invoices, r.invoice.id) : "—",
         r.totalAmount,
@@ -547,7 +573,7 @@ function DailyPage() {
     } else if (activeTab === "returns") {
       thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th><th>السبب</th></tr>";
       tbody = periodReturnsList.map((r, i) =>
-        `<tr><td>${i + 1}</td><td>${r.createdAt.slice(0, 10)}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`
+        `<tr><td>${i + 1}</td><td>${new Date(r.createdAt).toLocaleDateString("en-CA")}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`
       ).join("");
       colspan = 6;
     }
