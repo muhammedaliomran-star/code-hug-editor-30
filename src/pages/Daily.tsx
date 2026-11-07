@@ -606,7 +606,6 @@ function DailyPage() {
       <PageHeader
         eyebrow="تشغيل يومي"
         title="اليومية"
-        subtitle="ملخص المبيعات، التحصيلات، المصروفات، وصافي نقدية الخزينة."
         actionWidth="md:max-w-[24rem]"
         action={
           <div className="flex w-full flex-col gap-3">
