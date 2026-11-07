@@ -27,9 +27,8 @@ export function BentoKPIsSection() {
   return (
     <section className="mb-14">
       <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
-        <Reveal className="col-span-full h-full" delay={0}>
+        <Reveal className="h-full" delay={0}>
           <MetricCard
-            hero
             className="h-full"
             label="إجمالي الديون الخارجية (لدى العملاء)"
             value={totalDebt}
