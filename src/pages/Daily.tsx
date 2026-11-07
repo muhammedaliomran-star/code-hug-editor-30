@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
+import { ExpenseFormModal } from "@/components/expenses/ExpenseFormModal";
 import { PageTransition } from "@/components/PageTransition";
 import { BezelCard } from "@/components/BezelCard";
 import { MetricCard, MetricLabel } from "@/components/MetricCard";
@@ -11,24 +12,22 @@ import { EmptyState } from "@/components/EmptyState";
 import { Reveal } from "@/components/Reveal";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
+
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  db, useDB, fmt, invoiceNumber, EXPENSE_CATEGORIES, expenseCategoryLabel,
-  type ExpenseCategory, type Invoice,
+  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, type Invoice,
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
+import { getManualTransactions } from "@/lib/cashbox-system";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -158,11 +157,19 @@ function DailyPage() {
 
   // Actual Payments collected during period (including old invoice installment collections)
   const periodPayments = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return payments
       .filter((p) => {
         const pDay = p.paidAt.slice(0, 10);
         if (from && pDay < from) return false;
         if (to && pDay > to) return false;
+        const inv = invoiceById.get(p.invoiceId);
+        if (customerId !== "all" && inv?.customerId !== customerId) return false;
+        if (q) {
+          const cust = inv ? customerById.get(inv.customerId) : null;
+          const txt = `${cust?.name ?? ""} ${cust?.phone ?? ""} ${inv ? invoiceNumber(invoices, inv.id) : ""}`.toLowerCase();
+          if (!txt.includes(q)) return false;
+        }
         return true;
       })
       .map((p) => {
@@ -175,22 +182,40 @@ function DailyPage() {
         };
       })
       .sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime());
-  }, [payments, invoiceById, customerById, from, to]);
+  }, [payments, invoiceById, customerById, invoices, from, to, customerId, search]);
 
   // Expenses during period
   const periodExpensesList = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return expenses
-      .filter((e) => (!from || e.expenseDate >= from) && (!to || e.expenseDate <= to))
+      .filter((e) => {
+        if (from && e.expenseDate < from) return false;
+        if (to && e.expenseDate > to) return false;
+        if (q) {
+          const label = expenseCategoryLabel(e.category).toLowerCase();
+          const txt = `${label} ${e.notes ?? ""}`.toLowerCase();
+          if (!txt.includes(q)) return false;
+        }
+        return true;
+      })
       .sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime());
-  }, [expenses, from, to]);
+  }, [expenses, from, to, search]);
 
   // Returns during period
   const periodReturnsList = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return returns
       .filter((r) => {
         const rDay = r.createdAt.slice(0, 10);
         if (from && rDay < from) return false;
         if (to && rDay > to) return false;
+        const inv = r.invoiceId ? invoiceById.get(r.invoiceId) : null;
+        if (customerId !== "all" && inv?.customerId !== customerId) return false;
+        if (q) {
+          const cust = inv ? customerById.get(inv.customerId) : null;
+          const txt = `${cust?.name ?? ""} ${cust?.phone ?? ""} ${inv ? invoiceNumber(invoices, inv.id) : ""} ${r.reason ?? ""}`.toLowerCase();
+          if (!txt.includes(q)) return false;
+        }
         return true;
       })
       .map((r) => {
@@ -203,7 +228,7 @@ function DailyPage() {
         };
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [returns, invoiceById, customerById, from, to]);
+  }, [returns, invoiceById, customerById, invoices, from, to, customerId, search]);
 
   const stats = useMemo(() => {
     let sales = 0, cashSales = 0, instSales = 0;
@@ -227,6 +252,7 @@ function DailyPage() {
     const mk = () => new Array<number>(size).fill(0);
     const sCount = mk(), sSales = mk(), sCashSales = mk(), sInstSales = mk();
     const sPaid = mk(), sCashPaid = mk(), sInstPaid = mk(), sRemaining = mk();
+    const sCollected = mk();
 
     for (const inv of rows) {
       const isCash = (customerById.get(inv.customerId)?.customerType ?? "installment") === "cash";
@@ -246,12 +272,32 @@ function DailyPage() {
       }
     }
 
+    // تجميع التحصيلات الفعلية (حسب الدفعات) لـ sparkline
+    for (const p of payments) {
+      const pDay = p.paidAt.slice(0, 10);
+      if (from && pDay < from) continue;
+      if (to && pDay > to) continue;
+      const i = slotOf(p.paidAt);
+      if (i >= 0 && i < size) sCollected[i] += p.amount;
+    }
+
+    // حركات خزينة يدوية (إيداعات/سحوبات) ضمن الفترة — لتتوافق مع نظام الخزينة
+    const manualTxs = getManualTransactions();
+    let manualIn = 0, manualOut = 0;
+    for (const tx of manualTxs) {
+      const tDay = (tx.date || tx.createdAt).slice(0, 10);
+      if (from && tDay < from) continue;
+      if (to && tDay > to) continue;
+      if (tx.type === "in") manualIn += tx.amount;
+      else manualOut += tx.amount;
+    }
+
     const totalCollectedActual = periodPayments.reduce((s, p) => s + p.amount, 0);
     const periodExpenses = periodExpensesList.reduce((s, e) => s + e.amount, 0);
     const periodReturnsTotal = periodReturnsList.reduce((s, r) => s + r.totalAmount, 0);
     
     // صافي الخزينة / الدرج الحقيقي اليوم: كل المحصل الفعلي - المصروفات - المرتجعات
-    const netCashDrawer = totalCollectedActual - periodExpenses - periodReturnsTotal;
+    const netCashDrawer = totalCollectedActual - periodExpenses - periodReturnsTotal + manualIn - manualOut;
 
     return {
       count: rows.length,
@@ -262,14 +308,17 @@ function DailyPage() {
       remaining: Math.max(0, sales - paidFromNewInvoices),
       periodExpenses,
       periodReturnsTotal,
+      manualIn,
+      manualOut,
       netCashDrawer,
       net: paidFromNewInvoices - periodExpenses,
       series: {
         count: sCount, sales: sSales, cashSales: sCashSales, instSales: sInstSales,
         paid: sPaid, cashPaid: sCashPaid, instPaid: sInstPaid, remaining: sRemaining,
+        collected: sCollected,
       },
     };
-  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, from, to]);
+  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, from, to]);
 
   const filtersActive =
     !!search.trim() || customerId !== "all" || typeFilter !== "all" || statusFilter !== "all";
@@ -309,7 +358,7 @@ function DailyPage() {
         statusMeta[invStatus(inv)].label,
       ];
     });
-    const csv = "\uFEFF" + [headers, ...body, ["", "الإجمالي", "", stats.sales, stats.paid, stats.remaining, "", ""]]
+    const csv = "\uFEFF" + [headers, ...body, ["", "الإجمالي", "", stats.sales, stats.totalCollectedActual, stats.remaining, "", ""]]
       .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -334,7 +383,7 @@ function DailyPage() {
       body: `
         <table><thead><tr><th>م</th><th>رقم</th><th>العميل</th><th>الإجمالي</th><th>مدفوع</th><th>متبقي</th><th>نوع</th><th>الحالة</th></tr></thead>
         <tbody>${rowsHtml || `<tr><td colspan="8">لا توجد حركة في الفترة</td></tr>`}</tbody></table>
-        <p>إجمالي المبيعات: ${fmt(stats.sales)} ج.م — المحصّل الفعلي: ${fmt(stats.totalCollectedActual)} ج.م — المصروفات: ${fmt(stats.periodExpenses)} ج.م — صافي الدرج: ${fmt(stats.netCashDrawer)} ج.م</p>
+        <p>إجمالي المبيعات: ${fmt(stats.sales)} ج.م — المحصّل الفعلي: ${fmt(stats.totalCollectedActual)} ج.م — المصروفات: ${fmt(stats.periodExpenses)} ج.م — المرتجعات: ${fmt(stats.periodReturnsTotal)} ج.م — حركات خزينة: ${fmt(stats.manualIn - stats.manualOut)} ج.م — صافي الدرج: ${fmt(stats.netCashDrawer)} ج.م</p>
       `,
     });
     openPdfDocument(html);
@@ -433,7 +482,7 @@ function DailyPage() {
                 </Select>
               </label>
               <label className="block text-right">
-                <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
+                <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)} disabled={activeTab !== "invoices"}>
                   <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent dir="rtl">
                     <SelectItem value="all">كل الأنواع (فوري + قسط)</SelectItem>
@@ -443,7 +492,7 @@ function DailyPage() {
                 </Select>
               </label>
               <label className="block text-right">
-                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)} disabled={activeTab !== "invoices"}>
                   <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent dir="rtl">
                     <SelectItem value="all">كل الحالات</SelectItem>
@@ -482,7 +531,7 @@ function DailyPage() {
           icon={ArrowDownRight}
           tone="positive"
           masked={masked}
-          series={stats.series.paid}
+          series={stats.series.collected}
           format={money}
           sub={`${fmt(periodPayments.length)} دفعة وقسط مُحصّل`}
         />
@@ -508,7 +557,7 @@ function DailyPage() {
           tone={stats.netCashDrawer >= 0 ? "positive" : "danger"}
           masked={masked}
           format={money}
-          sub="التحصيلات - المصروفات - المرتجعات"
+          sub="التحصيلات - المصروفات - المرتجعات + حركات الخزينة"
         />
       </div>
 
@@ -783,6 +832,15 @@ function DailyPage() {
                   </div>
                 )}
 
+                {(stats.manualIn > 0 || stats.manualOut > 0) && (
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-muted-foreground">حركات خزينة يدوية (إيداع/سحب):</span>
+                    <strong className={cn("font-mono", masked && "privacy-blur")}>
+                      {stats.manualIn - stats.manualOut >= 0 ? "+" : ""}{money(stats.manualIn - stats.manualOut)}
+                    </strong>
+                  </div>
+                )}
+
                 <div className="flex justify-between items-center py-3">
                   <span className="font-bold text-foreground">صافي رصيد الخزينة بالدرج:</span>
                   <strong className={cn("font-mono text-base font-black text-primary", masked && "privacy-blur")}>
@@ -814,76 +872,7 @@ function DailyPage() {
         </div>
       </div>
 
-      <AddExpenseDialog open={openExpense} onOpenChange={setOpenExpense} defaultDate={from || todayISO()} />
+      <ExpenseFormModal open={openExpense} onOpenChange={setOpenExpense} editing={null} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
     </>
-  );
-}
-
-function AddExpenseDialog({
-  open, onOpenChange, defaultDate,
-}: { open: boolean; onOpenChange: (v: boolean) => void; defaultDate: string }) {
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<ExpenseCategory>("other");
-  const [date, setDate] = useState(defaultDate);
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => { if (open) { setAmount(""); setCategory("other"); setDate(defaultDate); setNotes(""); } }, [open, defaultDate]);
-
-  const submit = async () => {
-    const n = Number(amount);
-    if (!Number.isFinite(n) || n <= 0) { toast.error("أدخل مبلغ صحيح"); return; }
-    setSaving(true);
-    try {
-      await db.addExpense({ amount: n, category, expenseDate: date, notes: notes.trim() || null });
-      toast.success("تم تسجيل المصروف بنجاح");
-      onOpenChange(false);
-    } catch (err: any) {
-      toast.error(err?.message || "خطأ في تسجيل المصروف");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl" className="text-right sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-end gap-2 text-base font-bold">
-            إضافة مصروف جديد <Receipt className="h-4 w-4 text-primary" />
-          </DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-3 py-2">
-          <div className="grid gap-1.5">
-            <Label className="text-xs">المبلغ (ج.م)</Label>
-            <Input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0" className="h-10 text-xs" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label className="text-xs">التصنيف</Label>
-            <Select value={category} onValueChange={(v) => setCategory(v as ExpenseCategory)}>
-              <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent dir="rtl">
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <SelectItem key={c.value} value={c.value}>{expenseCategoryLabel(c.value)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid gap-1.5">
-            <Label className="text-xs">التاريخ</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} dir="ltr" className="h-10 text-xs" />
-          </div>
-          <div className="grid gap-1.5">
-            <Label className="text-xs">ملاحظات وبيان الصرف</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="بيان تفصيلي للمصروف..." className="resize-none text-xs" />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button onClick={submit} disabled={saving} className="rounded-xl text-xs font-bold">
-            {saving ? "جاري الحفظ..." : "حفظ المصروف"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }

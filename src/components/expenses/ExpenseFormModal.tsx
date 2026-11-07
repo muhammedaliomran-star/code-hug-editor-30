@@ -65,6 +65,7 @@ interface ExpenseFormModalProps {
   defaultCategory?: string;
   defaultAccountId?: string;
   defaultBranchId?: string;
+  defaultDate?: string;
 }
 
 export function ExpenseFormModal({
@@ -75,6 +76,7 @@ export function ExpenseFormModal({
   defaultCategory,
   defaultAccountId,
   defaultBranchId,
+  defaultDate,
 }: ExpenseFormModalProps) {
   const { branches, invoices, payments, expenses } = useDB();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +87,7 @@ export function ExpenseFormModal({
   const [branchId, setBranchId] = useState("all");
   const [costCenter, setCostCenter] = useState("none");
   const [recipientName, setRecipientName] = useState("");
-  const [expenseDate, setExpenseDate] = useState(new Date().toISOString().slice(0, 10));
+  const [expenseDate, setExpenseDate] = useState(defaultDate || new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
   const [receiptName, setReceiptName] = useState<string>("");
@@ -135,7 +137,7 @@ export function ExpenseFormModal({
         setReceiptName("");
       }
     }
-  }, [open, editing, defaultCategory, defaultAccountId, defaultBranchId]);
+  }, [open, editing, defaultCategory, defaultAccountId, defaultBranchId, defaultDate]);
 
   // Handle File Upload (Compress Image if large)
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
