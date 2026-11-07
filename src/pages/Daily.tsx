@@ -438,7 +438,6 @@ function DailyPage() {
                 </SelectContent>
               </Select>
             </label>
-          </label>
             <label className="block text-right">
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
                 <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
