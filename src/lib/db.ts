@@ -704,7 +704,7 @@ export const db = {
     } catch (err) {
       try {
         const { enqueueOffline } = await import("./offline-queue");
-        const payload = { id };
+        const payload: any = { id };
         if (patch.amount !== undefined) payload.amount = (patch.amount ?? 0) * 100;
         if (patch.category !== undefined) payload.category = patch.category;
         if (patch.expenseDate !== undefined) payload.expense_date = patch.expenseDate;

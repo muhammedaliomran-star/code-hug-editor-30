@@ -377,7 +377,10 @@ function DailyPage() {
       ? calculateAccountBalance(mainAccount, invoices, payments, expenses, manualTxs, transfers).currentBalance
       : null;
 
-    // مقدم (down payment) على فواتير الفترة — يُحصَّل عند إنشاء الفاتورة (لا يوجد له صف في payments)
+    // مقدم (down payment) على فواتير الفترة — يُحصَّل عند إنشاء الفاتورة (لا يوجد له صف في payments).
+    // ملاحظة: create_sale يكتب downPayment على invoices.paid but does not insert into payments.
+    // therefore we aggregate down payments client-side here. Do NOT also record them as payments rows,
+    // or calculateAccountBalance (which adds inv.downPayment + payments) would double-count.
     const periodDownPayments = rows.reduce((s, inv) => s + (inv.downPayment || 0), 0);
     const totalCollectedActual = periodPayments.reduce((s, p) => s + p.amount, 0) + periodDownPayments;
     const periodExpenses = periodExpensesList.reduce((s, e) => s + e.amount, 0);
@@ -400,7 +403,6 @@ function DailyPage() {
       manualOut,
       cashboxBalance,
       netCashDrawer,
-      net: paidFromNewInvoices - periodExpenses,
       series: {
         count: sCount, sales: sSales, cashSales: sCashSales, instSales: sInstSales,
         paid: sPaid, cashPaid: sCashPaid, instPaid: sInstPaid, remaining: sRemaining,
@@ -457,7 +459,7 @@ function DailyPage() {
 
     if (activeTab === "invoices") {
       headers = ["رقم", "التاريخ", "الوقت", "العميل", "الإجمالي", "مدفوع", "متبقي", "نوع", "الحالة"];
-      body = pagedRows.map((inv) => {
+      body = rows.map((inv) => {
         const c = customerById.get(inv.customerId);
         const isCash = (c?.customerType ?? "installment") === "cash";
         const d = new Date(inv.createdAt);

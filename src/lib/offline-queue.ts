@@ -10,7 +10,7 @@ import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 export interface OfflineQueueItem {
   id: string;
   tableName: string;
-  operation: "upsert" | "delete";
+  operation: "upsert" | "delete" | "update";
   payload: unknown;
   createdAt: string;
   retries: number;
