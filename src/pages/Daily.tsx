@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Plus, Eye, EyeOff, Download, Search, FileSpreadsheet, FileText, Receipt,
-  Coins, Wallet, CheckCircle2, ChevronDown, CalendarDays, TrendingUp,
+  Coins, Wallet, CheckCircle2, ChevronDown, TrendingUp,
   ArrowDownRight, ArrowUpRight, Clock, RotateCcw, DollarSign, Calendar,
   CreditCard, Sparkles, Filter, Layers, ListFilter
 } from "lucide-react";
@@ -381,13 +381,9 @@ function DailyPage() {
 
       {/* شريط الفترات السريعة والفلترة */}
       <Reveal className="sticky-search-bar mb-6">
-        <BezelCard variant="flat" innerClassName="p-4 sm:p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-[var(--hairline)] pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground flex items-center gap-1.5">
-                <CalendarDays className="h-4 w-4 text-primary" /> فترات سريعة:
-              </span>
-              <FilterChips<QuickPreset>
+        <BezelCard variant="flat" innerClassName="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <FilterChips<QuickPreset>
                 value={quickPreset}
                 onChange={setQuickDate}
                 options={[
@@ -397,7 +393,6 @@ function DailyPage() {
                   { value: "this-month", label: "هذا الشهر" },
                 ]}
               />
-            </div>
 
             {filtersActive && (
               <button
@@ -408,9 +403,10 @@ function DailyPage() {
                 مسح الفلاتر
               </button>
             )}
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <label className="block text-right">
               <MetricLabel className="mb-1.5 text-xs">من تاريخ</MetricLabel>
               <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
@@ -432,7 +428,6 @@ function DailyPage() {
               </div>
             </label>
             <label className="block text-right">
-              <MetricLabel className="mb-1.5 text-xs">العميل</MetricLabel>
               <Select value={customerId} onValueChange={setCustomerId}>
                 <SelectTrigger className="h-10 text-xs"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
                 <SelectContent dir="rtl">
@@ -443,11 +438,8 @@ function DailyPage() {
                 </SelectContent>
               </Select>
             </label>
-          </div>
-
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          </label>
             <label className="block text-right">
-              <MetricLabel className="mb-1.5 text-xs">نوع التعامل</MetricLabel>
               <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as TypeFilter)}>
                 <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent dir="rtl">
@@ -458,7 +450,6 @@ function DailyPage() {
               </Select>
             </label>
             <label className="block text-right">
-              <MetricLabel className="mb-1.5 text-xs">حالة الفاتورة</MetricLabel>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                 <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent dir="rtl">
