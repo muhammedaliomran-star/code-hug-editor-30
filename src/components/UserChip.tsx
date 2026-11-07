@@ -32,13 +32,13 @@ export function UserAvatar({ size = 36, className = "" }: { size?: number; class
   );
 }
 
-export function UserChip({ className = "" }: { className?: string }) {
+export function UserChip({ className = "", avatarSize = 36 }: { className?: string; avatarSize?: number }) {
   const { label, user, loading } = useProfile();
 
   if (loading) {
     return (
-      <div className={cn("flex items-center gap-2.5 rounded-full px-2 py-1.5", className)}>
-        <div className="flex items-center gap-2.5 rounded-full px-2 py-1.5">
+      <div className={cn("flex items-center gap-2 rounded-full px-1.5 py-1", className)}>
+        <div className="flex items-center gap-2 rounded-full px-1.5 py-1">
           <span className="h-9 w-9 shrink-0 motion-safe:animate-pulse rounded-full bg-foreground/10" />
           <span className="flex-1 space-y-1.5">
             <span className="block h-2.5 w-24 motion-safe:animate-pulse rounded-full bg-foreground/10" />
@@ -54,12 +54,12 @@ export function UserChip({ className = "" }: { className?: string }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2.5 rounded-full px-2 py-1.5",
+        "flex items-center gap-2 rounded-full px-1.5 py-1",
         "transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.32,0.72,0,1)]",
         className,
       )}
     >
-      <UserAvatar />
+      <UserAvatar size={avatarSize} />
       <span className="min-w-0 flex-1 text-right">
         <span className="block truncate text-sm font-semibold leading-tight">
           {label || "حسابي"}

@@ -252,28 +252,28 @@ export function AppShell({ children }: { children: ReactNode }) {
           <BranchSwitcher className="w-full justify-between" />
         </div>
 
-        {/* Pinned Executive Launcher: Owner Companion App — compact single row */}
+        {/* Pinned Executive Launcher: Owner Companion App — distributed single row */}
         <Link
           to="/owner"
           className={cn(
-            "group flex items-center gap-2.5 rounded-full px-3 py-2 text-[13px] transition-[background-color,color,transform] duration-300",
+            "group flex w-full items-center justify-between gap-2 rounded-full px-3 py-2 text-[13px] transition-[background-color,color,transform] duration-300",
             location.pathname.startsWith("/owner")
               ? "bg-amber-500/15 font-semibold text-amber-300"
               : "text-foreground hover:bg-card/80"
           )}
         >
-          <span className={cn(
-            "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
-            location.pathname.startsWith("/owner")
-              ? "bg-amber-500 text-black"
-              : "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20"
-          )}>
-            <Crown className="h-3.5 w-3.5" />
-          </span>
-          <span className="flex min-w-0 flex-1 items-center gap-1.5">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className={cn(
+              "grid h-7 w-7 shrink-0 place-items-center rounded-lg transition-colors",
+              location.pathname.startsWith("/owner")
+                ? "bg-amber-500 text-black"
+                : "bg-amber-500/10 text-amber-400 group-hover:bg-amber-500/20"
+            )}>
+              <Crown className="h-3.5 w-3.5" />
+            </span>
             <span className="truncate font-bold">تطبيق المالك</span>
-            <span className="shrink-0 rounded bg-amber-500/20 px-1 text-[10px] font-extrabold text-amber-400">Boss</span>
           </span>
+          <span className="shrink-0 rounded bg-amber-500/20 px-1 text-[10px] font-extrabold text-amber-400">Boss</span>
         </Link>
 
         <nav className="stagger no-scrollbar -mx-1 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto px-1">
@@ -360,17 +360,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        {/* Footer: single compact row — avatar + theme + logout */}
-        <div className="mt-0 flex shrink-0 items-center gap-2 border-t border-[var(--hairline)] pt-3">
+        {/* Footer: single compact row — avatar + theme + logout (larger touch targets) */}
+        <div className="mt-0 flex shrink-0 items-center gap-1.5 border-t border-[var(--hairline)] pt-3">
           <div className="min-w-0 flex-1">
-            <UserChip />
+            <UserChip avatarSize={30} />
           </div>
-          <ThemeToggle className="h-8 w-8 shrink-0" />
+          <ThemeToggle className="h-9 w-9 shrink-0" />
           <button
             onClick={signOut}
             aria-label="تسجيل الخروج"
             title="تسجيل الخروج"
-            className="press grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-[background-color,color] duration-300 hover:bg-destructive/10 hover:text-destructive"
+            className="press grid h-9 w-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-[background-color,color] duration-300 hover:bg-destructive/10 hover:text-destructive"
           >
             <LogOut className="h-4 w-4" />
           </button>
