@@ -346,7 +346,7 @@ function DailyPage() {
         eyebrow="تشغيل يومي • رصد التدفقات النقدية اللحظية"
         title="اليومية"
         subtitle={`${rangeLabel} — ملخص المبيعات، التحصيلات، المصروفات، وصافي نقدية الخزينة.`}
-        actionWidth="md:max-w-[46rem] lg:max-w-[52rem]"
+        actionWidth="md:max-w-[56rem] lg:max-w-[64rem]"
         action={
           <div className="flex w-full flex-col gap-3">
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -377,9 +377,7 @@ function DailyPage() {
               <ActionButton onClick={() => setOpenExpense(true)} icon={<Plus className="h-4 w-4" />}>
                 إضافة مصروف
               </ActionButton>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="mx-1 h-6 w-px bg-[var(--hairline)]" />
               <FilterChips<QuickPreset>
                 variant="segmented"
                 value={quickPreset}
