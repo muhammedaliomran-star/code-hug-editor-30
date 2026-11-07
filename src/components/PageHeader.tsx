@@ -30,7 +30,7 @@ export function PageHeader({
           <p className="text-lede mt-3 max-w-prose text-right">{subtitle}</p>
         )}
       </div>
-      <div className="order-2 flex flex-wrap items-center gap-2 md:justify-end">{action}</div>
+      <div className="order-2 flex max-w-full flex-wrap items-center gap-2 md:max-w-[34rem] md:justify-end">{action}</div>
     </header>
   );
 }
