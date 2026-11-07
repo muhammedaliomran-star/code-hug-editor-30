@@ -27,7 +27,7 @@ import {
   db, useDB, fmt, invoiceNumber, expenseCategoryLabel, type Invoice,
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
-import { getManualTransactions } from "@/lib/cashbox-system";
+import { getManualTransactions, getInternalTransfers, calculateAccountBalance, getTreasuryAccounts } from "@/lib/cashbox-system";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -94,7 +94,20 @@ function DailyPage() {
   const [note, setNote] = useState("");
 
   useEffect(() => {
+    // 1) instant from localStorage (offline / first paint)
     try { setNote(localStorage.getItem(noteKey(from, to)) ?? ""); } catch { setNote(""); }
+    // 2) then pull from server (source of truth) if available
+    let cancelled = false;
+    (async () => {
+      try {
+        const remote = await db.getDailyNote(from, to);
+        if (!cancelled && remote !== null) {
+          setNote(remote);
+          try { localStorage.setItem(noteKey(from, to), remote); } catch { /* ignore */ }
+        }
+      } catch { /* offline / table missing — keep local */ }
+    })();
+    return () => { cancelled = true; };
   }, [from, to]);
 
   // Quick Preset Date Selectors
@@ -290,6 +303,7 @@ function DailyPage() {
 
     // حركات خزينة يدوية (إيداعات/سحوبات) ضمن الفترة — لتتوافق مع نظام الخزينة
     const manualTxs = getManualTransactions();
+    const transfers = getInternalTransfers();
     let manualIn = 0, manualOut = 0;
     for (const tx of manualTxs) {
       const tDay = (tx.date || tx.createdAt).slice(0, 10);
@@ -298,6 +312,12 @@ function DailyPage() {
       if (tx.type === "in") manualIn += tx.amount;
       else manualOut += tx.amount;
     }
+
+    // رصيد الخزينة (الحالي) — من نظام الخزينة (مصدر الحقيقة)
+    const mainAccount = getTreasuryAccounts().find((a) => a.isDefault || a.id === "acc-cash-main");
+    const cashboxBalance = mainAccount
+      ? calculateAccountBalance(mainAccount, invoices, payments, expenses, manualTxs, transfers).currentBalance
+      : null;
 
     const totalCollectedActual = periodPayments.reduce((s, p) => s + p.amount, 0);
     const periodExpenses = periodExpensesList.reduce((s, e) => s + e.amount, 0);
@@ -317,6 +337,7 @@ function DailyPage() {
       periodReturnsTotal,
       manualIn,
       manualOut,
+      cashboxBalance,
       netCashDrawer,
       net: paidFromNewInvoices - periodExpenses,
       series: {
@@ -325,7 +346,7 @@ function DailyPage() {
         collected: sCollected,
       },
     };
-  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, from, to]);
+  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, invoices, expenses, from, to]);
 
   const filtersActive =
     !!search.trim() || customerId !== "all" || typeFilter !== "all" || statusFilter !== "all";
@@ -346,12 +367,16 @@ function DailyPage() {
     : `${from} — ${to}`;
 
   const saveNote = () => {
-    try {
-      localStorage.setItem(noteKey(from, to), note);
-      toast.success("تم حفظ ملاحظة اليوم");
-    } catch {
-      toast.error("مش قادر يحفظ الملاحظة على الجهاز");
-    }
+    try { localStorage.setItem(noteKey(from, to), note); } catch { /* ignore */ }
+    // push to server (best-effort; falls back to localStorage if offline)
+    (async () => {
+      try {
+        await db.saveDailyNote(from, to, note);
+        toast.success("تم حفظ الملاحظة (محلي + سيرفر)");
+      } catch (err: any) {
+        toast.success("تم حفظ الملاحظة محلياً (سيزامن لاحقاً)");
+      }
+    })();
   };
 
   const exportCSV = () => {
@@ -961,6 +986,16 @@ function DailyPage() {
                     {money(stats.netCashDrawer)}
                   </strong>
                 </div>
+
+                {stats.cashboxBalance !== null && (
+                  <div className="flex justify-between items-center py-2.5 border-t border-[var(--hairline)] mt-1 pt-2.5">
+                    <span className="text-muted-foreground">رصيد الخزينة (الحالي — من نظام الخزينة):</span>
+                    <strong className={cn("font-mono text-muted-foreground", masked && "privacy-blur")}>
+                      {money(stats.cashboxBalance)}
+                    </strong>
+                  </div>
+                )}
+
               </div>
 
               <div className="border-t border-[var(--hairline)] pt-3">

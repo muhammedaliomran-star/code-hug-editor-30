@@ -648,14 +648,48 @@ export const db = {
     await fetchAll();
   },
   async addExpense(exp: Omit<Expense, "id" | "createdAt">): Promise<string | undefined> {
-    const user_id = await uid();
-    const { data, error } = await supabase.from("expenses").insert({
-      user_id, amount: (exp.amount ?? 0) * 100, category: exp.category,
-      expense_date: exp.expenseDate, notes: exp.notes,
-    }).select("id").single();
-    if (error) throw error;
-    await fetchAll();
-    return (data as { id?: string } | null)?.id;
+    let user_id: string;
+    try {
+      user_id = await uid();
+    } catch {
+      // offline auth failure — try cached session
+      try {
+        const { data } = await supabase.auth.getSession();
+        user_id = data.session?.user?.id ?? "";
+      } catch { user_id = ""; }
+      if (!user_id) throw new Error("Not authenticated");
+    }
+    try {
+      const { data, error } = await supabase.from("expenses").insert({
+        user_id, amount: (exp.amount ?? 0) * 100, category: exp.category,
+        expense_date: exp.expenseDate, notes: exp.notes,
+      }).select("id").single();
+      if (error) throw error;
+      await fetchAll();
+      return (data as { id?: string } | null)?.id;
+    } catch (err) {
+      // offline fallback: enqueue for later replay
+      let queuedId: string | null = null;
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        queuedId = `off-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        enqueueOffline({
+          tableName: "expenses",
+          operation: "upsert",
+          payload: {
+            id: queuedId!,
+            user_id,
+            amount: (exp.amount ?? 0) * 100,
+            category: exp.category,
+            expense_date: exp.expenseDate,
+            notes: exp.notes,
+          },
+          onConflict: "id",
+        });
+      } catch { /* ignore */ }
+      if (queuedId) return queuedId;
+      throw err;
+    }
   },
   async updateExpense(id: string, patch: Partial<Omit<Expense, "id" | "createdAt">>) {
     const upd: any = {};
@@ -673,6 +707,33 @@ export const db = {
     await fetchAll();
   },
 
+  async getDailyNote(dateFrom: string, dateTo: string): Promise<string | null> {
+    try {
+      const user_id = await uid();
+      const { data, error } = await supabase
+        .from("daily_notes")
+        .select("note")
+        .eq("user_id", user_id)
+        .eq("date_from", dateFrom)
+        .eq("date_to", dateTo)
+        .maybeSingle();
+      if (error) return null;
+      return (data as { note?: string } | null)?.note ?? null;
+    } catch {
+      return null;
+    }
+  },
+
+  async saveDailyNote(dateFrom: string, dateTo: string, note: string): Promise<void> {
+    const user_id = await uid();
+    const { error } = await supabase
+      .from("daily_notes")
+      .upsert(
+        { user_id, date_from: dateFrom, date_to: dateTo, note, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,date_from,date_to" },
+      );
+    if (error) throw error;
+  },
   async addSupplier(s: Omit<Supplier, "id" | "createdAt">) {
     const user_id = await uid();
     const { error } = await supabase.from("suppliers").insert({
