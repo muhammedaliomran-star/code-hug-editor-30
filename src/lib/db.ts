@@ -296,9 +296,32 @@ async function fetchAllInner() {
   saveCacheToIDB(cache).catch(() => {});
 }
 
-export async function invalidateCache() {
-  loaded = false;
-  await fetchAll();
+// Optional `table` enables a partial refresh (single table) instead of reloading
+// all 18 tables. Used by realtime handlers to avoid heavy full reloads.
+export async function invalidateCache(table?: string) {
+  const dailyMap: Record<string, { cacheKey: string; fetch: () => Promise<any> }> = {
+    invoices: { cacheKey: "invoices", fetch: () => supabase.from("invoices").select("*").order("created_at", { ascending: false }) },
+    payments: { cacheKey: "payments", fetch: () => supabase.from("payments").select("*") },
+    expenses: { cacheKey: "expenses", fetch: () => supabase.from("expenses").select("*").order("expense_date", { ascending: false }) },
+    return_records: { cacheKey: "returns", fetch: () => supabase.from("return_records").select("*").order("created_at", { ascending: false }) },
+  };
+  const entry = table ? dailyMap[table] : undefined;
+  if (!entry) {
+    loaded = false;
+    await fetchAll();
+    return;
+  }
+  try {
+    const { data, error } = await entry.fetch();
+    if (error) throw error;
+    (cache as any)[entry.cacheKey] = data ?? [];
+  } catch (e) {
+    console.error("[db] refreshTable failed, falling back to full reload:", e);
+    loaded = false;
+    await fetchAll();
+    return;
+  }
+  notify();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

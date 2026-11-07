@@ -175,11 +175,11 @@ function DailyPage() {
         if (!uid) return;
         channel = supabase
           .channel("daily-realtime")
-          .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => { invalidateCache(); setNoteTick((n) => n + 1); }, 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("invoices"), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("payments"), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("expenses"), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("return_records"), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => { setNoteTick((n) => n + 1); }, 400); })
           .subscribe();
       } catch { /* ignore */ }
     })();
