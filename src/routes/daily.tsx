@@ -1,10 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 import Daily from "@/pages/Daily";
 import { requireAuth } from "@/lib/route-guards";
+
+const dailySearchSchema = z.object({
+  from: z.string().optional(),
+  to: z.string().optional(),
+  search: z.string().optional(),
+  customerId: z.string().optional(),
+  typeFilter: z.enum(["all", "installment", "cash"]).optional(),
+  statusFilter: z.enum(["all", "paid", "partial", "unpaid"]).optional(),
+  activeTab: z.enum(["invoices", "payments", "expenses", "returns"]).optional(),
+  quickPreset: z.enum(["today", "yesterday", "this-week", "this-month"]).optional(),
+});
 
 export const Route = createFileRoute("/daily")({
   ssr: false,
   beforeLoad: requireAuth,
+  validateSearch: dailySearchSchema,
   component: Daily,
   head: () => ({
     meta: [

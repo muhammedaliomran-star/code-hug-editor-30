@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearch, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { ExpenseFormModal } from "@/components/expenses/ExpenseFormModal";
@@ -81,16 +82,38 @@ function DailyPage() {
   const { privacy, toggle } = usePrivacy();
   const masked = privacy;
 
-  const [from, setFrom] = useState(todayISO);
-  const [to, setTo] = useState(todayISO);
-  const [search, setSearch] = useState("");
-  const [customerId, setCustomerId] = useState<"all" | string>("all");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [activeTab, setActiveTab] = useState<ActiveTab>("invoices");
+  const urlSearch = useSearch({ from: "/daily" });
+  const navigate = useNavigate();
+
+  const [from, setFrom] = useState(urlSearch.from ?? todayISO());
+  const [to, setTo] = useState(urlSearch.to ?? todayISO());
+  const [search, setSearch] = useState(urlSearch.search ?? "");
+  const [customerId, setCustomerId] = useState<"all" | string>(urlSearch.customerId ?? "all");
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>(urlSearch.typeFilter ?? "all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(urlSearch.statusFilter ?? "all");
+  const [activeTab, setActiveTab] = useState<ActiveTab>(urlSearch.activeTab ?? "invoices");
+  const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
 
   const [openExpense, setOpenExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
+
+  // Sync filter state to URL (shareable link)
+  useEffect(() => {
+    navigate({
+      to: "/daily",
+      search: {
+        from: from !== todayISO() ? from : undefined,
+        to: to !== todayISO() ? to : undefined,
+        search: search || undefined,
+        customerId: customerId !== "all" ? customerId : undefined,
+        typeFilter: typeFilter !== "all" ? typeFilter : undefined,
+        statusFilter: statusFilter !== "all" ? statusFilter : undefined,
+        activeTab: activeTab !== "invoices" ? activeTab : undefined,
+        quickPreset: quickPreset !== "today" ? quickPreset : undefined,
+      },
+      replace: true,
+    });
+  }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, quickPreset, navigate]);
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -112,7 +135,6 @@ function DailyPage() {
 
   // Quick Preset Date Selectors
   type QuickPreset = "today" | "yesterday" | "this-week" | "this-month";
-  const [quickPreset, setQuickPreset] = useState<QuickPreset>("today");
   const toISO = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
