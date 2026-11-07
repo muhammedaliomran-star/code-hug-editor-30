@@ -3,6 +3,7 @@ import { useSearch, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { ExpenseFormModal } from "@/components/expenses/ExpenseFormModal";
+import { ViewInvoiceDialog } from "@/components/invoices/ViewInvoiceDialog";
 import { PageTransition } from "@/components/PageTransition";
 import { BezelCard } from "@/components/BezelCard";
 import { MetricCard, MetricLabel } from "@/components/MetricCard";
@@ -25,7 +26,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, type Invoice,
+  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, invalidateCache, type Invoice,
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
 import { getManualTransactions, getInternalTransfers, calculateAccountBalance, getTreasuryAccounts } from "@/lib/cashbox-system";
@@ -78,7 +79,8 @@ function escapeHtml(s: string): string {
 }
 
 function DailyPage() {
-  const { invoices, customers, expenses, payments, returns } = useDB();
+  const { invoices, customers, expenses, payments, returns, invoiceItems } = useDB();
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const { privacy, toggle } = usePrivacy();
   const masked = privacy;
 
@@ -92,6 +94,8 @@ function DailyPage() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(urlSearch.typeFilter ?? "all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(urlSearch.statusFilter ?? "all");
   const [activeTab, setActiveTab] = useState<ActiveTab>(urlSearch.activeTab ?? "invoices");
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(1);
   const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
 
   const [openExpense, setOpenExpense] = useState(false);
@@ -113,7 +117,8 @@ function DailyPage() {
       },
       replace: true,
     });
-  }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, quickPreset, navigate]);
+    });
+    setPage(1);
   const [note, setNote] = useState("");
 
   useEffect(() => {
@@ -136,6 +141,31 @@ function DailyPage() {
   // تحديث رصيد الخزينة من السحابة (تقليل التأخر)
   useEffect(() => {
     import("@/lib/cashbox-sync").then((m) => m.pullCashboxFromCloud().catch(() => {})).catch(() => {});
+  }, []);
+
+  // Realtime: تحديث فوري عند تغيير البيانات في Supabase
+  useEffect(() => {
+    let channel: any = null;
+    let timer: any = null;
+    (async () => {
+      try {
+        const { supabase } = await import("@/lib/supabase");
+        const { data } = await supabase.auth.getUser();
+        const uid = data?.user?.id;
+        if (!uid) return;
+        channel = supabase
+          .channel("daily-realtime")
+          .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache(), 400); })
+          .subscribe();
+      } catch { /* ignore */ }
+    })();
+    return () => {
+      clearTimeout(timer);
+      if (channel) { try { channel.unsubscribe(); } catch { /* ignore */ } }
+    };
   }, []);
 
   // Quick Preset Date Selectors
@@ -379,6 +409,16 @@ function DailyPage() {
     };
   }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, invoices, expenses, from, to]);
 
+  const pagedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pagedPayments = periodPayments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pagedExpenses = periodExpensesList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pagedReturns = periodReturnsList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const activeListLen =
+    activeTab === "invoices" ? rows.length :
+    activeTab === "payments" ? periodPayments.length :
+    activeTab === "expenses" ? periodExpensesList.length : periodReturnsList.length;
+  const totalPages = Math.max(1, Math.ceil(activeListLen / PAGE_SIZE));
+
   const filtersActive =
     !!search.trim() || customerId !== "all" || typeFilter !== "all" || statusFilter !== "all";
 
@@ -417,7 +457,7 @@ function DailyPage() {
 
     if (activeTab === "invoices") {
       headers = ["رقم", "التاريخ", "الوقت", "العميل", "الإجمالي", "مدفوع", "متبقي", "نوع", "الحالة"];
-      body = rows.map((inv) => {
+      body = pagedRows.map((inv) => {
         const c = customerById.get(inv.customerId);
         const isCash = (c?.customerType ?? "installment") === "cash";
         const d = new Date(inv.createdAt);
@@ -776,12 +816,12 @@ function DailyPage() {
                           </td>
                         </tr>
                       ) : (
-                        rows.map((inv) => {
+                        pagedRows.map((inv) => {
                           const c = customerById.get(inv.customerId);
                           const st = statusMeta[invStatus(inv)];
                           const rem = Math.max(0, inv.total - inv.paid);
                           return (
-                            <tr key={inv.id} className="hover:bg-foreground/[0.02] transition-colors">
+                             <tr key={inv.id} className="hover:bg-foreground/[0.02] transition-colors cursor-pointer" onClick={() => setViewingInvoice(inv)}>
                               <td className="p-3 font-mono font-bold text-muted-foreground" dir="ltr">
                                 {invoiceNumber(invoices, inv.id)}
                               </td>
@@ -829,7 +869,7 @@ function DailyPage() {
                           </td>
                         </tr>
                       ) : (
-                        periodPayments.map((p) => (
+                        pagedPayments.map((p) => (
                           <tr key={p.id} className="hover:bg-foreground/[0.02] transition-colors">
                             <td className="p-3 font-mono text-muted-foreground">
                               {new Date(p.paidAt).toLocaleDateString("ar-EG")} {new Date(p.paidAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}
@@ -872,7 +912,7 @@ function DailyPage() {
                           </td>
                         </tr>
                       ) : (
-                        periodExpensesList.map((exp) => (
+                        pagedExpenses.map((exp) => (
                           <tr key={exp.id} className="hover:bg-foreground/[0.02] transition-colors">
                             <td className="p-3 font-mono text-muted-foreground">{exp.expenseDate}</td>
                             <td className="p-3">
@@ -940,7 +980,7 @@ function DailyPage() {
                           </td>
                         </tr>
                       ) : (
-                        periodReturnsList.map((ret) => (
+                        pagedReturns.map((ret) => (
                           <tr key={ret.id} className="hover:bg-foreground/[0.02] transition-colors">
                             <td className="p-3 font-mono text-muted-foreground">
                               {new Date(ret.createdAt).toLocaleDateString("ar-EG")}
@@ -957,6 +997,13 @@ function DailyPage() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 py-3">
+                  <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="press rounded-lg px-3 py-1.5 text-xs font-bold ring-1 ring-inset ring-[var(--hairline)] disabled:opacity-40">السابق</button>
+                  <span className="text-xs text-muted-foreground font-mono">صفحة {page} / {totalPages}</span>
+                  <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} className="press rounded-lg px-3 py-1.5 text-xs font-bold ring-1 ring-inset ring-[var(--hairline)] disabled:opacity-40">التالي</button>
                 </div>
               )}
             </BezelCard>
@@ -1060,7 +1107,7 @@ function DailyPage() {
         </div>
       </div>
 
-      <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
+      <ViewInvoiceDialog\n        inv={viewingInvoice}\n        customer={viewingInvoice ? customerById.get(viewingInvoice.customerId) ?? null : null}\n        items={invoiceItems}\n        payments={payments}\n        onClose={() => setViewingInvoice(null)}\n      />\n      <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
     </>
   );
 }
