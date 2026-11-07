@@ -32,6 +32,10 @@ export interface DashboardContextValue {
 
   timeRange: TimeRange;
   setTimeRange: (r: TimeRange) => void;
+  customFrom: string;
+  customTo: string;
+  setCustomFrom: (s: string) => void;
+  setCustomTo: (s: string) => void;
   topProductsSort: TopProductsSort;
   setTopProductsSort: (s: TopProductsSort) => void;
   customizationOpen: boolean;
@@ -117,6 +121,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const data = useDB();
   const { privacy, toggle } = usePrivacy();
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
+  const todayISO = () => new Date().toISOString().slice(0, 10);
+  const monthStartISO = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+  };
+  const [customFrom, setCustomFrom] = useState<string>(monthStartISO());
+  const [customTo, setCustomTo] = useState<string>(todayISO());
   const [topProductsSort, setTopProductsSort] = useState<TopProductsSort>("quantity");
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const { sections, isVisible, toggleSection, moveSection, resetToDefault } = useDashboardLayout();
@@ -143,8 +154,13 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
       const start = new Date(now.getFullYear(), now.getMonth(), 1);
       return { start, end: now };
     }
+    if (timeRange === "custom") {
+      const start = new Date(`${customFrom}T00:00:00`);
+      const end = new Date(`${customTo}T23:59:59`);
+      return { start, end };
+    }
     return { start: new Date(2000, 0, 1), end: now };
-  }, [timeRange]);
+  }, [timeRange, customFrom, customTo]);
 
   const isInRange = (d: Date | string) => {
     const t = new Date(d).getTime();
@@ -335,6 +351,7 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     "30d": "آخر 30 يوم",
     month: "هذا الشهر",
     all: "كافة السجلات",
+    custom: `${customFrom} — ${customTo}`,
   }[timeRange];
 
   const totalSupplierDebt = data.suppliers.reduce(
@@ -717,6 +734,10 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     toggle,
     timeRange,
     setTimeRange,
+    customFrom,
+    customTo,
+    setCustomFrom,
+    setCustomTo,
     topProductsSort,
     setTopProductsSort,
     customizationOpen,

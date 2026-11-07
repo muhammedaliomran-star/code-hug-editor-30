@@ -11,6 +11,7 @@ import { Link } from "@/lib/router-compat";
 import { cn } from "@/lib/utils";
 import { ActionButton } from "@/components/ActionButton";
 import { FilterChips } from "@/components/FilterChips";
+import { Input } from "@/components/ui/input";
 import {
   DashboardProvider,
   useDashboard,
@@ -32,6 +33,10 @@ function DashboardInner() {
     toggle,
     timeRange,
     setTimeRange,
+    customFrom,
+    customTo,
+    setCustomFrom,
+    setCustomTo,
     customizationOpen,
     setCustomizationOpen,
     sections,
@@ -46,7 +51,6 @@ function DashboardInner() {
     return (
       <>
         <PageHeader
-          eyebrow="Live overview"
           title="لوحة التحكم الرئيسية"
           subtitle="جاري تجهيز وتدقيق مؤشراتك المالية والتشغيلية…"
         />
@@ -64,7 +68,6 @@ function DashboardInner() {
   return (
     <>
       <PageHeader
-        eyebrow="Live overview"
         title="لوحة التحكم الرئيسية"
         subtitle="مركز القيادة والرقابة اللحظية على الخزينة، الديون، المخزون، المبيعات والشحن."
         action={
@@ -87,10 +90,36 @@ function DashboardInner() {
                   { value: "7d", label: "7 أيام" },
                   { value: "month", label: "الشهر" },
                   { value: "all", label: "الكل" },
+                  { value: "custom", label: "مخصص" },
                 ]}
                 value={timeRange}
                 onChange={setTimeRange}
               />
+
+              {timeRange === "custom" && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    من
+                    <Input
+                      type="date"
+                      value={customFrom}
+                      onChange={(e) => setCustomFrom(e.target.value)}
+                      dir="ltr"
+                      className="text-numeric h-9 text-xs"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                    إلى
+                    <Input
+                      type="date"
+                      value={customTo}
+                      onChange={(e) => setCustomTo(e.target.value)}
+                      dir="ltr"
+                      className="text-numeric h-9 text-xs"
+                    />
+                  </label>
+                </div>
+              )}
             </div>
 
             {/* الصف الثاني: التقرير + أدوات العرض (أيقونات) + المطابقة */}

@@ -16,7 +16,7 @@ export const TOOLTIP_STYLE = {
   boxShadow: "0 18px 45px -22px rgba(0,0,0,0.8)",
 };
 
-export type TimeRange = "today" | "7d" | "30d" | "month" | "all";
+export type TimeRange = "today" | "7d" | "30d" | "month" | "all" | "custom";
 export type TopProductsSort = "quantity" | "revenue";
 
 export function SectionHead({
