@@ -33,6 +33,7 @@ const CONFLICT_TARGETS: Record<string, string> = {
   category_budgets: "user_id,category",
   expense_settings: "user_id",
   loyalty_config: "user_id",
+  daily_notes: "user_id,date_from,date_to",
 };
 
 
@@ -136,6 +137,16 @@ export async function applyQueuedItem(item: OfflineQueueItem): Promise<void> {
       item.payload as never,
       options ? { onConflict: options } : undefined,
     );
+    if (error) throw error;
+    return;
+  }
+
+  if (item.operation === "update") {
+    const payload = (item.payload ?? {}) as Record<string, unknown>;
+    const id = payload.id;
+    if (id === undefined) throw new Error("queue update item without id");
+    const { id: _id, ...rest } = payload;
+    const { error } = await table(item.tableName).update(rest as never).eq("id", id as never);
     if (error) throw error;
     return;
   }

@@ -697,14 +697,37 @@ export const db = {
     if (patch.category !== undefined) upd.category = patch.category;
     if (patch.expenseDate !== undefined) upd.expense_date = patch.expenseDate;
     if (patch.notes !== undefined) upd.notes = patch.notes;
-    const { error } = await supabase.from("expenses").update(upd).eq("id", id);
-    if (error) throw error;
-    await fetchAll();
+    try {
+      const { error } = await supabase.from("expenses").update(upd).eq("id", id);
+      if (error) throw error;
+      await fetchAll();
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        const payload = { id };
+        if (patch.amount !== undefined) payload.amount = (patch.amount ?? 0) * 100;
+        if (patch.category !== undefined) payload.category = patch.category;
+        if (patch.expenseDate !== undefined) payload.expense_date = patch.expenseDate;
+        if (patch.notes !== undefined) payload.notes = patch.notes;
+        enqueueOffline({ tableName: "expenses", operation: "update", payload });
+      } catch { /* ignore */ }
+      throw err;
+    }
   },
   async removeExpense(id: string) {
-    const { error } = await supabase.from("expenses").delete().eq("id", id);
-    if (error) throw error;
-    await fetchAll();
+    try {
+      const { error } = await supabase.from("expenses").delete().eq("id", id);
+      if (error) throw error;
+      await fetchAll();
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        let user_id;
+        try { user_id = await uid(); } catch { user_id = undefined; }
+        enqueueOffline({ tableName: "expenses", operation: "delete", payload: user_id ? { id, user_id } : { id } });
+      } catch { /* ignore */ }
+      throw err;
+    }
   },
 
   async getDailyNote(dateFrom: string, dateTo: string): Promise<string | null> {
@@ -725,14 +748,27 @@ export const db = {
   },
 
   async saveDailyNote(dateFrom: string, dateTo: string, note: string): Promise<void> {
-    const user_id = await uid();
-    const { error } = await supabase
-      .from("daily_notes")
-      .upsert(
-        { user_id, date_from: dateFrom, date_to: dateTo, note, updated_at: new Date().toISOString() },
-        { onConflict: "user_id,date_from,date_to" },
-      );
-    if (error) throw error;
+    let user_id: string;
+    try { user_id = await uid(); }
+    catch {
+      try { const { data } = await supabase.auth.getSession(); user_id = data.session?.user?.id ?? ""; } catch { user_id = ""; }
+      if (!user_id) throw new Error("Not authenticated");
+    }
+    try {
+      const { error } = await supabase
+        .from("daily_notes")
+        .upsert(
+          { user_id, date_from: dateFrom, date_to: dateTo, note, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,date_from,date_to" },
+        );
+      if (error) throw error;
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        enqueueOffline({ tableName: "daily_notes", operation: "upsert", payload: { user_id, date_from: dateFrom, date_to: dateTo, note, updated_at: new Date().toISOString() }, onConflict: "user_id,date_from,date_to" });
+      } catch { /* ignore */ }
+      throw err;
+    }
   },
   async addSupplier(s: Omit<Supplier, "id" | "createdAt">) {
     const user_id = await uid();

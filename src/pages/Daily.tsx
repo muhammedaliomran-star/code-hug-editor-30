@@ -133,6 +133,11 @@ function DailyPage() {
     return () => { cancelled = true; };
   }, [from, to]);
 
+  // تحديث رصيد الخزينة من السحابة (تقليل التأخر)
+  useEffect(() => {
+    import("@/lib/cashbox-sync").then((m) => m.pullCashboxFromCloud().catch(() => {})).catch(() => {});
+  }, []);
+
   // Quick Preset Date Selectors
   type QuickPreset = "today" | "yesterday" | "this-week" | "this-month";
   const toISO = (d: Date) =>
@@ -153,10 +158,10 @@ function DailyPage() {
       setTo(toISO(y));
     } else if (preset === "this-week") {
       const w = new Date();
-      const dayOfWeek = w.getDay(); // 0 is Sunday, 6 is Saturday
-      const diff = w.getDate() - dayOfWeek + (dayOfWeek === 6 ? 0 : -1); // approximate start of week (Saturday)
+      const dayOfWeek = w.getDay(); // 0 Sunday .. 6 Saturday
+      const diff = (dayOfWeek + 1) % 7; // week starts Saturday
       const startW = new Date(w);
-      startW.setDate(diff);
+      startW.setDate(w.getDate() - diff);
       setFrom(toISO(startW));
       setTo(tIso);
     } else if (preset === "this-month") {
@@ -181,7 +186,7 @@ function DailyPage() {
     const q = search.trim().toLowerCase();
     return invoices
       .filter((inv) => {
-        const day = inv.createdAt.slice(0, 10);
+        const day = new Date(inv.createdAt).toLocaleDateString("en-CA");
         if (from && day < from) return false;
         if (to && day > to) return false;
         if (customerId !== "all" && inv.customerId !== customerId) return false;
@@ -202,7 +207,7 @@ function DailyPage() {
     const q = search.trim().toLowerCase();
     return payments
       .filter((p) => {
-        const pDay = p.paidAt.slice(0, 10);
+        const pDay = new Date(p.paidAt).toLocaleDateString("en-CA");
         if (from && pDay < from) return false;
         if (to && pDay > to) return false;
         const inv = invoiceById.get(p.invoiceId);
@@ -248,7 +253,7 @@ function DailyPage() {
     const q = search.trim().toLowerCase();
     return returns
       .filter((r) => {
-        const rDay = r.createdAt.slice(0, 10);
+        const rDay = new Date(r.createdAt).toLocaleDateString("en-CA");
         if (from && rDay < from) return false;
         if (to && rDay > to) return false;
         const inv = r.invoiceId ? invoiceById.get(r.invoiceId) : null;
@@ -282,7 +287,7 @@ function DailyPage() {
       const cur = new Date(`${from}T00:00:00`);
       const end = new Date(`${to}T00:00:00`);
       while (cur <= end && days.length < 62) {
-        days.push(cur.toISOString().slice(0, 10));
+        days.push(cur.toLocaleDateString("en-CA"));
         cur.setDate(cur.getDate() + 1);
       }
     }
@@ -290,7 +295,7 @@ function DailyPage() {
     const size = hourly ? 24 : days.length;
     const dayIndex = new Map(days.map((d, i) => [d, i]));
     const slotOf = (iso: string) =>
-      hourly ? new Date(iso).getHours() : (dayIndex.get(iso.slice(0, 10)) ?? -1);
+      hourly ? new Date(iso).getHours() : (dayIndex.get(new Date(iso).toLocaleDateString("en-CA")) ?? -1);
     const mk = () => new Array<number>(size).fill(0);
     const sCount = mk(), sSales = mk(), sCashSales = mk(), sInstSales = mk();
     const sPaid = mk(), sCashPaid = mk(), sInstPaid = mk(), sRemaining = mk();
@@ -309,6 +314,7 @@ function DailyPage() {
         sSales[i] += inv.total;
         sPaid[i] += inv.paid;
         sRemaining[i] += Math.max(0, inv.total - inv.paid);
+        sCollected[i] += inv.downPayment || 0;
         if (isCash) { sCashSales[i] += inv.total; sCashPaid[i] += inv.paid; }
         else { sInstSales[i] += inv.total; sInstPaid[i] += inv.paid; }
       }
@@ -316,7 +322,7 @@ function DailyPage() {
 
     // تجميع التحصيلات الفعلية (حسب الدفعات) لـ sparkline
     for (const p of payments) {
-      const pDay = p.paidAt.slice(0, 10);
+      const pDay = new Date(p.paidAt).toLocaleDateString("en-CA");
       if (from && pDay < from) continue;
       if (to && pDay > to) continue;
       const i = slotOf(p.paidAt);
@@ -341,7 +347,9 @@ function DailyPage() {
       ? calculateAccountBalance(mainAccount, invoices, payments, expenses, manualTxs, transfers).currentBalance
       : null;
 
-    const totalCollectedActual = periodPayments.reduce((s, p) => s + p.amount, 0);
+    // مقدم (down payment) على فواتير الفترة — يُحصَّل عند إنشاء الفاتورة (لا يوجد له صف في payments)
+    const periodDownPayments = rows.reduce((s, inv) => s + (inv.downPayment || 0), 0);
+    const totalCollectedActual = periodPayments.reduce((s, p) => s + p.amount, 0) + periodDownPayments;
     const periodExpenses = periodExpensesList.reduce((s, e) => s + e.amount, 0);
     const periodReturnsTotal = periodReturnsList.reduce((s, r) => s + r.totalAmount, 0);
     
@@ -353,6 +361,7 @@ function DailyPage() {
       sales, cashSales, instSales,
       paid: paidFromNewInvoices,
       totalCollectedActual,
+      periodDownPayments,
       cashPaid, instPaid,
       remaining: Math.max(0, sales - paidFromNewInvoices),
       periodExpenses,
@@ -423,7 +432,7 @@ function DailyPage() {
         ];
       });
     } else if (activeTab === "payments") {
-      headers = ["التاريخ", "الوقت", "العميل", "الفاتورة", "المبلغ", "ملاحظات"];
+      headers = ["التاريخ", "الوقت", "العميل", "الفاتورة", "المبلغ"];
       body = periodPayments.map((p) => {
         const d = new Date(p.paidAt);
         return [
@@ -432,7 +441,6 @@ function DailyPage() {
           p.customer?.name ?? "—",
           p.invoice ? invoiceNumber(invoices, p.invoice.id) : "—",
           p.amount,
-          p.notes ?? "",
         ];
       });
     } else if (activeTab === "expenses") {
@@ -976,6 +984,15 @@ function DailyPage() {
                     +{money(stats.totalCollectedActual)}
                   </strong>
                 </div>
+
+                {stats.periodDownPayments > 0 && (
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-muted-foreground">مقدم (دفعة مقدمة) على فواتير الفترة:</span>
+                    <strong className={cn("font-mono text-muted-foreground", masked && "privacy-blur")}>
+                      +{money(stats.periodDownPayments)}
+                    </strong>
+                  </div>
+                )}
 
                 <div className="flex justify-between items-center py-2.5">
                   <span className="text-danger">المصروفات النقدية المسحوبة:</span>
