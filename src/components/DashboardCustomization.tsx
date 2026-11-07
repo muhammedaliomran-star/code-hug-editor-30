@@ -23,7 +23,6 @@ import { cn } from "@/lib/utils";
 export type DashboardSectionId =
   | "quick_actions"
   | "bento_kpis"
-  | "secondary_kpis"
   | "top_products"
   | "insights"
   | "charts"
@@ -50,12 +49,6 @@ const DEFAULT_SECTIONS: SectionConfig[] = [
     id: "bento_kpis",
     label: "مؤشرات السيولة والديون والأرباح (Bento)",
     description: "السيولة النقدية، ديون العملاء، المخزون، والأرباح",
-    visible: true,
-  },
-  {
-    id: "secondary_kpis",
-    label: "العملاء والشحن ومؤشر الرقابة",
-    description: "كروت الشحن COD، مؤشر المطابقة المحاسبية، وحالة العملاء",
     visible: true,
   },
   {

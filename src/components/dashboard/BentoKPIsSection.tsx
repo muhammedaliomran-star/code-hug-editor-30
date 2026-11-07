@@ -1,4 +1,4 @@
-import { Wallet, Boxes, PiggyBank, Banknote, Truck } from "lucide-react";
+import { Wallet, Boxes, PiggyBank, Banknote, Truck, Users, ShieldCheck, TrendingUp, Receipt, FileText } from "lucide-react";
 import { fmt } from "@/lib/store";
 import { Reveal } from "@/components/Reveal";
 import { MetricCard } from "@/components/MetricCard";
@@ -20,16 +20,20 @@ export function BentoKPIsSection() {
     incompleteCostCount,
     rangeCollected,
     totalSupplierDebt,
+    activeCustomers,
+    frozenCustomers,
+    shippingStats,
+    reconciliationSummary,
     monthBuckets,
     data,
   } = useDashboard();
 
   return (
     <section className="mb-14">
-      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
-        <Reveal className="h-full" delay={0}>
+      <div className="grid auto-rows-fr grid-cols-2 gap-0 lg:grid-cols-4">
+        <Reveal className="h-full ring-0" delay={0}>
           <MetricCard
-            className="h-full"
+            className="h-full ring-0"
             label="إجمالي الديون الخارجية (لدى العملاء)"
             value={totalDebt}
             format={money}
@@ -47,9 +51,9 @@ export function BentoKPIsSection() {
           />
         </Reveal>
 
-        <Reveal className="h-full" delay={70}>
+        <Reveal className="h-full ring-0" delay={70}>
           <MetricCard
-            className="h-full"
+            className="h-full ring-0"
             label="السيولة النقدية (الخزائن)"
             value={treasuryLiquidity ?? 0}
             format={treasuryLiquidity === null ? () => "غير متاح" : money}
@@ -60,9 +64,9 @@ export function BentoKPIsSection() {
           />
         </Reveal>
 
-        <Reveal className="h-full" delay={140}>
+        <Reveal className="h-full ring-0" delay={140}>
           <MetricCard
-            className="h-full"
+            className="h-full ring-0"
             label="قيمة المخزون بسعر التكلفة"
             value={inventoryStats.totalCostValuation}
             format={money}
@@ -78,9 +82,9 @@ export function BentoKPIsSection() {
           />
         </Reveal>
 
-        <Reveal className="h-full" delay={210}>
+        <Reveal className="h-full ring-0" delay={210}>
           <MetricCard
-            className="h-full"
+            className="h-full ring-0"
             label={`صافي الأرباح (${rangeLabel})`}
             value={netProfit}
             format={money}
@@ -96,9 +100,9 @@ export function BentoKPIsSection() {
           />
         </Reveal>
 
-        <Reveal className="h-full" delay={245}>
+        <Reveal className="h-full ring-0" delay={245}>
           <MetricCard
-            className="h-full"
+            className="h-full ring-0"
             label={`التحصيلات (${rangeLabel})`}
             value={rangeCollected}
             format={money}
@@ -110,9 +114,9 @@ export function BentoKPIsSection() {
           />
         </Reveal>
 
-        <Reveal className="h-full" delay={280}>
+        <Reveal className="h-full ring-0" delay={280}>
           <MetricCard
-            className="h-full"
+            className="h-full ring-0"
             label="ديون الموردين (المستحقة علينا)"
             value={totalSupplierDebt}
             format={money}
@@ -121,6 +125,80 @@ export function BentoKPIsSection() {
             icon={Truck}
             series={monthBuckets.supplierTrend}
             sub={`${data.suppliers.length} مورد مسجل`}
+          />
+        </Reveal>
+
+        <Reveal className="h-full ring-0" delay={320}>
+          <MetricCard
+            className="h-full ring-0"
+            icon={Users}
+            label="العملاء والنشاط"
+            value={activeCustomers}
+            format={(n) => String(Math.round(n))}
+            tone="neutral"
+            sub={frozenCustomers > 0 ? `${frozenCustomers} مجمد | ${data.customers.filter((c) => c.status === "committed").length} ملتزم بالدفع` : `${data.customers.filter((c) => c.status === "committed").length} ملتزم بالدفع`}
+          />
+        </Reveal>
+
+        <Reveal className="h-full ring-0" delay={340}>
+          <MetricCard
+            className="h-full ring-0"
+            icon={Truck}
+            label="شحنات COD المعلقة"
+            value={shippingStats.pendingCodAmount}
+            format={(n) => money(n)}
+            tone="neutral"
+            sub={`${shippingStats.unsettledCount} شحنة مسلّمة تنتظر التوريد للخزينة • ${shippingStats.collectedCount} محصّلة باليد (${money(shippingStats.collectedCodAmount)}) • ${shippingStats.uncollectedCount} عند العملاء (${money(shippingStats.uncollectedCodAmount)})`}
+          />
+        </Reveal>
+
+        <Reveal className="h-full ring-0" delay={360}>
+          <MetricCard
+            className="h-full ring-0"
+            icon={ShieldCheck}
+            label="مؤشر الرقابة المحاسبية"
+            value={reconciliationSummary.healthScore}
+            format={(n) => `${Math.round(n)}%`}
+            tone={reconciliationSummary.healthScore >= 90 ? "positive" : reconciliationSummary.healthScore >= 70 ? "neutral" : "danger"}
+            sub={`${reconciliationSummary.criticalCount} حرج | ${reconciliationSummary.autoFixableCount} قابل للإصلاح الآلي`}
+          />
+        </Reveal>
+
+        <Reveal className="h-full ring-0" delay={395}>
+          <MetricCard
+            className="h-full ring-0"
+            icon={TrendingUp}
+            label="إجمالي الأرباح (قبل المصروفات)"
+            value={grossProfit}
+            format={money}
+            masked={privacy}
+            tone={grossProfit > 0 ? "positive" : "neutral"}
+            sub="إجمالي الإيرادات قبل خصم المصروفات"
+          />
+        </Reveal>
+
+        <Reveal className="h-full ring-0" delay={430}>
+          <MetricCard
+            className="h-full ring-0"
+            icon={Receipt}
+            label="إجمالي المصروفات"
+            value={expensesTotal}
+            format={money}
+            masked={privacy}
+            tone="neutral"
+            sub="إجمالي مصروفات الفترة المختارة"
+          />
+        </Reveal>
+
+        <Reveal className="h-full ring-0" delay={465}>
+          <MetricCard
+            className="h-full ring-0"
+            icon={FileText}
+            label="عدد الفواتير المسجلة"
+            value={data.invoices.length}
+            format={(n) => String(Math.round(n))}
+            tone="neutral"
+            sub={`${data.customers.length} عميل مسجل`}
           />
         </Reveal>
       </div>

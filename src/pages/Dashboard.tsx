@@ -16,7 +16,6 @@ import {
   useDashboard,
   QuickActionsSection,
   BentoKPIsSection,
-  SecondaryKPIsSection,
   TopProductsSection,
   InsightsSection,
   ChartsSection,
@@ -149,8 +148,6 @@ function DashboardInner() {
             return <QuickActionsSection key={section.id} />;
           case "bento_kpis":
             return <BentoKPIsSection key={section.id} />;
-          case "secondary_kpis":
-            return <SecondaryKPIsSection key={section.id} />;
           case "top_products":
             return <TopProductsSection key={section.id} />;
           case "insights":
