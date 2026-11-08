@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import { useSearch, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -10,6 +10,7 @@ import { MetricCard, MetricLabel } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
 import { FilterChips } from "@/components/FilterChips";
 import { StatTabs } from "@/components/StatTabs";
+import { CountUp } from "@/components/CountUp";
 
 import { Reveal } from "@/components/Reveal";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
@@ -36,7 +37,7 @@ import { toast } from "sonner";
 import {
   Plus, Eye, EyeOff, Download, Search, FileSpreadsheet, FileText, Receipt,
   Coins, Wallet, CheckCircle2, ChevronDown, Pencil, Trash2,
-  ArrowDownRight, ArrowUpRight, Clock, RotateCcw
+  ArrowDownRight, ArrowUpRight, Clock, RotateCcw, Printer,
 } from "lucide-react";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 
@@ -78,6 +79,36 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+/** صف واحد في كشف تسوية الخزينة (داخل / خارج). */
+function LedgerRow({
+  label, value, sign, tone = "muted", masked, icon,
+}: {
+  label: string;
+  value: number;
+  sign: "+" | "−";
+  tone?: "positive" | "danger" | "muted";
+  masked?: boolean;
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-foreground/[0.03]">
+      <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground">
+        {icon}
+        <span className="truncate">{label}</span>
+      </span>
+      <strong
+        className={cn(
+          "shrink-0 font-mono text-xs font-bold",
+          tone === "positive" ? "text-success" : tone === "danger" ? "text-danger" : "text-foreground/75",
+          masked && "privacy-blur",
+        )}
+      >
+        {sign}{fmt(value)} <span className="text-[10px] font-normal opacity-60">ج.م</span>
+      </strong>
+    </div>
+  );
+}
+
 function DailyPage() {
   const { invoices, customers, expenses, payments, returns, returnItems, paymentVouchers, invoiceItems, loading: dbLoading, fetchErrors, refresh } = useDB();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
@@ -98,6 +129,7 @@ function DailyPage() {
   const PAGE_SIZE = 25;
   const [page, setPage] = useState(1);
   const [noteTick, setNoteTick] = useState(0);
+  const [noteStatus, setNoteStatus] = useState<"saved" | "local">("saved");
   const [treasuryTick, setTreasuryTick] = useState(0);
   const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
 
@@ -163,7 +195,9 @@ function DailyPage() {
   useEffect(() => {
     const t = setTimeout(() => {
       try { localStorage.setItem(noteKey(from, to), note); } catch { /* ignore */ }
-      db.saveDailyNote(from, to, note).catch(() => { /* offline */ });
+      db.saveDailyNote(from, to, note)
+        .then(() => setNoteStatus("saved"))
+        .catch(() => setNoteStatus("local"));
     }, 800);
     return () => clearTimeout(t);
   }, [note]);
@@ -550,14 +584,26 @@ function DailyPage() {
     ? new Date(from || todayISO()).toLocaleDateString("ar-EG", { weekday: "long", day: "numeric", month: "long" })
     : `${from} — ${to}`;
 
+  const fmtChipDate = (iso: string) => {
+    if (!iso) return "—";
+    try {
+      return new Date(`${iso}T00:00:00`).toLocaleDateString("ar-EG", { day: "numeric", month: "long", year: "numeric" });
+    } catch {
+      return iso;
+    }
+  };
+  const dateChipLabel = from === to ? fmtChipDate(from) : `${fmtChipDate(from)} — ${fmtChipDate(to)}`;
+
   const saveNote = () => {
     try { localStorage.setItem(noteKey(from, to), note); } catch { /* ignore */ }
     // push to server (best-effort; falls back to localStorage if offline)
     (async () => {
       try {
         await db.saveDailyNote(from, to, note);
+        setNoteStatus("saved");
         toast.success("تم حفظ الملاحظة (محلي + سيرفر)");
       } catch (err: any) {
+        setNoteStatus("local");
         toast.success("تم حفظ الملاحظة محلياً (سيزامن لاحقاً)");
       }
     })();
@@ -741,6 +787,44 @@ function DailyPage() {
       meta: [{ label: "الفترة", value: `${from} — ${to}` }],
       body: `${body}
         <p>إجمالي المبيعات: ${fmt(stats.sales)} ج.م — المحصّل الفعلي: ${fmt(stats.totalCollectedActual)} ج.م — المصروفات: ${fmt(stats.periodExpenses)} ج.م — المرتجعات: ${fmt(stats.periodReturnsTotal)} ج.م — صافي الدرج: ${fmt(stats.netCashDrawer)} ج.م</p>`,
+    });
+    openPdfDocument(html);
+  };
+
+  // Print only the treasury settlement statement (panel export).
+  const exportSettlementPDF = () => {
+    const rows: { label: string; value: number; sign?: string; cls?: string }[] = [
+      { label: "إجمالي المبيعات المُصدرة", value: stats.sales },
+      { label: "التحصيلات والأقساط المستلمة", value: stats.totalCollectedActual, sign: "+", cls: "pay" },
+    ];
+    if (stats.periodDownPayments > 0) rows.push({ label: "مقدم على فواتير الفترة", value: stats.periodDownPayments, sign: "+", cls: "pay" });
+    rows.push({ label: "المصروفات النقدية المسحوبة", value: stats.periodExpenses, sign: "−", cls: "due" });
+    if (stats.periodReturnsTotal > 0) rows.push({ label: "مرتجعات مبيعات نقدية", value: stats.periodReturnsTotal, sign: "−", cls: "due" });
+    if (stats.manualIn > 0) rows.push({ label: "إيداعات خزينة يدوية", value: stats.manualIn, sign: "+", cls: "pay" });
+    if (stats.manualOut > 0) rows.push({ label: "سحوبات خزينة يدوية", value: stats.manualOut, sign: "−", cls: "due" });
+
+    const tbody = rows.map((r) =>
+      `<tr><td>${escapeHtml(r.label)}</td><td class="num ${r.cls ?? ""}">${r.sign ?? ""}${fmt(r.value)} ج.م</td></tr>`
+    ).join("");
+
+    const netColor = stats.netCashDrawer < 0 ? "#e11d48" : "#047857";
+    const netBar = `<div class="total-bar"><span>صافي رصيد الخزينة بالدرج</span><span class="v" style="color:${netColor}">${fmt(stats.netCashDrawer)} ج.م</span></div>`;
+
+    const cashboxLine = stats.cashboxBalance !== null
+      ? `<p><b>رصيد الخزينة الحالي (نظام الخزينة):</b> ${fmt(stats.cashboxBalance)} ج.م — <b>قبل الفترة ≈</b> ${fmt(stats.cashboxBalance - stats.netCashDrawer)} ج.م</p>`
+      : "";
+
+    const vouchersNote = (stats.periodVoucherReceipts > 0 || stats.periodVoucherPayments > 0)
+      ? `<p><b>سندات القبض/الصرف</b> (للعلم فقط — غير محتسبة في الصافي): <span class="tag payment">+${fmt(stats.periodVoucherReceipts)} ج.م</span> <span class="tag purchase">−${fmt(stats.periodVoucherPayments)} ج.م</span></p>`
+      : "";
+
+    const html = pdfDocument({
+      docTitle: "كشف تسوية الخزينة",
+      badge: "حركة يومية",
+      title: "كشف تسوية الخزينة",
+      lede: rangeLabel,
+      meta: [{ label: "الفترة", value: `${from} — ${to}` }],
+      body: `<table><thead><tr><th>البند</th><th>المبلغ</th></tr></thead><tbody>${tbody}</tbody></table>${netBar}${cashboxLine}${vouchersNote}`,
     });
     openPdfDocument(html);
   };
@@ -1372,104 +1456,146 @@ function DailyPage() {
           {/* Right Side Summary & Note */}
           <Reveal delay={90}>
             <BezelCard variant="flat" innerClassName="flex flex-col gap-4 p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-3 border-b border-[var(--hairline)] pb-3">
-                <span className="text-numeric text-[11px] text-muted-foreground font-mono" dir="ltr">{from} — {to}</span>
-                <h2 className="text-base font-bold text-foreground">كشف تسوية الخزينة</h2>
+              {/* Header */}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/20">
+                    <Wallet className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-bold leading-tight text-foreground">كشف تسوية الخزينة</h2>
+                    <span className="mt-1 inline-flex items-center rounded-full bg-foreground/[0.05] px-2 py-0.5 text-[10px] font-semibold text-muted-foreground ring-1 ring-inset ring-[var(--hairline)]">
+                      {dateChipLabel}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={exportSettlementPDF}
+                  className="press grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground ring-1 ring-inset ring-[var(--hairline)] hover:text-foreground"
+                  title="طباعة كشف التسوية"
+                >
+                  <Printer className="h-3.5 w-3.5" />
+                </button>
               </div>
 
-              <div className="divide-y divide-border/60 text-xs">
-                <div className="flex justify-between items-center py-2.5">
-                  <span className="text-muted-foreground">إجمالي المبيعات المصدرة:</span>
-                  <strong className={cn("font-mono text-foreground", masked && "privacy-blur")}>
-                    {money(stats.sales)}
-                  </strong>
+              {/* Sales reference */}
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-foreground/[0.03] px-2.5 py-2">
+                <span className="text-[11px] font-medium text-muted-foreground">إجمالي المبيعات المُصدرة</span>
+                <strong className={cn("font-mono text-xs font-bold text-foreground/80", masked && "privacy-blur")}>
+                  {money(stats.sales)}
+                </strong>
+              </div>
+
+              {/* Money in */}
+              <div>
+                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-success">
+                  <ArrowDownRight className="h-3.5 w-3.5" /> الداخل
                 </div>
-
-                <div className="flex justify-between items-center py-2.5">
-                  <span className="text-success font-bold">التحصيلات والأقساط المستلمة:</span>
-                  <strong className={cn("font-mono text-success text-sm font-black", masked && "privacy-blur")}>
-                    +{money(stats.totalCollectedActual)}
-                  </strong>
+                <div className="space-y-0.5">
+                  <LedgerRow label="التحصيلات والأقساط المستلمة" value={stats.totalCollectedActual} sign="+" tone="positive" masked={masked} />
+                  {stats.periodDownPayments > 0 && (
+                    <LedgerRow label="مقدم على فواتير الفترة" value={stats.periodDownPayments} sign="+" masked={masked} />
+                  )}
+                  {stats.manualIn > 0 && (
+                    <LedgerRow label="إيداعات خزينة يدوية" value={stats.manualIn} sign="+" masked={masked} />
+                  )}
                 </div>
+              </div>
 
-                {stats.periodDownPayments > 0 && (
-                  <div className="flex justify-between items-center py-2.5">
-                    <span className="text-muted-foreground">مقدم (دفعة مقدمة) على فواتير الفترة:</span>
-                    <strong className={cn("font-mono text-muted-foreground", masked && "privacy-blur")}>
-                      +{money(stats.periodDownPayments)}
-                    </strong>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center py-2.5">
-                  <span className="text-danger">المصروفات النقدية المسحوبة:</span>
-                  <strong className={cn("font-mono text-danger", masked && "privacy-blur")}>
-                    -{money(stats.periodExpenses)}
-                  </strong>
+              {/* Money out */}
+              <div>
+                <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-danger">
+                  <ArrowUpRight className="h-3.5 w-3.5" /> الخارج
                 </div>
-
-                {stats.periodReturnsTotal > 0 && (
-                  <div className="flex justify-between items-center py-2.5">
-                    <span className="text-danger">مرتجعات مبيعات نقدية:</span>
-                    <strong className={cn("font-mono text-danger", masked && "privacy-blur")}>
-                      -{money(stats.periodReturnsTotal)}
-                    </strong>
-                  </div>
-                )}
-
-                {(stats.periodVoucherReceipts > 0 || stats.periodVoucherPayments > 0) && (
-                  <div className="flex justify-between items-center py-2.5">
-                    <span className="text-muted-foreground">سندات القبض/الصرف (للعلم فقط — غير محتسبة):</span>
-                    <strong className={cn("font-mono text-muted-foreground text-[11px]", masked && "privacy-blur")}>
-                      +{money(stats.periodVoucherReceipts)} / -{money(stats.periodVoucherPayments)}
-                    </strong>
-                  </div>
-                )}
-
-                {(stats.manualIn > 0 || stats.manualOut > 0) && (
-                  <div className="flex justify-between items-center py-2.5">
-                    <span className="text-muted-foreground">حركات خزينة يدوية (إيداع/سحب):</span>
-                    <strong className={cn("font-mono", masked && "privacy-blur")}>
-                      {stats.manualIn - stats.manualOut >= 0 ? "+" : ""}{money(stats.manualIn - stats.manualOut)}
-                    </strong>
-                  </div>
-                )}
-
-                <div className="flex justify-between items-center py-3">
-                  <span className="font-bold text-foreground">صافي رصيد الخزينة بالدرج:</span>
-                  <strong className={cn("font-mono text-base font-black text-primary", masked && "privacy-blur")}>
-                    {money(stats.netCashDrawer)}
-                  </strong>
+                <div className="space-y-0.5">
+                  <LedgerRow label="المصروفات النقدية المسحوبة" value={stats.periodExpenses} sign="−" tone="danger" masked={masked} />
+                  {stats.periodReturnsTotal > 0 && (
+                    <LedgerRow label="مرتجعات مبيعات نقدية" value={stats.periodReturnsTotal} sign="−" tone="danger" masked={masked} />
+                  )}
+                  {stats.manualOut > 0 && (
+                    <LedgerRow label="سحوبات خزينة يدوية" value={stats.manualOut} sign="−" masked={masked} />
+                  )}
                 </div>
+              </div>
 
-                {stats.cashboxBalance !== null && (
-                  <div className="flex justify-between items-center py-2.5 border-t border-[var(--hairline)] mt-1 pt-2.5">
-                    <span className="text-muted-foreground">رصيد الخزينة (الحالي — من نظام الخزينة):</span>
-                    <strong className={cn("font-mono text-muted-foreground", masked && "privacy-blur")}>
+              {/* Net hero */}
+              <div className={cn(
+                "rounded-2xl p-4 ring-1 ring-inset",
+                stats.netCashDrawer < 0 ? "bg-danger/[0.06] ring-danger/20" : "bg-primary/[0.06] ring-primary/20",
+              )}>
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+                  <Wallet className="h-3.5 w-3.5" /> صافي رصيد الخزينة بالدرج
+                </div>
+                <div className={cn(
+                  "mt-1.5 font-mono text-[clamp(1.5rem,4.5vw,1.9rem)] font-black leading-none",
+                  stats.netCashDrawer < 0 ? "text-danger" : "text-primary",
+                  masked && "privacy-blur",
+                )}>
+                  <CountUp value={stats.netCashDrawer} duration={900} format={money} />
+                </div>
+                <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground">
+                  التحصيلات − المصروفات − المرتجعات + حركات الخزينة
+                </p>
+              </div>
+
+              {/* Current treasury balance */}
+              {stats.cashboxBalance !== null && (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--hairline)] px-2.5 py-2">
+                  <span className="text-[11px] text-muted-foreground">رصيد الخزينة الحالي (نظام الخزينة)</span>
+                  <div className="flex items-center gap-2">
+                    <strong className={cn("font-mono text-xs font-bold text-foreground/80", masked && "privacy-blur")}>
                       {money(stats.cashboxBalance)}
                     </strong>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full bg-foreground/[0.06] px-2 py-0.5 text-[10px] font-semibold text-muted-foreground"
+                      title="الرصيد الحالي ناقص صافي حركة هذه الفترة"
+                    >
+                      قبل الفترة ≈ {fmt(stats.cashboxBalance - stats.netCashDrawer)} ج.م
+                    </span>
                   </div>
-                )}
+                </div>
+              )}
 
-              </div>
+              {/* Vouchers — informational only */}
+              {(stats.periodVoucherReceipts > 0 || stats.periodVoucherPayments > 0) && (
+                <div className="rounded-xl border border-dashed border-[var(--hairline)] px-3 py-2.5">
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold text-muted-foreground">
+                    <Receipt className="h-3.5 w-3.5" />
+                    سندات القبض والصرف
+                    <span className="rounded-full bg-foreground/[0.06] px-1.5 py-0.5 text-[9px] font-semibold">
+                      للعلم فقط — غير محتسبة
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between gap-3 font-mono text-[11px] font-bold">
+                    <span className={cn("text-success", masked && "privacy-blur")}>+{money(stats.periodVoucherReceipts)}</span>
+                    <span className={cn("text-danger", masked && "privacy-blur")}>−{money(stats.periodVoucherPayments)}</span>
+                  </div>
+                </div>
+              )}
 
-              <div className="border-t border-[var(--hairline)] pt-3">
+              {/* Daily note */}
+              <div className="border-t border-[var(--hairline)] pt-4">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-medium text-muted-foreground">تُحفَظ محلياً تلقائياً</span>
                   <h3 className="text-xs font-bold text-foreground">ملاحظة اليوم واليومية</h3>
+                  <span className={cn(
+                    "inline-flex items-center gap-1 text-[10px] font-semibold",
+                    noteStatus === "local" ? "text-warning" : "text-success",
+                  )}>
+                    <span className={cn("h-1.5 w-1.5 rounded-full", noteStatus === "local" ? "bg-warning" : "bg-success")} />
+                    {noteStatus === "local" ? "محفوظ محلياً فقط" : "محفوظ تلقائياً"}
+                  </span>
                 </div>
                 <Textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
-                  rows={4}
-                  placeholder="سجل ملاحظات أو أحداث اليوم أو جرد العهدة هنا..."
-                  className="mt-2 text-xs resize-none"
+                  rows={5}
+                  placeholder="سجّل ملاحظات اليوم، أحداث مهمة، أو جرد العهدة..."
+                  className="mt-2 resize-none text-xs"
                 />
-                <div className="mt-2.5 flex justify-end">
-                  <Button size="sm" variant="secondary" onClick={saveNote} className="rounded-xl text-xs font-bold">
-                    حفظ الملاحظة
-                  </Button>
-                </div>
+                <Button size="sm" variant="secondary" onClick={saveNote} className="mt-2.5 w-full rounded-xl text-xs font-bold">
+                  حفظ الآن
+                </Button>
               </div>
             </BezelCard>
           </Reveal>
