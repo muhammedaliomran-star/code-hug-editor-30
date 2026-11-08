@@ -16,10 +16,10 @@ begin
   ) then
     execute $q$
       update public.expenses e
-         set account_id = coalesce(e.account_id, m.account_id),
-             branch_id  = coalesce(e.branch_id,  m.branch_id)
+         set account_id = coalesce(e.account_id, m.account_id::text),
+             branch_id  = coalesce(e.branch_id,  m.branch_id::text)
         from public.expense_metadata m
-       where m.expense_id = e.id
+       where m.expense_id::text = e.id::text
          and (e.account_id is null or e.branch_id is null)
     $q$;
   end if;
