@@ -614,8 +614,8 @@ function DailyPage() {
   return (
     <>
       <PageHeader
-        eyebrow="تشغيل يومي"
         title="اليومية"
+        subtitle="حركة نقدية — مبيعات · تحصيلات · مصروفات · صافي الدرج"
         actionWidth="md:max-w-[24rem]"
         action={
           <div className="flex w-full flex-col gap-3">
