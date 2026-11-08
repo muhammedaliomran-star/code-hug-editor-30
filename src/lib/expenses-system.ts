@@ -171,9 +171,9 @@ export function getExpenseMeta(exp: Expense): ExpenseMeta {
   const { meta: fromNotes } = decodeExpenseNotes(exp.notes);
 
   return {
-    accountId: fromNotes.accountId || fromStore?.accountId || "acc-cash-main",
+    accountId: exp.accountId || fromNotes.accountId || fromStore?.accountId || "acc-cash-main",
     accountName: fromNotes.accountName || fromStore?.accountName,
-    branchId: fromNotes.branchId || fromStore?.branchId,
+    branchId: exp.branchId || fromNotes.branchId || fromStore?.branchId,
     branchName: fromNotes.branchName || fromStore?.branchName,
     recipientName: fromNotes.recipientName || fromStore?.recipientName,
     voucherNumber: fromNotes.voucherNumber || fromStore?.voucherNumber || `VCH-${exp.id.slice(0, 6).toUpperCase()}`,

@@ -196,6 +196,10 @@ export interface Expense {
   expenseDate: string;
   notes: string | null;
   createdAt: string;
+  /** Treasury account the expense was deducted from (DB column `expenses.account_id`). */
+  accountId?: string | null;
+  /** Branch the expense belongs to (DB column `expenses.branch_id`). */
+  branchId?: string | null;
 }
 
 export interface Supplier {

@@ -247,6 +247,8 @@ export function ExpenseFormModal({
           category: category as any,
           expenseDate,
           notes: finalNotes,
+          accountId: meta.accountId,
+          branchId: meta.branchId,
         });
         saveExpenseMetaLocal(editing.id, meta);
         toast.success("تم تعديل المصروف وتحديث الخزينة");
@@ -256,6 +258,8 @@ export function ExpenseFormModal({
           category: category as any,
           expenseDate,
           notes: finalNotes,
+          accountId: meta.accountId,
+          branchId: meta.branchId,
         });
         if (newExpenseId) {
           saveExpenseMetaLocal(newExpenseId, meta);

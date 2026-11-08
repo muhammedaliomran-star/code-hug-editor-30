@@ -339,6 +339,9 @@ export interface CashTransactionUnified {
 }
 
 function getExpenseAccountId(exp: Expense): string {
+  // 1) explicit DB column (preferred, synced across devices)
+  if (exp.accountId) return exp.accountId;
+  // 2) legacy: meta embedded in notes
   if (exp.notes) {
     const match = exp.notes.match(/<!--seg_meta:(.*?)-->/s);
     if (match && match[1]) {

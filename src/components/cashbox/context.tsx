@@ -457,6 +457,7 @@ export function CashboxProvider({ children }: { children: ReactNode }) {
           amount: fee,
           category: "other",
           expenseDate: today,
+          accountId: transferFrom,
           notes: encodeExpenseNotes(`عمولة تحويل داخلي من ${fromName} إلى ${toName}`, {
             accountId: transferFrom,
             accountName: fromName,

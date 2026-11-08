@@ -29,6 +29,7 @@ import {
   db, useDB, fmt, invoiceNumber, expenseCategoryLabel, invalidateCache, type Invoice,
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
+import { decodeExpenseNotes } from "@/lib/expenses-system";
 import { getManualTransactions, getInternalTransfers, calculateAccountBalance, getTreasuryAccounts } from "@/lib/cashbox-system";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -543,7 +544,7 @@ function DailyPage() {
         e.expenseDate,
         expenseCategoryLabel(e.category),
         e.amount,
-        e.notes ?? "",
+        decodeExpenseNotes(e.notes).cleanNotes,
       ]);
     } else if (activeTab === "returns") {
       headers = ["التاريخ", "العميل", "الفاتورة", "المبلغ", "السبب"];
@@ -593,7 +594,7 @@ function DailyPage() {
     } else if (activeTab === "expenses") {
       thead = "<tr><th>م</th><th>التاريخ</th><th>التصنيف</th><th>المبلغ</th><th>ملاحظات</th></tr>";
       tbody = periodExpensesList.map((e, i) =>
-        `<tr><td>${i + 1}</td><td>${escapeHtml(e.expenseDate)}</td><td>${escapeHtml(expenseCategoryLabel(e.category))}</td><td class="num">${fmt(e.amount)} ج.م</td><td>${escapeHtml(e.notes ?? "—")}</td></tr>`
+        `<tr><td>${i + 1}</td><td>${escapeHtml(e.expenseDate)}</td><td>${escapeHtml(expenseCategoryLabel(e.category))}</td><td class="num">${fmt(e.amount)} ج.م</td><td>${escapeHtml(decodeExpenseNotes(e.notes).cleanNotes || "—")}</td></tr>`
       ).join("");
       colspan = 5;
     } else if (activeTab === "returns") {
@@ -1012,7 +1013,7 @@ function DailyPage() {
                             <td className={cn("p-3 font-mono font-bold text-danger", masked && "privacy-blur")}>
                               -{money(exp.amount)}
                             </td>
-                            <td className="p-3 text-muted-foreground">{exp.notes || "—"}</td>
+                            <td className="p-3 text-muted-foreground">{decodeExpenseNotes(exp.notes).cleanNotes || "—"}</td>
                             <td className="p-3">
                               <div className="flex items-center gap-1">
                                 <button

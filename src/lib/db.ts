@@ -194,6 +194,8 @@ async function fetchAllInner() {
     expenses: (e.data ?? []).map((r: TableRow<"expenses">) => ({
       id: r.id, amount: Number(r.amount) / 100, category: r.category as ExpenseCategory,
       expenseDate: r.expense_date, notes: r.notes, createdAt: r.created_at,
+      accountId: (r as any).account_id ?? null,
+      branchId: (r as any).branch_id ?? null,
     })),
     invoiceItems: (ii.data ?? []).map((r: TableRow<"invoice_items">) => ({
       id: r.id, invoiceId: r.invoice_id, name: r.name,
@@ -327,6 +329,7 @@ export async function invalidateCache(table?: string) {
       map: (r) => ({
         id: r.id, amount: Number(r.amount) / 100, category: r.category,
         expenseDate: r.expense_date, notes: r.notes, createdAt: r.created_at,
+        accountId: r.account_id ?? null, branchId: r.branch_id ?? null,
       }),
     },
     return_records: {
@@ -485,6 +488,12 @@ export function invoiceItemFinancials(item: {
 }
 
 // ─── DB object ────────────────────────────────────────────────────────────────
+
+/** True when PostgREST reports a missing column (database not migrated yet). */
+function isMissingColumnError(err: any): boolean {
+  const msg = String(err?.message ?? "");
+  return /column .* does not exist|schema cache|Could not find the '[^']+' column/i.test(msg);
+}
 
 export const db = {
 
@@ -745,13 +754,24 @@ export const db = {
       if (!user_id) throw new Error("Not authenticated");
     }
     try {
-      const { data, error } = await supabase.from("expenses").insert({
+      const row: any = {
         user_id, amount: (exp.amount ?? 0) * 100, category: exp.category,
         expense_date: exp.expenseDate, notes: exp.notes,
-      }).select("id").single();
-      if (error) throw error;
+      };
+      if (exp.accountId !== undefined) row.account_id = exp.accountId ?? null;
+      if (exp.branchId !== undefined) row.branch_id = exp.branchId ?? null;
+
+      let res = await supabase.from("expenses").insert(row).select("id").single();
+      if (res.error && isMissingColumnError(res.error)) {
+        // pre-migration database: fall back to the legacy column set
+        delete row.account_id;
+        delete row.branch_id;
+        res = await supabase.from("expenses").insert(row).select("id").single();
+      }
+      if (res.error) throw res.error;
+
       await invalidateCache("expenses");
-      return (data as { id?: string } | null)?.id;
+      return (res.data as { id?: string } | null)?.id;
     } catch (err) {
       // offline fallback: enqueue for later replay
       let queuedId: string | null = null;
@@ -768,6 +788,8 @@ export const db = {
             category: exp.category,
             expense_date: exp.expenseDate,
             notes: exp.notes,
+            ...(exp.accountId !== undefined ? { account_id: exp.accountId ?? null } : {}),
+            ...(exp.branchId !== undefined ? { branch_id: exp.branchId ?? null } : {}),
           },
           onConflict: "id",
         });
@@ -782,19 +804,23 @@ export const db = {
     if (patch.category !== undefined) upd.category = patch.category;
     if (patch.expenseDate !== undefined) upd.expense_date = patch.expenseDate;
     if (patch.notes !== undefined) upd.notes = patch.notes;
+    if (patch.accountId !== undefined) upd.account_id = patch.accountId ?? null;
+    if (patch.branchId !== undefined) upd.branch_id = patch.branchId ?? null;
     try {
-      const { error } = await supabase.from("expenses").update(upd).eq("id", id);
-      if (error) throw error;
+      let res = await supabase.from("expenses").update(upd).eq("id", id);
+      if (res.error && isMissingColumnError(res.error)) {
+        const legacy: any = { ...upd };
+        delete legacy.account_id;
+        delete legacy.branch_id;
+        res = await supabase.from("expenses").update(legacy).eq("id", id);
+      }
+      if (res.error) throw res.error;
+
       await invalidateCache("expenses");
     } catch (err) {
       try {
         const { enqueueOffline } = await import("./offline-queue");
-        const payload: any = { id };
-        if (patch.amount !== undefined) payload.amount = (patch.amount ?? 0) * 100;
-        if (patch.category !== undefined) payload.category = patch.category;
-        if (patch.expenseDate !== undefined) payload.expense_date = patch.expenseDate;
-        if (patch.notes !== undefined) payload.notes = patch.notes;
-        enqueueOffline({ tableName: "expenses", operation: "update", payload });
+        enqueueOffline({ tableName: "expenses", operation: "update", payload: { id, ...upd } });
       } catch { /* ignore */ }
       throw err;
     }
