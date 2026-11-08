@@ -206,6 +206,13 @@ export async function pullCashboxFromCloud(): Promise<boolean> {
   const user_id = await uid();
   if (!user_id) return false;
 
+  // Never overwrite local treasury state while writes are still queued offline:
+  // the queued rows are newer than anything already on the server. They will be
+  // pushed by `drainOfflineQueue`, and the next pull will pick them up.
+  const { getOfflineQueue } = await import("@/lib/offline-queue");
+  const pendingTreasury = getOfflineQueue().some((q) => q.tableName.startsWith("treasury_"));
+  if (pendingTreasury) return false;
+
   const [accounts, transactions, audits] = await Promise.all([
     table("treasury_accounts").select("*").eq("user_id", user_id).order("created_at", { ascending: true }),
     table("treasury_transactions").select("*").eq("user_id", user_id).order("created_at", { ascending: false }),

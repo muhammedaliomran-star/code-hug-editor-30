@@ -26,7 +26,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, invalidateCache, type Invoice,
+  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, EXPENSE_CATEGORIES, invalidateCache, type Invoice,
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
 import { decodeExpenseNotes } from "@/lib/expenses-system";
@@ -58,7 +58,7 @@ const noteKey = (f: string, t: string) => `segilly:daily-note:${f}_${t}`;
 
 type TypeFilter = "all" | "installment" | "cash";
 type StatusFilter = "all" | "paid" | "partial" | "unpaid";
-type ActiveTab = "invoices" | "payments" | "expenses" | "returns";
+type ActiveTab = "invoices" | "payments" | "expenses" | "returns" | "vouchers";
 
 type InvStatus = Exclude<StatusFilter, "all">;
 
@@ -79,7 +79,7 @@ function escapeHtml(s: string): string {
 }
 
 function DailyPage() {
-  const { invoices, customers, expenses, payments, returns, invoiceItems, loading: dbLoading, fetchErrors, refresh } = useDB();
+  const { invoices, customers, expenses, payments, returns, returnItems, paymentVouchers, invoiceItems, loading: dbLoading, fetchErrors, refresh } = useDB();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const { privacy, toggle } = usePrivacy();
   const masked = privacy;
@@ -93,6 +93,7 @@ function DailyPage() {
   const [customerId, setCustomerId] = useState<"all" | string>(urlSearch.customerId ?? "all");
   const [typeFilter, setTypeFilter] = useState<TypeFilter>(urlSearch.typeFilter ?? "all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(urlSearch.statusFilter ?? "all");
+  const [categoryFilter, setCategoryFilter] = useState<string>(urlSearch.categoryFilter ?? "all");
   const [activeTab, setActiveTab] = useState<ActiveTab>(urlSearch.activeTab ?? "invoices");
   const PAGE_SIZE = 25;
   const [page, setPage] = useState(1);
@@ -115,12 +116,13 @@ function DailyPage() {
         typeFilter: typeFilter !== "all" ? typeFilter : undefined,
         statusFilter: statusFilter !== "all" ? statusFilter : undefined,
         activeTab: activeTab !== "invoices" ? activeTab : undefined,
+        categoryFilter: categoryFilter !== "all" ? categoryFilter : undefined,
         quickPreset: quickPreset !== "today" ? quickPreset : undefined,
       },
       replace: true,
     });
     setPage(1);
-  }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, quickPreset, navigate]);
+  }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, categoryFilter, quickPreset, navigate]);
   const [note, setNote] = useState("");
   const latestNoteRef = useRef(note);
   latestNoteRef.current = note;
@@ -204,6 +206,8 @@ function DailyPage() {
           .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => schedule("daily_notes", () => setNoteTick((n) => n + 1)))
           .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `user_id=eq.${uid}` }, () => schedule("customers", () => invalidateCache("customers")))
           .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items", filter: `user_id=eq.${uid}` }, () => schedule("invoice_items", () => invalidateCache("invoice_items")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "return_items", filter: `user_id=eq.${uid}` }, () => schedule("return_items", () => invalidateCache("return_items")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "payment_vouchers", filter: `user_id=eq.${uid}` }, () => schedule("payment_vouchers", () => invalidateCache("payment_vouchers")))
           .on("postgres_changes", { event: "*", schema: "public", table: "treasury_transactions", filter: `user_id=eq.${uid}` }, () => schedule("treasury", syncTreasury))
           .on("postgres_changes", { event: "*", schema: "public", table: "treasury_accounts", filter: `user_id=eq.${uid}` }, () => schedule("treasury", syncTreasury))
           .subscribe();
@@ -253,6 +257,19 @@ function DailyPage() {
     () => new Map(customers.map((c) => [c.id, c])),
     [customers],
   );
+
+  // Category filter options: base list + any custom category found in the data.
+  const expenseCategoryOptions = useMemo(() => {
+    const opts = EXPENSE_CATEGORIES.map((c) => ({ value: c.value as string, label: c.label }));
+    const seen = new Set(opts.map((o) => o.value));
+    for (const e of expenses) {
+      if (!seen.has(e.category)) {
+        seen.add(e.category);
+        opts.push({ value: e.category, label: expenseCategoryLabel(e.category) });
+      }
+    }
+    return opts;
+  }, [expenses]);
 
   const invoiceById = useMemo(
     () => new Map(invoices.map((inv) => [inv.id, inv])),
@@ -316,15 +333,18 @@ function DailyPage() {
       .filter((e) => {
         if (from && e.expenseDate < from) return false;
         if (to && e.expenseDate > to) return false;
+        if (categoryFilter !== "all" && e.category !== categoryFilter) return false;
         if (q) {
           const label = expenseCategoryLabel(e.category).toLowerCase();
-          const txt = `${label} ${e.notes ?? ""}`.toLowerCase();
+          const { cleanNotes, meta } = decodeExpenseNotes(e.notes);
+          // Ignore the hidden meta blob; search the human-readable text only.
+          const txt = `${label} ${cleanNotes} ${meta.recipientName ?? ""} ${meta.voucherNumber ?? ""}`.toLowerCase();
           if (!txt.includes(q)) return false;
         }
         return true;
       })
       .sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime());
-  }, [expenses, from, to, search]);
+  }, [expenses, from, to, search, categoryFilter]);
 
   // Returns during period
   const periodReturnsList = useMemo(() => {
@@ -354,6 +374,36 @@ function DailyPage() {
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [returns, invoiceById, customerById, invoices, from, to, customerId, search]);
+
+  // Return line items grouped by their parent return record (issue #4).
+  const returnItemsByReturn = useMemo(() => {
+    const map = new Map<string, typeof returnItems>();
+    for (const it of returnItems) {
+      const arr = map.get(it.returnId);
+      if (arr) arr.push(it);
+      else map.set(it.returnId, [it]);
+    }
+    return map;
+  }, [returnItems]);
+
+  // Receipt / payment vouchers during the period (issue #7).
+  // Shown for information only — NOT part of the cash-drawer net (avoids double counting).
+  const periodVouchersList = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return paymentVouchers
+      .filter((v) => {
+        if (from && v.voucherDate < from) return false;
+        if (to && v.voucherDate > to) return false;
+        if (customerId !== "all" && v.customerId !== customerId) return false;
+        if (q) {
+          const cust = v.customerId ? customerById.get(v.customerId) : null;
+          const txt = `${v.partyName ?? ""} ${v.partyPhone ?? ""} ${cust?.name ?? ""} ${v.description ?? ""} ${v.paymentMethod ?? ""}`.toLowerCase();
+          if (!txt.includes(q)) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(b.voucherDate).getTime() - new Date(a.voucherDate).getTime());
+  }, [paymentVouchers, from, to, customerId, customerById, search]);
 
   const stats = useMemo(() => {
     let sales = 0, cashSales = 0, instSales = 0;
@@ -433,6 +483,9 @@ function DailyPage() {
     const totalCollectedActual = periodPayments.reduce((s, p) => s + p.amount, 0) + periodDownPayments;
     const periodExpenses = periodExpensesList.reduce((s, e) => s + e.amount, 0);
     const periodReturnsTotal = periodReturnsList.reduce((s, r) => s + r.totalAmount, 0);
+    // Vouchers are informational only (never added to the drawer net).
+    const periodVoucherReceipts = periodVouchersList.filter((v) => v.type === "receipt").reduce((s, v) => s + v.amount, 0);
+    const periodVoucherPayments = periodVouchersList.filter((v) => v.type === "payment").reduce((s, v) => s + v.amount, 0);
     
     // صافي الخزينة / الدرج الحقيقي اليوم: كل المحصل الفعلي - المصروفات - المرتجعات
     const netCashDrawer = totalCollectedActual - periodExpenses - periodReturnsTotal + manualIn - manualOut;
@@ -447,6 +500,8 @@ function DailyPage() {
       remaining: Math.max(0, sales - paidFromNewInvoices),
       periodExpenses,
       periodReturnsTotal,
+      periodVoucherReceipts,
+      periodVoucherPayments,
       manualIn,
       manualOut,
       cashboxBalance,
@@ -457,16 +512,18 @@ function DailyPage() {
         collected: sCollected,
       },
     };
-  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, invoices, expenses, from, to, treasuryTick]);
+  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, periodVouchersList, payments, invoices, expenses, from, to, treasuryTick]);
 
   const pagedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pagedPayments = periodPayments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pagedExpenses = periodExpensesList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pagedReturns = periodReturnsList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const pagedVouchers = periodVouchersList.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const activeListLen =
     activeTab === "invoices" ? rows.length :
     activeTab === "payments" ? periodPayments.length :
-    activeTab === "expenses" ? periodExpensesList.length : periodReturnsList.length;
+    activeTab === "expenses" ? periodExpensesList.length :
+    activeTab === "returns" ? periodReturnsList.length : periodVouchersList.length;
   const totalPages = Math.max(1, Math.ceil(activeListLen / PAGE_SIZE));
 
   // Clamp current page when data shrinks (e.g. realtime refresh / filter change)
@@ -475,13 +532,14 @@ function DailyPage() {
   }, [totalPages]);
 
   const filtersActive =
-    !!search.trim() || customerId !== "all" || typeFilter !== "all" || statusFilter !== "all";
+    !!search.trim() || customerId !== "all" || typeFilter !== "all" || statusFilter !== "all" || categoryFilter !== "all";
 
   const resetFilters = () => {
     setSearch("");
     setCustomerId("all");
     setTypeFilter("all");
     setStatusFilter("all");
+    setCategoryFilter("all");
     setQuickPreset("today");
     setFrom(todayISO());
     setTo(todayISO());
@@ -547,13 +605,24 @@ function DailyPage() {
         decodeExpenseNotes(e.notes).cleanNotes,
       ]);
     } else if (activeTab === "returns") {
-      headers = ["التاريخ", "العميل", "الفاتورة", "المبلغ", "السبب"];
+      headers = ["التاريخ", "العميل", "الفاتورة", "المبلغ", "البنود", "السبب"];
       body = periodReturnsList.map((r) => [
         new Date(r.createdAt).toLocaleDateString("en-CA"),
         r.customer?.name ?? "—",
         r.invoice ? invoiceNumber(invoices, r.invoice.id) : "—",
         r.totalAmount,
+        (returnItemsByReturn.get(r.id) ?? []).map((it) => `${it.name} ×${it.quantity}`).join(" · "),
         r.reason ?? "",
+      ]);
+    } else if (activeTab === "vouchers") {
+      headers = ["التاريخ", "النوع", "الطرف", "طريقة الدفع", "المبلغ", "الوصف"];
+      body = periodVouchersList.map((v) => [
+        v.voucherDate,
+        v.type === "receipt" ? "سند قبض" : "سند صرف",
+        v.partyName || (v.customerId ? customerById.get(v.customerId)?.name : "") || "—",
+        v.paymentMethod || "—",
+        v.amount,
+        v.description ?? "",
       ]);
     }
 
@@ -567,6 +636,115 @@ function DailyPage() {
     toast.success("تم تصدير اليومية");
   };
 
+  // Build every tab's rows at once (issue #6: "تصدير الكل").
+  const buildAllSections = () => {
+    const sections: { title: string; headers: string[]; rows: (string | number)[][] }[] = [];
+
+    sections.push({
+      title: "فواتير الفترة",
+      headers: ["رقم الفاتورة", "التاريخ", "العميل", "الإجمالي", "المدفوع", "المتبقي", "الحالة"],
+      rows: rows.map((inv) => {
+        const c = customerById.get(inv.customerId);
+        return [
+          invoiceNumber(invoices, inv.id),
+          new Date(inv.createdAt).toLocaleDateString("en-CA"),
+          c?.name ?? "—",
+          inv.total, inv.paid, Math.max(0, inv.total - inv.paid),
+          statusMeta[invStatus(inv)].label,
+        ];
+      }),
+    });
+
+    sections.push({
+      title: "التحصيلات والأقساط المستلمة",
+      headers: ["التاريخ", "العميل", "الفاتورة", "المبلغ"],
+      rows: periodPayments.map((p) => [
+        new Date(p.paidAt).toLocaleDateString("en-CA"),
+        p.customer?.name ?? "—",
+        p.invoice ? invoiceNumber(invoices, p.invoice.id) : "—",
+        p.amount,
+      ]),
+    });
+
+    sections.push({
+      title: "المصروفات",
+      headers: ["التاريخ", "التصنيف", "المبلغ", "ملاحظات"],
+      rows: periodExpensesList.map((e) => [
+        e.expenseDate,
+        expenseCategoryLabel(e.category),
+        e.amount,
+        decodeExpenseNotes(e.notes).cleanNotes,
+      ]),
+    });
+
+    sections.push({
+      title: "المرتجعات",
+      headers: ["التاريخ", "العميل", "الفاتورة", "المبلغ", "البنود", "السبب"],
+      rows: periodReturnsList.map((r) => [
+        new Date(r.createdAt).toLocaleDateString("en-CA"),
+        r.customer?.name ?? "—",
+        r.invoice ? invoiceNumber(invoices, r.invoice.id) : "—",
+        r.totalAmount,
+        (returnItemsByReturn.get(r.id) ?? []).map((it) => `${it.name} ×${it.quantity}`).join(" · "),
+        r.reason ?? "",
+      ]),
+    });
+
+    sections.push({
+      title: "سندات القبض والصرف",
+      headers: ["التاريخ", "النوع", "الطرف", "طريقة الدفع", "المبلغ", "الوصف"],
+      rows: periodVouchersList.map((v) => [
+        v.voucherDate,
+        v.type === "receipt" ? "سند قبض" : "سند صرف",
+        v.partyName || (v.customerId ? customerById.get(v.customerId)?.name : "") || "—",
+        v.paymentMethod || "—",
+        v.amount,
+        v.description ?? "",
+      ]),
+    });
+
+    return sections;
+  };
+
+  const exportAllCSV = () => {
+    const clean = (c: string | number) => `"${String(c).replace(/"/g, '""')}"`;
+    const lines: string[] = [];
+    for (const sec of buildAllSections()) {
+      lines.push(clean(`## ${sec.title}`));
+      lines.push(sec.headers.map(clean).join(","));
+      for (const r of sec.rows) lines.push(r.map(clean).join(","));
+      lines.push("");
+    }
+    const csv = "\uFEFF" + lines.join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `daily-all-${from}_${to}.csv`; a.click();
+    URL.revokeObjectURL(url);
+    toast.success("تم تصدير كل التبويبات");
+  };
+
+  const exportAllPDF = () => {
+    const sections = buildAllSections();
+    const body = sections.map((sec) => `
+      <h3>${escapeHtml(sec.title)}</h3>
+      <table><thead><tr>${sec.headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>
+      <tbody>${sec.rows.length
+        ? sec.rows.map((r) => `<tr>${r.map((c) => `<td>${escapeHtml(String(c))}</td>`).join("")}</tr>`).join("")
+        : `<tr><td colspan="${sec.headers.length}">لا توجد حركة</td></tr>`}</tbody></table>
+    `).join("");
+
+    const html = pdfDocument({
+      docTitle: "اليومية — تصدير شامل",
+      badge: "حركة يومية",
+      title: "اليومية — تصدير شامل",
+      lede: rangeLabel,
+      meta: [{ label: "الفترة", value: `${from} — ${to}` }],
+      body: `${body}
+        <p>إجمالي المبيعات: ${fmt(stats.sales)} ج.م — المحصّل الفعلي: ${fmt(stats.totalCollectedActual)} ج.م — المصروفات: ${fmt(stats.periodExpenses)} ج.م — المرتجعات: ${fmt(stats.periodReturnsTotal)} ج.م — صافي الدرج: ${fmt(stats.netCashDrawer)} ج.م</p>`,
+    });
+    openPdfDocument(html);
+  };
+
   const exportPDF = () => {
     let thead = "";
     let tbody = "";
@@ -574,7 +752,8 @@ function DailyPage() {
     const tabTitle =
       activeTab === "invoices" ? "فواتير الفترة" :
       activeTab === "payments" ? "التحصيلات والأقساط المستلمة" :
-      activeTab === "expenses" ? "المصروفات اليومية" : "المرتجعات";
+      activeTab === "expenses" ? "المصروفات اليومية" :
+      activeTab === "returns" ? "المرتجعات" : "سندات القبض والصرف";
 
     if (activeTab === "invoices") {
       thead = "<tr><th>م</th><th>رقم</th><th>العميل</th><th>الإجمالي</th><th>مدفوع</th><th>متبقي</th><th>نوع</th><th>الحالة</th></tr>";
@@ -598,17 +777,25 @@ function DailyPage() {
       ).join("");
       colspan = 5;
     } else if (activeTab === "returns") {
-      thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th><th>السبب</th></tr>";
-      tbody = periodReturnsList.map((r, i) =>
-        `<tr><td>${i + 1}</td><td>${new Date(r.createdAt).toLocaleDateString("en-CA")}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`
-      ).join("");
-      colspan = 6;
+      thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th><th>البنود</th><th>السبب</th></tr>";
+      tbody = periodReturnsList.map((r, i) => {
+        const items = (returnItemsByReturn.get(r.id) ?? []).map((it) => `${it.name} ×${it.quantity}`).join(" · ");
+        return `<tr><td>${i + 1}</td><td>${new Date(r.createdAt).toLocaleDateString("en-CA")}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(items || "—")}</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`;
+      }).join("");
+      colspan = 7;
+    } else if (activeTab === "vouchers") {
+      thead = "<tr><th>م</th><th>التاريخ</th><th>النوع</th><th>الطرف</th><th>طريقة الدفع</th><th>المبلغ</th><th>الوصف</th></tr>";
+      tbody = periodVouchersList.map((v, i) => {
+        const party = v.partyName || (v.customerId ? customerById.get(v.customerId)?.name : "") || "—";
+        return `<tr><td>${i + 1}</td><td>${escapeHtml(v.voucherDate)}</td><td>${v.type === "receipt" ? "سند قبض" : "سند صرف"}</td><td>${escapeHtml(party)}</td><td>${escapeHtml(v.paymentMethod || "—")}</td><td class="num">${fmt(v.amount)} ج.م</td><td>${escapeHtml(v.description ?? "—")}</td></tr>`;
+      }).join("");
+      colspan = 7;
     }
 
     const emptyRow = `<tr><td colspan="${colspan}">لا توجد حركة في الفترة</td></tr>`;
     const html = pdfDocument({
       docTitle: `اليومية — ${tabTitle}`,
-      badge: "تشغيل يومي",
+      badge: "حركة يومية",
       title: `اليومية — ${tabTitle}`,
       lede: rangeLabel,
       meta: [{ label: "الفترة", value: `${from} — ${to}` }],
@@ -642,10 +829,16 @@ function DailyPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="text-right">
                   <DropdownMenuItem onClick={exportCSV}>
-                    <FileSpreadsheet className="me-2 h-4 w-4" /> ملف Excel / CSV
+                    <FileSpreadsheet className="me-2 h-4 w-4" /> التبويب الحالي (Excel / CSV)
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportPDF}>
-                    <FileText className="me-2 h-4 w-4" /> تقرير PDF
+                    <FileText className="me-2 h-4 w-4" /> التبويب الحالي (PDF)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportAllCSV}>
+                    <FileSpreadsheet className="me-2 h-4 w-4" /> تصدير الكل (Excel / CSV)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={exportAllPDF}>
+                    <FileText className="me-2 h-4 w-4" /> تصدير الكل (PDF)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -762,6 +955,17 @@ function DailyPage() {
               </SelectContent>
             </Select>
           </label>
+          <label className="block text-right">
+            <Select value={categoryFilter} onValueChange={setCategoryFilter} disabled={activeTab !== "expenses"}>
+              <SelectTrigger className="h-10 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent dir="rtl">
+                <SelectItem value="all">كل تصنيفات المصروف</SelectItem>
+                {expenseCategoryOptions.map((c) => (
+                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
         </div>
         {from && to && from > to && (
           <p className="text-xs font-bold text-danger">⚠️ تاريخ "من" يجب أن يكون قبل "إلى"</p>
@@ -870,6 +1074,7 @@ function DailyPage() {
               { value: "payments", label: "التحصيلات والأقساط المستلمة", count: periodPayments.length, icon: <CheckCircle2 className="h-3.5 w-3.5 text-success" /> },
               { value: "expenses", label: "المصروفات اليومية", count: periodExpensesList.length, icon: <Receipt className="h-3.5 w-3.5 text-warning" /> },
               { value: "returns", label: "المرتجعات", count: periodReturnsList.length, icon: <RotateCcw className="h-3.5 w-3.5 text-danger" /> },
+              { value: "vouchers", label: "سندات القبض والصرف", count: periodVouchersList.length, icon: <Wallet className="h-3.5 w-3.5 text-primary" /> },
             ]}
           />
 
@@ -1059,13 +1264,14 @@ function DailyPage() {
                         <th className="p-3">تاريخ المرتجع</th>
                         <th className="p-3">العميل / الفاتورة</th>
                         <th className="p-3">قيمة المرتجع</th>
+                        <th className="p-3">البنود المرتجعة</th>
                         <th className="p-3">سبب الارتجاع</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--hairline)]">
                       {periodReturnsList.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                          <td colSpan={5} className="p-8 text-center text-muted-foreground">
                             لا توجد مرتجعات مسجلة في هذه الفترة
                           </td>
                         </tr>
@@ -1081,9 +1287,73 @@ function DailyPage() {
                             <td className={cn("p-3 font-mono font-bold text-danger", masked && "privacy-blur")}>
                               -{money(ret.totalAmount)}
                             </td>
+                            <td className="p-3 text-muted-foreground">
+                              {(returnItemsByReturn.get(ret.id) ?? []).length > 0 ? (
+                                <div className="flex flex-col gap-0.5">
+                                  {(returnItemsByReturn.get(ret.id) ?? []).map((it) => (
+                                    <span key={it.id} className="text-[11px]">
+                                      {it.name} <span className="font-mono text-foreground/70">×{fmt(it.quantity)}</span>
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
                             <td className="p-3 text-muted-foreground">{ret.reason || ret.notes || "—"}</td>
                           </tr>
                         ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* TAB 5: RECEIPT / PAYMENT VOUCHERS (informational) */}
+              {activeTab === "vouchers" && (
+                <div className="no-scrollbar overflow-x-auto p-2 sm:p-3">
+                  <table className="w-full min-w-[40rem] text-right text-xs">
+                    <thead>
+                      <tr className="border-b border-[var(--hairline)] text-[11px] font-bold text-muted-foreground">
+                        <th className="p-3">التاريخ</th>
+                        <th className="p-3">النوع</th>
+                        <th className="p-3">الطرف</th>
+                        <th className="p-3">طريقة الدفع</th>
+                        <th className="p-3">المبلغ</th>
+                        <th className="p-3">الوصف</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--hairline)]">
+                      {periodVouchersList.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                            لا توجد سندات قبض أو صرف في هذه الفترة
+                          </td>
+                        </tr>
+                      ) : (
+                        pagedVouchers.map((v) => {
+                          const isReceipt = v.type === "receipt";
+                          const party = v.partyName || (v.customerId ? customerById.get(v.customerId)?.name : "") || "—";
+                          return (
+                            <tr key={v.id} className="hover:bg-foreground/[0.02] transition-colors">
+                              <td className="p-3 font-mono text-muted-foreground">{v.voucherDate}</td>
+                              <td className="p-3">
+                                <span className={cn(
+                                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1",
+                                  isReceipt ? "bg-success/12 text-success ring-success/25" : "bg-danger/12 text-danger ring-danger/25",
+                                )}>
+                                  {isReceipt ? "سند قبض" : "سند صرف"}
+                                </span>
+                              </td>
+                              <td className="p-3 font-semibold text-foreground">{party}</td>
+                              <td className="p-3 text-muted-foreground">{v.paymentMethod || "—"}</td>
+                              <td className={cn("p-3 font-mono font-bold", isReceipt ? "text-success" : "text-danger", masked && "privacy-blur")}>
+                                {isReceipt ? "+" : "-"}{money(v.amount)}
+                              </td>
+                              <td className="p-3 text-muted-foreground">{v.description || "—"}</td>
+                            </tr>
+                          );
+                        })
                       )}
                     </tbody>
                   </table>
@@ -1143,6 +1413,15 @@ function DailyPage() {
                     <span className="text-danger">مرتجعات مبيعات نقدية:</span>
                     <strong className={cn("font-mono text-danger", masked && "privacy-blur")}>
                       -{money(stats.periodReturnsTotal)}
+                    </strong>
+                  </div>
+                )}
+
+                {(stats.periodVoucherReceipts > 0 || stats.periodVoucherPayments > 0) && (
+                  <div className="flex justify-between items-center py-2.5">
+                    <span className="text-muted-foreground">سندات القبض/الصرف (للعلم فقط — غير محتسبة):</span>
+                    <strong className={cn("font-mono text-muted-foreground text-[11px]", masked && "privacy-blur")}>
+                      +{money(stats.periodVoucherReceipts)} / -{money(stats.periodVoucherPayments)}
                     </strong>
                   </div>
                 )}

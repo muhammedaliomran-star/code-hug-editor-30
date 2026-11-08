@@ -367,6 +367,24 @@ export async function invalidateCache(table?: string) {
         createdAt: r.created_at,
       }),
     },
+    return_items: {
+      cacheKey: "returnItems",
+      fetch: () => supabase.from("return_items").select("*").order("created_at"),
+      map: (r) => ({
+        id: r.id, returnId: r.return_id, name: r.name,
+        unitPrice: Number(r.unit_price) / 100, quantity: Number(r.quantity), createdAt: r.created_at,
+      }),
+    },
+    payment_vouchers: {
+      cacheKey: "paymentVouchers",
+      fetch: () => supabase.from("payment_vouchers").select("*").order("voucher_date", { ascending: false }),
+      map: (r) => ({
+        id: r.id, customerId: r.customer_id, supplierId: r.supplier_id,
+        amount: Number(r.amount) / 100, type: r.type, paymentMethod: r.payment_method,
+        description: r.description, voucherDate: r.voucher_date, createdAt: r.created_at,
+        partyName: r.party_name, partyPhone: r.party_phone,
+      }),
+    },
   };
   const entry = table ? dailyMap[table] : undefined;
   if (!entry) {

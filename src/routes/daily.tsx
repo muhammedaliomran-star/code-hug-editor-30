@@ -10,7 +10,8 @@ const dailySearchSchema = z.object({
   customerId: z.string().optional(),
   typeFilter: z.enum(["all", "installment", "cash"]).optional(),
   statusFilter: z.enum(["all", "paid", "partial", "unpaid"]).optional(),
-  activeTab: z.enum(["invoices", "payments", "expenses", "returns"]).optional(),
+  activeTab: z.enum(["invoices", "payments", "expenses", "returns", "vouchers"]).optional(),
+  categoryFilter: z.string().optional(),
   quickPreset: z.enum(["today", "yesterday", "this-week", "this-month"]).optional(),
 });
 
