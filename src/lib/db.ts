@@ -298,14 +298,72 @@ async function fetchAllInner() {
 
 // Optional `table` enables a partial refresh (single table) instead of reloading
 // all 18 tables. Used by realtime handlers to avoid heavy full reloads.
+// NOTE: any single-table refresh MUST reuse the same row→cache mapping used by
+// fetchAll, otherwise raw snake_case/cents rows land in a camelCase cache and the
+// UI silently renders wrong numbers.
 export async function invalidateCache(table?: string) {
-  const dailyMap: Record<string, { cacheKey: string; fetch: () => Promise<any> }> = {
-    invoices: { cacheKey: "invoices", fetch: () => supabase.from("invoices").select("*").order("created_at", { ascending: false }) },
-    payments: { cacheKey: "payments", fetch: () => supabase.from("payments").select("*") },
-    expenses: { cacheKey: "expenses", fetch: () => supabase.from("expenses").select("*").order("expense_date", { ascending: false }) },
-    return_records: { cacheKey: "returns", fetch: () => supabase.from("return_records").select("*").order("created_at", { ascending: false }) },
-    customers: { cacheKey: "customers", fetch: () => supabase.from("customers").select("*").order("name") },
-    invoice_items: { cacheKey: "invoiceItems", fetch: () => supabase.from("invoice_items").select("*").order("created_at") },
+  const dailyMap: Record<string, { cacheKey: keyof typeof cache; fetch: () => PromiseLike<{ data: any[] | null; error: any }>; map: (r: any) => any }> = {
+    invoices: {
+      cacheKey: "invoices",
+      fetch: () => supabase.from("invoices").select("*").order("created_at", { ascending: false }),
+      map: (r) => ({
+        id: r.id, customerId: r.customer_id, total: Number(r.total) / 100,
+        downPayment: Number(r.down_payment) / 100, monthlyInstallment: Number(r.monthly_installment) / 100,
+        firstDueDate: r.first_due_date, paid: Number(r.paid) / 100, notes: r.notes, createdAt: r.created_at,
+        discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0) / 100,
+        taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
+        status: r.status ?? "pending", invoiceNumber: r.invoice_number, date: r.date || r.created_at,
+        receiptToken: r.receipt_token,
+      }),
+    },
+    payments: {
+      cacheKey: "payments",
+      fetch: () => supabase.from("payments").select("*"),
+      map: (r) => ({ id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount) / 100, paidAt: r.paid_at }),
+    },
+    expenses: {
+      cacheKey: "expenses",
+      fetch: () => supabase.from("expenses").select("*").order("expense_date", { ascending: false }),
+      map: (r) => ({
+        id: r.id, amount: Number(r.amount) / 100, category: r.category,
+        expenseDate: r.expense_date, notes: r.notes, createdAt: r.created_at,
+      }),
+    },
+    return_records: {
+      cacheKey: "returns",
+      fetch: () => supabase.from("return_records").select("*").order("created_at", { ascending: false }),
+      map: (r) => ({
+        id: r.id, invoiceId: r.invoice_id, type: r.type,
+        totalAmount: Number(r.total_amount) / 100, reason: r.reason, notes: r.notes, createdAt: r.created_at,
+      }),
+    },
+    customers: {
+      cacheKey: "customers",
+      fetch: () => supabase.from("customers").select("*").order("name"),
+      map: (r) => ({
+        id: r.id, name: r.name, phone: r.phone, rating: r.rating,
+        status: r.status, customerType: r.customer_type ?? "installment",
+        notes: r.notes, frozen: r.frozen,
+        address: r.address, joiningDate: r.joining_date,
+        creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
+        openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
+        createdAt: r.created_at,
+      }),
+    },
+    invoice_items: {
+      cacheKey: "invoiceItems",
+      fetch: () => supabase.from("invoice_items").select("*").order("created_at"),
+      map: (r) => ({
+        id: r.id, invoiceId: r.invoice_id, name: r.name,
+        cost: Number(r.cost ?? 0) / 100, price: Number(r.price ?? 0) / 100, quantity: Number(r.quantity ?? 1),
+        discountPct: Number(r.discount_pct ?? 0), discountAmount: Number(r.discount_amount ?? 0) / 100,
+        taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
+        lineTotal: Number(r.line_total ?? (Number(r.price ?? 0) * Number(r.quantity ?? 1))) / 100,
+        serialNumbers: Array.isArray(r.serial_numbers) ? r.serial_numbers : [],
+        stockItemId: r.stock_item_id ?? null,
+        createdAt: r.created_at,
+      }),
+    },
   };
   const entry = table ? dailyMap[table] : undefined;
   if (!entry) {
@@ -316,7 +374,7 @@ export async function invalidateCache(table?: string) {
   try {
     const { data, error } = await entry.fetch();
     if (error) throw error;
-    (cache as any)[entry.cacheKey] = data ?? [];
+    (cache as any)[entry.cacheKey] = (data ?? []).map(entry.map);
   } catch (e) {
     console.error("[db] refreshTable failed, falling back to full reload:", e);
     loaded = false;

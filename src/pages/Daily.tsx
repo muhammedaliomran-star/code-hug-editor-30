@@ -172,7 +172,13 @@ function DailyPage() {
   // Realtime: تحديث فوري عند تغيير البيانات في Supabase
   useEffect(() => {
     let channel: any = null;
-    let timer: any = null;
+    // مؤقّت مستقل لكل جدول، حتى لا يُلغي حدثُ جدولٍ تحديثَ جدولٍ آخر.
+    const timers = new Map<string, any>();
+    const schedule = (key: string, fn: () => void) => {
+      const prev = timers.get(key);
+      if (prev) clearTimeout(prev);
+      timers.set(key, setTimeout(() => { timers.delete(key); fn(); }, 400));
+    };
     (async () => {
       try {
         const { supabase } = await import("@/integrations/supabase/client");
@@ -181,18 +187,19 @@ function DailyPage() {
         if (!uid) return;
         channel = supabase
           .channel("daily-realtime")
-          .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("invoices"), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("payments"), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("expenses"), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("return_records"), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => { setNoteTick((n) => n + 1); }, 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("customers"), 400); })
-          .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items", filter: `user_id=eq.${uid}` }, () => { clearTimeout(timer); timer = setTimeout(() => invalidateCache("invoice_items"), 400); })
+          .on("postgres_changes", { event: "*", schema: "public", table: "invoices", filter: `user_id=eq.${uid}` }, () => schedule("invoices", () => invalidateCache("invoices")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "payments", filter: `user_id=eq.${uid}` }, () => schedule("payments", () => invalidateCache("payments")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "expenses", filter: `user_id=eq.${uid}` }, () => schedule("expenses", () => invalidateCache("expenses")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "return_records", filter: `user_id=eq.${uid}` }, () => schedule("returns", () => invalidateCache("return_records")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => schedule("daily_notes", () => setNoteTick((n) => n + 1)))
+          .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `user_id=eq.${uid}` }, () => schedule("customers", () => invalidateCache("customers")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items", filter: `user_id=eq.${uid}` }, () => schedule("invoice_items", () => invalidateCache("invoice_items")))
           .subscribe();
       } catch { /* ignore */ }
     })();
     return () => {
-      clearTimeout(timer);
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
       if (channel) { try { channel.unsubscribe(); } catch { /* ignore */ } }
     };
   }, []);
@@ -602,6 +609,8 @@ function DailyPage() {
     openPdfDocument(html);
   };
 
+  const showSkeleton = dbLoading && rows.length === 0 && periodPayments.length === 0;
+
   return (
     <>
       <PageHeader
@@ -729,15 +738,13 @@ function DailyPage() {
       </BezelCard>
 
 
-      {dbLoading && rows.length === 0 && periodPayments.length === 0 && (
+      {showSkeleton ? (
         <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[0,1,2,3].map((i) => (
             <div key={i} className="h-24 animate-pulse rounded-2xl bg-foreground/[0.06]" />
           ))}
         </div>
-      )}
-
-      {/* مؤشرات التدفق المالي — معادلة الدرج الصافية */}
+      ) : (
       <div className="stagger grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           mini
@@ -789,8 +796,10 @@ function DailyPage() {
           sub="التحصيلات - المصروفات - المرتجعات + حركات الخزينة"
         />
       </div>
+      )}
 
       {/* تفصيل المبيعات الفورية والأقساط */}
+      {!showSkeleton && (
       <div className="stagger mt-4 grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
           mini
@@ -817,6 +826,7 @@ function DailyPage() {
           series={stats.series.count} format={(n) => `${Math.round(n)} فاتورة`} sub="حركة الفواتير"
         />
       </div>
+      )}
 
       {/* تبويبات تفصيل حركة اليومية */}
       <div className="mt-8 space-y-4 pb-24 lg:pb-8">
