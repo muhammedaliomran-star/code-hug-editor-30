@@ -381,6 +381,8 @@ export async function invalidateCache(table?: string) {
     await fetchAll();
     return;
   }
+  // keep the offline IndexedDB snapshot in sync with the partial refresh
+  saveCacheToIDB(cache).catch(() => {});
   notify();
 }
 
@@ -748,7 +750,7 @@ export const db = {
         expense_date: exp.expenseDate, notes: exp.notes,
       }).select("id").single();
       if (error) throw error;
-      await fetchAll();
+      await invalidateCache("expenses");
       return (data as { id?: string } | null)?.id;
     } catch (err) {
       // offline fallback: enqueue for later replay
@@ -783,7 +785,7 @@ export const db = {
     try {
       const { error } = await supabase.from("expenses").update(upd).eq("id", id);
       if (error) throw error;
-      await fetchAll();
+      await invalidateCache("expenses");
     } catch (err) {
       try {
         const { enqueueOffline } = await import("./offline-queue");
@@ -801,7 +803,7 @@ export const db = {
     try {
       const { error } = await supabase.from("expenses").delete().eq("id", id);
       if (error) throw error;
-      await fetchAll();
+      await invalidateCache("expenses");
     } catch (err) {
       try {
         const { enqueueOffline } = await import("./offline-queue");

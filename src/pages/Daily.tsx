@@ -78,7 +78,7 @@ function escapeHtml(s: string): string {
 }
 
 function DailyPage() {
-  const { invoices, customers, expenses, payments, returns, invoiceItems, loading: dbLoading } = useDB();
+  const { invoices, customers, expenses, payments, returns, invoiceItems, loading: dbLoading, fetchErrors, refresh } = useDB();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
   const { privacy, toggle } = usePrivacy();
   const masked = privacy;
@@ -96,6 +96,7 @@ function DailyPage() {
   const PAGE_SIZE = 25;
   const [page, setPage] = useState(1);
   const [noteTick, setNoteTick] = useState(0);
+  const [treasuryTick, setTreasuryTick] = useState(0);
   const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
 
   const [openExpense, setOpenExpense] = useState(false);
@@ -164,9 +165,12 @@ function DailyPage() {
     return () => clearTimeout(t);
   }, [note]);
 
-  // تحديث رصيد الخزينة من السحابة (تقليل التأخر)
+  // تحديث رصيد الخزينة من السحابة (تقليل التأخر) — ثم إعادة حساب اللوحة
   useEffect(() => {
-    import("@/lib/cashbox-sync").then((m) => m.pullCashboxFromCloud().catch(() => {})).catch(() => {});
+    import("@/lib/cashbox-sync")
+      .then((m) => m.pullCashboxFromCloud()
+        .then((ok) => { if (ok) setTreasuryTick((t) => t + 1); }))
+      .catch(() => {});
   }, []);
 
   // Realtime: تحديث فوري عند تغيير البيانات في Supabase
@@ -178,6 +182,11 @@ function DailyPage() {
       const prev = timers.get(key);
       if (prev) clearTimeout(prev);
       timers.set(key, setTimeout(() => { timers.delete(key); fn(); }, 400));
+    };
+    const syncTreasury = () => {
+      import("@/lib/cashbox-sync")
+        .then((m) => m.pullCashboxFromCloud().then((ok) => { if (ok) setTreasuryTick((t) => t + 1); }))
+        .catch(() => {});
     };
     (async () => {
       try {
@@ -194,6 +203,8 @@ function DailyPage() {
           .on("postgres_changes", { event: "*", schema: "public", table: "daily_notes", filter: `user_id=eq.${uid}` }, () => schedule("daily_notes", () => setNoteTick((n) => n + 1)))
           .on("postgres_changes", { event: "*", schema: "public", table: "customers", filter: `user_id=eq.${uid}` }, () => schedule("customers", () => invalidateCache("customers")))
           .on("postgres_changes", { event: "*", schema: "public", table: "invoice_items", filter: `user_id=eq.${uid}` }, () => schedule("invoice_items", () => invalidateCache("invoice_items")))
+          .on("postgres_changes", { event: "*", schema: "public", table: "treasury_transactions", filter: `user_id=eq.${uid}` }, () => schedule("treasury", syncTreasury))
+          .on("postgres_changes", { event: "*", schema: "public", table: "treasury_accounts", filter: `user_id=eq.${uid}` }, () => schedule("treasury", syncTreasury))
           .subscribe();
       } catch { /* ignore */ }
     })();
@@ -445,7 +456,7 @@ function DailyPage() {
         collected: sCollected,
       },
     };
-  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, invoices, expenses, from, to]);
+  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, payments, invoices, expenses, from, to, treasuryTick]);
 
   const pagedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pagedPayments = periodPayments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -653,6 +664,25 @@ function DailyPage() {
         }
       />
 
+      {fetchErrors.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-danger/10 px-4 py-3 text-xs ring-1 ring-inset ring-danger/25">
+          <span className="font-bold text-danger">
+            ⚠️ تعذّر تحميل {fetchErrors.length} جدول من السحابة — الأرقام قد تكون ناقصة.
+          </span>
+          <div className="flex items-center gap-2">
+            <span className="max-w-[24rem] truncate font-mono text-[10px] text-muted-foreground" dir="ltr" title={fetchErrors.join(" • ")}>
+              {fetchErrors.slice(0, 2).join(" • ")}
+            </span>
+            <button
+              type="button"
+              onClick={() => { refresh().catch(() => {}); }}
+              className="press rounded-lg bg-danger/15 px-3 py-1 font-bold text-danger ring-1 ring-inset ring-danger/30"
+            >
+              إعادة المحاولة
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* شريط الفلاتر — منفصل عن أزرار الإجراءات */}
       <BezelCard variant="flat" innerClassName="flex flex-col gap-3 p-4 sm:p-5">
