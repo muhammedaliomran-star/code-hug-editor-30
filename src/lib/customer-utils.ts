@@ -7,7 +7,8 @@ export const EG_PHONE_RE = /^01[0125]\d{8}$/;
 /**
  * توليد كود تعريفي فريد ومختصر للعميل للبحث السريع والفواتير
  */
-export function getCustomerCode(c: { id: string }): string {
+export function getCustomerCode(c: { id: string; customerCode?: number }): string {
+  if (Number.isFinite(c.customerCode)) return String(c.customerCode);
   if (!c.id) return "C-00000";
   const hex = c.id.replace(/[^a-zA-Z0-9]/g, "").slice(-5).toUpperCase();
   return `C-${hex.padStart(5, "0")}`;

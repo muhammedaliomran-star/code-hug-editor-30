@@ -177,6 +177,7 @@ async function fetchAllInner() {
       address: r.address, joiningDate: r.joining_date,
       creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
       openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
+      customerCode: r.customer_code, paperLedgerNumber: r.paper_ledger_number,
       segment: r.customer_segment ?? "regular", assignedStaffId: r.assigned_staff_id,
       preferredContact: r.preferred_contact ?? "whatsapp", preferredPaymentMethod: r.preferred_payment_method ?? "cash",
       debtAlertThreshold: Number(r.debt_alert_threshold ?? 0) / 100,
@@ -355,6 +356,7 @@ export async function invalidateCache(table?: string) {
         address: r.address, joiningDate: r.joining_date,
         creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
         openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
+        customerCode: r.customer_code, paperLedgerNumber: r.paper_ledger_number,
         segment: r.customer_segment ?? "regular", assignedStaffId: r.assigned_staff_id,
         preferredContact: r.preferred_contact ?? "whatsapp", preferredPaymentMethod: r.preferred_payment_method ?? "cash",
         debtAlertThreshold: Number(r.debt_alert_threshold ?? 0) / 100,
@@ -532,6 +534,7 @@ export const db = {
       customer_type: c.customerType ?? 'installment',
       notes: c.notes, frozen: c.frozen,
       address: c.address, joining_date: c.joiningDate, national_id: c.nationalId,
+      paper_ledger_number: c.paperLedgerNumber,
       customer_segment: c.segment ?? "regular", assigned_staff_id: c.assignedStaffId,
       preferred_contact: c.preferredContact ?? "whatsapp", preferred_payment_method: c.preferredPaymentMethod ?? "cash",
       debt_alert_threshold: (c.debtAlertThreshold ?? 0) * 100, due_notifications: c.dueNotifications ?? true,
@@ -541,7 +544,9 @@ export const db = {
     }).select("id").single();
     if (error) throw error;
     await fetchAll();
-    return inserted ? ({ ...(c as any), id: inserted.id, createdAt: new Date().toISOString() } as Customer) : undefined;
+    return inserted
+      ? cache.customers.find((item) => item.id === inserted.id) ?? ({ ...(c as any), id: inserted.id, createdAt: new Date().toISOString() } as Customer)
+      : undefined;
   },
   async updateCustomer(id: string, patch: Partial<Customer>) {
     const upd: any = {};
@@ -554,6 +559,7 @@ export const db = {
     if (patch.frozen !== undefined) upd.frozen = patch.frozen;
     if (patch.address !== undefined) upd.address = patch.address;
     if (patch.nationalId !== undefined) upd.national_id = patch.nationalId;
+    if (patch.paperLedgerNumber !== undefined) upd.paper_ledger_number = patch.paperLedgerNumber;
     if (patch.segment !== undefined) upd.customer_segment = patch.segment;
     if (patch.assignedStaffId !== undefined) upd.assigned_staff_id = patch.assignedStaffId;
     if (patch.preferredContact !== undefined) upd.preferred_contact = patch.preferredContact;

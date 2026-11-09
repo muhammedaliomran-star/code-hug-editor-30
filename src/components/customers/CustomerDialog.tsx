@@ -8,6 +8,7 @@ import {
   type CustomerSegment,
   type CustomerContactPreference,
   type CustomerPaymentPreference,
+  useDB,
   useShopSettings,
 } from "@/lib/store";
 import { useStaffAndShifts } from "@/lib/staff";
@@ -118,6 +119,7 @@ export function CustomerDialog({
   const [address, setAddress] = useState(customer?.address ?? "");
   const [joiningDate, setJoiningDate] = useState(customer?.joiningDate ?? today);
   const [nationalId, setNationalId] = useState(customer?.nationalId ?? "");
+  const [paperLedgerNumber, setPaperLedgerNumber] = useState(customer?.paperLedgerNumber ?? "");
   const [segment, setSegment] = useState<CustomerSegment>(customer?.segment ?? "regular");
   const [assignedStaffId, setAssignedStaffId] = useState(customer?.assignedStaffId ?? "none");
   const [preferredContact, setPreferredContact] = useState<CustomerContactPreference>(customer?.preferredContact ?? "whatsapp");
@@ -136,7 +138,9 @@ export function CustomerDialog({
   const [draftHydrated, setDraftHydrated] = useState(Boolean(customer));
   const [saving, setSaving] = useState(false);
   const { staffList } = useStaffAndShifts();
+  const { customers } = useDB();
   const { settings: shop } = useShopSettings();
+  const nextCustomerCode = customer?.customerCode ?? customers.reduce((max, item) => Math.max(max, item.customerCode ?? 0), 0) + 1;
 
   const phoneValid = EG_PHONE_RE.test(phone);
   const hasDraft = Boolean(
@@ -159,6 +163,7 @@ export function CustomerDialog({
         setAddress(draft.address ?? "");
         setJoiningDate(draft.joiningDate ?? ddmmyyyyToIso(draft.joiningDateInput) ?? today);
         setNationalId(draft.nationalId ?? "");
+        setPaperLedgerNumber(draft.paperLedgerNumber ?? "");
         setSegment(draft.segment ?? "regular");
         setAssignedStaffId(draft.assignedStaffId ?? "none");
         setPreferredContact(draft.preferredContact ?? "whatsapp");
@@ -181,11 +186,11 @@ export function CustomerDialog({
   useEffect(() => {
     if (customer || !draftHydrated) return;
     sessionStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify({
-      name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId,
+      name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, paperLedgerNumber,
       segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold,
       dueNotifications, tagsText, creditLimit, openingBalance, dueDay,
     }));
-  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold, dueNotifications, tagsText, creditLimit, openingBalance, dueDay]);
+  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, paperLedgerNumber, segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold, dueNotifications, tagsText, creditLimit, openingBalance, dueDay]);
   const initials = name.trim()
     ? name
         .trim()
@@ -220,6 +225,7 @@ export function CustomerDialog({
       address: address || null,
       joiningDate,
       nationalId: nationalId.trim() || undefined,
+      paperLedgerNumber: customerType === "installment" ? paperLedgerNumber.trim() || undefined : undefined,
       segment,
       assignedStaffId: assignedStaffId === "none" ? null : assignedStaffId,
       preferredContact,
@@ -276,6 +282,19 @@ export function CustomerDialog({
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
         <div className="space-y-5 p-5 text-xs sm:p-8">
+          {/* Sequential customer code */}
+          <div>
+            <Label>كود العميل</Label>
+            <Input
+              value={nextCustomerCode}
+              readOnly
+              disabled
+              dir="ltr"
+              className="font-black tracking-widest text-primary opacity-100 disabled:cursor-default disabled:opacity-100"
+            />
+            <p className="mt-1 text-[11px] text-muted-foreground">يتحدد تلقائيًا ولا يمكن تعديله.</p>
+          </div>
+
           {/* Name + avatar */}
           <div>
             <Label>الاسم</Label>
@@ -492,6 +511,7 @@ export function CustomerDialog({
           </Collapsible>
 
           {/* Installment settings / Cash info */}
+          {customerType === "installment" && (
           <Collapsible open={creditSectionOpen} onOpenChange={setCreditSectionOpen} className="rounded-2xl bg-foreground/[0.025] p-3 ring-1 ring-inset ring-border/40">
             <CollapsibleTrigger className="group flex w-full items-center justify-between text-right">
               <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[state=open]:rotate-180" />
@@ -513,6 +533,16 @@ export function CustomerDialog({
               >
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
                   <CreditCard className="h-3.5 w-3.5" /> إعدادات التقسيط
+                </div>
+                <div>
+                  <Label>رقم العميل في الدفتر الورقي</Label>
+                  <Input
+                    value={paperLedgerNumber}
+                    onChange={(e) => setPaperLedgerNumber(e.target.value.slice(0, 50))}
+                    placeholder="يمكن تكراره لأكثر من عميل"
+                    maxLength={50}
+                  />
+                  <p className="mt-1 text-[11px] text-muted-foreground">رقم مرجعي يدوي، ولا يشترط أن يكون فريدًا.</p>
                 </div>
                 <div>
                   <Label>يوم القسط من الشهر</Label>
@@ -608,6 +638,7 @@ export function CustomerDialog({
           </div>
             </CollapsibleContent>
           </Collapsible>
+          )}
 
           {/* Rating section (installment only) */}
           <AnimatePresence mode="wait" initial={false}>

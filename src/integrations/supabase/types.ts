@@ -462,6 +462,7 @@ export type Database = {
           address: string | null
           assigned_staff_id: string | null
           customer_segment: string
+          customer_code: number
           created_at: string
           credit_limit: number
           customer_type: string
@@ -473,6 +474,7 @@ export type Database = {
           joining_date: string
           name: string
           national_id: string | null
+          paper_ledger_number: string | null
           notes: string | null
           opening_balance: number
           phone: string
@@ -488,6 +490,7 @@ export type Database = {
           address?: string | null
           assigned_staff_id?: string | null
           customer_segment?: string
+          customer_code?: number
           created_at?: string
           credit_limit?: number
           customer_type?: string
@@ -499,6 +502,7 @@ export type Database = {
           joining_date?: string
           name: string
           national_id?: string | null
+          paper_ledger_number?: string | null
           notes?: string | null
           opening_balance?: number
           phone?: string
@@ -514,6 +518,7 @@ export type Database = {
           address?: string | null
           assigned_staff_id?: string | null
           customer_segment?: string
+          customer_code?: number
           created_at?: string
           credit_limit?: number
           customer_type?: string
@@ -525,6 +530,7 @@ export type Database = {
           joining_date?: string
           name?: string
           national_id?: string | null
+          paper_ledger_number?: string | null
           notes?: string | null
           opening_balance?: number
           phone?: string

@@ -82,6 +82,7 @@ export interface PaymentVoucher {
 
 export interface Customer {
   id: string;
+  customerCode?: number;
   name: string;
   phone: string;
   rating: number;
@@ -95,6 +96,7 @@ export interface Customer {
   dueDay: number;
   openingBalance: number;
   nationalId?: string;
+  paperLedgerNumber?: string;
   segment?: CustomerSegment;
   assignedStaffId?: string | null;
   preferredContact?: CustomerContactPreference;
@@ -310,6 +312,7 @@ export interface StockItem {
   size: string | null;
   itemType: string | null;
   minStock: number;
+  archived?: boolean;
   createdAt: string;
   updatedAt: string;
   variants?: ProductVariant[];
