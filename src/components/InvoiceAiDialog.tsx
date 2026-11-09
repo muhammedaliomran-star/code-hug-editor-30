@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { parsePurchaseInvoice, type InvoiceAiResult } from "@/lib/invoice-ai";
-import { CheckCircle2, FileText, ImagePlus, Loader2, ScanSearch, Upload, AlertTriangle, X } from "lucide-react";
+import { checkInvoiceAiConnection, parsePurchaseInvoice, type InvoiceAiResult } from "@/lib/invoice-ai";
+import { CheckCircle2, FileText, ImagePlus, Loader2, ScanSearch, Upload, AlertTriangle, Wifi } from "lucide-react";
 import { toast } from "sonner";
 
 type SupplierOption = { id: string; name: string };
@@ -23,6 +23,7 @@ export function InvoiceAiDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [supplierName, setSupplierName] = useState("");
+  const [connectionState, setConnectionState] = useState<"unknown" | "checking" | "connected" | "missing" | "error">("unknown");
 
   const supplierMatch = useMemo(() => {
     if (!supplierName.trim()) return null;
@@ -34,7 +35,7 @@ export function InvoiceAiDialog({
   const extractedItemsTotal = useMemo(() => result?.items.reduce((sum, item) => sum + item.quantity * item.unitCost, 0) ?? 0, [result]);
   const totalMismatch = result?.total != null && Math.abs(extractedItemsTotal - result.total) > 0.01;
 
-  const reset = () => { setFiles([]); setResult(null); setError(""); setSupplierName(""); setBusy(false); };
+  const reset = () => { setFiles([]); setResult(null); setError(""); setSupplierName(""); setBusy(false); setConnectionState("unknown"); };
   const close = (value: boolean) => { if (!value) reset(); onOpenChange(value); };
 
   const analyze = async () => {
@@ -44,10 +45,17 @@ export function InvoiceAiDialog({
     finally { setBusy(false); }
   };
 
+  const checkConnection = async () => {
+    setConnectionState("checking");
+    try { const status = await checkInvoiceAiConnection(); setConnectionState(status.configured ? "connected" : "missing"); }
+    catch { setConnectionState("error"); }
+  };
+
   return <Dialog open={open} onOpenChange={close}>
     <DialogContent dir="rtl" className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl overflow-y-auto p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-7">
       <DialogHeader><DialogTitle className="flex items-center gap-2 text-right"><ScanSearch className="h-5 w-5 text-primary" /> قراءة الفاتورة بالذكاء الاصطناعي</DialogTitle><DialogDescription className="text-right">ارفع الفاتورة، راجع البيانات المستخرجة، ثم أضفها إلى نموذج الشراء.</DialogDescription></DialogHeader>
       {!result ? <div className="space-y-4">
+        <div className={cn("flex items-center justify-between gap-3 rounded-2xl border p-3", connectionState === "connected" ? "border-success/30 bg-success/10" : connectionState === "missing" || connectionState === "error" ? "border-danger/30 bg-danger/10" : "border-border/40 bg-foreground/[0.03]")}><div className="flex items-center gap-2 text-sm"><Wifi className={cn("h-4 w-4", connectionState === "connected" ? "text-success" : connectionState === "missing" || connectionState === "error" ? "text-danger" : "text-muted-foreground")} /><span>{connectionState === "connected" ? "خدمة الذكاء الاصطناعي متصلة" : connectionState === "missing" ? "مفتاح OpenAI غير مُعد على الخادم" : connectionState === "error" ? "تعذر الوصول إلى خدمة القراءة" : "لم يتم اختبار اتصال الخدمة بعد"}</span></div><Button type="button" size="sm" variant="outline" onClick={() => { void checkConnection(); }} disabled={connectionState === "checking"} className="shrink-0 gap-1.5">{connectionState === "checking" && <Loader2 className="h-3.5 w-3.5 animate-spin" />} اختبار الاتصال</Button></div>
         <label className="group flex min-h-48 cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-primary/35 bg-primary/[0.04] p-6 text-center transition-[background-color,border-color,transform] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:border-primary hover:bg-primary/[0.08] active:scale-[0.99]">
           <input type="file" className="sr-only" accept="image/*,.pdf,application/pdf" multiple capture="environment" onChange={(e) => { setFiles(Array.from(e.target.files ?? [])); setError(""); }} />
           <span className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/15 text-primary"><Upload className="h-6 w-6" /></span>

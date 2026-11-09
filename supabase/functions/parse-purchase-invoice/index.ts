@@ -47,6 +47,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
   const apiKey = Deno.env.get("OPENAI_API_KEY");
+  const contentType = req.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    const body = await req.json().catch(() => ({}));
+    if (body?.check === true) return json({ configured: Boolean(apiKey) });
+  }
   if (!apiKey) return json({ error: "OPENAI_API_KEY is not configured in Supabase" }, 503);
 
   try {

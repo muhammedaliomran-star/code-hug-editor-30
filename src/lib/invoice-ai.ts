@@ -48,3 +48,9 @@ export async function parsePurchaseInvoice(files: File[]): Promise<InvoiceAiResu
   if (!data?.result) throw new Error("لم تُرجع خدمة الذكاء الاصطناعي بيانات صالحة");
   return data.result as InvoiceAiResult;
 }
+
+export async function checkInvoiceAiConnection(): Promise<{ configured: boolean }> {
+  const { data, error } = await supabase.functions.invoke("parse-purchase-invoice", { body: { check: true } });
+  if (error) throw new Error(error.message || "تعذر اختبار الاتصال");
+  return { configured: data?.configured === true };
+}
