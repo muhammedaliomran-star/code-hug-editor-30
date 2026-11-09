@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { format, addMonths } from "date-fns";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import {
   useDB, db, fmt, customerBalance, useShopSettings, uid,
@@ -623,29 +624,12 @@ function PosPage() {
   });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 xl:overflow-hidden xl:pb-0">
-      {/* Top Header Bar */}
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 py-2.5 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground font-black shadow-sm">
-              <Zap className="h-5 w-5" />
-            </span>
-            <div>
-              <h1 className="text-base font-extrabold leading-tight text-foreground flex items-center gap-2">
-                نقطة البيع السريعة (POS)
-                <Badge variant="outline" className="text-[11px] font-bold border-primary/30 text-primary py-0">
-                  كاشير سريع
-                </Badge>
-              </h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">
-                اختيار الأصناف بنقرة واحدة، طباعة الفاتورة، وتعليق الطلبات فورياً.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+    <>
+      <PageHeader
+        title="نقطة البيع السريعة (POS)"
+        subtitle="اختيار الأصناف بنقرة واحدة، طباعة الفاتورة، وتعليق الطلبات فورياً."
+        action={
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           {/* Quick Refund (F3) */}
           <Button
             type="button"
@@ -725,12 +709,14 @@ function PosPage() {
             </Link>
           </Button>
         </div>
-      </header>
+        }
+      />
 
-      {/* Main Grid: Products (Left) + Cart Sidebar (Right) */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_420px] xl:flex-1 xl:min-h-0 xl:gap-0">
+      <div className="space-y-4">
+        {/* Main Grid: Products (Left) + Cart Sidebar (Right) */}
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_400px]">
         {/* Products Section */}
-        <div className="flex min-h-[540px] flex-col border-b border-border/40 bg-background/50 p-3 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:border-b-0 xl:border-l">
+        <div className="flex flex-col border-b border-border/40 bg-background/50 p-3 sm:p-4 xl:border-b-0 xl:border-l">
           {/* Search, Barcode & Category Filters */}
           <div className="space-y-2.5 shrink-0 mb-3">
             <div className="flex items-center gap-2">
@@ -793,7 +779,7 @@ function PosPage() {
           </div>
 
           {/* Products Grid */}
-          <div className="flex-1 min-h-0 overflow-visible pr-1 xl:overflow-y-auto xl:custom-scrollbar">
+          <div className="max-h-[60vh] overflow-y-auto pr-1 custom-scrollbar">
             {filteredProducts.length === 0 ? (
               <div className="h-full flex items-center justify-center p-5 text-center text-muted-foreground">
                 <div className="w-full max-w-sm rounded-2xl border border-dashed border-border/50 bg-card/40 px-5 py-6">
@@ -889,7 +875,7 @@ function PosPage() {
         </div>
 
         {/* Cart & Fast Checkout Sidebar */}
-        <div className="flex min-h-[620px] flex-col space-y-3 overflow-y-auto bg-card p-3.5 shadow-lg custom-scrollbar sm:p-4 xl:min-h-0 xl:overflow-y-auto">
+        <div className="flex flex-col space-y-3 bg-card p-3.5 shadow-lg sm:p-4 lg:sticky lg:top-4 lg:self-start">
           {/* Customer Selection Row */}
           <div className="py-2.5 flex items-center justify-between gap-2 shrink-0 border-b border-border/40">
             <div className="flex items-center gap-2 min-w-0">
@@ -930,7 +916,7 @@ function PosPage() {
           </div>
 
           {/* Cart Items List */}
-          <div className="flex-1 min-h-0 overflow-visible space-y-2 pr-1 xl:overflow-y-auto xl:custom-scrollbar">
+          <div className="max-h-[40vh] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-2 border-2 border-dashed border-border/40 rounded-2xl">
                 <ShoppingCart className="h-10 w-10 text-muted-foreground/30" />
@@ -1561,6 +1547,6 @@ function PosPage() {
           // optionally refresh data or state
         }}
       />
-    </div>
+    </>
   );
 }

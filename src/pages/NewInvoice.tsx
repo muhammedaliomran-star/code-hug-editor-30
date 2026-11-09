@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { format, addMonths } from "date-fns";
+import { ar } from "date-fns/locale";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
@@ -1493,13 +1494,17 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                                 <CalendarIcon className="h-4 w-4 opacity-60" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent dir="rtl" className="w-auto rounded-2xl border-border/70 bg-card/95 p-2 shadow-[0_24px_70px_-28px_hsl(0_0%_0%/0.8)] backdrop-blur-xl" align="start">
                               <Calendar
                                 mode="single"
                                 selected={date}
                                 onSelect={setDate}
                                 initialFocus
-                                className={cn("p-3 pointer-events-auto")}
+                                locale={ar}
+                                captionLayout="dropdown"
+                                fromYear={new Date().getFullYear() - 10}
+                                toYear={new Date().getFullYear() + 10}
+                                className={cn("pointer-events-auto")}
                               />
                             </PopoverContent>
                           </Popover>

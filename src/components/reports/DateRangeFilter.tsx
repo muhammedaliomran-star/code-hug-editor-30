@@ -3,6 +3,7 @@ import { ReportDatePreset } from "@/lib/reports-engine";
 import { Button } from "@/components/ui/button";
 import { Calendar, Filter } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DatePickerField } from "@/components/DatePickerField";
 
 interface DateRangeFilterProps {
   preset: ReportDatePreset;
@@ -63,21 +64,11 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
         <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-border/50">
           <div className="flex items-center gap-2 text-xs">
             <span className="text-muted-foreground">من تاريخ:</span>
-            <input
-              type="date"
-              value={customStartDate}
-              onChange={(e) => onCustomStartChange(e.target.value)}
-              className="px-2.5 py-1 text-xs rounded-lg border border-input bg-background font-medium focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+            <DatePickerField value={customStartDate} onChange={onCustomStartChange} className="h-9 w-36 text-xs" />
           </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-muted-foreground">إلى تاريخ:</span>
-            <input
-              type="date"
-              value={customEndDate}
-              onChange={(e) => onCustomEndChange(e.target.value)}
-              className="px-2.5 py-1 text-xs rounded-lg border border-input bg-background font-medium focus:outline-none focus:ring-1 focus:ring-primary"
-            />
+            <DatePickerField value={customEndDate} onChange={onCustomEndChange} className="h-9 w-36 text-xs" />
           </div>
         </div>
       )}

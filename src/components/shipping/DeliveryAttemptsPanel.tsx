@@ -16,6 +16,7 @@ import {
   type DeliveryAttempt,
 } from "@/lib/delivery-attempts";
 import { usePrivacy } from "@/lib/privacy";
+import { DatePickerField } from "@/components/DatePickerField";
 
 const egp = (n: number) => `${Number(n || 0).toLocaleString("ar-EG")} ج.م`;
 
@@ -101,7 +102,7 @@ export function DeliveryAttemptsPanel({ shipmentId }: { shipmentId: string }) {
             </div>
             <div className="space-y-1">
               <Label className="text-xs">إعادة الجدولة</Label>
-              <Input type="date" value={nextAt} onChange={(e) => setNextAt(e.target.value)} className="h-9 text-xs" />
+              <DatePickerField value={nextAt} onChange={setNextAt} className="h-9 text-xs" />
             </div>
           </div>
           <div className="space-y-1">

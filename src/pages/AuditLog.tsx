@@ -6,6 +6,7 @@ import { BezelCard } from "@/components/BezelCard";
 import { MetricCard } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
 import { Reveal } from "@/components/Reveal";
+import { DatePickerField } from "@/components/DatePickerField";
 import { usePrivacy } from "@/lib/privacy";
 import { fmt } from "@/lib/store";
 import {
@@ -355,13 +356,7 @@ export default function AuditLog() {
 
               <div>
                 <Label className="text-xs mb-1.5 block">التاريخ</Label>
-                <Input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="h-9 text-xs font-mono"
-                  dir="ltr"
-                />
+                <DatePickerField value={selectedDate} onChange={setSelectedDate} className="h-9 text-xs" />
               </div>
             </div>
           </BezelCard>

@@ -21,6 +21,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Plus, Trash2, CalendarIcon, Banknote } from "lucide-react";
 import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 import { usePrivacy } from "@/lib/privacy";
 
@@ -177,8 +178,17 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
                           <CalendarIcon className="h-4 w-4 opacity-60" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                      <PopoverContent dir="rtl" className="w-auto rounded-2xl border-border/70 bg-card/95 p-2 shadow-[0_24px_70px_-28px_hsl(0_0%_0%/0.8)] backdrop-blur-xl" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                          locale={ar}
+                          captionLayout="dropdown"
+                          fromYear={new Date().getFullYear() - 10}
+                          toYear={new Date().getFullYear() + 10}
+                        />
                       </PopoverContent>
                     </Popover>
                   </div>

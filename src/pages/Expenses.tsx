@@ -12,6 +12,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { StatTabs } from "@/components/StatTabs";
 import { MetricCard } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
+import { DatePickerField } from "@/components/DatePickerField";
 import {
   Select,
   SelectContent,
@@ -536,21 +537,9 @@ function ExpensesPage() {
 
             <div className="flex items-center justify-between gap-3 pt-2 border-t border-border/40 flex-wrap">
               <div className="flex items-center gap-2">
-                <Input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="text-xs h-8 w-36"
-                  placeholder="من تاريخ"
-                />
+                <DatePickerField value={fromDate} onChange={setFromDate} placeholder="من تاريخ" className="h-8 w-36 text-xs" />
                 <span className="text-xs text-muted-foreground">إلى</span>
-                <Input
-                  type="date"
-                  value={toDate}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="text-xs h-8 w-36"
-                  placeholder="إلى تاريخ"
-                />
+                <DatePickerField value={toDate} onChange={setToDate} placeholder="إلى تاريخ" className="h-8 w-36 text-xs" />
                 {(filterCat !== "all" || filterAccount !== "all" || filterBranch !== "all" || fromDate || toDate || search) && (
                   <Button
                     variant="ghost"

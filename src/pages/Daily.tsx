@@ -11,6 +11,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { FilterChips } from "@/components/FilterChips";
 import { StatTabs } from "@/components/StatTabs";
 import { CountUp } from "@/components/CountUp";
+import { DatePickerField } from "@/components/DatePickerField";
 
 import { Reveal } from "@/components/Reveal";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
@@ -1023,11 +1024,11 @@ function DailyPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="block text-right">
             <MetricLabel className="mb-1.5 text-xs">من تاريخ</MetricLabel>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
+            <DatePickerField value={from} onChange={setFrom} className="h-9 text-xs" />
           </label>
           <label className="block text-right">
             <MetricLabel className="mb-1.5 text-xs">إلى تاريخ</MetricLabel>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} dir="ltr" className="text-numeric h-9 text-xs" />
+            <DatePickerField value={to} onChange={setTo} className="h-9 text-xs" />
           </label>
           <label className="block text-right">
             <MetricLabel className="mb-1.5 text-xs">بحث سريع</MetricLabel>

@@ -21,6 +21,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { FilterChips } from "@/components/FilterChips";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -1332,19 +1333,11 @@ export default function Discounts() {
               <div className="grid grid-cols-2 gap-3 border-t border-border/30 pt-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">تاريخ البدء</Label>
-                  <Input
-                    type="date"
-                    value={formStartsAt}
-                    onChange={(e) => setFormStartsAt(e.target.value)}
-                  />
+                  <DatePickerField value={formStartsAt} onChange={setFormStartsAt} />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">تاريخ الانتهاء (اختياري)</Label>
-                  <Input
-                    type="date"
-                    value={formEndsAt}
-                    onChange={(e) => setFormEndsAt(e.target.value)}
-                  />
+                  <DatePickerField value={formEndsAt} onChange={setFormEndsAt} />
                 </div>
               </div>
 

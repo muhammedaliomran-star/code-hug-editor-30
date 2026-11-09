@@ -11,6 +11,7 @@ import { Link } from "@/lib/router-compat";
 import { cn } from "@/lib/utils";
 import { ActionButton } from "@/components/ActionButton";
 import { FilterChips } from "@/components/FilterChips";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Input } from "@/components/ui/input";
 import {
   DashboardProvider,
@@ -115,23 +116,11 @@ function DashboardInner() {
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                     من
-                    <Input
-                      type="date"
-                      value={customFrom}
-                      onChange={(e) => setCustomFrom(e.target.value)}
-                      dir="ltr"
-                      className="text-numeric h-9 text-xs"
-                    />
+                    <DatePickerField value={customFrom} onChange={setCustomFrom} className="h-9 text-xs" />
                   </label>
                   <label className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
                     إلى
-                    <Input
-                      type="date"
-                      value={customTo}
-                      onChange={(e) => setCustomTo(e.target.value)}
-                      dir="ltr"
-                      className="text-numeric h-9 text-xs"
-                    />
+                    <DatePickerField value={customTo} onChange={setCustomTo} className="h-9 text-xs" />
                   </label>
                 </div>
               )}

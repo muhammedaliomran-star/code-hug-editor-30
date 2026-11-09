@@ -81,6 +81,7 @@ export function DatePickerField({
             mode="single"
             selected={selected}
             onSelect={selectDate}
+            locale={ar}
             initialFocus
             captionLayout="dropdown"
             fromYear={new Date().getFullYear() - 10}

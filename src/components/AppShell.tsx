@@ -230,12 +230,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // Server-integration health: when the worker has no Supabase env, every
   // server function fails — show a guided banner instead of cryptic errors.
   const { linked: serverLinked, refresh: refreshHealth } = useDeploymentHealth();
-  const isPosWorkspace = location.pathname === "/pos";
   return (
-    <div dir="rtl" className={cn(
-      "relative text-foreground flex overflow-hidden selection:bg-primary selection:text-black",
-      isPosWorkspace ? "h-dvh min-h-0" : "min-h-screen"
-    )}>
+    <div dir="rtl" className="relative min-h-screen text-foreground flex overflow-hidden selection:bg-primary selection:text-black">
       {/* Ambient background layer */}
       <div className="fixed inset-0 z-[-1] ambient-mesh opacity-80" />
       {/* Sidebar */}
@@ -391,12 +387,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <ThemeToggle className="h-10 w-10 backdrop-blur-xl" />
       </div>
 
-      <main className={cn(
-        "min-w-0 flex-1 text-right",
-        isPosWorkspace
-          ? "flex min-h-0 flex-col overflow-hidden p-0"
-          : "px-4 pb-32 pt-10 md:px-12 md:pb-16 md:pt-16"
-      )}>
+      <main className="min-w-0 flex-1 px-4 pb-32 pt-10 text-right md:px-12 md:pb-16 md:pt-16">
         {serverLinked === false && (
           <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-right" role="alert">
             <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
