@@ -8,14 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useDB, db, fmt, findStockByBarcode, type PurchasePaymentType } from "@/lib/store";
+import { useDB, db, uid, fmt, findStockByBarcode, type PurchasePaymentType } from "@/lib/store";
+import { supabase } from "@/integrations/supabase/client";
 import { usePrivacy } from "@/lib/privacy";
 import { useNavigate, Link } from "@/lib/router-compat";
 import { 
   ShoppingCart, Save, X, Plus, Trash2, Banknote, Wallet, 
-  Search, Info, Eye, EyeOff, ScanLine, ArrowRight, CheckCircle2
+  Search, Info, Eye, EyeOff, ScanLine, ScanSearch, ArrowRight, CheckCircle2
 } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { InvoiceAiDialog } from "@/components/InvoiceAiDialog";
+import type { InvoiceAiResult } from "@/lib/invoice-ai";
 import { DatePickerField } from "@/components/DatePickerField";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -44,6 +47,8 @@ export function NewPurchasePage() {
   ]);
   const [busy, setBusy] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [invoiceAiOpen, setInvoiceAiOpen] = useState(false);
+  const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
 
   const total = useMemo(() => 
     items.reduce((sum, it) => sum + (Number(it.unitCost) || 0) * (Number(it.quantity) || 0), 0),
@@ -72,6 +77,16 @@ export function NewPurchasePage() {
 
   const updateItem = (id: string, patch: Partial<PurchaseLineItem>) => {
     setItems(items.map(it => it.id === id ? { ...it, ...patch } : it));
+  };
+
+  const applyAiInvoice = (result: InvoiceAiResult, matchedSupplierId: string | null, files: File[]) => {
+    if (matchedSupplierId) setSupplierId(matchedSupplierId);
+    if (result.invoiceDate && /^\d{4}-\d{2}-\d{2}$/.test(result.invoiceDate)) setDate(result.invoiceDate);
+    const attachmentNote = files.length ? `مرفق الفاتورة: ${files.map((file) => file.name).join("، ")}` : "";
+    setNotes([result.invoiceNumber ? `رقم الفاتورة: ${result.invoiceNumber}` : "", attachmentNote].filter(Boolean).join(" — "));
+    setInvoiceFiles(files);
+    setItems(result.items.map((item) => ({ id: crypto.randomUUID(), name: item.name, unitCost: String(item.unitCost || ""), quantity: String(item.quantity || 1), barcode: item.barcode || undefined })));
+    toast.success(`تمت إضافة ${result.items.length} صنف من قراءة الفاتورة. راجع البيانات قبل الحفظ.`);
   };
 
   const handleBarcodeDetected = (code: string) => {
@@ -163,6 +178,23 @@ export function NewPurchasePage() {
 
     setBusy(true);
     try {
+      let attachmentPath: string | null = null;
+      if (invoiceFiles.length) {
+        try {
+          const ownerId = await uid();
+          const paths: string[] = [];
+          for (const file of invoiceFiles) {
+            const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "-");
+            const path = `${ownerId}/${crypto.randomUUID()}-${safeName}`;
+            const uploaded = await supabase.storage.from("purchase-invoices").upload(path, file, { upsert: false, contentType: file.type || undefined });
+            if (uploaded.error) throw uploaded.error;
+            paths.push(path);
+          }
+          attachmentPath = paths.join("|");
+        } catch (attachmentError) {
+          toast.warning("تمت قراءة الفاتورة، لكن تعذر حفظ المرفق. يمكنك حفظ الفاتورة والمتابعة.");
+        }
+      }
       // 1. Add purchase atomically via PostgreSQL RPC (which updates stock quantities and last cost safely once)
       await db.addPurchase({
         supplierId,
@@ -170,6 +202,7 @@ export function NewPurchasePage() {
         paymentType,
         purchaseDate: date,
         notes: notes.trim() || null,
+        attachmentPath,
         items: validItems.map(it => ({
           name: it.name.trim(),
           unitCost: Number(it.unitCost),
@@ -289,6 +322,15 @@ export function NewPurchasePage() {
                           className="rounded-full border-border bg-foreground/[0.04] text-foreground font-semibold hover:bg-foreground/[0.08]"
                         >
                           <Plus className="w-4 h-4 me-1.5" /> إضافة صنف
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setInvoiceAiOpen(true)}
+                          className="rounded-full border-primary/30 bg-primary/10 text-primary font-semibold hover:bg-primary/20"
+                        >
+                          <ScanSearch className="w-4 h-4 me-1.5" /> قراءة الفاتورة بالذكاء الاصطناعي
                         </Button>
                         <Button 
                           type="button" 
@@ -476,7 +518,7 @@ export function NewPurchasePage() {
                   <div className="py-1 flex gap-2.5 text-right">
                     <Info className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      يتم تحديث رصيد المخزون فورياً وتعديل آخر تكلفة شراء، وإذا تم تحديد سعر بيع سيتم تثبيته في شاشات البيع.
+                      يتم تحديث رصيد المخزون فورياً وتعديل آخر تكلفة شراء بعد حفظ الفاتورة.
                     </p>
                   </div>
 
@@ -499,6 +541,12 @@ export function NewPurchasePage() {
           onClose={() => setScanOpen(false)}
           onDetected={handleBarcodeDetected}
           title="مسح باركود صنف للشراء"
+        />
+        <InvoiceAiDialog
+          open={invoiceAiOpen}
+          onOpenChange={setInvoiceAiOpen}
+          suppliers={data.suppliers.map((supplier) => ({ id: supplier.id, name: supplier.name }))}
+          onApply={applyAiInvoice}
         />
       </PageTransition>
     </AppShell>

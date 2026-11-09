@@ -33,6 +33,23 @@ create unique index if not exists idx_suppliers_user_code
   on public.suppliers (user_id, supplier_code)
   where supplier_code is not null;
 
+alter table public.purchases
+  add column if not exists attachment_path text;
+
+insert into storage.buckets (id, name, public)
+values ('purchase-invoices', 'purchase-invoices', false)
+on conflict (id) do nothing;
+
+drop policy if exists "Users upload purchase invoices" on storage.objects;
+create policy "Users upload purchase invoices"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'purchase-invoices' and (storage.foldername(name))[1] = auth.uid()::text);
+
+drop policy if exists "Users read purchase invoices" on storage.objects;
+create policy "Users read purchase invoices"
+  on storage.objects for select to authenticated
+  using (bucket_id = 'purchase-invoices' and (storage.foldername(name))[1] = auth.uid()::text);
+
 alter table public.suppliers
   drop constraint if exists suppliers_status_check;
 

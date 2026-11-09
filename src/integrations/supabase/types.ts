@@ -1324,6 +1324,7 @@ export type Database = {
       }
       purchases: {
         Row: {
+          attachment_path: string | null
           created_at: string
           id: string
           notes: string | null
@@ -1335,6 +1336,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          attachment_path?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1346,6 +1348,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          attachment_path?: string | null
           created_at?: string
           id?: string
           notes?: string | null

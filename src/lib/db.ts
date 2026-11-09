@@ -82,6 +82,11 @@ function isMissingSupplierSchema(error: unknown) {
   return message.includes("schema cache") && (message.includes("suppliers") || message.includes("supplier"));
 }
 
+function isSchemaCacheError(error: unknown) {
+  const message = String((error as { message?: string } | null)?.message ?? error).toLowerCase();
+  return message.includes("schema cache") && message.includes("column");
+}
+
 /**
  * Hydrate the in-memory cache from IndexedDB.
  * This runs before fetchAll() so the user sees data immediately,
@@ -232,7 +237,7 @@ async function fetchAllInner() {
     purchases: (pu.data ?? []).map((r: TableRow<"purchases">) => ({
       id: r.id, supplierId: r.supplier_id, total: Number(r.total) / 100,
       paymentType: r.payment_type as PurchasePaymentType,
-      purchaseDate: r.purchase_date, notes: r.notes, createdAt: r.created_at,
+      purchaseDate: r.purchase_date, notes: r.notes, attachmentPath: (r as any).attachment_path ?? null, createdAt: r.created_at,
     })),
     purchaseItems: (pi.data ?? []).map((r: TableRow<"purchase_items">) => ({
       id: r.id, purchaseId: r.purchase_id, name: r.name,
@@ -1043,6 +1048,13 @@ export const db = {
       p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
     });
     if (error) throw error;
+    if (p.attachmentPath) {
+      const latest = await supabase.from("purchases").select("id").eq("supplier_id", p.supplierId).eq("purchase_date", p.purchaseDate).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (latest.data?.id) {
+        const attached = await supabase.from("purchases").update({ attachment_path: p.attachmentPath }).eq("id", latest.data.id);
+        if (attached.error && !isSchemaCacheError(attached.error)) throw attached.error;
+      }
+    }
     await fetchAll();
   },
   async removePurchase(id: string) {

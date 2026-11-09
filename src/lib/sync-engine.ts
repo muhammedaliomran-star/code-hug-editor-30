@@ -24,7 +24,7 @@ const SYNC_TABLES: Record<string, { select: string; orderBy: string }> = {
   expenses: { select: "id,amount,category,expense_date,notes,created_at,updated_at", orderBy: "updated_at" },
   invoice_items: { select: "id,invoice_id,name,cost,price,quantity,discount_pct,discount_amount,tax_pct,tax_amount,line_total,serial_numbers,created_at,updated_at", orderBy: "updated_at" },
   suppliers: { select: "id,supplier_code,name,contact,email,address,category,tags,tax_number,commercial_register,preferred_contact_method,preferred_payment_method,payment_term_days,credit_limit,status,joined_at,attachment_url,notes,opening_balance,national_id,created_at,updated_at", orderBy: "updated_at" },
-  purchases: { select: "id,supplier_id,total,payment_type,purchase_date,notes,created_at,updated_at", orderBy: "updated_at" },
+  purchases: { select: "id,supplier_id,total,payment_type,purchase_date,notes,attachment_path,created_at,updated_at", orderBy: "updated_at" },
   purchase_items: { select: "id,purchase_id,name,unit_cost,quantity,created_at,updated_at", orderBy: "updated_at" },
   supplier_payments: { select: "id,supplier_id,amount,paid_at,updated_at", orderBy: "updated_at" },
   stock_items: { select: "id,name,quantity,last_unit_cost,sale_price,barcode,size,item_type,min_stock,archived,variants,image_url,supplier_id,category,created_at,updated_at", orderBy: "updated_at" },

@@ -245,6 +245,7 @@ export interface Purchase {
   paymentType: PurchasePaymentType;
   purchaseDate: string;
   notes: string | null;
+  attachmentPath?: string | null;
   createdAt: string;
 }
 
