@@ -216,6 +216,7 @@ export interface Expense {
 
 export interface Supplier {
   id: string;
+  code?: number;
   name: string;
   contact: string;
   email?: string | null;

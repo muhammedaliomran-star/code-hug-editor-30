@@ -213,7 +213,7 @@ async function fetchAllInner() {
       createdAt: r.created_at,
     })),
     suppliers: (s.data ?? []).map((r: TableRow<"suppliers">) => ({
-      id: r.id, name: r.name, contact: r.contact ?? "", notes: r.notes,
+      id: r.id, code: Number((r as any).supplier_code ?? 0) || undefined, name: r.name, contact: r.contact ?? "", notes: r.notes,
       email: (r as any).email ?? null, address: (r as any).address ?? null,
       category: (r as any).category ?? null, tags: Array.isArray((r as any).tags) ? (r as any).tags : [],
       taxNumber: (r as any).tax_number ?? null, commercialRegister: (r as any).commercial_register ?? null,
@@ -972,7 +972,7 @@ export const db = {
   async addSupplier(s: Omit<Supplier, "id" | "createdAt">) {
     const user_id = await uid();
     const { error } = await supabase.from("suppliers").insert({
-      user_id, name: s.name, contact: s.contact, notes: s.notes,
+      user_id, supplier_code: s.code ?? null, name: s.name, contact: s.contact, notes: s.notes,
       email: s.email ?? null, address: s.address ?? null, category: s.category ?? null, tags: s.tags ?? [],
       tax_number: s.taxNumber ?? null, commercial_register: s.commercialRegister ?? null,
       preferred_contact_method: s.preferredContactMethod ?? null, preferred_payment_method: s.preferredPaymentMethod ?? null,

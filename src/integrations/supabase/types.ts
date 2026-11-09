@@ -2347,6 +2347,7 @@ export type Database = {
           preferred_contact_method: string | null
           preferred_payment_method: string | null
           status: string
+          supplier_code: number | null
           tags: Json
           tax_number: string | null
           updated_at: string
@@ -2371,6 +2372,7 @@ export type Database = {
           preferred_contact_method?: string | null
           preferred_payment_method?: string | null
           status?: string
+          supplier_code?: number | null
           tags?: Json
           tax_number?: string | null
           updated_at?: string
@@ -2395,6 +2397,7 @@ export type Database = {
           preferred_contact_method?: string | null
           preferred_payment_method?: string | null
           status?: string
+          supplier_code?: number | null
           tags?: Json
           tax_number?: string | null
           updated_at?: string

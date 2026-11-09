@@ -1,5 +1,6 @@
 -- Optional supplier profile fields used by the enhanced supplier form.
 alter table public.suppliers
+  add column if not exists supplier_code integer,
   add column if not exists email text,
   add column if not exists address text,
   add column if not exists category text,
@@ -17,6 +18,20 @@ alter table public.suppliers
 update public.suppliers
 set joined_at = created_at::date
 where joined_at is null;
+
+with numbered as (
+  select id, row_number() over (order by created_at, id)::integer as code
+  from public.suppliers
+  where supplier_code is null
+)
+update public.suppliers s
+set supplier_code = numbered.code
+from numbered
+where s.id = numbered.id;
+
+create unique index if not exists idx_suppliers_user_code
+  on public.suppliers (user_id, supplier_code)
+  where supplier_code is not null;
 
 alter table public.suppliers
   drop constraint if exists suppliers_status_check;

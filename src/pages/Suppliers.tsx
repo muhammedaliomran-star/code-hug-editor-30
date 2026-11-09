@@ -383,13 +383,15 @@ function SupplierFormDialog({
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [sections, setSections] = useState({ basic: true, contact: false, finance: false, extra: false });
+  const supplierCategories = ["محلي", "مستورد", "جملة", "مصنع", "وكيل"];
+  const supplierTags = ["أساسي", "VIP", "مفضل", "محلي", "مستورد", "يحتاج متابعة"];
 
   const supplierCode = useMemo(() => {
     if (editing) {
-      const idx = (data.suppliers ?? []).findIndex((s) => s.id === editing.id);
-      return `S-${String((idx < 0 ? 0 : idx) + 1).padStart(4, "0")}`;
+      return String(editing.code ?? ((data.suppliers ?? []).findIndex((s) => s.id === editing.id) + 1));
     }
-    return `S-${String((data.suppliers?.length ?? 0) + 1).padStart(4, "0")}`;
+    const maxCode = Math.max(0, ...(data.suppliers ?? []).map((supplier) => supplier.code ?? 0));
+    return String(maxCode + 1);
   }, [data.suppliers, editing]);
 
   // Reset on open
@@ -423,7 +425,7 @@ function SupplierFormDialog({
     setBusy(true);
     try {
       const payload = {
-        name: name.trim(), contact: contact.trim(), email: email.trim() || null, address: address.trim() || null,
+        code: Number(supplierCode), name: name.trim(), contact: contact.trim(), email: email.trim() || null, address: address.trim() || null,
         category: category.trim() || null, tags: tagsText.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 8),
         taxNumber: taxNumber.trim() || null, commercialRegister: commercialRegister.trim() || null,
         preferredContactMethod: preferredContactMethod || null, preferredPaymentMethod: preferredPaymentMethod || null,
@@ -481,7 +483,10 @@ function SupplierFormDialog({
             <div className="space-y-3">
               <div><div className="mb-1 flex items-center justify-between"><Label>كود المورد</Label><span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-bold text-info">تلقائي</span></div><Input value={supplierCode} readOnly dir="ltr" className="font-mono tracking-wider text-muted-foreground" /></div>
               <div><Label>الاسم <span className="text-danger">*</span></Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder="مثال: شركة النور" aria-required="true" aria-invalid={submitted && !name.trim()} />{submitted && !name.trim() && <p className="mt-1 text-xs font-medium text-danger">اسم المورد مطلوب</p>}</div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><div><Label>تصنيف المورد</Label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="محلي، مستورد..." /></div><div><Label>وسوم المورد</Label><Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="أساسي، VIP" /><div className="mt-1 text-[11px] text-muted-foreground">افصل الوسوم بفاصلة</div></div></div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div><Label>تصنيف المورد</Label><Select value={category || "none"} onValueChange={(value) => setCategory(value === "none" ? "" : value)}><SelectTrigger><SelectValue placeholder="اختر التصنيف" /></SelectTrigger><SelectContent><SelectItem value="none">بدون تصنيف</SelectItem>{supplierCategories.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}</SelectContent></Select></div>
+                <div><Label>وسوم المورد</Label><div className="flex min-h-10 flex-wrap gap-2 rounded-xl border border-border/60 bg-background/70 p-2">{supplierTags.map((tag) => { const selected = tagsText.split(",").map((item) => item.trim()).filter(Boolean).includes(tag); return <button key={tag} type="button" onClick={() => { const current = tagsText.split(",").map((item) => item.trim()).filter(Boolean); const next = selected ? current.filter((item) => item !== tag) : [...current, tag]; setTagsText(next.join(", ")); }} className={cn("rounded-full px-2.5 py-1 text-[11px] font-bold transition-[background-color,color,transform] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]", selected ? "bg-primary/15 text-primary ring-1 ring-primary/30" : "bg-foreground/[0.05] text-muted-foreground hover:bg-primary/10 hover:text-primary")}><Tag className="ml-1 inline h-3 w-3" />{tag}</button>; })}</div><div className="mt-1 text-[11px] text-muted-foreground">يمكن اختيار أكثر من وسم</div></div>
+              </div>
               <div><Label>حالة المورد</Label><Select value={status} onValueChange={(v) => setStatus(v as "active" | "paused")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active"><span className="text-success">● نشط</span></SelectItem><SelectItem value="paused"><span className="text-muted-foreground">● متوقف</span></SelectItem></SelectContent></Select></div>
             </div>
           </Section>
