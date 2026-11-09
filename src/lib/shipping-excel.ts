@@ -31,7 +31,7 @@ export function exportShipmentsToExcel(
         "Receiver Phone 2": "",
         "Governorate / City": r.zone?.name || "القاهرة",
         "Dropoff Address": s.deliveryAddress || "",
-        "COD Amount (EGP)": s.codAmount || 0,
+        "COD Amount (ج.م)": s.codAmount || 0,
         "Package Type": "Parcel",
         "Number of Items": (r.items ?? []).reduce((sum, item) => sum + (item.quantity || 1), 0) || 1,
         "Item Description": itemsSummary,
@@ -87,7 +87,7 @@ export function exportShipmentsToExcel(
         "Address 1": s.deliveryAddress || "",
         "Goods Description": (r.items ?? []).map(item => item.name).join(" + ") || "Goods",
         "COD Amount": s.codAmount || 0,
-        "COD Currency": "EGP",
+        "COD Currency": "ج.م",
         "Comments": s.notes || "",
       };
     });

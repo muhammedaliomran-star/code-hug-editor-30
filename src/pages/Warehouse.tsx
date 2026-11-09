@@ -520,7 +520,7 @@ function AddWarehouseDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                     onChange={(e) => setUnitCost(e.target.value)} 
                     className="text-right h-12 bg-background/50 border-none focus-visible:ring-2 focus-visible:ring-foreground/30 font-black" 
                   />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground opacity-50">EGP</div>
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground opacity-50">ج.م</div>
                 </div>
               </div>
               </div>
@@ -537,7 +537,7 @@ function AddWarehouseDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                     onChange={(e) => setSalePrice(e.target.value)} 
                     className="text-right h-12 bg-background/50 border-none focus-visible:ring-2 focus-visible:ring-foreground/30 font-black" 
                   />
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground opacity-50">EGP</div>
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground opacity-50">ج.م</div>
                 </div>
               </div>
 

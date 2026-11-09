@@ -120,9 +120,9 @@ export default function PaymentsPage() {
 
           {/* Metrics Grid */}
           <Reveal className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3">
-            <MetricCard className="h-full" icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} EGP`} />
-            <MetricCard className="h-full" icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} EGP`} />
-            <MetricCard className="h-full" icon={Banknote} label="صافي الرصيد" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} EGP`} />
+            <MetricCard className="h-full" icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} ج.م`} />
+            <MetricCard className="h-full" icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} ج.م`} />
+            <MetricCard className="h-full" icon={Banknote} label="صافي الرصيد" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} ج.م`} />
           </Reveal>
 
           {/* Filters Bar */}
@@ -262,12 +262,12 @@ export default function PaymentsPage() {
       </PageTransition>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent dir="rtl" className="sm:max-w-[500px] p-0 overflow-hidden rounded-[2rem] border-none shadow-2xl">
-          <div className="sticky top-0 z-10 border-b border-[var(--hairline)] bg-card px-8 py-6">
+        <DialogContent dir="rtl" className="flex w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[2rem] border-none p-0 shadow-2xl">
+          <div className="shrink-0 border-b border-[var(--hairline)] bg-card px-6 py-5 sm:px-8 sm:py-6">
             <DialogTitle className="text-2xl font-bold">تسجيل سند جديد</DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">قم بتسجيل عملية دفع أو تحصيل مالي جديدة</p>
           </div>
-          <form onSubmit={handleSave} className="p-8 space-y-6">
+          <form onSubmit={handleSave} className="min-h-0 overflow-y-auto p-6 space-y-6 custom-scrollbar sm:p-8">
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 p-1 bg-muted rounded-2xl">
                 <Button 

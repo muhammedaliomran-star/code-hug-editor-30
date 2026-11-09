@@ -181,7 +181,7 @@ const OFFERS_JSON_LD = {
     name: `سِجلّي — باقة ${p.name}`,
     description: p.features.join("، "),
     url: siteUrl("/landing#pricing"),
-    priceCurrency: "EGP",
+    priceCurrency: "ج.م",
     price: arToLatDigits(p.price),
   })),
 };
