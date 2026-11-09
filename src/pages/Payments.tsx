@@ -28,6 +28,8 @@ export default function PaymentsPage() {
   const { paymentVouchers, customers, suppliers, addPaymentVoucher, removePaymentVoucher, loading } = useDB();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [dialogType, setDialogType] = useState<"receipt" | "payment">("receipt");
+  const [dialogPaymentMethod, setDialogPaymentMethod] = useState("كاش");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | "receipt" | "payment">("all");
   const [dateFilter, setDateFilter] = useState<{ from: string; to: string }>({
@@ -40,6 +42,7 @@ export default function PaymentsPage() {
     const create = new URLSearchParams(location.search).get("create");
     if (create !== "receipt" && create !== "payment") return;
     setTypeFilter(create);
+    setDialogType(create);
     setIsDialogOpen(true);
   }, [location.search]);
 
@@ -77,14 +80,29 @@ export default function PaymentsPage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const partyId = formData.get("partyId") as string;
-    const type = formData.get("type") as "receipt" | "payment";
+    const type = dialogType;
+    const amount = Number(formData.get("amount"));
+    const voucherDateValue = formData.get("voucherDate") as string;
+
+    if (!partyId) {
+      toast.error(type === "receipt" ? "اختر العميل أولاً" : "اختر المورد أولاً");
+      return;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("أدخل مبلغاً أكبر من صفر");
+      return;
+    }
+    if (!voucherDateValue) {
+      toast.error("اختر تاريخ السند");
+      return;
+    }
     
     const data = {
-      amount: Number(formData.get("amount")),
+      amount,
       type,
-      paymentMethod: formData.get("paymentMethod") as string,
+      paymentMethod: dialogPaymentMethod,
       description: formData.get("description") as string,
-      voucherDate: formData.get("voucherDate") as string,
+      voucherDate: voucherDateValue,
       customerId: type === "receipt" ? partyId : null,
       supplierId: type === "payment" ? partyId : null,
     };
@@ -101,6 +119,13 @@ export default function PaymentsPage() {
     }
   };
 
+  const openNewVoucher = () => {
+    setDialogType("receipt");
+    setDialogPaymentMethod("كاش");
+    setVoucherDate(format(new Date(), "yyyy-MM-dd"));
+    setIsDialogOpen(true);
+  };
+
   return (
     <AppShell>
       <PageTransition>
@@ -111,7 +136,7 @@ export default function PaymentsPage() {
             subtitle="إدارة سندات القبض والصرف" 
             action={
             <ActionButton
-              onClick={() => setIsDialogOpen(true)}
+              onClick={openNewVoucher}
               icon={<Plus className="h-4 w-4" />}
             >
               إضافة سند جديد
@@ -262,19 +287,19 @@ export default function PaymentsPage() {
       </PageTransition>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent dir="rtl" className="flex w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-[2rem] border-none p-0 shadow-2xl">
+        <DialogContent dir="rtl" className="flex h-[min(720px,calc(100dvh-1rem))] w-[calc(100vw-1rem)] max-w-lg flex-col overflow-hidden rounded-[2rem] border-none bg-card/95 p-0 shadow-2xl sm:w-[calc(100vw-2rem)]">
           <div className="shrink-0 border-b border-[var(--hairline)] bg-card px-6 py-5 sm:px-8 sm:py-6">
             <DialogTitle className="text-2xl font-bold">تسجيل سند جديد</DialogTitle>
             <p className="text-xs text-muted-foreground mt-1">قم بتسجيل عملية دفع أو تحصيل مالي جديدة</p>
           </div>
-          <form onSubmit={handleSave} className="min-h-0 overflow-y-auto p-6 space-y-6 custom-scrollbar sm:p-8">
+          <form id="payment-voucher-form" onSubmit={handleSave} className="min-h-0 flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar sm:p-8">
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 p-1 bg-muted rounded-2xl">
                 <Button 
                   type="button" 
                   variant="ghost" 
-                  className={cn("rounded-xl gap-2 h-11 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300", typeFilter === "receipt" && "bg-background shadow-sm text-success")}
-                  onClick={() => setTypeFilter("receipt")}
+                  className={cn("rounded-xl gap-2 h-11 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300", dialogType === "receipt" && "bg-background shadow-sm text-success")}
+                  onClick={() => setDialogType("receipt")}
                 >
                   <ArrowDownLeft className="h-4 w-4" />
                   سند قبض
@@ -282,25 +307,25 @@ export default function PaymentsPage() {
                 <Button 
                   type="button" 
                   variant="ghost"
-                  className={cn("rounded-xl gap-2 h-11 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300", typeFilter === "payment" && "bg-background shadow-sm text-danger")}
-                  onClick={() => setTypeFilter("payment")}
+                  className={cn("rounded-xl gap-2 h-11 transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-300", dialogType === "payment" && "bg-background shadow-sm text-danger")}
+                  onClick={() => setDialogType("payment")}
                 >
                   <ArrowUpRight className="h-4 w-4" />
                   سند صرف
                 </Button>
-                <input type="hidden" name="type" value={typeFilter === "all" ? "receipt" : typeFilter} />
+                <input type="hidden" name="type" value={dialogType} />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground pr-1">
-                  {typeFilter === "payment" ? "جهة الصرف (المورد)" : "جهة القبض (العميل)"}
+                   {dialogType === "payment" ? "جهة الصرف (المورد)" : "جهة القبض (العميل)"}
                 </Label>
-                <Select name="partyId" required>
+                    <Select key={dialogType} name="partyId" required>
                   <SelectTrigger className="h-12 rounded-2xl pr-4 bg-foreground/[0.02] border-foreground/5 focus:bg-background transition-[background-color,border-color,color,box-shadow,transform,opacity]">
-                    <SelectValue placeholder={typeFilter === "payment" ? "اختر المورد..." : "اختر العميل..."} />
+                       <SelectValue placeholder={dialogType === "payment" ? "اختر المورد..." : "اختر العميل..."} />
                   </SelectTrigger>
                   <SelectContent dir="rtl">
-                    {typeFilter === "payment" 
+                     {dialogType === "payment"
                       ? suppliers.map(s => <SelectItem key={s.id} value={s.id} className="font-bold">{s.name}</SelectItem>)
                       : customers.map(c => <SelectItem key={c.id} value={c.id} className="font-bold">{c.name}</SelectItem>)
                     }
@@ -308,7 +333,7 @@ export default function PaymentsPage() {
                 </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground pr-1">المبلغ</Label>
                   <div className="relative">
@@ -316,7 +341,7 @@ export default function PaymentsPage() {
                     <Input 
                       id="amount" 
                       name="amount" 
-                      type="number" 
+                       type="number" min="0.01" step="0.01" inputMode="decimal"
                       required 
                       placeholder="0.00" 
                       className="h-12 rounded-2xl text-center text-xl font-black bg-foreground/[0.02] border-foreground/5 focus:bg-background transition-[background-color,border-color,color,box-shadow,transform,opacity] pr-11" 
@@ -337,14 +362,14 @@ export default function PaymentsPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground pr-1">طريقة الدفع</Label>
-                <Select name="paymentMethod" defaultValue="كاش">
+                 <Select name="paymentMethod" value={dialogPaymentMethod} onValueChange={setDialogPaymentMethod}>
                   <SelectTrigger className="h-12 rounded-2xl pr-4 bg-foreground/[0.02] border-foreground/5 focus:bg-background transition-[background-color,border-color,color,box-shadow,transform,opacity]">
                     <div className="flex items-center gap-2">
                       <Wallet className="h-4 w-4 text-foreground" />
                       <SelectValue />
                     </div>
                   </SelectTrigger>
-                  <SelectContent dir="rtl">
+                  <SelectContent dir="rtl" className="max-h-[min(18rem,calc(100dvh-12rem))]">
                     <SelectItem value="كاش" className="font-bold">نقدي (كاش)</SelectItem>
                     <SelectItem value="تحويل بنكي" className="font-bold">تحويل بنكي</SelectItem>
                     <SelectItem value="شيك" className="font-bold">شيك بنكي</SelectItem>
@@ -368,15 +393,19 @@ export default function PaymentsPage() {
               </div>
             </div>
 
-            <div className="flex gap-3 pt-2">
-              <Button type="submit" disabled={isSaving} className="flex-1 h-12 rounded-2xl font-black text-lg shadow-sm bg-primary text-black transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-[1.02] active:scale-[0.98]">
+          </form>
+          <div className="shrink-0 border-t border-[var(--hairline)] bg-card/95 p-4 sm:p-6">
+            <div className="mb-3 flex items-center justify-between text-xs font-bold text-muted-foreground">
+              <span>{dialogType === "receipt" ? "سند قبض" : "سند صرف"}</span>
+              <span>{dialogPaymentMethod}</span>
+            </div>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row">
+              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-12 rounded-2xl border-foreground/10 hover:bg-foreground/5 sm:w-28">إلغاء</Button>
+              <Button form="payment-voucher-form" type="submit" disabled={isSaving} className={cn("h-12 flex-1 rounded-2xl font-black text-lg shadow-sm transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500 hover:scale-[1.01] active:scale-[0.98]", dialogType === "payment" && "bg-danger text-white hover:bg-danger/90")}>
                 {isSaving ? "جاري التسجيل..." : "تسجيل السند"}
               </Button>
-              <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="h-12 px-6 rounded-2xl border-foreground/10 hover:bg-foreground/5 transition-[background-color,border-color,color,box-shadow,transform,opacity]">
-                إلغاء
-              </Button>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 
