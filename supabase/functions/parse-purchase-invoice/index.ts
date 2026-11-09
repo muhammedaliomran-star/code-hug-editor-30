@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
       const dataUrl = toDataUrl(bytes, file.type || "application/octet-stream");
       content.push(file.type === "application/pdf"
         ? { type: "input_file", filename: file.name, file_data: dataUrl }
-        : { type: "input_image", image_url: dataUrl, detail: "high" });
+        : { type: "input_image", image_url: dataUrl, detail: Deno.env.get("OPENAI_INVOICE_IMAGE_DETAIL") || "low" });
     }
 
     const response = await fetch("https://api.openai.com/v1/responses", {
@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
         model: Deno.env.get("OPENAI_INVOICE_MODEL") || "gpt-4.1-mini",
         input: [{ role: "user", content }],
         text: { format: { type: "json_schema", name: "purchase_invoice", strict: true, schema } },
-        max_output_tokens: 12000,
+        max_output_tokens: 7000,
       }),
     });
     const payload = await response.json();

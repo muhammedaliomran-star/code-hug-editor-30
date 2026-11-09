@@ -7,8 +7,11 @@
 ```bash
 supabase secrets set OPENAI_API_KEY=your_key_here
 supabase secrets set OPENAI_INVOICE_MODEL=gpt-4.1-mini
+supabase secrets set OPENAI_INVOICE_IMAGE_DETAIL=low
 supabase functions deploy parse-purchase-invoice
 ```
+
+الصور الكبيرة يتم تصغيرها وضغطها في المتصفح قبل الإرسال. استخدم `high` بدل `low` فقط عندما تكون الفاتورة غير واضحة أو تحتوي على كتابة صغيرة جدًا.
 
 بعد النشر، افتح صفحة فاتورة شراء جديدة واضغط **قراءة الفاتورة بالذكاء الاصطناعي**. يمكن رفع صورة أو PDF متعدد الصفحات، ثم يجب مراجعة النتائج قبل إضافتها إلى الفاتورة.
 
