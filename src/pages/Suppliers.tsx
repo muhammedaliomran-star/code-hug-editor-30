@@ -28,6 +28,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -38,7 +41,7 @@ import {
 import {
   Plus, Search, Truck, Eye, EyeOff, Pencil, Trash2, Wallet, Banknote,
   History, Phone, Receipt, X, ShoppingCart, ScanLine, Info, CreditCard,
-  CalendarDays,
+  CalendarDays, MoreHorizontal, Download, Copy, Printer, CheckCircle2, Clock3, CircleDollarSign,
 } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -57,6 +60,7 @@ export default function Page() {
 }
 
 type Tab = "all" | "owing" | "settled" | "purchases";
+type PurchaseStatus = "paid" | "credit" | "partial" | "cancelled";
 
 function SuppliersPage() {
   const data = useDB();
@@ -79,16 +83,14 @@ function SuppliersPage() {
 
   const totals = useMemo(() => {
     const totalDebt = enriched.reduce((sum, x) => sum + Math.max(0, x.balance), 0);
+    const totalPurchases = data.purchases.reduce((sum, p) => sum + p.total, 0);
+    const cashPurchases = data.purchases.filter((p) => p.paymentType === "cash").reduce((sum, p) => sum + p.total, 0);
+    const supplierPayments = data.supplierPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaid = cashPurchases + supplierPayments;
+    const creditPurchases = data.purchases.filter((p) => p.paymentType === "credit").reduce((sum, p) => sum + p.total, 0);
     const owing = enriched.filter((x) => x.balance > 0).length;
-    const monthCash = data.purchases
-      .filter((p) => {
-        const d = new Date(p.purchaseDate);
-        const now = new Date();
-        return p.paymentType === "cash" && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      })
-      .reduce((s, p) => s + p.total, 0);
-    return { totalDebt, owing, monthCash };
-  }, [enriched, data.purchases]);
+    return { totalDebt, owing, totalPurchases, totalPaid, creditPurchases, cashPurchases };
+  }, [enriched, data.purchases, data.supplierPayments]);
 
   const list = useMemo(() => {
     return enriched
@@ -127,32 +129,66 @@ function SuppliersPage() {
       />
 
       {/* Stats */}
-      <div className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 mb-14">
+      <div className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6 mb-14">
         <MetricCard
           className="h-full"
-          icon={Wallet}
-          label="إجمالي ديون الموردين"
-          value={totals.totalDebt}
+          icon={Receipt}
+          label="إجمالي المشتريات"
+          value={totals.totalPurchases}
           format={(n) => `${fmt(n)} ج.م`}
           masked={privacy}
-          sub={`${totals.owing} مورد له مديونية`}
+          tone="info"
+          sub={`${data.purchases.length} فاتورة مسجلة`}
+        />
+        <MetricCard
+          className="h-full"
+          icon={CircleDollarSign}
+          label="إجمالي المدفوع"
+          value={totals.totalPaid}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
+          tone="positive"
+          sub="نقدي + دفعات الموردين"
+        />
+        <MetricCard
+          className="h-full"
+          icon={Clock3}
+          label="مشتريات آجلة"
+          value={totals.creditPurchases}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
+          tone="warning"
+          sub={`${totals.owing} مورد عليه مديونية`}
         />
         <MetricCard
           className="h-full"
           icon={Banknote}
-          label="مشتريات نقدية (الشهر)"
-          value={totals.monthCash}
+          label="مشتريات نقدية"
+          value={totals.cashPurchases}
           format={(n) => `${fmt(n)} ج.م`}
           masked={privacy}
-          sub="مخصومة من صافي الربح"
+          tone="danger"
+          sub="مصروف فعلي من الخزينة"
         />
         <MetricCard
           className="h-full"
           icon={Truck}
-          label="إجمالي الموردين"
-          value={data.suppliers.length}
+          label="عدد الفواتير"
+          value={data.purchases.length}
           format={(n) => String(Math.round(n))}
-          sub={`${data.purchases.length} فاتورة شراء`}
+          tone="neutral"
+          isMoney={false}
+          sub={`${data.suppliers.length} مورد مسجل`}
+        />
+        <MetricCard
+          className="h-full"
+          icon={Wallet}
+          label="المتبقي للموردين"
+          value={totals.totalDebt}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
+          tone="danger"
+          sub="مديونية مستحقة"
         />
       </div>
 
@@ -604,7 +640,7 @@ export function NewPurchaseDialog({
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-2xl border-2 px-3 py-2.5 text-sm font-bold transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   paymentType === "cash"
-                    ? "border-border bg-foreground text-background"
+                    ? "border-danger/40 bg-danger/10 text-danger"
                     : "border-border text-muted-foreground hover:bg-foreground/[0.04]",
                 )}
               >
@@ -616,7 +652,7 @@ export function NewPurchaseDialog({
                 className={cn(
                   "flex items-center justify-center gap-2 rounded-2xl border-2 px-3 py-2.5 text-sm font-bold transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
                   paymentType === "credit"
-                    ? "border-border bg-foreground text-background"
+                    ? "border-warning/40 bg-warning/10 text-warning"
                     : "border-border text-muted-foreground hover:bg-foreground/[0.04]",
                 )}
               >
@@ -726,12 +762,14 @@ export function NewPurchaseDialog({
   );
 }
 
-function PaymentDialog({ supplier, balance }: { supplier: Supplier; balance: number }) {
+function PaymentDialog({ supplier, balance, compact = true }: { supplier: Supplier; balance: number; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const submit = async () => {
     const n = Number(amount);
     if (!n || n <= 0) { toast.error("أدخل مبلغ صحيح"); return; }
+    if (balance <= 0) { toast.error("لا توجد مديونية مستحقة على هذه الفاتورة"); return; }
+    if (n > balance) { toast.error(`المبلغ لا يمكن أن يتجاوز ${fmt(balance)} ج.م`); return; }
     try {
       await db.recordSupplierPayment(supplier.id, n);
       toast.success("تم تسجيل الدفعة");
@@ -742,8 +780,8 @@ function PaymentDialog({ supplier, balance }: { supplier: Supplier; balance: num
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-success hover:bg-success/10" title="تسجيل دفعة">
-          <Wallet className="w-4 h-4" />
+        <Button size={compact ? "icon" : "sm"} variant={compact ? "ghost" : "default"} className={cn(compact ? "h-10 w-10 text-muted-foreground hover:text-success hover:bg-success/10" : "h-10 gap-1.5 rounded-full bg-success px-3 text-success-foreground hover:bg-success/90")} title="تسجيل دفعة">
+          <Wallet className="h-4 w-4" />{!compact && "تسجيل دفعة"}
         </Button>
       </DialogTrigger>
       <DialogContent dir="rtl">
@@ -751,7 +789,7 @@ function PaymentDialog({ supplier, balance }: { supplier: Supplier; balance: num
           <DialogTitle className="text-right">دفعة للمورد {supplier.name}</DialogTitle>
           <DialogDescription className="text-right">المديونية الحالية: {fmt(Math.max(0, balance))} ج.م</DialogDescription>
         </DialogHeader>
-        <div><Label>المبلغ المدفوع (ج.م)</Label><Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} /></div>
+        <div><Label>المبلغ المدفوع (ج.م)</Label><Input type="number" min="0.01" max={balance} value={amount} onChange={(e) => setAmount(e.target.value)} /><div className="mt-1 text-xs text-muted-foreground">المتبقي: {fmt(balance)} ج.م</div></div>
         <DialogFooter>
           <Button onClick={submit} className="w-full">تسجيل الدفعة</Button>
         </DialogFooter>
@@ -860,169 +898,164 @@ function SupplierProfileDialog({
   );
 }
 
+type PurchaseRow = Purchase & { paid: number; remaining: number; status: PurchaseStatus; itemCount: number };
+
+function buildPurchaseRows(purchases: Purchase[], payments: SupplierPayment[], itemCounts: Map<string, number>): PurchaseRow[] {
+  const paidBySupplier = new Map<string, number>();
+  payments.forEach((payment) => paidBySupplier.set(payment.supplierId, (paidBySupplier.get(payment.supplierId) ?? 0) + payment.amount));
+  const allocations = new Map<string, number>();
+  const bySupplier = new Map<string, Purchase[]>();
+  purchases.filter((p) => p.paymentType === "credit").forEach((p) => {
+    const group = bySupplier.get(p.supplierId) ?? [];
+    group.push(p);
+    bySupplier.set(p.supplierId, group);
+  });
+  bySupplier.forEach((group, supplierId) => {
+    let available = paidBySupplier.get(supplierId) ?? 0;
+    [...group].sort((a, b) => a.purchaseDate.localeCompare(b.purchaseDate)).forEach((purchase) => {
+      const paid = Math.min(purchase.total, Math.max(0, available));
+      allocations.set(purchase.id, paid);
+      available -= paid;
+    });
+  });
+  return purchases.map((p) => {
+    const paid = p.paymentType === "cash" ? p.total : allocations.get(p.id) ?? 0;
+    const remaining = Math.max(0, p.total - paid);
+    const status: PurchaseStatus = p.paymentType === "cash" || remaining <= 0.005 ? "paid" : paid > 0 ? "partial" : "credit";
+    return { ...p, paid, remaining, status, itemCount: itemCounts.get(p.id) ?? 0 };
+  });
+}
+
+function purchaseStatusMeta(status: PurchaseStatus) {
+  return status === "paid"
+    ? { label: "مدفوعة", className: "bg-success/10 text-success border-success/30", icon: CheckCircle2 }
+    : status === "partial"
+      ? { label: "جزئية", className: "bg-warning/10 text-warning border-warning/30", icon: CircleDollarSign }
+      : status === "cancelled"
+        ? { label: "ملغاة", className: "bg-danger/10 text-danger border-danger/30", icon: X }
+        : { label: "آجلة", className: "bg-warning/10 text-warning border-warning/30", icon: Clock3 };
+}
+
 function PurchasesTable({ privacy }: { privacy: boolean }) {
   const data = useDB();
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
-  const [detailFor, setDetailFor] = useState<Purchase | null>(null);
+  const [detailFor, setDetailFor] = useState<PurchaseRow | null>(null);
   const [editFor, setEditFor] = useState<Purchase | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  const [status, setStatus] = useState<PurchaseStatus | "all">("all");
+  const [datePreset, setDatePreset] = useState("all");
+  const [supplierId, setSupplierId] = useState("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
-  const rows = useMemo(() => {
-    return [...data.purchases].sort((a, b) => (a.purchaseDate < b.purchaseDate ? 1 : -1));
-  }, [data.purchases]);
+  const itemCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    data.purchaseItems.forEach((item) => map.set(item.purchaseId, (map.get(item.purchaseId) ?? 0) + 1));
+    return map;
+  }, [data.purchaseItems]);
+  const rows = useMemo(() => buildPurchaseRows(data.purchases, data.supplierPayments, itemCounts), [data.purchases, data.supplierPayments, itemCounts]);
+  const supplierName = (id: string) => data.suppliers.find((s) => s.id === id)?.name ?? "مورد غير معروف";
 
-  const supplierName = (id: string) => data.suppliers.find((s) => s.id === id)?.name ?? "—";
+  const filteredRows = useMemo(() => {
+    const now = new Date();
+    const start = datePreset === "today" ? new Date(now.getFullYear(), now.getMonth(), now.getDate())
+      : datePreset === "week" ? new Date(now.getTime() - 6 * 86400000)
+        : datePreset === "month" ? new Date(now.getFullYear(), now.getMonth(), 1) : null;
+    const customStart = fromDate ? new Date(`${fromDate}T00:00:00`) : null;
+    const customEnd = toDate ? new Date(`${toDate}T23:59:59`) : null;
+    return rows
+      .filter((p) => status === "all" || p.status === status)
+      .filter((p) => supplierId === "all" || p.supplierId === supplierId)
+      .filter((p) => !start || new Date(`${p.purchaseDate}T00:00:00`) >= start)
+      .filter((p) => !customStart || new Date(`${p.purchaseDate}T00:00:00`) >= customStart)
+      .filter((p) => !customEnd || new Date(`${p.purchaseDate}T00:00:00`) <= customEnd)
+      .filter((p) => !q || supplierName(p.supplierId).includes(q) || p.id.toLowerCase().includes(q.toLowerCase()))
+      .sort((a, b) => b.purchaseDate.localeCompare(a.purchaseDate));
+  }, [rows, status, supplierId, datePreset, fromDate, toDate, q, data.suppliers]);
+
+  const exportRows = () => {
+    const csv = ["رقم الفاتورة,المورد,التاريخ,الإجمالي,المدفوع,المتبقي,الحالة,عدد الأصناف", ...filteredRows.map((p) =>
+      [p.id, supplierName(p.supplierId), p.purchaseDate, p.total, p.paid, p.remaining, purchaseStatusMeta(p.status).label, p.itemCount].join(","),
+    )].join("\n");
+    const url = URL.createObjectURL(new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = "فواتير-المشتريات.csv"; link.click(); URL.revokeObjectURL(url);
+  };
 
   return (
     <>
-      <BezelCard variant="flat" className="animate-[fade-in_0.4s_ease-out]">
+      <div className="mb-4 space-y-3">
+        <div className="flex flex-col gap-3 xl:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ابحث برقم الفاتورة أو اسم المورد..." className="h-11 pr-10" />
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+            <Select value={status} onValueChange={(v) => setStatus(v as PurchaseStatus | "all")}>
+              <SelectTrigger className="h-11 min-w-[145px] shrink-0"><SelectValue placeholder="حالة الفاتورة" /></SelectTrigger>
+              <SelectContent><SelectItem value="all">كل الحالات ({rows.length})</SelectItem><SelectItem value="paid">مدفوعة ({rows.filter((p) => p.status === "paid").length})</SelectItem><SelectItem value="credit">آجلة ({rows.filter((p) => p.status === "credit").length})</SelectItem><SelectItem value="partial">جزئية ({rows.filter((p) => p.status === "partial").length})</SelectItem><SelectItem value="cancelled">ملغاة (0)</SelectItem></SelectContent>
+            </Select>
+            <Select value={datePreset} onValueChange={setDatePreset}>
+              <SelectTrigger className="h-11 min-w-[140px] shrink-0"><SelectValue placeholder="التاريخ" /></SelectTrigger>
+              <SelectContent><SelectItem value="all">كل التواريخ</SelectItem><SelectItem value="today">اليوم</SelectItem><SelectItem value="week">هذا الأسبوع</SelectItem><SelectItem value="month">هذا الشهر</SelectItem><SelectItem value="custom">نطاق مخصص</SelectItem></SelectContent>
+            </Select>
+            <Select value={supplierId} onValueChange={setSupplierId}>
+              <SelectTrigger className="h-11 min-w-[150px] shrink-0"><SelectValue placeholder="كل الموردين" /></SelectTrigger>
+              <SelectContent><SelectItem value="all">كل الموردين</SelectItem>{data.suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button type="button" variant="outline" className="h-11 shrink-0 gap-2" onClick={exportRows}><Download className="h-4 w-4" /> تصدير</Button>
+          </div>
+        </div>
+        {datePreset === "custom" && <div className="grid grid-cols-1 gap-2 sm:grid-cols-2"><div><Label>من تاريخ</Label><DatePickerField value={fromDate} onChange={setFromDate} /></div><div><Label>إلى تاريخ</Label><DatePickerField value={toDate} onChange={setToDate} /></div></div>}
+        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+          <span>عرض {filteredRows.length} من {rows.length} فاتورة</span>
+          {(q || status !== "all" || datePreset !== "all" || supplierId !== "all" || fromDate || toDate) && <Button type="button" variant="ghost" size="sm" onClick={() => { setQ(""); setStatus("all"); setDatePreset("all"); setSupplierId("all"); setFromDate(""); setToDate(""); }}>مسح الفلاتر</Button>}
+        </div>
+      </div>
+
+      <BezelCard variant="flat" className="animate-[fade-in_0.4s_cubic-bezier(0.32,0.72,0,1)]">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-foreground/[0.04] text-muted-foreground">
-              <tr>
-                <th className="text-right p-4 font-medium">التاريخ</th>
-                <th className="text-right p-4 font-medium">المورد</th>
-                <th className="text-right p-4 font-medium">الإجمالي</th>
-                <th className="text-right p-4 font-medium">طريقة الدفع</th>
-                <th className="text-right p-4 font-medium">إجراءات</th>
-              </tr>
-            </thead>
+          <table className="w-full min-w-[920px] text-sm">
+            <thead className="bg-foreground/[0.04] text-muted-foreground"><tr>
+              <th className="p-4 text-right font-medium">الفاتورة / التاريخ</th><th className="p-4 text-right font-medium">المورد</th><th className="p-4 text-right font-medium">الإجمالي</th><th className="p-4 text-right font-medium">المدفوع</th><th className="p-4 text-right font-medium">المتبقي</th><th className="p-4 text-right font-medium">الحالة</th><th className="p-4 text-right font-medium">الأصناف</th><th className="p-4 text-right font-medium">إجراءات</th>
+            </tr></thead>
             <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center py-12 text-muted-foreground">
-                    <Receipt className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                    لا توجد فواتير شراء
-                  </td>
-                </tr>
-              )}
+              {filteredRows.length === 0 && <tr><td colSpan={8} className="py-16 text-center text-muted-foreground"><Receipt className="mx-auto mb-2 h-10 w-10 opacity-40" />لا توجد فواتير مطابقة للفلاتر</td></tr>}
               <AnimatePresence initial={false}>
-                {rows.map((p, idx) => (
-                  <motion.tr
-                    key={p.id}
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2, delay: idx * 0.02 }}
-                    className="border-t border-[var(--hairline)] hover:bg-foreground/[0.035] transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
-                    onClick={() => setDetailFor(p)}
-                  >
-                    <td className="p-4 text-muted-foreground" dir="ltr">{p.purchaseDate}</td>
+                {filteredRows.map((p, idx) => {
+                  const meta = purchaseStatusMeta(p.status); const StatusIcon = meta.icon; const supplier = data.suppliers.find((s) => s.id === p.supplierId);
+                  return <motion.tr key={p.id} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25, delay: idx * 0.02 }} className="cursor-pointer border-t border-[var(--hairline)] transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-foreground/[0.035]" onClick={() => setDetailFor(p)}>
+                    <td className="p-4"><div className="font-bold" dir="ltr">#{p.id.slice(0, 8)}</div><div className="mt-1 text-xs text-muted-foreground" dir="ltr">{p.purchaseDate}</div></td>
                     <td className="p-4 font-medium">{supplierName(p.supplierId)}</td>
                     <td className={cn("p-4 font-bold tabular-nums", blurCls)}>{fmt(p.total)} ج.م</td>
-                    <td className="p-4">
-<Badge variant="outline" className={cn(
-                      "text-xs",
-                      p.paymentType === "cash"
-                        ? "bg-foreground/[0.06] text-muted-foreground ring-border"
-                        : "bg-foreground/[0.06] text-muted-foreground ring-border",
-                    )}>
-                        {p.paymentType === "cash" ? "نقدي" : "آجل"}
-                      </Badge>
-                    </td>
-                    <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center gap-0.5">
-                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10" title="تفاصيل" onClick={() => setDetailFor(p)}>
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-primary hover:bg-primary/10" title="تعديل" onClick={() => setEditFor(p)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-10 w-10 text-muted-foreground hover:text-danger hover:bg-danger/10" title="حذف" onClick={() => setDeleteId(p.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-
-                  </motion.tr>
-                ))}
+                    <td className={cn("p-4 font-bold tabular-nums text-success", blurCls)}>{fmt(p.paid)} ج.م</td>
+                    <td className={cn("p-4 font-bold tabular-nums", p.remaining > 0 ? "text-danger" : "text-muted-foreground", blurCls)}>{fmt(p.remaining)} ج.م</td>
+                    <td className="p-4"><Badge variant="outline" className={cn("gap-1", meta.className)}><StatusIcon className="h-3.5 w-3.5" />{meta.label}</Badge></td>
+                    <td className="p-4 tabular-nums text-muted-foreground">{p.itemCount}</td>
+                    <td className="p-4" onClick={(e) => e.stopPropagation()}><div className="flex items-center gap-1">
+                      {(p.status === "credit" || p.status === "partial") && supplier && <PaymentDialog supplier={supplier} balance={Math.max(0, p.remaining)} compact={false} />}
+                      <DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" className="h-10 w-10" title="المزيد"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end" className="text-right">
+                        <DropdownMenuItem onClick={() => setDetailFor(p)}><Eye className="h-4 w-4" /> عرض التفاصيل</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setEditFor(p)}><Pencil className="h-4 w-4" /> تعديل الفاتورة</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => { void navigator.clipboard?.writeText(p.id); toast.success("تم نسخ رقم الفاتورة"); }}><Copy className="h-4 w-4" /> نسخ رقم الفاتورة</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => window.print()}><Printer className="h-4 w-4" /> طباعة</DropdownMenuItem>
+                        <DropdownMenuSeparator /><DropdownMenuItem className="text-danger focus:text-danger" onClick={() => setDeleteId(p.id)}><Trash2 className="h-4 w-4" /> حذف الفاتورة</DropdownMenuItem>
+                      </DropdownMenuContent></DropdownMenu>
+                    </div></td>
+                  </motion.tr>;
+                })}
               </AnimatePresence>
             </tbody>
           </table>
         </div>
       </BezelCard>
 
-      <Dialog open={!!detailFor} onOpenChange={(v) => !v && setDetailFor(null)}>
-        <DialogContent dir="rtl" className="max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-right">تفاصيل فاتورة الشراء</DialogTitle>
-            <DialogDescription className="text-right">
-              {detailFor && `${supplierName(detailFor.supplierId)} — ${detailFor.purchaseDate}`}
-            </DialogDescription>
-          </DialogHeader>
-          {detailFor && (
-            <div className="space-y-3 text-right">
-              <div className="flex items-center justify-between py-2 border-b border-border/40">
-                <Badge variant="outline" className={cn(
-                  detailFor.paymentType === "cash"
-                    ? "bg-success/10 text-success border-success/30"
-                    : "bg-warning/10 text-warning border-warning/30",
-                )}>
-                  {detailFor.paymentType === "cash" ? "نقدي" : "آجل"}
-                </Badge>
-                <div className={cn("font-extrabold tabular-nums text-lg", blurCls)}>{fmt(detailFor.total)} ج.م</div>
-              </div>
-              <div className="border-t border-border/30 pt-4">
-                <div className="text-xs text-muted-foreground mb-2">الأصناف</div>
-                <div className="space-y-1.5">
-                  {data.purchaseItems.filter((i) => i.purchaseId === detailFor.id).map((it) => (
-                    <div key={it.id} className="flex items-center justify-between border-t border-[var(--hairline)] pt-1.5 text-sm">
-                      <span className={cn("text-muted-foreground tabular-nums", blurCls)}>
-                        {fmt(it.unitCost)} × {it.quantity} = {fmt(it.unitCost * it.quantity)} ج.م
-                      </span>
-                      <span className="font-medium">{it.name}</span>
-                    </div>
-                  ))}
-                  {data.purchaseItems.filter((i) => i.purchaseId === detailFor.id).length === 0 && (
-                    <div className="text-xs text-muted-foreground text-center py-2">لا توجد أصناف</div>
-                  )}
-                </div>
-              </div>
-              {detailFor.notes && (
-                <div className="py-1 text-sm border-t border-border/40">
-                  <div className="text-xs text-muted-foreground mb-1">ملاحظات</div>
-                  {detailFor.notes}
-                </div>
-              )}
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDetailFor(null)} className="w-full">
-              <X className="w-4 h-4 ml-1" /> إغلاق
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <NewPurchaseDialog
-        editing={editFor}
-        open={!!editFor}
-        onOpenChange={(v) => { if (!v) setEditFor(null); }}
-      />
-
-
-      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}>
-        <AlertDialogContent dir="rtl">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-right">حذف فاتورة الشراء؟</AlertDialogTitle>
-            <AlertDialogDescription className="text-right">
-              سيتم حذف الفاتورة وكل أصنافها. لا يمكن التراجع.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>إلغاء</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (!deleteId) return;
-                try { await db.removePurchase(deleteId); toast.success("تم حذف الفاتورة"); }
-                catch (e: any) { toast.error(e.message || "خطأ"); }
-                setDeleteId(null);
-              }}
-              className="bg-danger text-danger-foreground hover:bg-danger/90"
-            >حذف</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <Dialog open={!!detailFor} onOpenChange={(v) => !v && setDetailFor(null)}><DialogContent dir="rtl" className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"><DialogHeader><DialogTitle className="text-right">تفاصيل فاتورة الشراء</DialogTitle><DialogDescription className="text-right">{detailFor && `${supplierName(detailFor.supplierId)} — ${detailFor.purchaseDate}`}</DialogDescription></DialogHeader>
+        {detailFor && <div className="space-y-4 text-right"><div className="grid grid-cols-2 gap-3 sm:grid-cols-4">{[["الإجمالي", detailFor.total, "text-foreground"], ["المدفوع", detailFor.paid, "text-success"], ["المتبقي", detailFor.remaining, detailFor.remaining ? "text-danger" : "text-muted-foreground"], ["عدد الأصناف", detailFor.itemCount, "text-info"]].map(([label, value, color]) => <div key={String(label)} className="rounded-2xl border border-border/30 bg-foreground/[0.04] p-3"><div className="text-xs text-muted-foreground">{label}</div><div className={cn("mt-1 font-extrabold tabular-nums", color, blurCls)}>{label === "عدد الأصناف" ? value : `${fmt(Number(value))} ج.م`}</div></div>)}</div><div className="flex items-center justify-between"><Badge variant="outline" className={purchaseStatusMeta(detailFor.status).className}>{purchaseStatusMeta(detailFor.status).label}</Badge><span className="text-xs text-muted-foreground">#{detailFor.id.slice(0, 8)}</span></div><div className="border-t border-border/30 pt-4"><div className="mb-2 text-xs text-muted-foreground">الأصناف ({detailFor.itemCount})</div><div className="space-y-1.5">{data.purchaseItems.filter((i) => i.purchaseId === detailFor.id).map((it) => <div key={it.id} className="flex items-center justify-between border-t border-[var(--hairline)] pt-1.5 text-sm"><span className={cn("text-muted-foreground tabular-nums", blurCls)}>{fmt(it.unitCost)} × {it.quantity} = {fmt(it.unitCost * it.quantity)} ج.م</span><span className="font-medium">{it.name}</span></div>)}</div></div>{detailFor.notes && <div className="border-t border-border/40 py-1 text-sm"><div className="mb-1 text-xs text-muted-foreground">ملاحظات</div>{detailFor.notes}</div>}</div>}
+        <DialogFooter><Button variant="outline" onClick={() => setDetailFor(null)} className="w-full"><X className="ml-1 h-4 w-4" /> إغلاق</Button></DialogFooter>
+      </DialogContent></Dialog>
+      <NewPurchaseDialog editing={editFor} open={!!editFor} onOpenChange={(v) => { if (!v) setEditFor(null); }} />
+      <AlertDialog open={!!deleteId} onOpenChange={(v) => !v && setDeleteId(null)}><AlertDialogContent dir="rtl"><AlertDialogHeader><AlertDialogTitle className="text-right">حذف فاتورة الشراء؟</AlertDialogTitle><AlertDialogDescription className="text-right">سيتم حذف الفاتورة وكل أصنافها. لا يمكن التراجع.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>إلغاء</AlertDialogCancel><AlertDialogAction onClick={async () => { if (!deleteId) return; try { await db.removePurchase(deleteId); toast.success("تم حذف الفاتورة"); } catch (e: any) { toast.error(e.message || "خطأ"); } setDeleteId(null); }} className="bg-danger text-danger-foreground hover:bg-danger/90">حذف</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </>
   );
 }
