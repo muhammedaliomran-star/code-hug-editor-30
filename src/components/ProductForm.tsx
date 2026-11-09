@@ -103,15 +103,13 @@ export function ProductForm({
   const [confirmZeroPrice, setConfirmZeroPrice] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
   const [openSections, setOpenSections] = useState({ identity: true, pricing: true, stock: true });
-  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
-  const [variantsJson, setVariantsJson] = useState("[]");
   const [supplierId, setSupplierId] = useState("");
 
   const reset = () => {
     setName(""); setSize(""); setItemType(PRODUCT_TYPES[0]);
     setCategory("");
-    setImageUrl(""); setVariantsJson("[]"); setSupplierId(""); setAdvancedOpen(false);
+    setImageUrl(""); setSupplierId("");
     setQty("1"); setCost(""); setPrice("");
     setPrefix(""); setMinStock(""); setConfirmZeroPrice(false);
     setBarcode("");
@@ -188,7 +186,7 @@ export function ProductForm({
         category: category.trim() || null,
         supplierId: supplierId || null,
         imageUrl: imageUrl.trim() || null,
-        variants: (() => { try { const v = JSON.parse(variantsJson || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } })(),
+        variants: [],
       });
       void recordAuditLog({
         action: "STOCK_CREATE",
@@ -439,17 +437,6 @@ export function ProductForm({
                <Label>رابط الصورة (اختياري)</Label>
                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="h-11 rounded-xl text-right" />
              </div>
-           </div>
-           <div className="overflow-hidden rounded-2xl border border-border/60">
-             <button type="button" onClick={() => setAdvancedOpen((v) => !v)} className="flex w-full items-center gap-2 bg-foreground/[0.025] px-3 py-3 text-right hover:bg-foreground/[0.06]">
-               <span className="text-sm font-bold">خيارات متقدمة</span><span className="h-px flex-1 bg-border/60" />
-               {advancedOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-             </button>
-             {advancedOpen && <div className="grid gap-2 border-t border-border/60 p-3">
-               <Label>متغيرات المنتج</Label>
-               <textarea value={variantsJson} onChange={(e) => setVariantsJson(e.target.value)} rows={4} className="rounded-xl border border-border/70 bg-background p-3 font-mono text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="أدخل بيانات المتغيرات المتقدمة بصيغة JSON عند الحاجة" />
-               <span className="text-[11px] text-muted-foreground">اتركه كما هو إذا كان المنتج لا يحتوي على مقاسات أو ألوان متعددة.</span>
-             </div>}
            </div>
           </div>}
         </div>
