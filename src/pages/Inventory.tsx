@@ -309,7 +309,7 @@ ${
               onClick={toggle}
               title="إخفاء الأرقام"
               icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-               />
+            >
             </ActionButton>
             <ActionButton
               onClick={() => {
