@@ -214,6 +214,14 @@ async function fetchAllInner() {
     })),
     suppliers: (s.data ?? []).map((r: TableRow<"suppliers">) => ({
       id: r.id, name: r.name, contact: r.contact ?? "", notes: r.notes,
+      email: (r as any).email ?? null, address: (r as any).address ?? null,
+      category: (r as any).category ?? null, tags: Array.isArray((r as any).tags) ? (r as any).tags : [],
+      taxNumber: (r as any).tax_number ?? null, commercialRegister: (r as any).commercial_register ?? null,
+      preferredContactMethod: (r as any).preferred_contact_method ?? null,
+      preferredPaymentMethod: (r as any).preferred_payment_method ?? null,
+      paymentTermDays: Number((r as any).payment_term_days ?? 0), creditLimit: Number((r as any).credit_limit ?? 0) / 100,
+      status: (r as any).status === "paused" ? "paused" : "active", joinedAt: (r as any).joined_at ?? r.created_at,
+      attachmentUrl: (r as any).attachment_url ?? null,
       openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id, createdAt: r.created_at,
     })),
     purchases: (pu.data ?? []).map((r: TableRow<"purchases">) => ({
@@ -965,6 +973,11 @@ export const db = {
     const user_id = await uid();
     const { error } = await supabase.from("suppliers").insert({
       user_id, name: s.name, contact: s.contact, notes: s.notes,
+      email: s.email ?? null, address: s.address ?? null, category: s.category ?? null, tags: s.tags ?? [],
+      tax_number: s.taxNumber ?? null, commercial_register: s.commercialRegister ?? null,
+      preferred_contact_method: s.preferredContactMethod ?? null, preferred_payment_method: s.preferredPaymentMethod ?? null,
+      payment_term_days: s.paymentTermDays ?? 0, credit_limit: (s.creditLimit ?? 0) * 100,
+      status: s.status ?? "active", joined_at: s.joinedAt ?? new Date().toISOString().slice(0, 10), attachment_url: s.attachmentUrl ?? null,
       opening_balance: (s.openingBalance ?? 0) * 100,
     });
     if (error) throw error;
@@ -974,6 +987,19 @@ export const db = {
     const upd: any = {};
     if (patch.name !== undefined) upd.name = patch.name;
     if (patch.contact !== undefined) upd.contact = patch.contact;
+    if (patch.email !== undefined) upd.email = patch.email;
+    if (patch.address !== undefined) upd.address = patch.address;
+    if (patch.category !== undefined) upd.category = patch.category;
+    if (patch.tags !== undefined) upd.tags = patch.tags;
+    if (patch.taxNumber !== undefined) upd.tax_number = patch.taxNumber;
+    if (patch.commercialRegister !== undefined) upd.commercial_register = patch.commercialRegister;
+    if (patch.preferredContactMethod !== undefined) upd.preferred_contact_method = patch.preferredContactMethod;
+    if (patch.preferredPaymentMethod !== undefined) upd.preferred_payment_method = patch.preferredPaymentMethod;
+    if (patch.paymentTermDays !== undefined) upd.payment_term_days = patch.paymentTermDays;
+    if (patch.creditLimit !== undefined) upd.credit_limit = (patch.creditLimit ?? 0) * 100;
+    if (patch.status !== undefined) upd.status = patch.status;
+    if (patch.joinedAt !== undefined) upd.joined_at = patch.joinedAt;
+    if (patch.attachmentUrl !== undefined) upd.attachment_url = patch.attachmentUrl;
     if (patch.notes !== undefined) upd.notes = patch.notes;
     if (patch.openingBalance !== undefined) upd.opening_balance = (patch.openingBalance ?? 0) * 100;
     const { error } = await supabase.from("suppliers").update(upd).eq("id", id);

@@ -42,6 +42,7 @@ import {
   Plus, Search, Truck, Eye, EyeOff, Pencil, Trash2, Wallet, Banknote,
   History, Phone, Receipt, X, ShoppingCart, ScanLine, Info, CreditCard,
   CalendarDays, MoreHorizontal, Download, Copy, Printer, CheckCircle2, Clock3, CircleDollarSign,
+  Mail, MapPin, Tag, Building2, FileText, ChevronDown, ChevronUp, ShieldCheck,
 } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -364,10 +365,24 @@ function SupplierFormDialog({
   const data = useDB();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
+  const [address, setAddress] = useState("");
+  const [category, setCategory] = useState("");
+  const [tagsText, setTagsText] = useState("");
+  const [taxNumber, setTaxNumber] = useState("");
+  const [commercialRegister, setCommercialRegister] = useState("");
+  const [preferredContactMethod, setPreferredContactMethod] = useState<Supplier["preferredContactMethod"]>("phone");
+  const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<Supplier["preferredPaymentMethod"]>("cash");
+  const [paymentTermDays, setPaymentTermDays] = useState("0");
+  const [creditLimit, setCreditLimit] = useState("0");
+  const [status, setStatus] = useState<"active" | "paused">("active");
+  const [attachmentUrl, setAttachmentUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [opening, setOpening] = useState("");
   const [joinDate, setJoinDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [sections, setSections] = useState({ basic: true, contact: false, finance: false, extra: false });
 
   const supplierCode = useMemo(() => {
     if (editing) {
@@ -381,29 +396,56 @@ function SupplierFormDialog({
   useMemoOnOpen(open, () => {
     setName(editing?.name ?? "");
     setContact(editing?.contact ?? "");
+    setEmail(editing?.email ?? "");
+    setAddress(editing?.address ?? "");
+    setCategory(editing?.category ?? "");
+    setTagsText((editing?.tags ?? []).join(", "));
+    setTaxNumber(editing?.taxNumber ?? "");
+    setCommercialRegister(editing?.commercialRegister ?? "");
+    setPreferredContactMethod(editing?.preferredContactMethod ?? "phone");
+    setPreferredPaymentMethod(editing?.preferredPaymentMethod ?? "cash");
+    setPaymentTermDays(String(editing?.paymentTermDays ?? 0));
+    setCreditLimit(String(editing?.creditLimit ?? 0));
+    setStatus(editing?.status ?? "active");
+    setAttachmentUrl(editing?.attachmentUrl ?? "");
     setNotes(editing?.notes ?? "");
     setOpening(String(editing?.openingBalance ?? 0));
-    setJoinDate((editing?.createdAt ?? new Date().toISOString()).slice(0, 10));
+    setJoinDate((editing?.joinedAt ?? editing?.createdAt ?? new Date().toISOString()).slice(0, 10));
+    setSubmitted(false);
+    setSections({ basic: true, contact: false, finance: false, extra: false });
   });
 
-  const submit = async () => {
+  const submit = async (keepOpen = false) => {
+    setSubmitted(true);
     if (!name.trim()) { toast.error("اكتب اسم المورد"); return; }
+    if (email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())) { toast.error("اكتب بريدًا إلكترونيًا صحيحًا"); return; }
+    if (Number(paymentTermDays) < 0 || Number(creditLimit) < 0 || Number(opening) < 0) { toast.error("القيم المالية لا يمكن أن تكون سالبة"); return; }
     setBusy(true);
     try {
+      const payload = {
+        name: name.trim(), contact: contact.trim(), email: email.trim() || null, address: address.trim() || null,
+        category: category.trim() || null, tags: tagsText.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 8),
+        taxNumber: taxNumber.trim() || null, commercialRegister: commercialRegister.trim() || null,
+        preferredContactMethod: preferredContactMethod || null, preferredPaymentMethod: preferredPaymentMethod || null,
+        paymentTermDays: Number(paymentTermDays) || 0, creditLimit: Number(creditLimit) || 0, status,
+        joinedAt: joinDate || null, attachmentUrl: attachmentUrl.trim() || null,
+        notes: notes.trim() || null, openingBalance: Number(opening) || 0,
+      };
       if (editing) {
-        await db.updateSupplier(editing.id, {
-          name: name.trim(), contact: contact.trim(),
-          notes: notes.trim() || null, openingBalance: Number(opening) || 0,
-        });
+        await db.updateSupplier(editing.id, payload);
         toast.success("تم تحديث المورد");
       } else {
-        await db.addSupplier({
-          name: name.trim(), contact: contact.trim(),
-          notes: notes.trim() || null, openingBalance: Number(opening) || 0,
-        });
+        await db.addSupplier(payload);
         toast.success("تمت إضافة المورد");
       }
-      onOpenChange(false);
+      if (keepOpen && !editing) {
+        setName(""); setContact(""); setEmail(""); setAddress(""); setCategory(""); setTagsText("");
+        setTaxNumber(""); setCommercialRegister(""); setPreferredContactMethod("phone"); setPreferredPaymentMethod("cash");
+        setPaymentTermDays("0"); setCreditLimit("0"); setStatus("active"); setAttachmentUrl(""); setNotes(""); setOpening("0");
+        setJoinDate(new Date().toISOString().slice(0, 10)); setSubmitted(false); setSections({ basic: true, contact: false, finance: false, extra: false });
+      } else {
+        onOpenChange(false);
+      }
     } catch (e: any) { toast.error(e.message || "خطأ"); }
     finally { setBusy(false); }
   };
@@ -412,6 +454,17 @@ function SupplierFormDialog({
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
   };
+
+  const toggleSection = (key: keyof typeof sections) => setSections((current) => ({ ...current, [key]: !current[key] }));
+  const Section = ({ id, title, icon: Icon, children }: { id: keyof typeof sections; title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) => (
+    <section className="overflow-hidden rounded-2xl border border-border/40 bg-foreground/[0.025]">
+      <button type="button" onClick={() => toggleSection(id)} className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-right transition-[background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-primary/[0.04]">
+        <span className="flex items-center gap-2 font-bold"><Icon className="h-4 w-4 text-primary" />{title}</span>
+        {sections[id] ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {sections[id] && <div className="border-t border-border/30 p-4">{children}</div>}
+    </section>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -424,31 +477,38 @@ function SupplierFormDialog({
           <DialogDescription className="text-right">بيانات المورد ومديونيته الافتتاحية.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-right">
-          <div>
-            <Label>كود المورد</Label>
-            <Input value={supplierCode} readOnly dir="ltr" className="font-mono tracking-wider text-muted-foreground" />
-          </div>
-          <div><Label>الاسم</Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} /></div>
-          <div><Label>رقم الهاتف</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} dir="ltr" maxLength={30} /></div>
-          <div>
-            <Label>تاريخ انضمام المورد</Label>
-            <DatePickerField value={joinDate} onChange={setJoinDate} />
-            <div className="flex gap-2 justify-end mt-2">
-              <Button type="button" variant="outline" size="sm" className="h-10 rounded-full px-4 text-xs"
-                onClick={() => setJoinDate(firstOfMonth())}>أول الشهر</Button>
-              <Button type="button" variant="outline" size="sm" className="h-10 rounded-full px-4 text-xs"
-                onClick={() => setJoinDate(new Date().toISOString().slice(0, 10))}>النهارده</Button>
+          <Section id="basic" title="البيانات الأساسية" icon={Building2}>
+            <div className="space-y-3">
+              <div><div className="mb-1 flex items-center justify-between"><Label>كود المورد</Label><span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-bold text-info">تلقائي</span></div><Input value={supplierCode} readOnly dir="ltr" className="font-mono tracking-wider text-muted-foreground" /></div>
+              <div><Label>الاسم <span className="text-danger">*</span></Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder="مثال: شركة النور" aria-required="true" aria-invalid={submitted && !name.trim()} />{submitted && !name.trim() && <p className="mt-1 text-xs font-medium text-danger">اسم المورد مطلوب</p>}</div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><div><Label>تصنيف المورد</Label><Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="محلي، مستورد..." /></div><div><Label>وسوم المورد</Label><Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="أساسي، VIP" /><div className="mt-1 text-[11px] text-muted-foreground">افصل الوسوم بفاصلة</div></div></div>
+              <div><Label>حالة المورد</Label><Select value={status} onValueChange={(v) => setStatus(v as "active" | "paused")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active"><span className="text-success">● نشط</span></SelectItem><SelectItem value="paused"><span className="text-muted-foreground">● متوقف</span></SelectItem></SelectContent></Select></div>
             </div>
-          </div>
-          <div>
-            <Label>مديونية افتتاحية (ج.م)</Label>
-            <Input type="number" value={opening} onChange={(e) => setOpening(e.target.value)} />
-            <div className="text-xs text-muted-foreground mt-1">المبلغ المستحق للمورد قبل بداية تسجيل الفواتير في النظام.</div>
-          </div>
-          <div><Label>ملاحظات</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} /></div>
+          </Section>
+          <Section id="contact" title="بيانات التواصل" icon={Mail}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div><Label>رقم الهاتف</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} dir="ltr" maxLength={30} placeholder="01xxxxxxxxx" /></div>
+              <div><Label>البريد الإلكتروني</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" dir="ltr" placeholder="supplier@example.com" aria-invalid={submitted && !!email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())} />{submitted && email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim()) && <p className="mt-1 text-xs font-medium text-danger">البريد الإلكتروني غير صحيح</p>}</div>
+              <div className="sm:col-span-2"><Label>العنوان</Label><div className="relative"><MapPin className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={address} onChange={(e) => setAddress(e.target.value)} className="pr-10" placeholder="المحافظة، المنطقة، العنوان" /></div></div>
+              <div><Label>وسيلة التواصل المفضلة</Label><Select value={preferredContactMethod ?? "phone"} onValueChange={(v) => setPreferredContactMethod(v as Supplier["preferredContactMethod"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="phone">هاتف</SelectItem><SelectItem value="whatsapp">واتساب</SelectItem><SelectItem value="email">بريد إلكتروني</SelectItem><SelectItem value="other">أخرى</SelectItem></SelectContent></Select></div>
+              <div><Label>الرقم الضريبي</Label><Input value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} dir="ltr" placeholder="اختياري" /></div>
+              <div className="sm:col-span-2"><Label>السجل التجاري</Label><Input value={commercialRegister} onChange={(e) => setCommercialRegister(e.target.value)} dir="ltr" placeholder="اختياري" /></div>
+            </div>
+          </Section>
+          <Section id="finance" title="الإعدادات المالية" icon={ShieldCheck}>
+            <div className="space-y-3">
+              <div><Label>تاريخ انضمام المورد</Label><DatePickerField value={joinDate} onChange={setJoinDate} /><div className="mt-2 flex justify-end gap-2"><Button type="button" variant="outline" size="sm" className="h-9 px-3 text-xs" onClick={() => setJoinDate(firstOfMonth())}>أول الشهر</Button><Button type="button" variant="outline" size="sm" className="h-9 px-3 text-xs" onClick={() => setJoinDate(new Date().toISOString().slice(0, 10))}>النهارده</Button></div></div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><div><Label>وسيلة الدفع المفضلة</Label><Select value={preferredPaymentMethod ?? "cash"} onValueChange={(v) => setPreferredPaymentMethod(v as Supplier["preferredPaymentMethod"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">نقدي</SelectItem><SelectItem value="bank">تحويل بنكي</SelectItem><SelectItem value="transfer">تحويل آخر</SelectItem><SelectItem value="other">أخرى</SelectItem></SelectContent></Select></div><div><Label>مدة السداد (يوم)</Label><Input type="number" min="0" value={paymentTermDays} onChange={(e) => setPaymentTermDays(e.target.value)} /></div><div><Label>الحد الائتماني (ج.م)</Label><Input type="number" min="0" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} /></div><div><Label>مديونية افتتاحية (ج.م)</Label><Input type="number" min="0" value={opening} onChange={(e) => setOpening(e.target.value)} /></div></div>
+              <div className="text-xs text-muted-foreground">سيظهر تنبيه عند الاقتراب من الحد الائتماني أو موعد السداد.</div>
+            </div>
+          </Section>
+          <Section id="extra" title="الملاحظات والمرفقات" icon={FileText}>
+            <div className="space-y-3"><div><Label>رابط صورة أو ملف المورد</Label><Input value={attachmentUrl} onChange={(e) => setAttachmentUrl(e.target.value)} type="url" dir="ltr" placeholder="https://..." /></div><div><Label>ملاحظات</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={500} placeholder="أضف أي تفاصيل مهمة..." /></div></div>
+          </Section>
         </div>
         <DialogFooter className="sticky bottom-0 -mx-4 -mb-4 border-t border-border/40 bg-card/95 px-4 pb-1 pt-3 sm:-mx-7 sm:-mb-7 sm:px-7 sm:pb-1">
-          <Button onClick={submit} disabled={busy} className="w-full">{editing ? "حفظ التعديلات" : "إضافة"}</Button>
+          <Button onClick={submit} disabled={busy || !name.trim()} className="w-full">{editing ? "حفظ التعديلات" : "حفظ المورد"}</Button>
+          {!editing && <Button type="button" variant="outline" disabled={busy || !name.trim()} onClick={() => { void submit(true); }} className="w-full sm:w-auto">حفظ وإضافة مورد آخر</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

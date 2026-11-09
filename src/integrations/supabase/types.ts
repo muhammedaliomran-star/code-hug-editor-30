@@ -2329,35 +2329,74 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          address: string | null
+          attachment_url: string | null
+          category: string | null
           contact: string
+          credit_limit: number
+          commercial_register: string | null
           created_at: string
+          email: string | null
           id: string
+          joined_at: string | null
           name: string
           national_id: string | null
           notes: string | null
           opening_balance: number
+          payment_term_days: number
+          preferred_contact_method: string | null
+          preferred_payment_method: string | null
+          status: string
+          tags: Json
+          tax_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
+          attachment_url?: string | null
+          category?: string | null
           contact?: string
+          credit_limit?: number
+          commercial_register?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          joined_at?: string | null
           name: string
           national_id?: string | null
           notes?: string | null
           opening_balance?: number
+          payment_term_days?: number
+          preferred_contact_method?: string | null
+          preferred_payment_method?: string | null
+          status?: string
+          tags?: Json
+          tax_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
+          attachment_url?: string | null
+          category?: string | null
           contact?: string
+          credit_limit?: number
+          commercial_register?: string | null
           created_at?: string
+          email?: string | null
           id?: string
+          joined_at?: string | null
           name?: string
           national_id?: string | null
           notes?: string | null
           opening_balance?: number
+          payment_term_days?: number
+          preferred_contact_method?: string | null
+          preferred_payment_method?: string | null
+          status?: string
+          tags?: Json
+          tax_number?: string | null
           updated_at?: string
           user_id?: string
         }
