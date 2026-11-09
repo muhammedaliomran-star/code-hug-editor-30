@@ -80,12 +80,14 @@ import {
   LogIn,
   LogOut,
   Award,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 type StaffPageTab = "live-shift" | "shifts-history" | "staff-list" | "commissions" | "attendance";
 
 export default function StaffAndShifts() {
-  const { privacy } = usePrivacy();
+  const { privacy, toggle } = usePrivacy();
   const { settings: shop } = useShopSettings();
   const {
     staffList,
@@ -354,6 +356,13 @@ export default function StaffAndShifts() {
                 >
                   موظف جديد
                 </ActionButton>
+
+                <ActionButton
+                  tone={privacy ? "primary" : "surface"}
+                  onClick={toggle}
+                  title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                  icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                />
               </div>
             }
           />

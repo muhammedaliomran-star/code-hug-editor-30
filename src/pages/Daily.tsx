@@ -1190,7 +1190,7 @@ function DailyPage() {
             options={[
               { value: "invoices", label: "فواتير الفترة", count: rows.length, icon: <FileText className="h-3.5 w-3.5 text-primary" /> },
               { value: "payments", label: "التحصيلات والأقساط المستلمة", count: periodPayments.length, icon: <CheckCircle2 className="h-3.5 w-3.5 text-success" /> },
-              { value: "expenses", label: "المصروفات اليومية", count: periodExpensesList.length, icon: <Receipt className="h-3.5 w-3.5 text-warning" /> },
+              { value: "expenses", label: "المصروفات اليومية", count: periodExpensesList.length, icon: <Receipt className="h-3.5 w-3.5 text-danger" /> },
               { value: "returns", label: "المرتجعات", count: periodReturnsList.length, icon: <RotateCcw className="h-3.5 w-3.5 text-danger" /> },
               { value: "vouchers", label: "سندات القبض والصرف", count: periodVouchersList.length, icon: <Wallet className="h-3.5 w-3.5 text-primary" /> },
             ]}

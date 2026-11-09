@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
-import { Plus, History, TrendingUp, X, Check, Trash2, Receipt, Package, Undo2, Search } from "lucide-react";
+import { Plus, History, TrendingUp, X, Check, Trash2, Receipt, Package, Undo2, Search, Eye, EyeOff } from "lucide-react";
 import { MetricCard } from "@/components/MetricCard";
 import { ActionButton } from "@/components/ActionButton";
 import { motion, AnimatePresence } from "framer-motion";
@@ -47,7 +47,7 @@ export default function Page() {
 
 function ReturnsPage() {
   const data = useDB();
-  const { privacy } = usePrivacy();
+  const { privacy, toggle } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   
   const [returnType, setReturnType] = useState<"sale" | "supplier">("sale");
@@ -140,12 +140,19 @@ function ReturnsPage() {
         subtitle="إدارة مرتجعات المبيعات والمشتريات والربط مع المخازن."
         icon={<Undo2 className="w-8 h-8" />}
         action={
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <ActionButton icon={<Plus className="h-4 w-4" />}>
-                تسجيل مرتجع جديد
-              </ActionButton>
-            </DialogTrigger>
+          <div className="flex items-center gap-2">
+            <ActionButton
+              tone={privacy ? "primary" : "surface"}
+              onClick={toggle}
+              title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            />
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <ActionButton icon={<Plus className="h-4 w-4" />}>
+                  تسجيل مرتجع جديد
+                </ActionButton>
+              </DialogTrigger>
             <DialogContent className="flex h-[min(760px,calc(100dvh-1rem))] w-[min(94vw,760px)] max-w-none flex-col overflow-hidden border-none bg-card/95 p-0">
               <DialogHeader className="shrink-0 border-b border-[var(--hairline)] bg-card/95 p-5 sm:p-6">
                 <DialogTitle className="text-right text-xl font-black">تسجيل مرتجع جديد</DialogTitle>
@@ -181,7 +188,7 @@ function ReturnsPage() {
                   <div className="space-y-3 rounded-2xl border border-[var(--hairline)] bg-muted/10 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <Label className="text-xs font-black text-muted-foreground">إضافة أصناف المرتجع</Label>
-                      <Badge variant="outline" className="rounded-full">{returnType === "sale" ? "تُضاف للمخزون" : "تُخصم من المخزون"}</Badge>
+                      <Badge variant="outline" className={cn("rounded-full", returnType === "sale" ? "border-success/30 bg-success/10 text-success" : "border-danger/30 bg-danger/10 text-danger")}>{returnType === "sale" ? "تُضاف للمخزون" : "تُخصم من المخزون"}</Badge>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-[1fr_110px_auto]">
                       <Select value={newItemId} onValueChange={setNewItemId} disabled={!sourceId || availableItems.length === 0}>
@@ -212,12 +219,13 @@ function ReturnsPage() {
 
               <div className="shrink-0 border-t border-[var(--hairline)] bg-card/95 p-4 sm:p-6">
                 <div className="mb-3 flex items-center justify-between gap-3"><span className="text-xs font-black text-muted-foreground">الإجمالي النهائي</span><span className={cn("text-xl font-black text-primary", blurCls)}>{fmt(total)} ج.م</span></div>
-                <Button type="button" className={cn("w-full gap-2 rounded-2xl py-6 text-lg font-black", returnType === "supplier" && "bg-warning text-warning-foreground hover:bg-warning/90")} disabled={!sourceId || !reason.trim() || items.length === 0} onClick={handleAddReturn}>
+                <Button type="button" className={cn("w-full gap-2 rounded-2xl py-6 text-lg font-black", returnType === "sale" ? "bg-danger text-danger-foreground hover:bg-danger/90" : "bg-warning text-warning-foreground hover:bg-warning/90")} disabled={!sourceId || !reason.trim() || items.length === 0} onClick={handleAddReturn}>
                   <Check className="h-5 w-5" /> تأكيد وتسجيل المرتجع
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
+          </div>
         }
       />
 
@@ -316,7 +324,7 @@ function ReturnsPage() {
                     <div className="flex min-w-0 items-center gap-3">
                       <div className={cn(
                         "grid h-11 w-11 shrink-0 place-items-center rounded-2xl ring-1",
-                        r.type === "sale" ? "bg-warning/12 text-warning ring-warning/25" : "bg-primary/12 text-primary ring-primary/25"
+                        r.type === "sale" ? "bg-danger/12 text-danger ring-danger/25" : "bg-warning/12 text-warning ring-warning/25"
                       )}>
                         {r.type === "sale" ? <TrendingUp className="h-5 w-5" /> : <Package className="h-5 w-5" />}
                       </div>
@@ -338,7 +346,7 @@ function ReturnsPage() {
                       <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                           <div className="text-xs text-muted-foreground mb-0.5">قيمة المرتجع</div>
-                          <div className={cn("text-numeric text-xl font-extrabold", r.type === "sale" ? "text-warning" : "text-primary", blurCls)}>
+                          <div className={cn("text-numeric text-xl font-extrabold", r.type === "sale" ? "text-danger" : "text-warning", blurCls)}>
                             {fmt(r.totalAmount)} <span className="text-xs font-bold text-muted-foreground">ج.م</span>
                           </div>
                         </div>

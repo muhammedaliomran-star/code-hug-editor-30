@@ -361,7 +361,7 @@ export default function Reconciliation() {
                 <button
                   type="button"
                   onClick={() => setBatchDialogOpen(true)}
-                  className="font-bold text-emerald-600 hover:underline inline-flex items-center gap-1"
+                  className="font-bold text-success hover:underline inline-flex items-center gap-1"
                 >
                   إصلاح الكل <ChevronRight className="h-3 w-3" />
                 </button>
@@ -444,8 +444,8 @@ export default function Reconciliation() {
         {/* Findings List */}
         {summary.findings.length === 0 ? (
           /* Zero-state: Completely Balanced System */
-          <BezelCard className="p-12 text-center border-emerald-500/30 bg-emerald-500/5">
-            <div className="inline-flex p-4 rounded-full bg-emerald-500/10 text-emerald-600 mb-4 ring-8 ring-emerald-500/5">
+          <BezelCard className="p-12 text-center border-success/30 bg-success/5">
+            <div className="inline-flex p-4 rounded-full bg-success/10 text-success mb-4 ring-8 ring-success/5">
               <CheckCircle2 className="h-12 w-12" />
             </div>
             <h3 className="text-xl font-bold text-foreground">الحسابات والمخزون متطابقة بنسبة 100%!</h3>
@@ -504,7 +504,7 @@ export default function Reconciliation() {
       <Dialog open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-emerald-600">
+            <DialogTitle className="flex items-center gap-2 text-success">
               <Sparkles className="h-5 w-5" />
               تأكيد الإصلاح والمزامنة التلقائية
             </DialogTitle>
@@ -517,7 +517,7 @@ export default function Reconciliation() {
             <div className="p-3 bg-muted/60 rounded-lg space-y-2 border">
               <div className="flex justify-between font-medium">
                 <span>عدد العمليات القابلة للتصحيح:</span>
-                <span className="font-bold text-emerald-600">{summary.autoFixableCount} بند</span>
+                <span className="font-bold text-success">{summary.autoFixableCount} بند</span>
               </div>
               <ul className="text-xs text-muted-foreground list-disc list-inside space-y-1">
                 <li>إعادة حساب المبالغ المسددة في الفواتير حسب إيصالات الدفع الفعلية.</li>
@@ -541,7 +541,7 @@ export default function Reconciliation() {
             <Button
               onClick={handleBatchFixSubmit}
               disabled={isBatchFixing}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2"
+              className="bg-success hover:bg-success/90 text-success-foreground gap-2"
             >
               {isBatchFixing ? (
                 <>

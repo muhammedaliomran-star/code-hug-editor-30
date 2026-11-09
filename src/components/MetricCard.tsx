@@ -4,18 +4,22 @@ import { CountUp } from "@/components/CountUp";
 import { Sparkline } from "@/components/Sparkline";
 import { cn } from "@/lib/utils";
 
-export type MetricTone = "positive" | "neutral" | "danger";
+export type MetricTone = "positive" | "neutral" | "danger" | "warning" | "info";
 
 const toneText: Record<MetricTone, string> = {
   positive: "text-success",
   neutral: "text-foreground",
   danger: "text-danger",
+  warning: "text-warning",
+  info: "text-info",
 };
 
 const toneChip: Record<MetricTone, string> = {
   positive: "bg-success/10 text-success ring-success/25",
   neutral: "bg-foreground/[0.06] text-muted-foreground ring-foreground/10",
   danger: "bg-danger/10 text-danger ring-danger/25",
+  warning: "bg-warning/10 text-warning ring-warning/25",
+  info: "bg-info/10 text-info ring-info/25",
 };
 
 export function MetricLabel({

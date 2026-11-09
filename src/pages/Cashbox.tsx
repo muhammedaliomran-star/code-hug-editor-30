@@ -9,6 +9,7 @@ import { StatTabs } from "@/components/StatTabs";
 import { ActionButton } from "@/components/ActionButton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { fmt } from "@/lib/store";
+import { usePrivacy } from "@/lib/privacy";
 import {
   CashboxProvider,
   useCashbox,
@@ -35,6 +36,8 @@ import {
   Layers,
   FileSpreadsheet,
   TrendingUp,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 function CashboxPageContent() {
@@ -55,6 +58,8 @@ function CashboxPageContent() {
     setIsManualTxOpen,
     setManualTxType,
   } = useCashbox();
+  const { privacy, toggle } = usePrivacy();
+  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
 
   return (
     <AppShell>
@@ -100,6 +105,13 @@ function CashboxPageContent() {
                 >
                   تسجيل إيداع / سحب
                 </ActionButton>
+
+                <ActionButton
+                  tone={privacy ? "primary" : "surface"}
+                  onClick={toggle}
+                  title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                  icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                />
               </div>
             }
           />
@@ -112,6 +124,7 @@ function CashboxPageContent() {
               label="إجمالي السيولة الكلية (جميع الخزن)"
               value={totalLiquidity}
               format={(n) => `${fmt(n)} ${cur}`}
+              masked={privacy}
               sub={`موزعة على ${accounts.length} حسابات وخزائن`}
             />
             <MetricCard
@@ -120,6 +133,7 @@ function CashboxPageContent() {
               label="الدرج النقدي الرئيسي (الكاش)"
               value={accountBalances["acc-cash-main"]?.currentBalance || 0}
               format={(n) => `${fmt(n)} ${cur}`}
+              masked={privacy}
               sub="السيولة الحاضرة المتاحة فوراً"
             />
             <MetricCard
@@ -130,6 +144,7 @@ function CashboxPageContent() {
                 .filter((a) => a.type === "ewallet")
                 .reduce((s, a) => s + (accountBalances[a.id]?.currentBalance || 0), 0)}
               format={(n) => `${fmt(n)} ${cur}`}
+              masked={privacy}
               sub="فودافون كاش، أورانج، InstaPay"
             />
             <MetricCard
@@ -140,6 +155,7 @@ function CashboxPageContent() {
                 .filter((a) => a.type === "bank" || a.type === "pos")
                 .reduce((s, a) => s + (accountBalances[a.id]?.currentBalance || 0), 0)}
               format={(n) => `${fmt(n)} ${cur}`}
+              masked={privacy}
               sub="أرصدة البنوك وماكينات POS"
             />
           </Reveal>
@@ -172,7 +188,7 @@ function CashboxPageContent() {
                     </SelectItem>
                     {accounts.map((acc) => (
                       <SelectItem key={acc.id} value={acc.id} className="text-xs">
-                        {acc.name} ({fmt(accountBalances[acc.id]?.currentBalance || 0)} {cur})
+                        {acc.name} (<span className={blurCls}>{fmt(accountBalances[acc.id]?.currentBalance || 0)} {cur}</span>)
                       </SelectItem>
                     ))}
                   </SelectContent>

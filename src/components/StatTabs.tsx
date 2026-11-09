@@ -8,7 +8,7 @@ export type StatTab<T extends string = string> = {
   active?: boolean;
   icon?: ReactNode;
   /** Alert dot overlay (e.g. overdue budgets, due recurring items). */
-  dot?: "amber" | "danger";
+  dot?: "amber" | "warning" | "danger";
 };
 
 /**
@@ -56,7 +56,7 @@ export function StatTabs<T extends string>({
                 aria-hidden
                 className={cn(
                   "absolute left-2 top-1.5 h-2 w-2 rounded-full",
-                  opt.dot === "amber" ? "bg-amber-500" : "bg-danger",
+                  opt.dot === "danger" ? "bg-danger" : "bg-warning",
                 )}
               />
             )}

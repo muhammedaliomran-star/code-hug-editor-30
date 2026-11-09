@@ -6,12 +6,15 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { GitBranch, Building2, Boxes, ArrowLeftRight, Wallet, Receipt, BarChart3, Users, Truck } from "lucide-react";
+import { GitBranch, Building2, Boxes, ArrowLeftRight, Wallet, Receipt, BarChart3, Users, Truck, Eye, EyeOff } from "lucide-react";
 import { fmt } from "@/lib/store";
+import { usePrivacy } from "@/lib/privacy";
+import { ActionButton } from "@/components/ActionButton";
 import { BranchesProvider, useBranches, BranchesListTab, InventoryTab, TransfersTab, CashboxTab, ProfitabilityTab, AnalyticsTab, StaffTab, BranchDialog, CreateTransferDialog, ReceiveTransferDialog, RemittanceDialog, ZReportDialog, StaffDialog } from "@/components/branches";
 
 function BranchesPageInner() {
   const { branches, stockItems, transfers, staffList, cur, totalValuation, activeTab, setActiveTab, selectedBranchId, setSelectedBranchId } = useBranches();
+  const { privacy, toggle } = usePrivacy();
 
   return (
     <AppShell>
@@ -21,6 +24,14 @@ function BranchesPageInner() {
             title="إدارة الفروع والمخزون المتعدد"
             icon={<GitBranch className="h-7 w-7 text-primary" />}
             subtitle="المنظومة المركزية لإدارة الفروع، حركة المخزون، التحويلات، الخزن والورديات، وقوائم الأرباح"
+            action={
+              <ActionButton
+                tone={privacy ? "primary" : "surface"}
+                onClick={toggle}
+                title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              />
+            }
           />
 
           <Reveal className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
@@ -39,6 +50,7 @@ function BranchesPageInner() {
               label="تقييم مخزون الفروع (تكلفة)"
               value={totalValuation.cost}
               format={(n) => `${fmt(n)} ${cur}`}
+              masked={privacy}
               sub={`القيمة البيعية: ${fmt(totalValuation.retail)} ${cur}`}
             />
             <MetricCard

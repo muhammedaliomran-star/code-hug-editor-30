@@ -471,7 +471,7 @@ export default function OwnerCockpit() {
                   label="السيولة المحصلة كاش"
                   value={stats.totalCashCollected}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="neutral"
+                  tone="positive"
                   masked={privacy}
                   sub="نقدية جاهزة للاستخدام أو التوريد"
                 />
@@ -481,7 +481,7 @@ export default function OwnerCockpit() {
                   label="صافي الربح الحقيقي"
                   value={stats.netProfit}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="neutral"
+                  tone={stats.netProfit >= 0 ? "positive" : "danger"}
                   masked={privacy}
                   sub={<>هامش الربح الصافي: <strong className="text-foreground">{stats.profitMargin}%</strong></>}
                 />
@@ -491,7 +491,7 @@ export default function OwnerCockpit() {
                   label="إجمالي المبيعات الجديدة"
                   value={stats.totalSales}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="neutral"
+                  tone="positive"
                   masked={privacy}
                   sub={`عدد الفواتير: ${filteredInvoices.length} فاتورة`}
                 />
@@ -501,7 +501,7 @@ export default function OwnerCockpit() {
                   label="المصروفات والمسحوبات"
                   value={stats.totalExpenses}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="neutral"
+                  tone="danger"
                   masked={privacy}
                   sub={`عدد الحركات: ${filteredExpenses.length} حركة صرف`}
                 />
@@ -516,7 +516,7 @@ export default function OwnerCockpit() {
                   label="ديون السوق (عند العملاء)"
                   value={stats.totalReceivables}
                   format={(n) => `ج.م ${fmt(n)}`}
-                  tone="neutral"
+                  tone={stats.totalReceivables > 0 ? "danger" : "neutral"}
                   masked={privacy}
                   sub={
                     <>
@@ -539,7 +539,7 @@ export default function OwnerCockpit() {
                   label="مستحق التحصيل اليوم"
                   value={dueTodayInvoices.length}
                   format={(n) => `${Math.round(n)} أقساط`}
-                  tone="neutral"
+                  tone={dueTodayInvoices.length > 0 ? "warning" : "neutral"}
                   masked={privacy}
                   sub={
                     <>

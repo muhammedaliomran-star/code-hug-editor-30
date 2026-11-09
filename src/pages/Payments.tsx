@@ -1,7 +1,7 @@
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
-import { Banknote, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft, Calendar, User, Truck, Receipt, Trash2, Wallet } from "lucide-react";
+import { Banknote, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft, Calendar, User, Truck, Receipt, Trash2, Wallet, Eye, EyeOff } from "lucide-react";
 import { useDB, PaymentVoucher } from "@/lib/store";
 import { Reveal } from "@/components/Reveal";
 import { EmptyState } from "@/components/EmptyState";
@@ -20,12 +20,15 @@ import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useLocation } from "@/lib/router-compat";
+import { usePrivacy } from "@/lib/privacy";
 import { DatePickerField } from "@/components/DatePickerField";
 
 
 export default function PaymentsPage() {
   const location = useLocation();
   const { paymentVouchers, customers, suppliers, addPaymentVoucher, removePaymentVoucher, loading } = useDB();
+  const { privacy, toggle } = usePrivacy();
+  const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [dialogType, setDialogType] = useState<"receipt" | "payment">("receipt");
@@ -135,19 +138,27 @@ export default function PaymentsPage() {
             icon={<Banknote className="h-7 w-7" />} 
             subtitle="إدارة سندات القبض والصرف" 
             action={
-            <ActionButton
-              onClick={openNewVoucher}
-              icon={<Plus className="h-4 w-4" />}
-            >
-              إضافة سند جديد
-            </ActionButton>
+            <div className="flex items-center gap-2">
+              <ActionButton
+                tone={privacy ? "primary" : "surface"}
+                onClick={toggle}
+                title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              />
+              <ActionButton
+                onClick={openNewVoucher}
+                icon={<Plus className="h-4 w-4" />}
+              >
+                إضافة سند جديد
+              </ActionButton>
+            </div>
           } />
 
           {/* Metrics Grid */}
           <Reveal className="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-3">
-            <MetricCard className="h-full" icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} ج.م`} />
-            <MetricCard className="h-full" icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} ج.م`} />
-            <MetricCard className="h-full" icon={Banknote} label="صافي الرصيد" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} ج.م`} />
+            <MetricCard className="h-full" icon={ArrowDownLeft} label="إجمالي المقبوضات" value={stats.receipts} tone="positive" format={(n) => `${n.toLocaleString()} ج.م`} masked={privacy} />
+            <MetricCard className="h-full" icon={ArrowUpRight} label="إجمالي المدفوعات" value={stats.payments} tone="danger" format={(n) => `${n.toLocaleString()} ج.م`} masked={privacy} />
+            <MetricCard className="h-full" icon={Banknote} label="صافي الرصيد" value={stats.balance} tone={stats.balance >= 0 ? "positive" : "danger"} format={(n) => `${n.toLocaleString()} ج.م`} masked={privacy} />
           </Reveal>
 
           {/* Filters Bar */}
@@ -246,7 +257,8 @@ export default function PaymentsPage() {
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-[0.12em]">المبلغ</span>
                       <span className={cn(
                         "text-2xl font-black tabular-nums",
-                        voucher.type === "receipt" ? "text-success" : "text-danger"
+                        voucher.type === "receipt" ? "text-success" : "text-danger",
+                         blurCls
                       )} dir="ltr">
                         {voucher.type === "receipt" ? "+" : "-"}{voucher.amount.toLocaleString()}
                       </span>

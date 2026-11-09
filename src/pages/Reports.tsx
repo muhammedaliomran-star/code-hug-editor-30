@@ -305,7 +305,7 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
         <MetricCard className="h-full" icon={Receipt} label="المبيعات" value={totals.sales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
         <MetricCard className="h-full" icon={Wallet} label="التحصيلات" value={totals.collected} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
         <MetricCard className="h-full" icon={TrendingDown} label="المصروفات" value={totals.expenses} tone="danger" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard className="h-full" icon={TrendingUp} label="صافي الربح" value={totals.net} tone={totals.net >= 0 ? "neutral" : "danger"} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        <MetricCard className="h-full" icon={TrendingUp} label="صافي الربح" value={totals.net} tone={totals.net >= 0 ? "positive" : "danger"} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
       </div>
 
       {incompleteCostCount > 0 && <div className="mb-6 rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm font-bold text-warning">بيانات غير مكتملة: {incompleteCostCount} فاتورة مستبعدة من حساب الربح لعدم اكتمال تكلفة الأصناف.</div>}
@@ -317,7 +317,7 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
           label="المتبقي على العملاء"
           value={outstanding}
           format={(n) => `${fmt(n)} ج.م`}
-          tone="neutral"
+          tone={outstanding > 0 ? "danger" : "neutral"}
           masked={privacy}
         />
         <MetricCard
@@ -335,7 +335,7 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
           label="مجمل الربح قبل المصروفات"
           value={totals.profit}
           format={(n) => `${fmt(n)} ج.م`}
-          tone={totals.profit >= 0 ? "neutral" : "danger"}
+          tone={totals.profit >= 0 ? "positive" : "danger"}
           masked={privacy}
         />
       </div>

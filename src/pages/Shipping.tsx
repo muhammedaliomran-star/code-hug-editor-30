@@ -8,7 +8,7 @@ import { ActionButton } from "@/components/ActionButton";
 import {
   Truck, Search, Plus, MapPin, Building2, PackageCheck, Clock, Pencil, Trash2, ExternalLink,
   ShieldAlert, CalendarDays, Printer, FileText, Wallet, BarChart3, MessageCircle, CheckCheck, AlertTriangle,
-  Link2, RefreshCw, Undo2,
+  Link2, RefreshCw, Undo2, Eye, EyeOff,
 } from "lucide-react";
 import { buildCourierLink, freshCourierToken } from "@/lib/courier-token";
 import { useDB, db, useShopSettings, ShipmentStatus, type Shipment, type ShipmentCarrier, type ShippingZone } from "@/lib/store";
@@ -162,7 +162,7 @@ export default function Shipping() {
   const [periodFilter, setPeriodFilter] = useState<string>("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkCarrier, setBulkCarrier] = useState("");
-  const { privacy } = usePrivacy();
+  const { privacy, toggle } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "";
 
   const invoicedIds = useMemo(() => new Set(shipments.map((s) => s.invoiceId).filter(Boolean)), [shipments]);
@@ -618,6 +618,12 @@ export default function Shipping() {
               <ActionButton tone="surface" onClick={() => navigate("/shipping/rescue")} icon={<ShieldAlert className="h-4 w-4" />}>
                 إنقاذ الطلبات
               </ActionButton>
+              <ActionButton
+                tone={privacy ? "primary" : "surface"}
+                onClick={toggle}
+                title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              />
               <Dialog open={isAddShipmentOpen} onOpenChange={(open) => { setIsAddShipmentOpen(open); if (!open) resetShipmentForm(); }}>
                 <DialogTrigger asChild>
                   <ActionButton icon={<Plus className="h-5 w-5" />}>

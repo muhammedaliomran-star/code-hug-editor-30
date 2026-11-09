@@ -64,11 +64,13 @@ import {
   Sliders,
   RotateCcw,
   Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 
 export default function AuditLog() {
-  const { privacy } = usePrivacy();
+  const { privacy, toggle } = usePrivacy();
   const { logs, stats } = useAuditLogs();
   const { staffList } = useStaffAndShifts();
 
@@ -102,14 +104,14 @@ export default function AuditLog() {
   const severityBadge = (severity: AuditSeverity) => {
     switch (severity) {
       case "critical":
-        return <Badge variant="destructive" className="bg-rose-600 text-white text-[10px] font-bold">حرج جداً</Badge>;
+        return <Badge variant="destructive" className="bg-danger text-danger-foreground text-[10px] font-bold">حرج جداً</Badge>;
       case "danger":
-        return <Badge variant="destructive" className="bg-red-500 text-white text-[10px] font-bold">عالي الخطورة</Badge>;
+        return <Badge variant="destructive" className="bg-danger text-danger-foreground text-[10px] font-bold">عالي الخطورة</Badge>;
       case "warning":
-        return <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">تنبيه / تعديل</Badge>;
+        return <Badge variant="outline" className="border-warning/50 bg-warning/10 text-warning text-[10px] font-bold">تنبيه / تعديل</Badge>;
       case "info":
       default:
-        return <Badge variant="outline" className="border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">اعتيادي</Badge>;
+        return <Badge variant="outline" className="border-success/50 bg-success/10 text-success text-[10px] font-bold">اعتيادي</Badge>;
     }
   };
 
@@ -177,6 +179,12 @@ export default function AuditLog() {
           subtitle="تتبع وتدقيق جميع التعديلات، الحذف، إصدار الفواتير، الخصومات، والعمليات الحساسة لمنع التلاعب."
           action={
             <>
+               <ActionButton
+                 tone={privacy ? "primary" : "surface"}
+                 onClick={toggle}
+                 title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+                 icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+               />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <ActionButton tone="surface" icon={<Download className="h-4 w-4" />}>
@@ -277,8 +285,8 @@ export default function AuditLog() {
                   className={cn(
                     "px-3 py-1 rounded-xl text-xs font-bold transition-all",
                     selectedSeverity === "critical"
-                      ? "bg-rose-600 text-white"
-                      : "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20"
+                      ? "bg-danger text-danger-foreground"
+                      : "bg-danger/10 text-danger hover:bg-danger/20"
                   )}
                 >
                   حرج وحذف فقط
@@ -289,8 +297,8 @@ export default function AuditLog() {
                   className={cn(
                     "px-3 py-1 rounded-xl text-xs font-bold transition-all",
                     selectedModule === "invoices"
-                      ? "bg-blue-600 text-white"
-                      : "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20"
+                      ? "bg-info text-info-foreground"
+                      : "bg-info/10 text-info hover:bg-info/20"
                   )}
                 >
                   الفواتير
@@ -301,8 +309,8 @@ export default function AuditLog() {
                   className={cn(
                     "px-3 py-1 rounded-xl text-xs font-bold transition-all",
                     selectedModule === "inventory"
-                      ? "bg-amber-600 text-white"
-                      : "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
+                      ? "bg-warning text-warning-foreground"
+                      : "bg-warning/10 text-warning hover:bg-warning/20"
                   )}
                 >
                   المخزن
@@ -478,11 +486,11 @@ export default function AuditLog() {
                   <div className="grid grid-cols-2 gap-2 py-1">
                     <div>
                       <span className="text-muted-foreground block text-[11px]">القيمة السابقة (قبل):</span>
-                      <strong className="font-mono text-rose-500">{String(viewLog.oldValue ?? "—")}</strong>
+                      <strong className="font-mono text-danger">{String(viewLog.oldValue ?? "—")}</strong>
                     </div>
                     <div>
                       <span className="text-muted-foreground block text-[11px]">القيمة الجديدة (بعد):</span>
-                      <strong className="font-mono text-emerald-500">{String(viewLog.newValue ?? "—")}</strong>
+                      <strong className="font-mono text-success">{String(viewLog.newValue ?? "—")}</strong>
                     </div>
                   </div>
                 )}
