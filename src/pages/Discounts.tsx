@@ -272,7 +272,7 @@ export default function Discounts() {
     if (duplicate) return toast.error("كود الخصم هذا مستخدم بالفعل، يرجى اختيار كود آخر");
 
     const maxUsageNum = formHasMaxUsage ? Number(formMaxUsage) : null;
-    if (formHasMaxUsage && (!Number.isInteger(maxUsageNum) || maxUsageNum < 1)) return toast.error("أدخل حد استخدام صحيحاً أكبر من صفر");
+    if (formHasMaxUsage && (maxUsageNum === null || !Number.isInteger(maxUsageNum) || maxUsageNum < 1)) return toast.error("أدخل حد استخدام صحيحاً أكبر من صفر");
 
     if (editingCoupon) {
       updateCoupon(editingCoupon.id, {

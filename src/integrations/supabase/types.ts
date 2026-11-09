@@ -2195,6 +2195,9 @@ export type Database = {
           updated_at: string
           user_id: string
           variants: Json
+          archived: boolean
+          image_url: string | null
+          supplier_id: string | null
         }
         Insert: {
           barcode?: string | null
@@ -2214,6 +2217,9 @@ export type Database = {
           updated_at?: string
           user_id: string
           variants?: Json
+          archived?: boolean
+          image_url?: string | null
+          supplier_id?: string | null
         }
         Update: {
           barcode?: string | null
@@ -2233,6 +2239,9 @@ export type Database = {
           updated_at?: string
           user_id?: string
           variants?: Json
+          archived?: boolean
+          image_url?: string | null
+          supplier_id?: string | null
         }
         Relationships: []
       }

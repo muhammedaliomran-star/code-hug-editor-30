@@ -200,7 +200,7 @@ function InventoryPage() {
     setScanOpen(false);
     const found = findStockByBarcode(data.stockItems, code);
     if (found) {
-      setQ(found.name);
+      setSearchInput(found.name);
       toast.success(`تم العثور على: ${found.name}`);
     } else {
       toast.error("الكود غير موجود في المخزن", {
@@ -266,7 +266,7 @@ function InventoryPage() {
         if (sortKey === "low") return (a.minStock || LOW_STOCK()) - (b.minStock || LOW_STOCK());
         return branchQty(a.id, a.quantity) - branchQty(b.id, b.quantity);
       });
-  }, [data.stockItems, q, tab, isAllBranches, activeBranchId]);
+  }, [data.stockItems, debouncedQ, tab, isAllBranches, activeBranchId]);
 
   const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(1, page), totalPages);
@@ -778,16 +778,21 @@ ${
                                 title="نسخ المنتج"
                                 onClick={async () => {
                                   try {
-                                    await db.addStockItem({
-                                      name: ${it.name} (نسخة), quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null,
-                                    });
+                                    await db.addStockItem({ name: `${it.name} (نسخة)`, quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null });
                                     toast.success("تم نسخ المنتج");
-                                  } catch (e: any) { toast.error(e?.message ?? تعذر النسخ); }
+                                  } catch (e: any) { toast.error(e?.message ?? "تعذر النسخ"); }
                                 }}
                               >
-                                
+                                <Copy className="w-4 h-4" />
+                              </Button>
 
-                              <Button size="icon" variant="ghost" className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]" title="مرتجع للمورد" onClick={() => { window.location.assign(/returns?product=); }}>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
+                                title="مرتجع للمورد"
+                                onClick={() => { window.location.assign(`/returns?product=${encodeURIComponent(it.name)}`); }}
+                              >
                                 <Undo2 className="w-4 h-4" />
                               </Button>
                             </TooltipTrigger>
@@ -798,7 +803,15 @@ ${
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              {it.archived ? (\n                                 <Button size="icon" variant="ghost" className="action-btn rounded-full text-success hover:bg-success/10 hover:text-success" title="استعادة" onClick={async () => { try { await db.restoreStockItem(it.id); toast.success("تمت استعادة المنتج"); } catch (e: any) { toast.error(e?.message ?? "تعذر الاستعادة"); } }}>\n                                   <RotateCcw className="w-4 h-4" />\n                                 </Button>\n                               ) : (\n                                 <Button size="icon" variant="ghost" className="action-btn danger rounded-full text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteId(it.id)}>\n                                   <Trash2 className="w-4 h-4" />\n                                 </Button>\n                               )}
+                              {it.archived ? (
+                                 <Button size="icon" variant="ghost" className="action-btn rounded-full text-success hover:bg-success/10 hover:text-success" title="استعادة" onClick={async () => { try { await db.restoreStockItem(it.id); toast.success("تمت استعادة المنتج"); } catch (e: any) { toast.error(e?.message ?? "تعذر الاستعادة"); } }}>
+                                   <RotateCcw className="w-4 h-4" />
+                                 </Button>
+                               ) : (
+                                 <Button size="icon" variant="ghost" className="action-btn danger rounded-full text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteId(it.id)}>
+                                   <Trash2 className="w-4 h-4" />
+                                 </Button>
+                               )}
                             </TooltipTrigger>
                             <TooltipContent side="top">حذف</TooltipContent>
                           </Tooltip>
@@ -810,15 +823,15 @@ ${
               })}
             </div>
           </ScrollArea>
-          {totalPages > 1 && (
-            <div className="mt-3 flex items-center justify-center gap-2">
-              <Button size="sm" variant="outline" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>السابق</Button>
-              <span className="text-xs text-muted-foreground">{safePage} / {totalPages}</span>
-              <Button size="sm" variant="outline" disabled={safePage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>التالي</Button>
-            </div>
-          )}
         )}
       </Reveal>
+      {totalPages > 1 && (
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <Button size="sm" variant="outline" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>السابق</Button>
+          <span className="text-xs text-muted-foreground">{safePage} / {totalPages}</span>
+          <Button size="sm" variant="outline" disabled={safePage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>التالي</Button>
+        </div>
+      )}
       <AdjustDialog item={adjustItem} onClose={() => setAdjustItem(null)} />
       <MoveToWarehouseDialog item={moveItem} onClose={() => setMoveItem(null)} />
       <EditDialog

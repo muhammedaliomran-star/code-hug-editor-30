@@ -321,7 +321,6 @@ export interface StockItem {
   variants?: ProductVariant[];
   lowStockAlert?: number;
   season?: string | null;
-  category?: string | null;
   notes?: string | null;
 }
 
