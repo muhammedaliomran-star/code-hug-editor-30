@@ -415,7 +415,10 @@ function SupplierFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl">
+      <DialogContent
+        dir="rtl"
+        className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-xl overflow-y-auto overscroll-contain p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-7"
+      >
         <DialogHeader>
           <DialogTitle className="text-right">{editing ? "تعديل المورد" : "إضافة مورد جديد"}</DialogTitle>
           <DialogDescription className="text-right">بيانات المورد ومديونيته الافتتاحية.</DialogDescription>
@@ -444,7 +447,7 @@ function SupplierFormDialog({
           </div>
           <div><Label>ملاحظات</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={500} /></div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="sticky bottom-0 -mx-4 -mb-4 border-t border-border/40 bg-card/95 px-4 pb-1 pt-3 sm:-mx-7 sm:-mb-7 sm:px-7 sm:pb-1">
           <Button onClick={submit} disabled={busy} className="w-full">{editing ? "حفظ التعديلات" : "إضافة"}</Button>
         </DialogFooter>
       </DialogContent>
