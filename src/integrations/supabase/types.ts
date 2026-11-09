@@ -1500,6 +1500,7 @@ export type Database = {
           id: string
           invoice_id: string | null
           notes: string | null
+          purchase_id: string | null
           reason: string | null
           total_amount: number
           type: string
@@ -1511,6 +1512,7 @@ export type Database = {
           id?: string
           invoice_id?: string | null
           notes?: string | null
+          purchase_id?: string | null
           reason?: string | null
           total_amount?: number
           type: string
@@ -1522,6 +1524,7 @@ export type Database = {
           id?: string
           invoice_id?: string | null
           notes?: string | null
+          purchase_id?: string | null
           reason?: string | null
           total_amount?: number
           type?: string
@@ -1534,6 +1537,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "return_records_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -2702,6 +2712,10 @@ export type Database = {
       }
       create_sale_return: {
         Args: { p_invoice_id: string; p_items: Json; p_reason: string }
+        Returns: string
+      }
+      create_supplier_return: {
+        Args: { p_items: Json; p_purchase_id: string; p_reason: string }
         Returns: string
       }
       deduct_stock: { Args: { p_items: Json }; Returns: undefined }
