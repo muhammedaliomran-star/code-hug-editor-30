@@ -44,7 +44,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Reveal } from "@/components/Reveal";
 import {
@@ -90,6 +89,7 @@ import {
   Copy,
   RotateCcw,
   Undo2,
+  MoreVertical,
 } from "lucide-react";
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { toast } from "sonner";
@@ -134,6 +134,7 @@ function InventoryPage() {
   const { privacy, toggle } = usePrivacy();
   const [tab, setTab] = useState<Tab>("all");
   const [editing, setEditing] = useState<StockItem | null>(null);
+  const [detailItem, setDetailItem] = useState<StockItem | null>(null);
   const [historyItem, setHistoryItem] = useState<StockItem | null>(null);
   const [adjustItem, setAdjustItem] = useState<StockItem | null>(null);
   const [moveItem, setMoveItem] = useState<StockItem | null>(null);
@@ -435,9 +436,9 @@ ${
       </div>
 
       <div className="sticky-search-bar">
-        <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           <Select value={sortKey} onValueChange={(v) => { setSortKey(v as any); setPage(1); }}>
-            <SelectTrigger className="h-9 w-[150px] rounded-xl text-xs">
+            <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:w-[150px]">
               <SelectValue placeholder="فرز" />
             </SelectTrigger>
             <SelectContent>
@@ -448,11 +449,11 @@ ${
               <SelectItem value="low">الأكثر نقصًا</SelectItem>
             </SelectContent>
           </Select>
-          <Button size="sm" variant={showArchived ? "default" : "outline"} className="h-9 rounded-xl text-xs" onClick={() => { setShowArchived((v) => !v); setPage(1); }}>
+          <Button size="sm" variant={showArchived ? "default" : "outline"} className="h-9 w-full rounded-xl text-xs sm:w-auto" onClick={() => { setShowArchived((v) => !v); setPage(1); }}>
             {showArchived ? "إخفاء المؤرشف" : "عرض المؤرشف"}
           </Button>
           <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
-            <SelectTrigger className="h-9 w-[140px] rounded-xl text-xs">
+            <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:w-[140px]">
               <SelectValue placeholder="تصنيف" />
             </SelectTrigger>
             <SelectContent>
@@ -462,10 +463,10 @@ ${
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs" onClick={() => setProfitOpen(true)}>
+          <Button size="sm" variant="outline" className="h-9 w-full rounded-xl text-xs sm:w-auto" onClick={() => setProfitOpen(true)}>
             تقرير أرباح
           </Button>
-          <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs gap-1" onClick={() => {
+          <Button size="sm" variant="outline" className="h-9 w-full rounded-xl text-xs gap-1 sm:w-auto" onClick={() => {
             const items = paginatedList.filter((it) => it.barcode);
             if (items.length === 0) { toast.error("لا توجد منتجات بباركود في هذه الصفحة"); return; }
             const w = window.open("", "_blank");
@@ -501,7 +502,7 @@ ${
         />
 
         <div className="mb-5">
-          <div className="relative">
+          <div className="relative mt-1">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchInput}
@@ -572,17 +573,33 @@ ${
                 const out = shownQty <= 0;
                 const low = !out && shownQty < (it.minStock || LOW_STOCK());
                 const profit = it.salePrice - it.lastUnitCost;
+                const margin = it.salePrice > 0 ? (profit / it.salePrice) * 100 : 0;
+                const stockLabel = out ? "نافد" : low ? "منخفض" : "متوفر";
+                const stockTone = out ? "text-danger bg-danger/10 ring-danger/20" : low ? "text-warning bg-warning/10 ring-warning/20" : "text-success bg-success/10 ring-success/20";
 
                 return (
                   <div
                     key={it.id}
-                    className="group bezel-shell bezel-lift animate-[fade-in_0.5s_cubic-bezier(0.32,0.72,0,1)] both"
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.closest("button, input, a, [role='menuitem']")) return;
+                      setDetailItem(it);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setDetailItem(it);
+                      }
+                    }}
+                    className="group bezel-shell bezel-lift cursor-pointer animate-[fade-in_0.5s_cubic-bezier(0.32,0.72,0,1)] both focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
                     style={{ animationDelay: `${Math.min(idx, 12) * 45}ms` }}
                   >
-                    <div className="bezel-core grid grid-cols-1 items-center gap-5 p-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto] md:gap-6">
+                    <div dir="ltr" className="bezel-core grid grid-cols-1 items-center gap-5 p-4 md:grid-cols-[auto_minmax(0,1.25fr)_minmax(0,1.1fr)] md:gap-6 md:p-5">
                       {/* الهوية */}
-                      <div className="flex min-w-0 items-center gap-3">
-                        <input type="checkbox" className="h-4 w-4 shrink-0 cursor-pointer mt-1" checked={selectedIds.has(it.id)} onChange={(e) => { const ns = new Set(selectedIds); if (e.target.checked) ns.add(it.id); else ns.delete(it.id); setSelectedIds(ns); }} />
+                      <div dir="rtl" className="min-w-0 md:order-3 md:justify-self-end md:text-right">
+                        <div className="flex min-w-0 items-center gap-3">
                         <span
                           className={cn(
                             "text-display grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg font-bold",
@@ -592,7 +609,7 @@ ${
                           {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-5 w-5 rounded object-cover" /> : <Package className="h-5 w-5" />}
                         </span>
                         <div className="min-w-0">
-                          <div className="truncate font-bold leading-tight">{it.name}</div>
+                          <div className="truncate text-base font-black leading-tight">{it.name}</div>
                           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                             {(it.itemType || it.size) && (
                               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -608,11 +625,16 @@ ${
                             )}
                           </div>
                         </div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-bold ring-1", stockTone)}>{stockLabel}</span>
+                          {it.barcode && <span className="rounded-full bg-foreground/[0.05] px-2 py-0.5 font-mono text-[10px] text-muted-foreground">كود: {it.barcode}</span>}
+                        </div>
                       </div>
 
                       {/* المقاييس */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-4">
+                      <div dir="rtl" className="min-w-0 md:order-2">
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                           <div className="flex flex-col">
                             <div className="text-[10px] text-muted-foreground mb-0.5">الكمية</div>
                             <div
@@ -632,192 +654,58 @@ ${
                           </div>
 
                           <div className="flex flex-col">
-                            <div className="text-[10px] text-muted-foreground mb-0.5">
-                              الربح المتوقع
-                            </div>
-                            <div
-                              className={cn(
-                                "text-numeric font-bold leading-none flex items-center gap-1",
-                                profit >= 0 ? "text-success" : "text-danger",
-                                privacy && "privacy-blur",
-                              )}
-                            >
-                              {profit >= 0 ? (
-                                <TrendingUp className="w-3.5 h-3.5" />
-                              ) : (
-                                <TrendingDown className="w-3.5 h-3.5" />
-                              )}
+                            <div className="text-[10px] text-muted-foreground mb-0.5">التكلفة</div>
+                            <div className={cn("text-numeric font-bold leading-none", privacy && "privacy-blur")}>{fmt(it.lastUnitCost)} <span className="text-[10px]">ج.م</span></div>
+                          </div>
+
+                          <div className="flex flex-col">
+                            <div className="text-[10px] text-muted-foreground mb-0.5">سعر البيع</div>
+                            <div className={cn("text-numeric font-bold leading-none text-primary", privacy && "privacy-blur")}>{fmt(it.salePrice)} <span className="text-[10px]">ج.م</span></div>
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="text-[10px] text-muted-foreground mb-0.5">الربح</div>
+                            <div className={cn("text-numeric font-bold leading-none", profit >= 0 ? "text-success" : "text-danger", privacy && "privacy-blur")}>
+                              {profit >= 0 ? <TrendingUp className="mr-1 inline h-3.5 w-3.5" /> : <TrendingDown className="mr-1 inline h-3.5 w-3.5" />}
                               {fmt(profit)} <span className="text-[10px]">ج.م</span>
                             </div>
-                          </div>
-                         {(() => {
-                           const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
-                           const sold = data.invoiceItems
-                             .filter((ii) => (ii.stockItemId === it.id || ii.name === it.name) && new Date(ii.createdAt).getTime() >= since)
-                             .reduce((s, ii) => s + (ii.quantity || 1), 0);
-                           const daily = sold / 30;
-                           const suggested = Math.max(0, Math.ceil(daily * 14) - shownQty);
-                           if (suggested <= 0) return null;
-                           return (
-                             <div className="mt-2 text-[10px] text-warning font-bold">
-                               مقترح إعادة طلب: {suggested} وحدة (معدل بيع {daily.toFixed(1)}/يوم)
-                             </div>
-                           );
-                         })()}
-
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-2 gap-2">
-                          <div
-                            className={cn(
-                              "rounded-lg bg-foreground/[0.03] p-1.5 text-center",
-                              privacy && "privacy-blur",
-                            )}
-                          >
-                            <div className="text-[9px] text-muted-foreground uppercase">
-                              التكلفة
-                            </div>
-                            <div className="text-xs font-bold">{fmt(it.lastUnitCost)}</div>
-                          </div>
-                          <div
-                            className={cn(
-                              "rounded-lg bg-primary/5 p-1.5 text-center",
-                              privacy && "privacy-blur",
-                            )}
-                          >
-                            <div className="text-[9px] text-primary/70 uppercase">البيع</div>
-                            <div className="text-xs font-bold text-primary">
-                              {fmt(it.salePrice)}
-                            </div>
+                            <div className={cn("mt-1 text-[10px] font-bold", profit >= 0 ? "text-success/80" : "text-danger/80")}>هامش {margin.toFixed(1)}%</div>
                           </div>
                         </div>
+                        {(() => {
+                          const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                          const sold = data.invoiceItems
+                            .filter((ii) => (ii.stockItemId === it.id || ii.name === it.name) && new Date(ii.createdAt).getTime() >= since)
+                            .reduce((s, ii) => s + (ii.quantity || 1), 0);
+                          const daily = sold / 30;
+                          const suggested = Math.max(0, Math.ceil(daily * 14) - shownQty);
+                          if (suggested <= 0) return null;
+                          return <div className="mt-2 text-[10px] font-bold text-warning">مقترح إعادة طلب: {suggested} وحدة (معدل بيع {daily.toFixed(1)}/يوم)</div>;
+                        })()}
                       </div>
 
                       {/* الإجراءات */}
-                      <div className="flex flex-wrap items-center justify-end gap-1.5 md:opacity-70 md:transition-opacity md:duration-500 md:ease-[cubic-bezier(0.32,0.72,0,1)] md:group-hover:opacity-100 md:focus-within:opacity-100">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                onClick={() => setLabelItem(it)}
-                              >
-                                <Tag className="w-4 h-4 text-primary" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">طباعة ملصق باركود</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                onClick={() => setAdjustItem(it)}
-                              >
-                                <Scale className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">تسوية كمية</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                onClick={() => setHistoryItem(it)}
-                              >
-                                <History className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">سجل الحركة</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                onClick={() => setEditing(it)}
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">تعديل الصنف</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <span className="inline-flex items-center gap-1">
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                  onClick={() => setMoveItem(it)}
-                                >
-                                  <Boxes className="w-4 h-4" />
-                                </Button>
-
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                  title="نسخ المنتج"
-                                  onClick={async () => {
-                                    try {
-                                      await db.addStockItem({ name: `${it.name} (نسخة)`, quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null });
-                                      toast.success("تم نسخ المنتج");
-                                    } catch (e: any) { toast.error(e?.message ?? "تعذر النسخ"); }
-                                  }}
-                                >
-                                  <Copy className="w-4 h-4" />
-                                </Button>
-
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                  title="مرتجع للمورد"
-                                  onClick={() => { window.location.assign(`/returns?product=${encodeURIComponent(it.name)}`); }}
-                                >
-                                  <Undo2 className="w-4 h-4" />
-                                </Button>
-                              </span>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">نقل للمخازن</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              {it.archived ? (
-                                 <Button size="icon" variant="ghost" className="action-btn rounded-full text-success hover:bg-success/10 hover:text-success" title="استعادة" onClick={async () => { try { await db.restoreStockItem(it.id); toast.success("تمت استعادة المنتج"); } catch (e: any) { toast.error(e?.message ?? "تعذر الاستعادة"); } }}>
-                                   <RotateCcw className="w-4 h-4" />
-                                 </Button>
-                               ) : (
-                                 <Button size="icon" variant="ghost" className="action-btn danger rounded-full text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteId(it.id)}>
-                                   <Trash2 className="w-4 h-4" />
-                                 </Button>
-                               )}
-                            </TooltipTrigger>
-                            <TooltipContent side="top">حذف</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                      <div dir="ltr" className="flex items-center justify-start gap-2 md:order-1 md:justify-self-start">
+                        <input aria-label={`تحديد ${it.name}`} type="checkbox" className="h-4 w-4 shrink-0 cursor-pointer" checked={selectedIds.has(it.id)} onChange={(e) => { const ns = new Set(selectedIds); if (e.target.checked) ns.add(it.id); else ns.delete(it.id); setSelectedIds(ns); }} />
+                        <Button size="sm" className="h-9 gap-1.5 rounded-xl px-3" onClick={() => setEditing(it)}>
+                          <Pencil className="h-4 w-4" /> <span className="hidden sm:inline">تعديل</span>
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl" aria-label="إجراءات إضافية">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" dir="rtl" className="min-w-48">
+                            <DropdownMenuItem onSelect={() => setLabelItem(it)}><Tag className="ml-2 h-4 w-4" />طباعة ملصق باركود</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setAdjustItem(it)}><Scale className="ml-2 h-4 w-4" />تسوية كمية</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setHistoryItem(it)}><History className="ml-2 h-4 w-4" />سجل الحركة</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setMoveItem(it)}><Boxes className="ml-2 h-4 w-4" />نقل لمخزن آخر</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={async () => { try { await db.addStockItem({ name: `${it.name} (نسخة)`, quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null }); toast.success("تم نسخ المنتج"); } catch (e: any) { toast.error(e?.message ?? "تعذر النسخ"); } }}><Copy className="ml-2 h-4 w-4" />نسخ المنتج</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => { window.location.assign(`/returns?product=${encodeURIComponent(it.name)}`); }}><Undo2 className="ml-2 h-4 w-4" />مرتجع للمورد</DropdownMenuItem>
+                            {it.archived && <DropdownMenuItem onSelect={async () => { try { await db.restoreStockItem(it.id); toast.success("تمت استعادة المنتج"); } catch (e: any) { toast.error(e?.message ?? "تعذر الاستعادة"); } }}><RotateCcw className="ml-2 h-4 w-4" />استعادة المنتج</DropdownMenuItem>}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        {!it.archived && <Button size="icon" variant="ghost" aria-label="حذف المنتج" className="h-9 w-9 rounded-xl text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteId(it.id)}><Trash2 className="h-4 w-4" /></Button>}
                       </div>
                     </div>
                   </div>
@@ -842,6 +730,7 @@ ${
         existingBarcodes={data.stockItems.map((s) => s.barcode)}
         suppliers={data.suppliers}
       />
+      <ProductDetailsDialog item={detailItem} onClose={() => setDetailItem(null)} onEdit={(product) => setEditing(product)} />
 
       <BarcodeLabelModal
         open={!!labelItem}
@@ -1628,6 +1517,63 @@ function EditDialog({
         />
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ProductDetailsDialog({ item, onClose, onEdit }: { item: StockItem | null; onClose: () => void; onEdit: (item: StockItem) => void }) {
+  const profit = item ? item.salePrice - item.lastUnitCost : 0;
+  const margin = item && item.salePrice > 0 ? (profit / item.salePrice) * 100 : 0;
+  const out = !item || item.quantity <= 0;
+  const low = !out && item.quantity < (item.minStock || LOW_STOCK());
+
+  return (
+    <Dialog open={!!item} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent dir="rtl" className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle className="text-right">تفاصيل المنتج</DialogTitle>
+          <DialogDescription className="text-right">مراجعة سريعة للبيانات والأسعار والمخزون.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="text-lg font-black">{item?.name}</div>
+            <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+              {item?.barcode && <span className="font-mono">الباركود: {item.barcode}</span>}
+              {item?.itemType && <span>{item.itemType}</span>}
+              {item?.size && <span>المقاس: {item.size}</span>}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <DetailStat label="الكمية" value={fmt(item?.quantity ?? 0)} tone={out ? "danger" : low ? "warning" : "default"} />
+            <DetailStat label="التكلفة" value={`${fmt(item?.lastUnitCost ?? 0)} ج.م`} />
+            <DetailStat label="سعر البيع" value={`${fmt(item?.salePrice ?? 0)} ج.م`} tone="primary" />
+            <DetailStat label="الربح" value={`${fmt(profit)} ج.م`} tone={profit >= 0 ? "success" : "danger"} />
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-border/60 px-3 py-2 text-sm">
+            <span className="text-muted-foreground">حالة المخزون</span>
+            <span className={cn("font-bold", out ? "text-danger" : low ? "text-warning" : "text-success")}>{out ? "نافد" : low ? "منخفض" : "متوفر"}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-xl bg-foreground/[0.03] px-3 py-2 text-sm">
+            <span className="text-muted-foreground">هامش الربح</span>
+            <span className={cn("font-bold", profit >= 0 ? "text-success" : "text-danger")}>{margin.toFixed(1)}%</span>
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:justify-start">
+          <Button onClick={() => { if (item) onEdit(item); onClose(); }}>
+            <Pencil className="ml-2 h-4 w-4" /> تعديل المنتج
+          </Button>
+          <Button variant="outline" onClick={onClose}>إغلاق</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DetailStat({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "primary" | "success" | "warning" | "danger" }) {
+  return (
+    <div className="rounded-xl border border-border/60 bg-foreground/[0.025] p-3">
+      <div className="text-[10px] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 text-sm font-black", tone === "primary" ? "text-primary" : tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : tone === "danger" ? "text-danger" : "text-foreground")}>{value}</div>
+    </div>
   );
 }
 
