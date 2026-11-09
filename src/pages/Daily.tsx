@@ -185,6 +185,7 @@ function DailyPage() {
         quickPreset: quickPreset !== "today" ? quickPreset : undefined,
       },
       replace: true,
+      resetScroll: false,
     });
     setPage(1);
   }, [from, to, search, customerId, typeFilter, statusFilter, activeTab, categoryFilter, quickPreset, navigate]);
