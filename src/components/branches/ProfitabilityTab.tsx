@@ -40,10 +40,10 @@ export default function ProfitabilityTab() {
 
         <div className={cn(
           "p-5 rounded-2xl border flex flex-col justify-between",
-          pl.netProfit >= 0 ? "border-emerald-500/30 bg-emerald-500/10" : "border-danger/30 bg-danger/10"
+          pl.netProfit >= 0 ? "border-success/30 bg-success/10" : "border-danger/30 bg-danger/10"
         )}>
           <span className="text-xs font-bold block text-foreground">صافي ربح الفرع (Net Profit)</span>
-          <div className={cn("text-2xl sm:text-3xl font-black tabular-nums mt-1", pl.netProfit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-danger")}>
+          <div className={cn("text-2xl sm:text-3xl font-black tabular-nums mt-1", pl.netProfit >= 0 ? "text-success" : "text-danger")}>
             {fmt(pl.netProfit)} {cur}
           </div>
           <span className="text-[11px] font-bold text-foreground/80">

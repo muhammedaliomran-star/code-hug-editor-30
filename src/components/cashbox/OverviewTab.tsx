@@ -57,7 +57,7 @@ export function OverviewTab() {
           const isNegative = bal.currentBalance < 0;
 
           const typeIcon = {
-            cash: <Banknote className="h-5 w-5 text-emerald-500" />,
+            cash: <Banknote className="h-5 w-5 text-success" />,
             ewallet: <Smartphone className="h-5 w-5 text-indigo-500" />,
             bank: <Building2 className="h-5 w-5 text-blue-500" />,
             pos: <CreditCard className="h-5 w-5 text-purple-500" />,
@@ -113,11 +113,11 @@ export function OverviewTab() {
 
                 {/* Inflows & Outflows stats */}
                 <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                  <div className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                  <div className="text-success font-semibold">
                     <span className="text-[10px] text-muted-foreground block font-normal">إجمالي الوارد</span>
                     +{fmt(bal.inflows)} {cur}
                   </div>
-                  <div className="text-rose-600 dark:text-rose-400 font-semibold">
+                  <div className="text-danger font-semibold">
                     <span className="text-[10px] text-muted-foreground block font-normal">إجمالي المنصرف</span>
                     -{fmt(bal.outflows)} {cur}
                   </div>
@@ -188,14 +188,14 @@ export function OverviewTab() {
         <div className="flex items-center gap-6 text-xs">
           <div>
             <span className="text-muted-foreground block text-[10px]">المقبوضات الواردة</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm tabular-nums">
+            <span className="font-bold text-success text-sm tabular-nums">
               +{fmt(periodStats.inflow)} {cur}
             </span>
           </div>
           <div className="h-7 w-[1px] bg-foreground/10" />
           <div>
             <span className="text-muted-foreground block text-[10px]">المدفوعات والمنصرفات</span>
-            <span className="font-bold text-rose-600 dark:text-rose-400 text-sm tabular-nums">
+            <span className="font-bold text-danger text-sm tabular-nums">
               -{fmt(periodStats.outflow)} {cur}
             </span>
           </div>
@@ -205,7 +205,7 @@ export function OverviewTab() {
             <span
               className={cn(
                 "font-black text-sm tabular-nums",
-                periodStats.net >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-danger"
+                periodStats.net >= 0 ? "text-success" : "text-danger"
               )}
             >
               {periodStats.net >= 0 ? "+" : ""}{fmt(periodStats.net)} {cur}

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const map: Record<CustomerStatus, { label: string; cls: string; Icon: typeof ShieldCheck }> = {
   committed: { label: "ملتزم", cls: "bg-success/12 text-success ring-success/25", Icon: ShieldCheck },
-  neutral: { label: "عادي", cls: "bg-warning/12 text-warning ring-warning/25", Icon: CircleDot },
+  neutral: { label: "عادي", cls: "bg-muted text-muted-foreground ring-border", Icon: CircleDot },
   defaulter: { label: "مماطل", cls: "bg-danger/12 text-danger ring-danger/25", Icon: AlertCircle },
 };
 

@@ -21,12 +21,12 @@ export default function CashboxTab() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex flex-col gap-1">
-          <span className="text-xs text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-between">
+        <div className="p-5 rounded-2xl border border-success/20 bg-success/5 flex flex-col gap-1">
+          <span className="text-xs text-success font-bold flex items-center justify-between">
             <span>النقدية المتوفرة بدرج الفرع</span>
-            <Wallet className="h-4 w-4 text-emerald-600" />
+            <Wallet className="h-4 w-4 text-success" />
           </span>
-          <div className="text-3xl font-black text-emerald-700 dark:text-emerald-400 tabular-nums mt-1">
+          <div className="text-3xl font-black text-success tabular-nums mt-1">
             {fmt(cashSummary.currentCashBalance)} <span className="text-xs font-normal">{cur}</span>
           </div>
           <span className="text-[11px] text-muted-foreground">
@@ -140,7 +140,7 @@ export default function CashboxTab() {
                         variant="outline"
                         className={cn(
                           "text-[9px] font-bold",
-                          sh.variance === 0 ? "text-emerald-600" : "text-danger"
+                          sh.variance === 0 ? "text-success" : "text-danger"
                         )}
                       >
                         {sh.variance === 0 ? "متطابق" : `فارق ${fmt(sh.variance)}`}

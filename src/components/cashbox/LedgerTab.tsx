@@ -74,9 +74,9 @@ export function LedgerTab() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all" className="text-xs">كافة الأنواع</SelectItem>
-              <SelectItem value="in" className="text-xs text-emerald-600">وارد (مقبوضات)</SelectItem>
-              <SelectItem value="out" className="text-xs text-rose-600">منصرف (مدفوعات)</SelectItem>
-              <SelectItem value="transfer" className="text-xs text-amber-600">تحويلات خزن</SelectItem>
+              <SelectItem value="in" className="text-xs text-success">وارد (مقبوضات)</SelectItem>
+              <SelectItem value="out" className="text-xs text-danger">منصرف (مدفوعات)</SelectItem>
+              <SelectItem value="transfer" className="text-xs text-warning">تحويلات خزن</SelectItem>
             </SelectContent>
           </Select>
 
@@ -122,8 +122,8 @@ export function LedgerTab() {
                     className={cn(
                       "text-[10px] font-semibold",
                       isPositive
-                        ? "border-emerald-500/20 text-emerald-600 bg-emerald-500/10"
-                        : "border-rose-500/20 text-rose-600 bg-rose-500/10"
+                        ? "border-success/20 text-success bg-success/10"
+                        : "border-danger/20 text-danger bg-danger/10"
                     )}
                   >
                     {tx.category}
@@ -204,8 +204,8 @@ export function LedgerTab() {
                         className={cn(
                           "text-[10px] font-semibold",
                           isPositive
-                            ? "border-emerald-500/20 text-emerald-600 bg-emerald-500/10"
-                            : "border-rose-500/20 text-rose-600 bg-rose-500/10"
+                            ? "border-success/20 text-success bg-success/10"
+                            : "border-danger/20 text-danger bg-danger/10"
                         )}
                       >
                         {tx.category}

@@ -60,7 +60,7 @@ export function ManualTxDialog() {
               variant={manualTxType === "in" ? "default" : "outline"}
               className={cn(
                 "rounded-xl text-xs font-bold h-10",
-                manualTxType === "in" && "bg-emerald-600 hover:bg-emerald-700 text-white"
+                manualTxType === "in" && "bg-success hover:bg-success/90 text-success-foreground"
               )}
               onClick={() => {
                 setManualTxType("in");
@@ -75,7 +75,7 @@ export function ManualTxDialog() {
               variant={manualTxType === "out" ? "default" : "outline"}
               className={cn(
                 "rounded-xl text-xs font-bold h-10",
-                manualTxType === "out" && "bg-rose-600 hover:bg-rose-700 text-white"
+                manualTxType === "out" && "bg-danger hover:bg-danger/90 text-danger-foreground"
               )}
               onClick={() => {
                 setManualTxType("out");

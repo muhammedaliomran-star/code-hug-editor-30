@@ -636,22 +636,22 @@ function FindingCard({
 }: FindingCardProps) {
   const severityConfig = {
     critical: {
-      border: "border-rose-500/30 hover:border-rose-500/50",
-      badge: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
+      border: "border-danger/30 hover:border-danger/50",
+      badge: "bg-danger/15 text-danger border-danger/30",
       label: "حرج 🔴",
-      icon: <AlertCircle className="h-5 w-5 text-rose-500 shrink-0" />,
+      icon: <AlertCircle className="h-5 w-5 text-danger shrink-0" />,
     },
     warning: {
-      border: "border-amber-500/30 hover:border-amber-500/50",
-      badge: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
+      border: "border-warning/30 hover:border-warning/50",
+      badge: "bg-warning/15 text-warning border-warning/30",
       label: "تحذير 🟡",
-      icon: <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />,
+      icon: <AlertTriangle className="h-5 w-5 text-warning shrink-0" />,
     },
     notice: {
-      border: "border-blue-500/30 hover:border-blue-500/50",
-      badge: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30",
+      border: "border-info/30 hover:border-info/50",
+      badge: "bg-info/15 text-info border-info/30",
       label: "تنبيه 🔵",
-      icon: <Info className="h-5 w-5 text-blue-500 shrink-0" />,
+      icon: <Info className="h-5 w-5 text-info shrink-0" />,
     },
   }[finding.severity];
 
@@ -680,7 +680,7 @@ function FindingCard({
                 {categoryName}
               </span>
               {finding.differenceAmount !== undefined && finding.differenceAmount > 0 && (
-                <span className="text-[11px] font-bold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-md">
+                <span className="text-[11px] font-bold text-danger bg-danger/10 px-2 py-0.5 rounded-md">
                   فرق: {fmt(finding.differenceAmount)} ج.م
                 </span>
               )}
@@ -690,7 +690,7 @@ function FindingCard({
             <p className="text-xs text-muted-foreground leading-relaxed">{finding.description}</p>
 
             {/* Impact indicator */}
-            <div className="text-[11px] text-amber-700 dark:text-amber-400/90 font-medium flex items-center gap-1.5 pt-1">
+            <div className="text-[11px] text-warning font-medium flex items-center gap-1.5 pt-1">
               <span className="font-bold">الأثر الرقابي:</span>
               <span>{finding.impact}</span>
             </div>

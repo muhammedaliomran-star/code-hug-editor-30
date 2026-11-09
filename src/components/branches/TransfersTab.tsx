@@ -41,8 +41,8 @@ export default function TransfersTab() {
           const statusConfig = {
             draft: { label: "مسودة", color: "bg-slate-500/10 text-slate-600 border-slate-500/30" },
             in_transit: { label: "قيد النقل والشحن", color: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
-            received: { label: "تم الاستلام بنجاح", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
-            cancelled: { label: "ملغي", color: "bg-red-500/10 text-red-600 border-red-500/30" },
+            received: { label: "تم الاستلام بنجاح", color: "bg-success/10 text-success border-success/30" },
+            cancelled: { label: "ملغي", color: "bg-danger/10 text-danger border-danger/30" },
           }[trf.status];
 
           return (
@@ -71,7 +71,7 @@ export default function TransfersTab() {
                     </span>
                     <ArrowLeftRight className="h-3 w-3 text-muted-foreground" />
                     <span className="font-semibold text-foreground">
-                      إلى: <span className="text-emerald-600 dark:text-emerald-400">{toBranch?.name || "فرع محذوف"}</span>
+                      إلى: <span className="text-success">{toBranch?.name || "فرع محذوف"}</span>
                     </span>
                     <span className="text-muted-foreground">| {trf.items.length} أصناف ({totalUnits} قطعة)</span>
                     <span className="font-bold text-foreground">| القيمة: {fmt(totalCost)} {cur}</span>

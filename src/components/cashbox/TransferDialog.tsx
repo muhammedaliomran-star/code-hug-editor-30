@@ -41,7 +41,7 @@ export function TransferDialog() {
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">من حساب (المصدر)</Label>
               <Select value={transferFrom} onValueChange={setTransferFrom}>
-                <SelectTrigger className="h-9 rounded-xl text-xs font-bold border-rose-500/20 text-rose-600">
+                <SelectTrigger className="h-9 rounded-xl text-xs font-bold border-danger/20 text-danger">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -57,7 +57,7 @@ export function TransferDialog() {
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">إلى حساب (الوجهة)</Label>
               <Select value={transferTo} onValueChange={setTransferTo}>
-                <SelectTrigger className="h-9 rounded-xl text-xs font-bold border-emerald-500/20 text-emerald-600">
+                <SelectTrigger className="h-9 rounded-xl text-xs font-bold border-success/20 text-success">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -111,7 +111,7 @@ export function TransferDialog() {
             <Button type="button" variant="outline" onClick={() => setIsTransferOpen(false)} className="rounded-xl text-xs">
               إلغاء
             </Button>
-            <Button type="submit" className="rounded-xl text-xs font-bold px-5 bg-amber-600 hover:bg-amber-700 text-white">
+            <Button type="submit" className="rounded-xl text-xs font-bold px-5 bg-warning hover:bg-warning/90 text-warning-foreground">
               تنفيذ التحويل المالي
             </Button>
           </DialogFooter>

@@ -437,7 +437,7 @@ function AlertsPage() {
                       key={`${a.branchId}-${a.stockItemId}`}
                       className={cn(
                         "flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-xs",
-                        a.isOut ? "border-rose-500/40 bg-rose-500/[0.05]" : "border-amber-500/40 bg-amber-500/[0.05]"
+                        a.isOut ? "border-danger/40 bg-danger/[0.05]" : "border-warning/40 bg-warning/[0.05]"
                       )}
                     >
                       <div className="min-w-0">
@@ -445,7 +445,7 @@ function AlertsPage() {
                         <div className="text-[10px] text-muted-foreground">{a.branchName}</div>
                       </div>
                       <div className="text-left shrink-0">
-                        <div className={cn("font-extrabold text-numeric", a.isOut ? "text-rose-600" : "text-amber-600")}>
+                        <div className={cn("font-extrabold text-numeric", a.isOut ? "text-danger" : "text-warning")}>
                           {a.quantity}
                         </div>
                         <div className="text-[10px] text-muted-foreground">الحد {a.minStock}</div>
@@ -458,7 +458,7 @@ function AlertsPage() {
 
             {lowStock.length === 0 ? (
               <div className="text-center py-16 bg-card border rounded-2xl p-6">
-                <Package className="w-12 h-12 mx-auto text-emerald-500 mb-2 opacity-80" />
+                <Package className="w-12 h-12 mx-auto text-success mb-2 opacity-80" />
                 <div className="text-base font-bold text-foreground">المخزون مكتمل ومستقر 🎉</div>
                 <div className="text-xs text-muted-foreground mt-1">لا توجد أصناف تحت حد الأمان المطلوب.</div>
               </div>
@@ -473,15 +473,15 @@ function AlertsPage() {
                       className={cn(
                         "flex items-center justify-between gap-3 rounded-2xl border p-4 transition-[border-color,box-shadow,background-color] duration-200 hover:shadow-xs",
                         out
-                          ? "border-rose-500/40 bg-rose-500/[0.04] hover:bg-rose-500/[0.08]"
-                          : "border-amber-500/40 bg-amber-500/[0.04] hover:bg-amber-500/[0.08]"
+                          ? "border-danger/40 bg-danger/[0.04] hover:bg-danger/[0.08]"
+                          : "border-warning/40 bg-warning/[0.04] hover:bg-warning/[0.08]"
                       )}
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className={cn(
                             "p-2.5 rounded-xl",
-                            out ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" : "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                            out ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning"
                           )}
                         >
                           <AlertTriangle className="w-5 h-5" />
@@ -494,7 +494,7 @@ function AlertsPage() {
                         </div>
                       </div>
                       <div className="text-left">
-                        <div className={cn("text-2xl font-black tabular-nums", out ? "text-rose-600 dark:text-rose-400" : "text-amber-600 dark:text-amber-400", blurCls)}>
+                        <div className={cn("text-2xl font-black tabular-nums", out ? "text-danger" : "text-warning", blurCls)}>
                           {fmt(it.quantity)}
                         </div>
                         <div className="text-[10px] text-muted-foreground font-semibold">المتبقي بالمخزن</div>
@@ -515,27 +515,27 @@ function AlertsPage() {
 
                 const cardStyles = {
                   due_today: {
-                    border: "border-emerald-500/40 bg-emerald-500/[0.03]",
-                    badgeBg: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-                    accent: "text-emerald-600 dark:text-emerald-400",
+                    border: "border-success/40 bg-success/[0.03]",
+                    badgeBg: "bg-success/15 text-success border-success/30",
+                    accent: "text-success",
                     label: upcoming ? `يستحق بعد ${until} يوم` : "مستحق السداد اليوم",
                   },
                   minor: {
-                    border: "border-amber-500/40 bg-amber-500/[0.03]",
-                    badgeBg: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30",
-                    accent: "text-amber-600 dark:text-amber-400",
+                    border: "border-warning/40 bg-warning/[0.03]",
+                    badgeBg: "bg-warning/15 text-warning border-warning/30",
+                    accent: "text-warning",
                     label: `تأخر بسيط (${late} يوم)`,
                   },
                   moderate: {
-                    border: "border-orange-500/40 bg-orange-500/[0.03]",
-                    badgeBg: "bg-orange-500/15 text-orange-700 dark:text-orange-300 border-orange-500/30",
-                    accent: "text-orange-600 dark:text-orange-400",
+                    border: "border-warning/40 bg-warning/[0.03]",
+                    badgeBg: "bg-warning/15 text-warning border-warning/30",
+                    accent: "text-warning",
                     label: `تأخر متوسط (${late} يوم)`,
                   },
                   critical: {
-                    border: "border-rose-500/50 bg-rose-500/[0.04]",
-                    badgeBg: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30",
-                    accent: "text-rose-600 dark:text-rose-400",
+                    border: "border-danger/50 bg-danger/[0.04]",
+                    badgeBg: "bg-danger/15 text-danger border-danger/30",
+                    accent: "text-danger",
                     label: `ديون حرجة متعثرة (${late} يوم)`,
                   },
                 }[bracket];

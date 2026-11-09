@@ -53,9 +53,9 @@ export function TransfersTab() {
                 </span>
               </div>
               <p className="mt-1.5 text-xs leading-relaxed">
-                من <span className="font-bold text-rose-600 dark:text-rose-400">{fromAcc?.name || "حساب محذوف"}</span>
+                من <span className="font-bold text-danger">{fromAcc?.name || "حساب محذوف"}</span>
                 {" إلى "}
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{toAcc?.name || "حساب محذوف"}</span>
+                <span className="font-bold text-success">{toAcc?.name || "حساب محذوف"}</span>
               </p>
               <div className="mt-2 flex items-center justify-between gap-2">
                 <span className="min-w-0 truncate font-mono text-[11px] text-muted-foreground">
@@ -108,12 +108,12 @@ export function TransfersTab() {
                       {new Date(trf.date).toLocaleDateString("ar-EG")}
                     </td>
                     <td className="p-3.5">
-                      <span className="font-semibold text-rose-600 dark:text-rose-400">
+                      <span className="font-semibold text-danger">
                         {fromAcc?.name || "حساب محذوف"}
                       </span>
                     </td>
                     <td className="p-3.5">
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      <span className="font-semibold text-success">
                         {toAcc?.name || "حساب محذوف"}
                       </span>
                     </td>

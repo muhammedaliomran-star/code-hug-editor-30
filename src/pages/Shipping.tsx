@@ -62,18 +62,18 @@ type ShipmentNotification = {
 };
 
 const statusMap: Record<string, { label: string; color: string }> = {
-  pending: { label: "قيد الانتظار", color: "bg-amber-500/10 text-amber-500 border-amber-500/20" },
-  processing: { label: "جاري التجهيز", color: "bg-blue-500/10 text-blue-500 border-blue-500/20" },
-  shipped: { label: "تم الشحن", color: "bg-indigo-500/10 text-indigo-500 border-indigo-500/20" },
-  delivered: { label: "تم التوصيل", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20" },
-  returned: { label: "مرتجع", color: "bg-rose-500/10 text-rose-500 border-rose-500/20" },
-  cancelled: { label: "ملغي", color: "bg-slate-500/10 text-slate-500 border-slate-500/20" },
+  pending: { label: "قيد الانتظار", color: "bg-warning/10 text-warning border-warning/20" },
+  processing: { label: "جاري التجهيز", color: "bg-info/10 text-info border-info/20" },
+  shipped: { label: "تم الشحن", color: "bg-info/10 text-info border-info/20" },
+  delivered: { label: "تم التوصيل", color: "bg-success/10 text-success border-success/20" },
+  returned: { label: "مرتجع", color: "bg-danger/10 text-danger border-danger/20" },
+  cancelled: { label: "ملغي", color: "bg-muted/60 text-muted-foreground border-border/60" },
 };
 
 const collectionMap: Record<string, { label: string; color: string }> = {
-  uncollected: { label: "لم يُحصّل", color: "bg-slate-500/10 text-slate-500" },
-  collected: { label: "محصّل مع المندوب", color: "bg-amber-500/10 text-amber-500" },
-  settled: { label: "مُسوّى", color: "bg-emerald-500/10 text-emerald-500" },
+  uncollected: { label: "لم يُحصّل", color: "bg-warning/10 text-warning" },
+  collected: { label: "محصّل مع المندوب", color: "bg-success/10 text-success" },
+  settled: { label: "مُسوّى", color: "bg-success/10 text-success" },
 };
 
 const egp = (n: number) => `${Number(n || 0).toLocaleString("en-US", { maximumFractionDigits: 2 })} ج.م`;
@@ -959,7 +959,7 @@ export default function Shipping() {
                               const sla = slaOf(s);
                               if (sla.state === "closed" || sla.state === "on_time") return null;
                               return (
-                                <span className={`rounded-full px-3 py-0.5 text-[11px] font-bold ${sla.state === "late" ? "bg-rose-500/10 text-rose-500" : "bg-amber-500/10 text-amber-600"}`}>
+                                <span className={`rounded-full px-3 py-0.5 text-[11px] font-bold ${sla.state === "late" ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning"}`}>
                                   {sla.label}
                                 </span>
                               );
@@ -994,7 +994,7 @@ export default function Shipping() {
                             variant="ghost"
                             size="icon"
                             title="إشعارات وقوالب واتساب التلقائية"
-                            className="h-11 w-11 text-emerald-600 hover:bg-emerald-500/10 hover:text-emerald-700 sm:h-9 sm:w-9"
+                            className="h-11 w-11 text-success hover:bg-success/10 hover:text-success sm:h-9 sm:w-9"
                             onClick={() => setWhatsappModalShipment(s)}
                           >
                             <MessageCircle className="h-4 w-4" />
@@ -1037,11 +1037,11 @@ export default function Shipping() {
                     <BezelCard className="plate space-y-4 p-6">
                       <div className="flex items-center justify-between">
                         <h3 className="text-lg font-bold">{st.carrier.name}</h3>
-                        <Wallet className="h-5 w-5 text-amber-500" />
+                        <Wallet className="h-5 w-5 text-warning" />
                       </div>
-                      <div className="rounded-2xl bg-amber-500/5 p-4">
+                      <div className="rounded-2xl bg-warning/5 p-4">
                         <p className="text-xs font-medium text-muted-foreground">محصّل ولم يُسلَّم بعد</p>
-                        <p className={`mt-1 text-2xl font-bold text-amber-500 ${blurCls}`}>{egp(st.due)}</p>
+                        <p className={`mt-1 text-2xl font-bold text-warning ${blurCls}`}>{egp(st.due)}</p>
                       </div>
                       <div className="flex items-center justify-between border-t border-hairline pt-3 text-sm">
                         <span className="text-muted-foreground">عدد الشحنات</span>
@@ -1151,7 +1151,7 @@ export default function Shipping() {
                   <Reveal key={z.id} delay={i * 0.1}>
                     <BezelCard className="plate space-y-4 p-6">
                       <div className="flex items-center justify-between">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-500 ring-1 ring-inset ring-amber-500/20">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-warning/10 text-warning ring-1 ring-inset ring-warning/20">
                           <MapPin className="h-6 w-6" />
                         </div>
                         <span className="text-[10px] font-bold text-muted-foreground">{carrierById.get(z.carrierId)?.name}</span>
@@ -1296,7 +1296,7 @@ export default function Shipping() {
                               <td className="py-3">{st.successRate.toFixed(0)}%</td>
                               <td className="py-3">{st.avgDays.toFixed(1)}</td>
                               <td className="py-3">{egp(st.cost)}</td>
-                              <td className={`py-3 font-bold text-amber-500 ${blurCls}`}>{egp(st.due)}</td>
+                              <td className={`py-3 font-bold text-warning ${blurCls}`}>{egp(st.due)}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1401,7 +1401,7 @@ export default function Shipping() {
                     </Link>
                   )}
                   {isLate(detail) && (
-                    <div className="flex items-center gap-2 rounded-xl bg-rose-500/10 p-3 text-sm text-rose-500">
+                          <div className="flex items-center gap-2 rounded-xl bg-danger/10 p-3 text-sm text-danger">
                       <Clock className="h-4 w-4" /> الشحنة تجاوزت مدة التوصيل المتوقعة — راجع صفحة الإنقاذ.
                     </div>
                   )}
