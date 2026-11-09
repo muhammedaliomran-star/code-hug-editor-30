@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { db, type Customer, type CustomerStatus, type CustomerType } from "@/lib/store";
 import { isoToDDMMYYYY, ddmmyyyyToIso } from "@/lib/date-utils";
@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const EG_PHONE_RE = /^01[0125]\d{8}$/;
+const CUSTOMER_DRAFT_KEY = "segilly.customer.new.draft.v1";
 
 const RATING_TIPS: Record<number, { text: string; cls: string }> = {
   5: {
@@ -76,7 +77,15 @@ const STATUS_TABS: { value: CustomerStatus; label: string; dot: string; active: 
   },
 ];
 
-export function CustomerDialog({ customer, trigger }: { customer?: Customer; trigger: React.ReactNode }) {
+export function CustomerDialog({
+  customer,
+  trigger,
+  onCreated,
+}: {
+  customer?: Customer;
+  trigger: React.ReactNode;
+  onCreated?: (created: Customer) => void | Promise<void>;
+}) {
   const today = new Date().toISOString().slice(0, 10);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(customer?.name ?? "");
@@ -99,8 +108,49 @@ export function CustomerDialog({ customer, trigger }: { customer?: Customer; tri
     isoToDDMMYYYY(customer?.joiningDate ?? today),
   );
   const [pressed, setPressed] = useState(false);
+  const [draftHydrated, setDraftHydrated] = useState(Boolean(customer));
+  const [saving, setSaving] = useState(false);
 
   const phoneValid = EG_PHONE_RE.test(phone);
+  const hasDraft = Boolean(
+    name.trim() || phone.trim() || address.trim() || notes.trim() || Number(creditLimit) > 0 || Number(openingBalance) > 0,
+  );
+
+  useEffect(() => {
+    if (customer) return;
+    try {
+      const raw = sessionStorage.getItem(CUSTOMER_DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw);
+        setName(draft.name ?? "");
+        setPhone(draft.phone ?? "");
+        setRating(draft.rating ?? 3);
+        setStatus(draft.status ?? "neutral");
+        setCustomerType(draft.customerType ?? "installment");
+        setNotes(draft.notes ?? "");
+        setFrozen(Boolean(draft.frozen));
+        setAddress(draft.address ?? "");
+        setJoiningDate(draft.joiningDate ?? today);
+        setCreditLimit(String(draft.creditLimit ?? 0));
+        setOpeningBalance(String(draft.openingBalance ?? 0));
+        setDueDay(draft.dueDay ?? 1);
+        setJoiningDateInput(draft.joiningDateInput ?? isoToDDMMYYYY(draft.joiningDate ?? today));
+        setOpen(true);
+      }
+    } catch {
+      sessionStorage.removeItem(CUSTOMER_DRAFT_KEY);
+    } finally {
+      setDraftHydrated(true);
+    }
+  }, [customer, today]);
+
+  useEffect(() => {
+    if (customer || !draftHydrated) return;
+    sessionStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify({
+      name, phone, rating, status, customerType, notes, frozen, address, joiningDate,
+      creditLimit, openingBalance, dueDay, joiningDateInput,
+    }));
+  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, creditLimit, openingBalance, dueDay, joiningDateInput]);
   const initials = name.trim()
     ? name
         .trim()
@@ -110,12 +160,17 @@ export function CustomerDialog({ customer, trigger }: { customer?: Customer; tri
         .join("")
     : "";
 
-  const submit = () => {
+  const submit = async () => {
     if (!name.trim()) return toast.error("الاسم مطلوب");
     if (!phoneValid)
       return toast.error("رقم الهاتف يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويتكون من 11 رقم");
     const iso = ddmmyyyyToIso(joiningDateInput);
     if (!iso) return toast.error("تاريخ الانضمام غير صحيح. الصيغة: يوم/شهر/سنة");
+    const numericCreditLimit = Number(creditLimit);
+    const numericOpeningBalance = Number(openingBalance);
+    if (!Number.isFinite(numericCreditLimit) || numericCreditLimit < 0) return toast.error("سقف المديونية غير صحيح");
+    if (!Number.isFinite(numericOpeningBalance) || numericOpeningBalance < 0) return toast.error("الرصيد الافتتاحي غير صحيح");
+    if (customerType === "installment" && numericCreditLimit > 0 && numericOpeningBalance > numericCreditLimit) return toast.error("الرصيد الافتتاحي أكبر من سقف المديونية");
     const payload = {
       name,
       phone,
@@ -126,27 +181,40 @@ export function CustomerDialog({ customer, trigger }: { customer?: Customer; tri
       frozen,
       address: address || null,
       joiningDate: iso,
-      creditLimit: Number(creditLimit) || 0,
+      creditLimit: numericCreditLimit,
       dueDay,
-      openingBalance: Number(openingBalance) || 0,
+      openingBalance: numericOpeningBalance,
     };
-    if (customer) {
-      db.updateCustomer(customer.id, payload);
-      toast.success("تم التحديث");
-    } else {
-      db.addCustomer(payload);
-      toast.success("تم إضافة العميل");
+    setSaving(true);
+    try {
+      if (customer) {
+        await db.updateCustomer(customer.id, payload);
+        toast.success("تم التحديث");
+      } else {
+        const created = await db.addCustomer(payload);
+        if (created) await onCreated?.(created);
+        toast.success("تم إضافة العميل");
+      }
+    } catch {
+      toast.error("تعذر حفظ بيانات العميل. حاول مرة أخرى.");
+      return;
+    } finally {
+      setSaving(false);
     }
+    if (!customer) sessionStorage.removeItem(CUSTOMER_DRAFT_KEY);
     setOpen(false);
   };
 
   const tip = RATING_TIPS[rating];
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(next) => {
+      if (!next && !customer && hasDraft && !window.confirm("لديك بيانات غير محفوظة. هل تريد الخروج؟")) return;
+      setOpen(next);
+    }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex h-[min(760px,calc(100dvh-1rem))] w-[calc(100vw-1rem)] max-w-2xl flex-col overflow-hidden rounded-[2rem] border-none bg-card/95 p-0 sm:w-[calc(100vw-2rem)]">
+        <DialogHeader className="shrink-0 border-b border-[var(--hairline)] bg-card/95 px-5 py-5 sm:px-8 sm:py-6">
           <DialogTitle className="text-right">
             {customer ? "تعديل العميل" : "عميل جديد"}
           </DialogTitle>
@@ -154,7 +222,8 @@ export function CustomerDialog({ customer, trigger }: { customer?: Customer; tri
             أدخل تفاصيل العميل والتقييم الائتماني.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+        <div className="space-y-5 p-5 text-xs sm:p-8">
           {/* Name + avatar */}
           <div>
             <Label>الاسم</Label>
@@ -455,9 +524,22 @@ export function CustomerDialog({ customer, trigger }: { customer?: Customer; tri
               سيمنع هذا إنشاء أي فواتير جديدة لهذا العميل.
             </p>
           </div>
+
+          <div className="rounded-2xl bg-primary/[0.06] p-4 ring-1 ring-inset ring-primary/20">
+            <div className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-muted-foreground">ملخص العميل</div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold sm:grid-cols-4">
+              <span className="truncate">{name.trim() || "بدون اسم"}</span>
+              <span className="text-muted-foreground">{customerType === "installment" ? "أقساط" : "فوري"}</span>
+              <span className="text-muted-foreground">{customerType === "installment" ? `حد ${creditLimit || 0} ج.م` : "سداد كامل"}</span>
+              <span className={cn(status === "defaulter" ? "text-danger" : status === "committed" ? "text-success" : "text-warning")}>{STATUS_TABS.find((item) => item.value === status)?.label}</span>
+            </div>
+          </div>
         </div>
-        <DialogFooter>
+        </div>
+        <DialogFooter className="shrink-0 border-t border-[var(--hairline)] bg-card/95 p-4 sm:p-6">
           <Button
+            type="button"
+            disabled={saving}
             onClick={submit}
             onMouseDown={() => setPressed(true)}
             onMouseUp={() => setPressed(false)}
@@ -466,7 +548,7 @@ export function CustomerDialog({ customer, trigger }: { customer?: Customer; tri
             onTouchEnd={() => setPressed(false)}
             className={cn("w-full transition-transform duration-100", pressed && "scale-95")}
           >
-            {customer ? "حفظ" : "إضافة العميل"}
+            {saving ? "جارٍ الحفظ..." : customer ? "حفظ" : "إضافة العميل"}
           </Button>
         </DialogFooter>
       </DialogContent>
