@@ -1197,6 +1197,7 @@ function PosPage() {
           </div>
         </div>
       </div>
+      </div>
 
       {/* Keyboard Shortcuts Bottom HUD */}
       <PosKeyboardHUD
