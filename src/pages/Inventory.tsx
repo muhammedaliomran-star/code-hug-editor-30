@@ -225,18 +225,20 @@ function InventoryPage() {
     const totalItems = data.stockItems.length;
     if (!isAllBranches && activeBranch) {
       const val = calculateBranchStockValuation(activeBranch.id, data.stockItems);
+      const out = data.stockItems.filter((it) => getProductStockInBranch(activeBranch.id, it.id, it.quantity).quantity <= 0).length;
       const low = data.stockItems.filter((it) => {
         const st = getProductStockInBranch(activeBranch.id, it.id, it.quantity);
-        return st.quantity <= (st.minStock || it.minStock || LOW_STOCK());
+        return st.quantity > 0 && st.quantity < (st.minStock || it.minStock || LOW_STOCK());
       }).length;
       const avgCost = totalItems > 0 ? data.stockItems.reduce((s, it) => s + it.lastUnitCost, 0) / totalItems : 0;
-      return { totalItems, value: val.totalCostValue, low, avgCost };
+      return { totalItems, value: val.totalCostValue, low, out, avgCost };
     }
     const value = data.stockItems.reduce((s, it) => s + it.quantity * it.lastUnitCost, 0);
     const avgCost =
       totalItems > 0 ? data.stockItems.reduce((s, it) => s + it.lastUnitCost, 0) / totalItems : 0;
-    const low = data.stockItems.filter((it) => it.quantity < (it.minStock || LOW_STOCK())).length;
-    return { totalItems, value, low, avgCost };
+    const out = data.stockItems.filter((it) => it.quantity <= 0).length;
+    const low = data.stockItems.filter((it) => it.quantity > 0 && it.quantity < (it.minStock || LOW_STOCK())).length;
+    return { totalItems, value, low, out, avgCost };
   }, [data.stockItems, isAllBranches, activeBranch]);
 
   const list = useMemo(() => {
@@ -344,6 +346,20 @@ ${
     if (!openPdfDocument(html, { autoPrint: true })) toast.error("اسمح بفتح النوافذ المنبثقة");
   };
 
+  const printPageLabels = () => {
+    const items = paginatedList.filter((it) => it.barcode);
+    if (items.length === 0) { toast.error("لا توجد منتجات بباركود في هذه الصفحة"); return; }
+    const w = window.open("", "_blank");
+    if (!w) { toast.error("المتصفح منع فتح نافذة"); return; }
+    const html = `<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>ملصقات</title><style>@page{size:50mm 30mm;margin:2mm}body{margin:0;font-family:Tahoma,sans-serif}.label{width:46mm;text-align:center;margin:2mm}.name{font-size:9pt;font-weight:700}.price{font-size:11pt;font-weight:800;margin-top:1mm}.bars{height:11mm;display:flex;align-items:stretch;justify-content:center;gap:1px;margin:1.5mm 0 .5mm}.bars i{background:#0b1220;display:block}.bars b{background:#fff;display:block}.code{font-family:monospace;font-size:8pt;letter-spacing:1px;direction:ltr}</style></head><body>` +
+      items.map((it) => {
+        const bars = Array.from(it.barcode || "").map((d) => `<i style="width:${1 + (Number(d) % 4)}px"></i><b style="width:${1 + ((Number(d) + 2) % 3)}px"></b>`).join("");
+        return `<div class="label"><div class="name">${it.name}${it.size ? " — " + it.size : ""}</div><div class="price">${it.salePrice} ج.م</div><div class="bars">${bars}</div><div class="code">${it.barcode}</div></div>`;
+      }).join("") + `</body></html>`;
+    w.document.open(); w.document.write(html); w.document.close();
+    setTimeout(() => w.print(), 300);
+  };
+
   return (
     <>
       <PageHeader
@@ -405,6 +421,7 @@ ${
           icon={Boxes}
           label="إجمالي الأصناف"
           value={totals.totalItems}
+          tone="info"
           format={(n) => String(Math.round(n))}
           sub="عدد الأصناف الفريدة"
         />
@@ -413,6 +430,7 @@ ${
           icon={Wallet}
           label="قيمة المخزن"
           value={totals.value}
+          tone="info"
           format={(n) => `${fmt(n)} ج.م`}
           masked={privacy}
           sub="الكمية × سعر الشراء"
@@ -422,6 +440,7 @@ ${
           icon={TrendingUp}
           label="متوسط سعر الشراء"
           value={totals.avgCost}
+          tone="info"
           format={(n) => `${fmt(n)} ج.م`}
           masked={privacy}
           sub="متوسط على كل الأصناف"
@@ -430,64 +449,38 @@ ${
           className="h-full"
           icon={AlertTriangle}
           label="نواقص"
-          value={totals.low}
-          tone={totals.low > 0 ? "danger" : "neutral"}
+          value={totals.low + totals.out}
+          tone={totals.out > 0 ? "danger" : totals.low > 0 ? "warning" : "positive"}
           format={(n) => String(Math.round(n))}
-          sub={`أقل من الحد الأدنى لكل صنف • مرتبط بالمنبه`}
+          sub={totals.out > 0 ? `${totals.out} نافد • يحتاج تدخلًا` : totals.low > 0 ? "أقل من الحد الأدنى • يحتاج متابعة" : "المخزون في الحدود الآمنة"}
         />
       </div>
 
       <div className="sticky-search-bar">
-        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-          <Select value={sortKey} onValueChange={(v) => { setSortKey(v as any); setPage(1); }}>
-            <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:w-[150px]">
-              <SelectValue placeholder="فرز" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="qty">حسب الكمية</SelectItem>
-              <SelectItem value="name">حسب الاسم</SelectItem>
-              <SelectItem value="price">حسب السعر</SelectItem>
-              <SelectItem value="newest">الأحدث</SelectItem>
-              <SelectItem value="low">الأكثر نقصًا</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant={showArchived ? "default" : "outline"} className="h-9 w-full rounded-xl text-xs sm:w-auto" onClick={() => { setShowArchived((v) => !v); setPage(1); }}>
-            {showArchived ? "إخفاء المؤرشف" : "عرض المؤرشف"}
-          </Button>
-          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
-            <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:w-[140px]">
-              <SelectValue placeholder="تصنيف" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">كل التصنيفات</SelectItem>
-              {Array.from(new Set(data.stockItems.map((it) => it.category).filter(Boolean))).map((c) => (
-                <SelectItem key={c as string} value={c as string}>{c as string}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant="outline" className="h-9 w-full rounded-xl text-xs sm:w-auto" onClick={() => setProfitOpen(true)}>
-            تقرير أرباح
-          </Button>
-          <Button size="sm" variant="outline" className="h-9 w-full rounded-xl text-xs gap-1 sm:w-auto" onClick={() => {
-            const items = paginatedList.filter((it) => it.barcode);
-            if (items.length === 0) { toast.error("لا توجد منتجات بباركود في هذه الصفحة"); return; }
-            const w = window.open("", "_blank");
-            if (!w) { toast.error("المتصفح منع فتح نافذة"); return; }
-            const html = `<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>ملصقات</title><style>@page{size:50mm 30mm;margin:2mm}body{margin:0;font-family:Tahoma,sans-serif}.label{width:46mm;text-align:center;margin:2mm}.name{font-size:9pt;font-weight:700}.price{font-size:11pt;font-weight:800;margin-top:1mm}.bars{height:11mm;display:flex;align-items:stretch;justify-content:center;gap:1px;margin:1.5mm 0 .5mm}.bars i{background:#0b1220;display:block}.bars b{background:#fff;display:block}.code{font-family:monospace;font-size:8pt;letter-spacing:1px;direction:ltr}</style></head><body>` +
-              items.map((it) => {
-                const bars = Array.from(it.barcode || "").map((d) => `<i style="width:${1 + (Number(d) % 4)}px"></i><b style="width:${1 + ((Number(d) + 2) % 3)}px"></b>`).join("");
-                return `<div class="label"><div class="name">${it.name}${it.size ? " — " + it.size : ""}</div><div class="price">${it.salePrice} ج.م</div><div class="bars">${bars}</div><div class="code">${it.barcode}</div></div>`;
-              }).join("") + `</body></html>`;
-            w.document.open(); w.document.write(html); w.document.close();
-            setTimeout(() => w.print(), 300);
-          }}>
-            طباعة ملصقات الصفحة
-          </Button>
+        <div className="mb-3">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchInput}
+              onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+              placeholder="ابحث بالاسم، الباركود، المقاس أو النوع..."
+              className="h-10 pr-10 pl-10"
+            />
+            <button
+              type="button"
+              onClick={() => setScanOpen(true)}
+              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-xl text-muted-foreground transition-[color,background-color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-foreground/[0.08] hover:text-foreground"
+              title="مسح باركود"
+            >
+              <ScanLine className="h-4 w-4" />
+            </button>
+          </div>
         </div>
+
         <StatTabs
           value={tab}
           onChange={(v) => setTab(v as Tab)}
-          className="mb-4"
+          className="mb-3"
           options={[
             { value: "all", label: "الكل", count: data.stockItems.length },
             {
@@ -503,24 +496,44 @@ ${
           ]}
         />
 
-        <div className="mb-5">
-          <div className="relative mt-1">
-            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={searchInput}
-              onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
-              placeholder="ابحث بالاسم، الباركود، المقاس أو النوع..."
-              className="pr-10 pl-10"
-            />
-            <button
-              type="button"
-              onClick={() => setScanOpen(true)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08] transition-[color,background-color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
-              title="مسح باركود"
-            >
-              <ScanLine className="w-4 h-4" />
-            </button>
-          </div>
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+          <Select value={sortKey} onValueChange={(v) => { setSortKey(v as any); setPage(1); }}>
+            <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:w-[150px]">
+              <SelectValue placeholder="فرز" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="qty">حسب الكمية</SelectItem>
+              <SelectItem value="name">حسب الاسم</SelectItem>
+              <SelectItem value="price">حسب السعر</SelectItem>
+              <SelectItem value="newest">الأحدث</SelectItem>
+              <SelectItem value="low">الأكثر نقصًا</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
+            <SelectTrigger className="h-9 w-full rounded-xl text-xs sm:w-[140px]">
+              <SelectValue placeholder="تصنيف" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل التصنيفات</SelectItem>
+              {Array.from(new Set(data.stockItems.map((it) => it.category).filter(Boolean))).map((c) => (
+                <SelectItem key={c as string} value={c as string}>{c as string}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant={showArchived ? "default" : "outline"} className="h-9 w-full rounded-xl text-xs sm:w-auto" onClick={() => { setShowArchived((v) => !v); setPage(1); }}>
+            {showArchived ? "إخفاء المؤرشف" : "عرض المؤرشف"}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-9 w-full gap-2 rounded-xl text-xs sm:ml-auto sm:w-auto">
+                <MoreVertical className="h-4 w-4" /> إجراءات
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" dir="rtl" className="min-w-48">
+              <DropdownMenuItem onSelect={() => setProfitOpen(true)}><TrendingUp className="ml-2 h-4 w-4" />تقرير الأرباح</DropdownMenuItem>
+              <DropdownMenuItem onSelect={printPageLabels}><FileText className="ml-2 h-4 w-4" />طباعة ملصقات الصفحة</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
