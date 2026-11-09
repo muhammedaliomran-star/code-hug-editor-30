@@ -213,8 +213,8 @@ export const CashFlowView: React.FC<CashFlowViewProps> = ({ data, blurCls }) => 
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-                <Bar dataKey="cashIn" name="نقد داخل (مقبوضات)" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="cashOut" name="نقد خارج (مدفوعات)" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cashIn" name="نقد داخل (مقبوضات)" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cashOut" name="نقد خارج (مدفوعات)" fill="hsl(var(--danger))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

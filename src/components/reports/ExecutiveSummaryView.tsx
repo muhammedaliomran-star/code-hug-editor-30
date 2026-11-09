@@ -158,9 +158,9 @@ export const ExecutiveSummaryView: React.FC<ExecutiveSummaryViewProps> = ({ data
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-                  <Bar dataKey="sales" name="المبيعات" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="collected" name="التحصيلات" fill="#10b981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expenses" name="المصروفات" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="sales" name="المبيعات" fill="hsl(var(--info))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="collected" name="التحصيلات" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expenses" name="المصروفات" fill="hsl(var(--danger))" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

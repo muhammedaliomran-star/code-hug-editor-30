@@ -71,8 +71,8 @@ export function AnalyticsTab() {
                     name === "in" ? "وارد" : "منصرف",
                   ]}
                 />
-                <Bar dataKey="in" name="وارد" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="out" name="منصرف" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="in" name="وارد" fill="hsl(var(--success))" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="out" name="منصرف" fill="hsl(var(--danger))" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

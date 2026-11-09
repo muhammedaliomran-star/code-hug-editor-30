@@ -160,7 +160,7 @@ export function ExpenseAnalyticsTab() {
                   labelFormatter={(label) => `شهر: ${label}`}
                   contentStyle={{ direction: "rtl", borderRadius: "12px", border: "1px solid #e2e8f0" }}
                 />
-                <Bar dataKey="total" fill="#ef4444" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="total" fill="hsl(var(--danger))" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
