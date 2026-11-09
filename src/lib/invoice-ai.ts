@@ -44,7 +44,15 @@ export async function parsePurchaseInvoice(files: File[]): Promise<InvoiceAiResu
   const form = new FormData();
   optimizedFiles.forEach((file) => form.append("files", file, file.name));
   const { data, error } = await supabase.functions.invoke("parse-purchase-invoice", { body: form });
-  if (error) throw new Error(error.message || "تعذر قراءة الفاتورة");
+  if (error) {
+    let message = error.message || "تعذر قراءة الفاتورة";
+    const context = (error as { context?: unknown }).context;
+    if (context instanceof Response) {
+      const body = await context.json().catch(() => null) as { error?: string } | null;
+      if (body?.error) message = body.error;
+    }
+    throw new Error(message);
+  }
   if (!data?.result) throw new Error("لم تُرجع خدمة الذكاء الاصطناعي بيانات صالحة");
   return data.result as InvoiceAiResult;
 }

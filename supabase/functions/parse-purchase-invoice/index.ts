@@ -91,7 +91,15 @@ Deno.serve(async (req) => {
       }),
     });
     const payload = await response.json();
-    if (!response.ok) return json({ error: payload?.error?.message || "OpenAI request failed" }, response.status);
+    if (!response.ok) {
+      console.error("OpenAI invoice parsing failed", {
+        status: response.status,
+        error: payload?.error?.message || "OpenAI request failed",
+        code: payload?.error?.code || null,
+        type: payload?.error?.type || null,
+      });
+      return json({ error: payload?.error?.message || "OpenAI request failed" }, response.status);
+    }
     const raw = payload.output_text || payload.output?.flatMap((item: any) => item.content || []).find((item: any) => item.type === "output_text")?.text;
     if (!raw) return json({ error: "OpenAI returned no structured result" }, 502);
     return json({ result: JSON.parse(raw) });
