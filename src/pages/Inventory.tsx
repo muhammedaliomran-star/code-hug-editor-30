@@ -787,6 +787,7 @@ ${
         }}
         prefillBarcode={addPrefillBarcode}
         existingBarcodes={data.stockItems.map((s) => s.barcode)}
+        suppliers={data.suppliers}
         productCode={Math.max(0, ...data.stockItems.map((s) => s.productCode || 0)) + 1}
       />
       <HistoryDialog item={historyItem} onClose={() => setHistoryItem(null)} />

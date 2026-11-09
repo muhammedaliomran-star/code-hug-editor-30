@@ -23,12 +23,13 @@ function ExpandLink({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-export function AddProductDialog({ open, onOpenChange, prefillBarcode, existingBarcodes, productCode }: {
+export function AddProductDialog({ open, onOpenChange, prefillBarcode, existingBarcodes, productCode, suppliers = [] }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   prefillBarcode?: string;
   existingBarcodes: Array<string | null>;
   productCode?: number;
+  suppliers?: Array<{ id: string; name: string }>;
 }) {
   const isMobile = useIsMobile();
 
@@ -36,6 +37,7 @@ export function AddProductDialog({ open, onOpenChange, prefillBarcode, existingB
     <ProductForm
       existingBarcodes={existingBarcodes}
       productCode={productCode ?? 1}
+      suppliers={suppliers}
       prefillBarcode={prefillBarcode}
       onSaved={() => onOpenChange(false)}
       onCancel={() => onOpenChange(false)}
