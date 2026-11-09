@@ -13,7 +13,7 @@ import { usePrivacy } from "@/lib/privacy";
 import { useNavigate, Link } from "@/lib/router-compat";
 import { 
   ShoppingCart, Save, X, Plus, Trash2, Banknote, Wallet, 
-  Search, Info, Eye, EyeOff, ScanLine, Tag, ArrowRight, CheckCircle2
+  Search, Info, Eye, EyeOff, ScanLine, ArrowRight, CheckCircle2
 } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { DatePickerField } from "@/components/DatePickerField";
@@ -26,7 +26,6 @@ export interface PurchaseLineItem {
   name: string;
   unitCost: string;
   quantity: string;
-  salePrice?: string;
   barcode?: string;
 }
 
@@ -41,7 +40,7 @@ export function NewPurchasePage() {
   const [paymentType, setPaymentType] = useState<PurchasePaymentType>("cash");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<PurchaseLineItem[]>([
-    { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1", salePrice: "" }
+    { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1" }
   ]);
   const [busy, setBusy] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
@@ -59,13 +58,13 @@ export function NewPurchasePage() {
   const addItem = () => {
     setItems(prev => [
       ...prev, 
-      { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1", salePrice: "" }
+      { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1" }
     ]);
   };
 
   const removeItem = (id: string) => {
     if (items.length === 1) {
-      setItems([{ id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1", salePrice: "" }]);
+      setItems([{ id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1" }]);
       return;
     }
     setItems(items.filter(it => it.id !== id));
@@ -102,7 +101,6 @@ export function NewPurchasePage() {
             name: found.name,
             unitCost: String(found.lastUnitCost || ""),
             quantity: "1",
-            salePrice: found.salePrice ? String(found.salePrice) : "",
             barcode: code
           }
         : {
@@ -110,7 +108,6 @@ export function NewPurchasePage() {
             name: "",
             unitCost: "",
             quantity: "1",
-            salePrice: "",
             barcode: code
           };
 
@@ -134,9 +131,9 @@ export function NewPurchasePage() {
 
   // Suggestions from stock catalog and purchase history
   const suggestions = useMemo(() => {
-    const map = new Map<string, { cost: number; salePrice?: number; barcode?: string | null }>();
+    const map = new Map<string, { cost: number; barcode?: string | null }>();
     data.stockItems.forEach(s => {
-      map.set(s.name, { cost: s.lastUnitCost, salePrice: s.salePrice, barcode: s.barcode });
+      map.set(s.name, { cost: s.lastUnitCost, barcode: s.barcode });
     });
     data.purchaseItems.forEach(pi => {
       if (!map.has(pi.name)) {
@@ -146,7 +143,6 @@ export function NewPurchasePage() {
     return Array.from(map.entries()).map(([name, val]) => ({ 
       name, 
       cost: val.cost, 
-      salePrice: val.salePrice, 
       barcode: val.barcode 
     }));
   }, [data.stockItems, data.purchaseItems]);
@@ -181,19 +177,17 @@ export function NewPurchasePage() {
         }))
       });
 
-      // 2. If selling price or barcode is provided for newly entered items, update catalog properties without duplicating quantity
+      // 2. If a barcode is provided, update the catalog without duplicating quantity
       for (const item of validItems) {
         const trimmedName = item.name.trim();
-        const salePriceNum = Number(item.salePrice);
         const barcodeVal = item.barcode?.trim() || null;
 
-        if ((salePriceNum && salePriceNum > 0) || barcodeVal) {
+        if (barcodeVal) {
           const matchedStock = data.stockItems.find(s => 
             s.name.trim().toLowerCase() === trimmedName.toLowerCase()
           );
           if (matchedStock) {
             const patch: any = {};
-            if (salePriceNum > 0) patch.salePrice = salePriceNum;
             if (barcodeVal) patch.barcode = barcodeVal;
             try {
               await db.updateStockItem(matchedStock.id, patch);
@@ -356,7 +350,6 @@ export function NewPurchasePage() {
                                       ? { 
                                           name: v, 
                                           unitCost: String(match.cost || ""), 
-                                          salePrice: match.salePrice ? String(match.salePrice) : it.salePrice,
                                           barcode: match.barcode || it.barcode
                                         } 
                                       : { name: v }
@@ -393,21 +386,6 @@ export function NewPurchasePage() {
                                 />
                               </div>
 
-                              {/* Proposed Retail Sale Price */}
-                              <div className="space-y-1 text-right">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-[10px] text-primary/80 font-bold bg-primary/10 px-1.5 py-0.2 rounded">اختياري</span>
-                                  <Label className="text-xs text-muted-foreground font-semibold">سعر البيع المقترح</Label>
-                                </div>
-                                <Input 
-                                  type="number" 
-                                  step="any"
-                                  value={it.salePrice || ""} 
-                                  onChange={(e) => updateItem(it.id, { salePrice: e.target.value })} 
-                                  placeholder="سعر البيع بالمحل"
-                                  className={cn("rounded-xl font-mono text-right", blurCls)}
-                                />
-                              </div>
                             </div>
 
                             {/* Subtotal of line item */}
@@ -415,12 +393,6 @@ export function NewPurchasePage() {
                               <span className={cn("font-extrabold text-foreground tabular-nums", blurCls)}>
                                 الإجمالي: {fmt((Number(it.unitCost) || 0) * (Number(it.quantity) || 0))} ج.م
                               </span>
-                              {Number(it.salePrice) > 0 && Number(it.unitCost) > 0 && (
-                                <span className="text-success text-[11px] font-semibold">
-                                  نسبة الربح المتوقعة: +{fmt(Number(it.salePrice) - Number(it.unitCost))} ج.م (
-                                  {Math.round(((Number(it.salePrice) - Number(it.unitCost)) / Number(it.unitCost)) * 100)}%)
-                                </span>
-                              )}
                             </div>
                           </motion.div>
                         ))}
