@@ -359,6 +359,26 @@ function SuppliersPage() {
   );
 }
 
+function SupplierFormSection({
+  title, icon: Icon, open, onToggle, children,
+}: {
+  title: string;
+  icon: React.ComponentType<{ className?: string }>;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-border/40 bg-foreground/[0.025]">
+      <button type="button" onClick={onToggle} className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-right transition-[background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-primary/[0.04]">
+        <span className="flex items-center gap-2 font-bold"><Icon className="h-4 w-4 text-primary" />{title}</span>
+        {open ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+      </button>
+      {open && <div className="border-t border-border/30 p-4">{children}</div>}
+    </section>
+  );
+}
+
 function SupplierFormDialog({
   open, onOpenChange, editing,
 }: { open: boolean; onOpenChange: (v: boolean) => void; editing: Supplier | null }) {
@@ -458,15 +478,6 @@ function SupplierFormDialog({
   };
 
   const toggleSection = (key: keyof typeof sections) => setSections((current) => ({ ...current, [key]: !current[key] }));
-  const Section = ({ id, title, icon: Icon, children }: { id: keyof typeof sections; title: string; icon: React.ComponentType<{ className?: string }>; children: React.ReactNode }) => (
-    <section className="overflow-hidden rounded-2xl border border-border/40 bg-foreground/[0.025]">
-      <button type="button" onClick={() => toggleSection(id)} className="flex min-h-12 w-full items-center justify-between gap-3 px-4 text-right transition-[background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-primary/[0.04]">
-        <span className="flex items-center gap-2 font-bold"><Icon className="h-4 w-4 text-primary" />{title}</span>
-        {sections[id] ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-      </button>
-      {sections[id] && <div className="border-t border-border/30 p-4">{children}</div>}
-    </section>
-  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -479,7 +490,7 @@ function SupplierFormDialog({
           <DialogDescription className="text-right">بيانات المورد ومديونيته الافتتاحية.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-right">
-          <Section id="basic" title="البيانات الأساسية" icon={Building2}>
+          <SupplierFormSection title="البيانات الأساسية" icon={Building2} open={sections.basic} onToggle={() => toggleSection("basic")}>
             <div className="space-y-3">
               <div><div className="mb-1 flex items-center justify-between"><Label>كود المورد</Label><span className="rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-bold text-info">تلقائي</span></div><Input value={supplierCode} readOnly dir="ltr" className="font-mono tracking-wider text-muted-foreground" /></div>
               <div><Label>الاسم <span className="text-danger">*</span></Label><Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} placeholder="مثال: شركة النور" aria-required="true" aria-invalid={submitted && !name.trim()} />{submitted && !name.trim() && <p className="mt-1 text-xs font-medium text-danger">اسم المورد مطلوب</p>}</div>
@@ -489,8 +500,8 @@ function SupplierFormDialog({
               </div>
               <div><Label>حالة المورد</Label><Select value={status} onValueChange={(v) => setStatus(v as "active" | "paused")}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="active"><span className="text-success">● نشط</span></SelectItem><SelectItem value="paused"><span className="text-muted-foreground">● متوقف</span></SelectItem></SelectContent></Select></div>
             </div>
-          </Section>
-          <Section id="contact" title="بيانات التواصل" icon={Mail}>
+          </SupplierFormSection>
+          <SupplierFormSection title="بيانات التواصل" icon={Mail} open={sections.contact} onToggle={() => toggleSection("contact")}>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div><Label>رقم الهاتف</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} dir="ltr" maxLength={30} placeholder="01xxxxxxxxx" /></div>
               <div><Label>البريد الإلكتروني</Label><Input value={email} onChange={(e) => setEmail(e.target.value)} type="email" dir="ltr" placeholder="supplier@example.com" aria-invalid={submitted && !!email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim())} />{submitted && email.trim() && !/^\S+@\S+\.\S+$/.test(email.trim()) && <p className="mt-1 text-xs font-medium text-danger">البريد الإلكتروني غير صحيح</p>}</div>
@@ -499,17 +510,17 @@ function SupplierFormDialog({
               <div><Label>الرقم الضريبي</Label><Input value={taxNumber} onChange={(e) => setTaxNumber(e.target.value)} dir="ltr" placeholder="اختياري" /></div>
               <div className="sm:col-span-2"><Label>السجل التجاري</Label><Input value={commercialRegister} onChange={(e) => setCommercialRegister(e.target.value)} dir="ltr" placeholder="اختياري" /></div>
             </div>
-          </Section>
-          <Section id="finance" title="الإعدادات المالية" icon={ShieldCheck}>
+          </SupplierFormSection>
+          <SupplierFormSection title="الإعدادات المالية" icon={ShieldCheck} open={sections.finance} onToggle={() => toggleSection("finance")}>
             <div className="space-y-3">
               <div><Label>تاريخ انضمام المورد</Label><DatePickerField value={joinDate} onChange={setJoinDate} /><div className="mt-2 flex justify-end gap-2"><Button type="button" variant="outline" size="sm" className="h-9 px-3 text-xs" onClick={() => setJoinDate(firstOfMonth())}>أول الشهر</Button><Button type="button" variant="outline" size="sm" className="h-9 px-3 text-xs" onClick={() => setJoinDate(new Date().toISOString().slice(0, 10))}>النهارده</Button></div></div>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><div><Label>وسيلة الدفع المفضلة</Label><Select value={preferredPaymentMethod ?? "cash"} onValueChange={(v) => setPreferredPaymentMethod(v as Supplier["preferredPaymentMethod"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">نقدي</SelectItem><SelectItem value="bank">تحويل بنكي</SelectItem><SelectItem value="transfer">تحويل آخر</SelectItem><SelectItem value="other">أخرى</SelectItem></SelectContent></Select></div><div><Label>مدة السداد (يوم)</Label><Input type="number" min="0" value={paymentTermDays} onChange={(e) => setPaymentTermDays(e.target.value)} /></div><div><Label>الحد الائتماني (ج.م)</Label><Input type="number" min="0" value={creditLimit} onChange={(e) => setCreditLimit(e.target.value)} /></div><div><Label>مديونية افتتاحية (ج.م)</Label><Input type="number" min="0" value={opening} onChange={(e) => setOpening(e.target.value)} /></div></div>
               <div className="text-xs text-muted-foreground">سيظهر تنبيه عند الاقتراب من الحد الائتماني أو موعد السداد.</div>
             </div>
-          </Section>
-          <Section id="extra" title="الملاحظات والمرفقات" icon={FileText}>
+          </SupplierFormSection>
+          <SupplierFormSection title="الملاحظات والمرفقات" icon={FileText} open={sections.extra} onToggle={() => toggleSection("extra")}>
             <div className="space-y-3"><div><Label>رابط صورة أو ملف المورد</Label><Input value={attachmentUrl} onChange={(e) => setAttachmentUrl(e.target.value)} type="url" dir="ltr" placeholder="https://..." /></div><div><Label>ملاحظات</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={500} placeholder="أضف أي تفاصيل مهمة..." /></div></div>
-          </Section>
+          </SupplierFormSection>
         </div>
         <DialogFooter className="sticky bottom-0 -mx-4 -mb-4 border-t border-border/40 bg-card/95 px-4 pb-1 pt-3 sm:-mx-7 sm:-mb-7 sm:px-7 sm:pb-1">
           <Button onClick={submit} disabled={busy || !name.trim()} className="w-full">{editing ? "حفظ التعديلات" : "حفظ المورد"}</Button>
