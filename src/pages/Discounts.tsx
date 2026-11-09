@@ -254,11 +254,16 @@ export default function Discounts() {
   const handleSaveCoupon = () => {
     const cleanCode = formCode.trim().toUpperCase();
     if (!cleanCode) return toast.error("يرجى إدخال كود الخصم (مثلاً SALE10)");
+    if (!/^[A-Z0-9_-]+$/.test(cleanCode)) return toast.error("الكود يجب أن يحتوي على حروف إنجليزية أو أرقام أو شرطة فقط");
     if (!formTitle.trim()) return toast.error("يرجى إدخال عنوان أو وصف الكوبون");
 
     const val = Number(formValue);
     if (isNaN(val) || val <= 0) return toast.error("يرجى إدخال قيمة خصم صالحة");
     if (formType === "percentage" && val > 100) return toast.error("نسبة الخصم لا يمكن أن تتجاوز 100%");
+    const minOrder = Number(formMinOrder || 0);
+    if (!Number.isFinite(minOrder) || minOrder < 0) return toast.error("الحد الأدنى للفاتورة غير صحيح");
+    if (formType === "fixed" && minOrder > 0 && val > minOrder) return toast.error("مبلغ الخصم لا يمكن أن يتجاوز الحد الأدنى للفاتورة");
+    if (formEndsAt && formStartsAt && formEndsAt < formStartsAt) return toast.error("تاريخ الانتهاء يجب أن يكون بعد تاريخ البدء");
 
     // Check duplicate code
     const duplicate = coupons.find(
@@ -266,7 +271,8 @@ export default function Discounts() {
     );
     if (duplicate) return toast.error("كود الخصم هذا مستخدم بالفعل، يرجى اختيار كود آخر");
 
-    const maxUsageNum = formHasMaxUsage && formMaxUsage ? Math.max(1, parseInt(formMaxUsage, 10)) : null;
+    const maxUsageNum = formHasMaxUsage ? Number(formMaxUsage) : null;
+    if (formHasMaxUsage && (!Number.isInteger(maxUsageNum) || maxUsageNum < 1)) return toast.error("أدخل حد استخدام صحيحاً أكبر من صفر");
 
     if (editingCoupon) {
       updateCoupon(editingCoupon.id, {
@@ -274,7 +280,7 @@ export default function Discounts() {
         title: formTitle.trim(),
         discountType: formType,
         discountValue: val,
-        minOrderValue: Math.max(0, Number(formMinOrder || 0)),
+        minOrderValue: minOrder,
         maxUsage: maxUsageNum,
         startsAt: new Date(formStartsAt).toISOString(),
         endsAt: formEndsAt ? new Date(formEndsAt).toISOString() : null,
@@ -288,7 +294,7 @@ export default function Discounts() {
         title: formTitle.trim(),
         discountType: formType,
         discountValue: val,
-        minOrderValue: Math.max(0, Number(formMinOrder || 0)),
+        minOrderValue: minOrder,
         maxUsage: maxUsageNum,
         startsAt: new Date(formStartsAt).toISOString(),
         endsAt: formEndsAt ? new Date(formEndsAt).toISOString() : null,
@@ -1145,7 +1151,7 @@ export default function Discounts() {
                       <SelectTrigger className="h-10 text-xs">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                     <SelectContent className="max-h-[min(18rem,calc(100dvh-12rem))]">
                         <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
                         <SelectItem value="fixed">مبلغ ثابت (ج.م)</SelectItem>
                       </SelectContent>
@@ -1213,21 +1219,23 @@ export default function Discounts() {
 
         {/* DIALOG 1: CREATE / EDIT COUPON */}
         <Dialog open={isOpenCouponModal} onOpenChange={setIsOpenCouponModal}>
-          <DialogContent className="max-w-md p-6">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
+          <DialogContent dir="rtl" className="flex h-[min(760px,calc(100dvh-1rem))] w-[calc(100vw-1rem)] max-w-2xl flex-col overflow-hidden rounded-[2rem] border-none bg-card/95 p-0 sm:w-[calc(100vw-2rem)]">
+            <DialogHeader className="shrink-0 border-b border-[var(--hairline)] bg-card/95 px-5 py-5 sm:px-8 sm:py-6">
+              <DialogTitle className="text-xl font-black flex items-center gap-2">
                 <Tag className="w-4 h-4 text-primary" />
                 {editingCoupon ? "تعديل كود الخصم" : "إنشاء كود خصم جديد"}
               </DialogTitle>
+              <p className="mt-1 text-right text-xs font-bold text-muted-foreground">أنشئ عرضًا واضحًا وسهل الاستخدام لعملائك.</p>
             </DialogHeader>
 
-            <div className="space-y-4 text-xs">
+            <div className="min-h-0 flex-1 overflow-y-auto custom-scrollbar">
+            <div className="space-y-5 p-5 text-xs sm:p-8">
               <div className="space-y-1.5">
                 <Label className="text-xs">كود الخصم (Promo Code)</Label>
                 <div className="flex gap-2">
                   <Input
                     value={formCode}
-                    onChange={(e) => setFormCode(e.target.value.toUpperCase())}
+                    onChange={(e) => setFormCode(e.target.value.toUpperCase().replace(/[^A-Z0-9_-]/g, ""))}
                     placeholder="مثال: SUMMER20"
                     className="font-mono uppercase font-bold text-center tracking-wider text-sm"
                   />
@@ -1254,14 +1262,14 @@ export default function Discounts() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">نوع الخصم</Label>
                   <Select value={formType} onValueChange={(v: any) => setFormType(v)}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                     <SelectContent className="max-h-[min(18rem,calc(100dvh-12rem))]">
                       <SelectItem value="percentage">نسبة مئوية (%)</SelectItem>
                       <SelectItem value="fixed">مبلغ ثابت (ج.م)</SelectItem>
                     </SelectContent>
@@ -1282,7 +1290,7 @@ export default function Discounts() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">الحد الأدنى للفاتورة (ج.م)</Label>
                   <Input
@@ -1330,7 +1338,7 @@ export default function Discounts() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 border-t border-border/30 pt-3">
+              <div className="grid grid-cols-1 gap-3 border-t border-border/30 pt-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs">تاريخ البدء</Label>
                   <DatePickerField value={formStartsAt} onChange={setFormStartsAt} />
@@ -1349,16 +1357,34 @@ export default function Discounts() {
                   placeholder="ملاحظات لإدارة المحل..."
                 />
               </div>
-            </div>
 
-            <DialogFooter className="gap-2 mt-4">
-              <Button variant="outline" onClick={() => setIsOpenCouponModal(false)} className="text-xs">
-                إلغاء
-              </Button>
-              <Button onClick={handleSaveCoupon} className="text-xs font-bold bg-primary text-primary-foreground">
-                {editingCoupon ? "حفظ التعديلات" : "إنشاء الكوبون"}
-              </Button>
-            </DialogFooter>
+              <div className="rounded-[1.5rem] bg-primary/[0.06] p-4 ring-1 ring-inset ring-primary/20">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <Badge className="rounded-full bg-primary/15 text-primary hover:bg-primary/15">{formCode.trim() ? formCode.trim().toUpperCase() : "كود الخصم"}</Badge>
+                  <span className="text-[11px] font-black text-muted-foreground">معاينة الكوبون</span>
+                </div>
+                <div className="text-right">
+                  <div className="font-black text-foreground">{formTitle.trim() || "عنوان العرض سيظهر هنا"}</div>
+                  <div className="mt-1 text-lg font-black text-primary">
+                    {formType === "percentage" ? `خصم ${formValue || 0}%` : `خصم ${fmt(Number(formValue || 0))} ج.م`}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] font-bold text-muted-foreground">
+                    <span>حد أدنى: {fmt(Number(formMinOrder || 0))} ج.م</span>
+                    <span>{formHasMaxUsage && formMaxUsage ? `${formMaxUsage} استخدام` : "استخدام غير محدود"}</span>
+                    <span>{formEndsAt ? `حتى ${formEndsAt}` : "بدون تاريخ انتهاء"}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            </div>
+            <div className="shrink-0 border-t border-[var(--hairline)] bg-card/95 p-4 sm:p-6">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <Button type="button" variant="outline" onClick={() => setIsOpenCouponModal(false)} className="h-12 rounded-2xl sm:w-28">إلغاء</Button>
+                <Button type="button" onClick={handleSaveCoupon} className="h-12 flex-1 rounded-2xl text-base font-black bg-primary text-primary-foreground">
+                  {editingCoupon ? "حفظ التعديلات" : "إنشاء الكوبون"}
+                </Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
 
