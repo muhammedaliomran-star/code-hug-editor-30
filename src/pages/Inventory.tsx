@@ -90,6 +90,8 @@ import {
   RotateCcw,
   Undo2,
   MoreVertical,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { toast } from "sonner";
@@ -761,7 +763,6 @@ ${
         item={editing}
         onClose={() => setEditing(null)}
         existingBarcodes={data.stockItems.map((s) => s.barcode)}
-        productCode={Math.max(0, ...data.stockItems.map((s) => s.productCode || 0)) + 1}
         suppliers={data.suppliers}
       />
       <ProductDetailsDialog item={detailItem} onClose={() => setDetailItem(null)} onEdit={(product) => setEditing(product)} />
@@ -786,6 +787,7 @@ ${
         }}
         prefillBarcode={addPrefillBarcode}
         existingBarcodes={data.stockItems.map((s) => s.barcode)}
+        productCode={Math.max(0, ...data.stockItems.map((s) => s.productCode || 0)) + 1}
       />
       <HistoryDialog item={historyItem} onClose={() => setHistoryItem(null)} />
       <BarcodeScanner
@@ -1184,6 +1186,7 @@ function EditDialog({
   const [reasonNotes, setReasonNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
 
   useEffect(() => {
     if (item) {
@@ -1280,14 +1283,14 @@ function EditDialog({
 
   return (
     <Dialog open={!!item} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent dir="rtl" className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent dir="rtl" className="flex max-h-[90vh] max-w-lg flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-right">تعديل المنتج</DialogTitle>
           <DialogDescription className="text-right">
             عدّل كل تفاصيل المنتج. أي تغيير في الكمية يحتاج سبب.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pe-1">
           <div className="py-2 border-t border-border/40 first:border-t-0">
             <GroupLabel icon={Tag}>هوية المنتج</GroupLabel>
             <div className="grid gap-3">
@@ -1462,30 +1465,40 @@ function EditDialog({
             </div>
           </div>
 
-             <div className="mt-3 grid gap-1.5">
-               <Label>رابط الصورة (URL)</Label>
-               <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-2xl text-right" />
+             <div className="mt-4 rounded-2xl border border-border/60 bg-foreground/[0.025] p-3">
+               <div className="grid gap-3 sm:grid-cols-2">
+                 <div className="grid gap-1.5">
+                   <Label>المورد</Label>
+                   <Select value={supplierId || "none"} onValueChange={(v) => setSupplierId(v === "none" ? "" : v)}>
+                     <SelectTrigger className="h-11 rounded-xl text-right"><SelectValue placeholder="اختر المورد" /></SelectTrigger>
+                     <SelectContent dir="rtl">
+                       <SelectItem value="none">بدون مورد</SelectItem>
+                       {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                     </SelectContent>
+                   </Select>
+                 </div>
+                 <div className="grid gap-1.5">
+                   <Label>التصنيف</Label>
+                   <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="مثال: ملابس" className="h-11 rounded-xl text-right" />
+                 </div>
+               </div>
+               <div className="mt-3 grid gap-1.5">
+                 <Label>رابط الصورة (اختياري)</Label>
+                 <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="h-11 rounded-xl text-right" />
+               </div>
              </div>
-             <div className="mt-3 grid gap-1.5">
-               <Label>المورد</Label>
-               <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="rounded-2xl border border-border bg-background p-2 text-sm">
-                 <option value="">— بدون مورد —</option>
-                 {suppliers.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
-               </select>
-             </div>
-             <div className="mt-3 grid gap-1.5">
-               <Label>التصنيف</Label>
-               <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="مثال: ملابس" className="rounded-2xl text-right" />
-             </div>
-             <div className="mt-3 grid gap-1.5">
-               <Label>متغيرات (Variants) - JSON</Label>
-               <textarea
-                 value={variantsJson}
-                 onChange={(e) => setVariantsJson(e.target.value)}
-                 rows={3}
-                 className="rounded-2xl border border-border bg-background p-2 font-mono text-xs"
-                 placeholder='[{"id":"1","name":"أحمر","size":"L","salePrice":1200}]'
-               />
+
+             <div className="mt-3 overflow-hidden rounded-2xl border border-border/60">
+               <button type="button" onClick={() => setAdvancedOpen((v) => !v)} className="flex w-full items-center gap-2 bg-foreground/[0.025] px-3 py-3 text-right transition-colors hover:bg-foreground/[0.06]">
+                 <span className="text-sm font-bold">خيارات متقدمة</span>
+                 <span className="h-px flex-1 bg-border/60" />
+                 {advancedOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+               </button>
+               {advancedOpen && <div className="grid gap-2 border-t border-border/60 p-3">
+                 <Label>متغيرات المنتج</Label>
+                 <textarea value={variantsJson} onChange={(e) => setVariantsJson(e.target.value)} rows={4} className="rounded-xl border border-border/70 bg-background p-3 font-mono text-xs outline-none focus:border-primary focus:ring-2 focus:ring-primary/20" placeholder="أدخل بيانات المتغيرات المتقدمة بصيغة JSON عند الحاجة" />
+                 <span className="text-[11px] text-muted-foreground">اتركه كما هو إذا كان المنتج لا يحتوي على مقاسات أو ألوان متعددة.</span>
+               </div>}
              </div>
 
           {reasonRequired && (
@@ -1526,12 +1539,12 @@ function EditDialog({
             </div>
           )}
         </div>
-        <DialogFooter>
-          <Button variant="outline" className="rounded-full" onClick={onClose}>
+        <DialogFooter className="sticky bottom-0 mt-3 border-t border-border/60 bg-background/95 pt-3 backdrop-blur-sm">
+          <Button variant="outline" className="rounded-xl" onClick={onClose}>
             إلغاء
           </Button>
           <Button
-            className="rounded-full"
+            className="rounded-xl bg-primary text-primary-foreground"
             onClick={submit}
             disabled={busy || !name.trim() || codeDuplicate}
           >

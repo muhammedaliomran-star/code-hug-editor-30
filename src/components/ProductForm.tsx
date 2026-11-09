@@ -79,7 +79,7 @@ export function ProductForm({
   cancelLabel = "إلغاء",
 }: {
   existingBarcodes: Array<string | null>;
-  productCode: number;
+  productCode?: number;
   prefillBarcode?: string;
   onSaved?: () => void;
   onCancel?: () => void;
@@ -218,7 +218,7 @@ export function ProductForm({
           {openSections.identity && <div className="space-y-4">
           <div className="grid gap-1.5">
             <Label>كود المنتج</Label>
-            <Input value={String(productCode)} readOnly aria-readonly="true" dir="ltr" className="h-10 rounded-xl bg-muted/30 font-mono font-bold text-muted-foreground" />
+            <Input value={String(productCode ?? 1)} readOnly aria-readonly="true" dir="ltr" className="h-10 rounded-xl bg-muted/30 font-mono font-bold text-muted-foreground" />
             <span className="text-xs text-muted-foreground">رقم تسلسلي تلقائي وغير قابل للتعديل.</span>
           </div>
           <div className="grid gap-3">

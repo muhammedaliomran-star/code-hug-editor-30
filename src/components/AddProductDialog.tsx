@@ -28,14 +28,14 @@ export function AddProductDialog({ open, onOpenChange, prefillBarcode, existingB
   onOpenChange: (v: boolean) => void;
   prefillBarcode?: string;
   existingBarcodes: Array<string | null>;
-  productCode: number;
+  productCode?: number;
 }) {
   const isMobile = useIsMobile();
 
   const form = (
     <ProductForm
       existingBarcodes={existingBarcodes}
-      productCode={productCode}
+      productCode={productCode ?? 1}
       prefillBarcode={prefillBarcode}
       onSaved={() => onOpenChange(false)}
       onCancel={() => onOpenChange(false)}
