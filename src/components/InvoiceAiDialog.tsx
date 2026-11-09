@@ -47,7 +47,7 @@ export function InvoiceAiDialog({
 
   const checkConnection = async () => {
     setConnectionState("checking");
-    try { const status = await checkInvoiceAiConnection(); setConnectionState(status.configured ? "connected" : "missing"); }
+    try { const status = await checkInvoiceAiConnection(); setConnectionState(status.configured && status.reachable ? "connected" : status.configured ? "error" : "missing"); }
     catch { setConnectionState("error"); }
   };
 

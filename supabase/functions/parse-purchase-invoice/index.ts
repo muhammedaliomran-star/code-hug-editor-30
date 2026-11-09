@@ -50,7 +50,17 @@ Deno.serve(async (req) => {
   const contentType = req.headers.get("content-type") || "";
   if (contentType.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
-    if (body?.check === true) return json({ configured: Boolean(apiKey) });
+    if (body?.check === true) {
+      if (!apiKey) return json({ configured: false, reachable: false });
+      const healthResponse = await fetch("https://api.openai.com/v1/models", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (!healthResponse.ok) {
+        const healthPayload = await healthResponse.json().catch(() => null);
+        return json({ configured: true, reachable: false, error: healthPayload?.error?.message || "مفتاح OpenAI غير صالح أو غير متاح" });
+      }
+      return json({ configured: true, reachable: true });
+    }
   }
   if (!apiKey) return json({ error: "OPENAI_API_KEY is not configured in Supabase" }, 503);
 

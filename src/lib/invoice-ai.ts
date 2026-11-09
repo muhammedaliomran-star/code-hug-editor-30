@@ -57,8 +57,9 @@ export async function parsePurchaseInvoice(files: File[]): Promise<InvoiceAiResu
   return data.result as InvoiceAiResult;
 }
 
-export async function checkInvoiceAiConnection(): Promise<{ configured: boolean }> {
+export async function checkInvoiceAiConnection(): Promise<{ configured: boolean; reachable: boolean }> {
   const { data, error } = await supabase.functions.invoke("parse-purchase-invoice", { body: { check: true } });
   if (error) throw new Error(error.message || "تعذر اختبار الاتصال");
-  return { configured: data?.configured === true };
+  if (data?.error) throw new Error(data.error);
+  return { configured: data?.configured === true, reachable: data?.reachable === true };
 }
