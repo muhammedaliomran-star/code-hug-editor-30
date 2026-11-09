@@ -139,20 +139,20 @@ export default function Shipping() {
   const [carrierName, setCarrierName] = useState("");
   const [carrierContact, setCarrierContact] = useState("");
   const [carrierPhone, setCarrierPhone] = useState("");
-  const [carrierBaseCost, setCarrierBaseCost] = useState("0");
+  const [carrierBaseCost, setCarrierBaseCost] = useState("");
 
   const [zoneName, setZoneName] = useState("");
   const [zoneCarrierId, setZoneCarrierId] = useState("");
-  const [zoneCost, setZoneCost] = useState("0");
+  const [zoneCost, setZoneCost] = useState("");
   const [zoneDays, setZoneDays] = useState("2");
 
   const [shipmentInvoiceId, setShipmentInvoiceId] = useState("");
   const [shipmentCarrierId, setShipmentCarrierId] = useState("");
   const [shipmentZoneId, setShipmentZoneId] = useState("");
   const [shipmentTracking, setShipmentTracking] = useState("");
-  const [shipmentCost, setShipmentCost] = useState("0");
-  const [shipmentCod, setShipmentCod] = useState("0");
-  const [shipmentWeight, setShipmentWeight] = useState("0");
+  const [shipmentCost, setShipmentCost] = useState("");
+  const [shipmentCod, setShipmentCod] = useState("");
+  const [shipmentWeight, setShipmentWeight] = useState("");
   const [shipmentPieces, setShipmentPieces] = useState("1");
 
   // فلاتر + تحديد متعدد
@@ -259,9 +259,9 @@ export default function Shipping() {
     [zones, shipments],
   );
 
-  const resetCarrierForm = () => { setCarrierName(""); setCarrierContact(""); setCarrierPhone(""); setCarrierBaseCost("0"); setEditCarrier(null); };
-  const resetZoneForm = () => { setZoneName(""); setZoneCarrierId(""); setZoneCost("0"); setZoneDays("2"); setEditZone(null); };
-  const resetShipmentForm = () => { setShipmentInvoiceId(""); setShipmentCarrierId(""); setShipmentZoneId(""); setShipmentTracking(""); setShipmentCost("0"); setShipmentCod("0"); setShipmentWeight("0"); setShipmentPieces("1"); };
+  const resetCarrierForm = () => { setCarrierName(""); setCarrierContact(""); setCarrierPhone(""); setCarrierBaseCost(""); setEditCarrier(null); };
+  const resetZoneForm = () => { setZoneName(""); setZoneCarrierId(""); setZoneCost(""); setZoneDays("2"); setEditZone(null); };
+  const resetShipmentForm = () => { setShipmentInvoiceId(""); setShipmentCarrierId(""); setShipmentZoneId(""); setShipmentTracking(""); setShipmentCost(""); setShipmentCod(""); setShipmentWeight(""); setShipmentPieces("1"); };
 
   if (loading) return <PageLoadingSkeleton type="table" />;
 

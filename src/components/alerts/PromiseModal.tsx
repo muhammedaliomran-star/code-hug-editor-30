@@ -189,7 +189,7 @@ export function PromiseModal({
                   type="number"
                   value={promisedAmount}
                   onChange={(e) => setPromisedAmount(e.target.value)}
-                  placeholder="0"
+                  placeholder="أدخل المبلغ"
                   className="text-right font-mono text-base font-bold"
                 />
               </div>

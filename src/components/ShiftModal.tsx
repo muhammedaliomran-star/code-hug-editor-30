@@ -59,7 +59,7 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
 
   // Form states for opening shift
   const [cashierName, setCashierName] = useState("");
-  const [openingBalance, setOpeningBalance] = useState("0");
+  const [openingBalance, setOpeningBalance] = useState("");
   const [openNotes, setOpenNotes] = useState("");
 
   // Form states for closing shift
@@ -107,7 +107,7 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
       });
       toast.success(`تم فتح الوردية رقم #${shift.shiftNumber} بنجاح`);
       setCashierName("");
-      setOpeningBalance("0");
+      setOpeningBalance("");
       setOpenNotes("");
       setActiveTab("status");
     } catch (err: any) {
@@ -329,7 +329,7 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
                   step="any"
                   value={openingBalance}
                   onChange={(e) => setOpeningBalance(e.target.value)}
-                  placeholder="0"
+                  placeholder="أدخل المبلغ"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1">
                   المبلغ المتواجد في الدرج كعهدة فكة قبل بدء عمليات البيع.
@@ -409,7 +409,7 @@ export function ShiftModal({ open, onOpenChange, mode = "status" }: ShiftModalPr
                           onChange={(e) =>
                             setDenoms({ ...denoms, [denom]: Number(e.target.value) || 0 })
                           }
-                          placeholder="0"
+                          placeholder="العدد"
                           className="h-8 text-xs text-center"
                         />
                       </div>

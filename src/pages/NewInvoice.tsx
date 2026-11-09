@@ -99,7 +99,7 @@ function NewInvoicePage() {
   const [products, setProducts] = useState<ProductRow[]>([
     { id: crypto.randomUUID(), name: "", cost: "", price: "", quantity: "1" },
   ]);
-  const [down, setDown] = useState("0");
+  const [down, setDown] = useState("");
   const [monthly, setMonthly] = useState("");
   const [count, setCount] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
@@ -304,7 +304,7 @@ function NewInvoicePage() {
     if (cashCust) {
       setCustomerId(cashCust.id);
       setSaleType("cash");
-      setDown("0");
+      setDown("");
       setMonthly("");
       setCount("");
       toast.success(`تم اختيار العميل: ${cashCust.name} (بيع فوري)`);
@@ -345,7 +345,7 @@ function NewInvoicePage() {
   const reset = () => {
     setCustomerId("");
     setProducts([{ id: crypto.randomUUID(), name: "", cost: "", price: "", quantity: "1" }]);
-    setDown("0");
+    setDown("");
     setMonthly("");
     setCount(String(Math.max(1, shop.defaultInstallmentMonths || 6)));
     setDate(defaultFirstDue());
@@ -704,7 +704,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     const c = data.customers.find((x) => x.id === v);
                     if (c?.customerType === "cash") {
                       setSaleType("cash");
-                      setDown("0");
+                      setDown("");
                       setMonthly("");
                       setCount("");
                     } else if (c) {
@@ -795,7 +795,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                           setSaleType(opt.key);
                           if (opt.key === "installments" && !date)
                             setDate(addMonths(new Date(), 1));
-                          if (opt.key === "cash") setDown("0");
+                          if (opt.key === "cash") setDown("");
                         }}
                         aria-pressed={active}
                         className={cn(
@@ -1013,11 +1013,11 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                         <div className="mt-2 grid grid-cols-1 gap-2 border-t border-border/30 pt-3 sm:grid-cols-[110px_110px_minmax(0,1fr)]">
                           <div>
                             <Label className="mb-1 block text-[10px] text-muted-foreground">خصم البند %</Label>
-                            <Input type="number" min="0" max="100" value={p.discount || ""} onChange={(e) => updateProduct(p.id, { discount: e.target.value })} className="h-9 text-center" placeholder="0" />
+                            <Input type="number" min="0" max="100" value={p.discount || ""} onChange={(e) => updateProduct(p.id, { discount: e.target.value })} className="h-9 text-center" placeholder="—" />
                           </div>
                           <div>
                             <Label className="mb-1 block text-[10px] text-muted-foreground">ضريبة البند %</Label>
-                            <Input type="number" min="0" value={p.taxPct || ""} onChange={(e) => updateProduct(p.id, { taxPct: e.target.value })} className="h-9 text-center" placeholder="0" />
+                            <Input type="number" min="0" value={p.taxPct || ""} onChange={(e) => updateProduct(p.id, { taxPct: e.target.value })} className="h-9 text-center" placeholder="—" />
                           </div>
                           <div>
                             <Label className="mb-1 block text-[10px] text-muted-foreground">السيريال / IMEI (افصل بفاصلة)</Label>
@@ -1069,7 +1069,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                       type="number"
                       min="0"
                       max="100"
-                      placeholder="0"
+                      placeholder="أدخل النسبة"
                       value={discountPct}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -1085,7 +1085,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
+                      placeholder="أدخل المبلغ"
                       value={discountAmt}
                       onChange={(e) => {
                         const v = e.target.value;
@@ -1131,7 +1131,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     <Input
                       type="number"
                       min="0"
-                      placeholder="0"
+                      placeholder="أدخل النسبة"
                       value={taxPct}
                       onChange={(e) => setTaxPct(e.target.value)}
                       className="h-11 rounded-2xl border-white/10 bg-white/[0.04] text-center"
@@ -1288,7 +1288,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                                 </Label>
                                 <Input
                                   type="number"
-                                  placeholder="0"
+                                  placeholder="أدخل المبلغ"
                                   value={splitCash}
                                   onChange={(e) => {
                                     const val = e.target.value;
@@ -1308,7 +1308,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                                 </Label>
                                 <Input
                                   type="number"
-                                  placeholder="0"
+                                  placeholder="أدخل المبلغ"
                                   value={splitElectronic}
                                   onChange={(e) => setSplitElectronic(e.target.value)}
                                   className="font-bold"

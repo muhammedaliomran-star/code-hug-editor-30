@@ -1072,7 +1072,7 @@ export default function StaffAndShifts() {
                       value={actualDrawerCash}
                       onChange={(e) => setActualDrawerCash(e.target.value)}
                       className="font-mono text-base font-black pl-12 h-10 text-foreground"
-                      placeholder="0"
+                      placeholder="أدخل المبلغ"
                     />
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
                       ج.م

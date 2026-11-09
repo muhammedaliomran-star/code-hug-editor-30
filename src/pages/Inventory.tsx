@@ -1152,11 +1152,11 @@ function EditDialog({
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
   const [itemType, setItemType] = useState<string>(PRODUCT_TYPES[0]);
-  const [qty, setQty] = useState("0");
-  const [cost, setCost] = useState("0");
-  const [price, setPrice] = useState("0");
+  const [qty, setQty] = useState("");
+  const [cost, setCost] = useState("");
+  const [price, setPrice] = useState("");
   const [barcode, setBarcode] = useState("");
-  const [minStock, setMinStock] = useState("0");
+  const [minStock, setMinStock] = useState("");
   const [variantsJson, setVariantsJson] = useState("[]");
   const [imageUrl, setImageUrl] = useState("");
   const [supplierId, setSupplierId] = useState("");

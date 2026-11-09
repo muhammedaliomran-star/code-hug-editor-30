@@ -130,7 +130,7 @@ export default function Discounts() {
   const [formTitle, setFormTitle] = useState("");
   const [formType, setFormType] = useState<DiscountType>("percentage");
   const [formValue, setFormValue] = useState("10");
-  const [formMinOrder, setFormMinOrder] = useState("0");
+  const [formMinOrder, setFormMinOrder] = useState("");
   const [formMaxUsage, setFormMaxUsage] = useState("");
   const [formHasMaxUsage, setFormHasMaxUsage] = useState(false);
   const [formStartsAt, setFormStartsAt] = useState(new Date().toISOString().slice(0, 10));
@@ -225,7 +225,7 @@ export default function Discounts() {
     setFormTitle("");
     setFormType("percentage");
     setFormValue("10");
-    setFormMinOrder("0");
+    setFormMinOrder("");
     setFormMaxUsage("");
     setFormHasMaxUsage(false);
     setFormStartsAt(new Date().toISOString().slice(0, 10));

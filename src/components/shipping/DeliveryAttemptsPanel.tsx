@@ -98,7 +98,7 @@ export function DeliveryAttemptsPanel({ shipmentId }: { shipmentId: string }) {
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs">المبلغ المُحصَّل</Label>
-              <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-9 text-xs" placeholder="0" />
+              <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-9 text-xs" placeholder="المبلغ" />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">إعادة الجدولة</Label>

@@ -329,7 +329,7 @@ function SupplierFormDialog({
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [notes, setNotes] = useState("");
-  const [opening, setOpening] = useState("0");
+  const [opening, setOpening] = useState("");
   const [joinDate, setJoinDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [busy, setBusy] = useState(false);
 

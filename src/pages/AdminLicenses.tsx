@@ -213,7 +213,7 @@ export default function AdminLicensesPage() {
     if (tier === "trial") {
       setBillingCycle("monthly");
       setCustomDays(14);
-      setPaidAmount("0");
+      setPaidAmount("");
     } else if (tier === "starter") {
       setBillingCycle("monthly");
       setCustomDays(30);

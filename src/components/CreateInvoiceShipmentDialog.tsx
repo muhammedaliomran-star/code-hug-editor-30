@@ -263,7 +263,7 @@ export function CreateInvoiceShipmentDialog({
                 type="number"
                 value={codAmount}
                 onChange={(e) => setCodAmount(e.target.value)}
-                placeholder="0"
+                placeholder="المبلغ المتوقع"
                 className="font-bold text-center"
               />
               <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -277,7 +277,7 @@ export function CreateInvoiceShipmentDialog({
                 type="number"
                 value={shippingCost}
                 onChange={(e) => setShippingCost(e.target.value)}
-                placeholder="0"
+                placeholder="رسوم الشحن"
                 className="text-center"
               />
               <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -307,7 +307,7 @@ export function CreateInvoiceShipmentDialog({
                 step="0.5"
                 value={weightKg}
                 onChange={(e) => setWeightKg(e.target.value)}
-                placeholder="0"
+                placeholder="الوزن بالكيلو"
                 className="text-center"
               />
             </div>

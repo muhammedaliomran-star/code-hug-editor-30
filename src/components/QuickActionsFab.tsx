@@ -120,7 +120,7 @@ function TypeToggle({ value, onChange }: { value: "installment" | "cash"; onChan
 function QuickCustomerForm({ onDone }: { onDone: () => void }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [opening, setOpening] = useState("0");
+  const [opening, setOpening] = useState("");
   const [customerType, setCustomerType] = useState<"installment" | "cash">("installment");
   const [busy, setBusy] = useState(false);
 

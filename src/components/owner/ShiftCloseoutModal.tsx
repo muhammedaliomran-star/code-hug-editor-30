@@ -252,7 +252,7 @@ export function ShiftCloseoutModal({
                         min="0"
                         value={count === 0 ? "" : count}
                         onChange={(e) => handleCountChange(denom.value, e.target.value)}
-                        placeholder="0"
+                         placeholder="العدد"
                         className="w-16 h-8 text-center rounded-lg border border-border bg-background text-xs font-bold text-foreground outline-none focus:ring-1 focus:ring-primary"
                       />
                       <span className="text-[10px] text-muted-foreground">ورقة</span>

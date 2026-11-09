@@ -93,7 +93,7 @@ export function ProductForm({
   const [barcode, setBarcode] = useState("");
   const [mode, setMode] = useState<"auto" | "manual">("auto");
   const [prefix, setPrefix] = useState("");
-  const [minStock, setMinStock] = useState("0");
+  const [minStock, setMinStock] = useState("");
   const [scanOpen, setScanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmZeroPrice, setConfirmZeroPrice] = useState(false);
@@ -104,7 +104,7 @@ export function ProductForm({
     setName(""); setSize(""); setItemType(PRODUCT_TYPES[0]);
     setCategory("");
     setQty("1"); setCost(""); setPrice("");
-    setPrefix(""); setMinStock("0"); setConfirmZeroPrice(false);
+    setPrefix(""); setMinStock(""); setConfirmZeroPrice(false);
     setBarcode("");
     setNameTouched(false);
     setOpenSections({ identity: true, pricing: true, stock: true });
@@ -259,11 +259,11 @@ export function ProductForm({
             </div>
             <div className="grid gap-1.5">
               <Label>سعر الشراء</Label>
-              <div className="relative"><Input inputMode="decimal" value={cost} onChange={(e) => setCost(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} placeholder="0" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ج.م</span></div>
+              <div className="relative"><Input inputMode="decimal" value={cost} onChange={(e) => setCost(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} placeholder="مثال: 100" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ج.م</span></div>
             </div>
             <div className="grid gap-1.5">
               <Label>سعر البيع</Label>
-              <div className="relative"><Input inputMode="decimal" value={price} onChange={(e) => { setPrice(posNum(e.target.value)); setConfirmZeroPrice(false); }} onFocus={(e) => e.currentTarget.select()} placeholder="0" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ج.م</span></div>
+              <div className="relative"><Input inputMode="decimal" value={price} onChange={(e) => { setPrice(posNum(e.target.value)); setConfirmZeroPrice(false); }} onFocus={(e) => e.currentTarget.select()} placeholder="مثال: 150" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ج.م</span></div>
             </div>
           </div>
 

@@ -805,7 +805,7 @@ function AlertsPage() {
                 inputMode="decimal"
                 value={payAmount}
                 onChange={(e) => setPayAmount(e.target.value)}
-                placeholder="0"
+                placeholder="أدخل المبلغ"
                 className="text-right font-mono text-lg font-black"
                 autoFocus
               />

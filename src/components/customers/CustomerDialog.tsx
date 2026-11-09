@@ -385,7 +385,7 @@ export function CustomerDialog({
                       setCustomerType(opt.key);
                       setCreditSectionOpen(opt.key === "installment");
                       if (opt.key === "cash") {
-                        setCreditLimit("0");
+                        setCreditLimit("");
                         setDueDay(1);
                       }
                     }}
@@ -620,7 +620,7 @@ export function CustomerDialog({
               min={0}
               value={openingBalance}
               onChange={(e) => setOpeningBalance(e.target.value)}
-              placeholder="0"
+              placeholder="أدخل الرصيد"
               dir="ltr"
             />
           </div>

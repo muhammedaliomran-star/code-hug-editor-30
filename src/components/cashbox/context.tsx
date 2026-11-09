@@ -168,7 +168,7 @@ export function CashboxProvider({ children }: { children: ReactNode }) {
   const [transferFrom, setTransferFrom] = useState("acc-cash-main");
   const [transferTo, setTransferTo] = useState("acc-vodafone-cash");
   const [transferAmount, setTransferAmount] = useState("");
-  const [transferFee, setTransferFee] = useState("0");
+  const [transferFee, setTransferFee] = useState("");
   const [transferNotes, setTransferNotes] = useState("");
 
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
@@ -189,7 +189,7 @@ export function CashboxProvider({ children }: { children: ReactNode }) {
   const [isAccountManageOpen, setIsAccountManageOpen] = useState(false);
   const [newAccName, setNewAccName] = useState("");
   const [newAccType, setNewAccType] = useState<TreasuryAccount["type"]>("cash");
-  const [newAccInitial, setNewAccInitial] = useState("0");
+  const [newAccInitial, setNewAccInitial] = useState("");
   const [newAccNumber, setNewAccNumber] = useState("");
   const [newAccBank, setNewAccBank] = useState("");
   const [newAccColor, setNewAccColor] = useState("emerald");
@@ -487,7 +487,7 @@ export function CashboxProvider({ children }: { children: ReactNode }) {
     );
     setIsTransferOpen(false);
     setTransferAmount("");
-    setTransferFee("0");
+    setTransferFee("");
     setTransferNotes("");
     refreshAll();
   };
@@ -556,7 +556,7 @@ export function CashboxProvider({ children }: { children: ReactNode }) {
     toast.success("تمت إضافة الخزينة / الحساب المالي الجديد بنجاح");
     setIsAccountManageOpen(false);
     setNewAccName("");
-    setNewAccInitial("0");
+    setNewAccInitial("");
     setNewAccNumber("");
     setNewAccBank("");
     refreshAll();

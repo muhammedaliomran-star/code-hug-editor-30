@@ -1006,7 +1006,7 @@ function PosPage() {
                   <span className="text-[11px] text-muted-foreground">الخصم:</span>
                   <input
                     type="number"
-                    placeholder="0"
+                     placeholder="القيمة"
                     value={discountValue}
                     onChange={(e) => setDiscountValue(e.target.value)}
                     className="w-16 h-10 text-center rounded-lg border border-border/50 text-xs font-mono bg-background"

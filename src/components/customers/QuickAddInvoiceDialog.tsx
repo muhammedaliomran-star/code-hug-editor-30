@@ -29,7 +29,7 @@ export function QuickAddInvoice({ customerId, blocked }: { customerId: string; b
   const [productName, setProductName] = useState("");
   const [cost, setCost] = useState("");
   const [total, setTotal] = useState("");
-  const [down, setDown] = useState("0");
+  const [down, setDown] = useState("");
   const [monthly, setMonthly] = useState("");
   const [dateInput, setDateInput] = useState("");
   const [notes, setNotes] = useState("");
@@ -64,7 +64,7 @@ export function QuickAddInvoice({ customerId, blocked }: { customerId: string; b
     setProductName("");
     setCost("");
     setTotal("");
-    setDown("0");
+    setDown("");
     setMonthly("");
     setDateInput("");
     setNotes("");

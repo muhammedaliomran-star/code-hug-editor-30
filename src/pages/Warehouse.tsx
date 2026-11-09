@@ -435,15 +435,15 @@ function MoveToShopDialog({ item, open, onOpenChange }: { item: WarehouseItem; o
 
 function AddWarehouseDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState("0");
-  const [unitCost, setUnitCost] = useState("0");
-  const [salePrice, setSalePrice] = useState("0");
+  const [quantity, setQuantity] = useState("");
+  const [unitCost, setUnitCost] = useState("");
+  const [salePrice, setSalePrice] = useState("");
   const [season, setSeason] = useState<WarehouseSeason>("all");
   const [category, setCategory] = useState("other");
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
-    setName(""); setQuantity("0"); setUnitCost("0"); setSalePrice("0");
+    setName(""); setQuantity(""); setUnitCost(""); setSalePrice("");
     setSeason("all"); setCategory("other");
   };
 
