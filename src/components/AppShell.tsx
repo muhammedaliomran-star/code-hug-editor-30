@@ -394,7 +394,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main className={cn(
         "min-w-0 flex-1 text-right",
         isPosWorkspace
-          ? "flex min-h-0 flex-col overflow-hidden px-4 pb-4 pt-10 md:px-6 md:pb-6 md:pt-10"
+          ? "flex min-h-0 flex-col overflow-hidden p-0"
           : "px-4 pb-32 pt-10 md:px-12 md:pb-16 md:pt-16"
       )}>
         {serverLinked === false && (

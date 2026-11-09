@@ -623,7 +623,7 @@ function PosPage() {
   });
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 xl:overflow-hidden xl:pb-0">
       {/* Top Header Bar */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 py-2.5 shrink-0">
         <div className="flex items-center gap-3">
@@ -889,7 +889,7 @@ function PosPage() {
         </div>
 
         {/* Cart & Fast Checkout Sidebar */}
-        <div className="flex min-h-[620px] flex-col space-y-3 bg-card p-3.5 shadow-lg sm:p-4 xl:min-h-0">
+        <div className="flex min-h-[620px] flex-col space-y-3 overflow-y-auto bg-card p-3.5 shadow-lg custom-scrollbar sm:p-4 xl:min-h-0 xl:overflow-y-auto">
           {/* Customer Selection Row */}
           <div className="py-2.5 flex items-center justify-between gap-2 shrink-0 border-b border-border/40">
             <div className="flex items-center gap-2 min-w-0">
