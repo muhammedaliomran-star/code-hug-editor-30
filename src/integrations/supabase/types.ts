@@ -517,6 +517,33 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_notes: {
+        Row: {
+          date_from: string
+          date_to: string
+          id: string
+          note: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          date_from: string
+          date_to: string
+          id?: string
+          note?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          date_from?: string
+          date_to?: string
+          id?: string
+          note?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       delivery_attempts: {
         Row: {
           attempt_number: number
@@ -629,7 +656,9 @@ export type Database = {
       }
       expenses: {
         Row: {
+          account_id: string | null
           amount: number
+          branch_id: string | null
           category: string
           created_at: string
           expense_date: string
@@ -639,7 +668,9 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_id?: string | null
           amount?: number
+          branch_id?: string | null
           category?: string
           created_at?: string
           expense_date?: string
@@ -649,7 +680,9 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_id?: string | null
           amount?: number
+          branch_id?: string | null
           category?: string
           created_at?: string
           expense_date?: string
