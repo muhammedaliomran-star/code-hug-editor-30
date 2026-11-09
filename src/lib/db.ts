@@ -177,6 +177,10 @@ async function fetchAllInner() {
       address: r.address, joiningDate: r.joining_date,
       creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
       openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
+      segment: r.customer_segment ?? "regular", assignedStaffId: r.assigned_staff_id,
+      preferredContact: r.preferred_contact ?? "whatsapp", preferredPaymentMethod: r.preferred_payment_method ?? "cash",
+      debtAlertThreshold: Number(r.debt_alert_threshold ?? 0) / 100,
+      dueNotifications: r.due_notifications ?? true, tags: r.tags ?? [],
       createdAt: r.created_at,
     })),
     invoices: (i.data ?? []).map((r: TableRow<"invoices">) => ({
@@ -351,6 +355,10 @@ export async function invalidateCache(table?: string) {
         address: r.address, joiningDate: r.joining_date,
         creditLimit: Number(r.credit_limit ?? 0) / 100, dueDay: r.due_day ?? 1,
         openingBalance: Number(r.opening_balance ?? 0) / 100, nationalId: r.national_id,
+        segment: r.customer_segment ?? "regular", assignedStaffId: r.assigned_staff_id,
+        preferredContact: r.preferred_contact ?? "whatsapp", preferredPaymentMethod: r.preferred_payment_method ?? "cash",
+        debtAlertThreshold: Number(r.debt_alert_threshold ?? 0) / 100,
+        dueNotifications: r.due_notifications ?? true, tags: r.tags ?? [],
         createdAt: r.created_at,
       }),
     },
@@ -524,6 +532,10 @@ export const db = {
       customer_type: c.customerType ?? 'installment',
       notes: c.notes, frozen: c.frozen,
       address: c.address, joining_date: c.joiningDate, national_id: c.nationalId,
+      customer_segment: c.segment ?? "regular", assigned_staff_id: c.assignedStaffId,
+      preferred_contact: c.preferredContact ?? "whatsapp", preferred_payment_method: c.preferredPaymentMethod ?? "cash",
+      debt_alert_threshold: (c.debtAlertThreshold ?? 0) * 100, due_notifications: c.dueNotifications ?? true,
+      tags: c.tags ?? [],
       credit_limit: (c.creditLimit ?? 0) * 100, due_day: c.dueDay,
       opening_balance: (c.openingBalance ?? 0) * 100,
     }).select("id").single();
@@ -542,6 +554,13 @@ export const db = {
     if (patch.frozen !== undefined) upd.frozen = patch.frozen;
     if (patch.address !== undefined) upd.address = patch.address;
     if (patch.nationalId !== undefined) upd.national_id = patch.nationalId;
+    if (patch.segment !== undefined) upd.customer_segment = patch.segment;
+    if (patch.assignedStaffId !== undefined) upd.assigned_staff_id = patch.assignedStaffId;
+    if (patch.preferredContact !== undefined) upd.preferred_contact = patch.preferredContact;
+    if (patch.preferredPaymentMethod !== undefined) upd.preferred_payment_method = patch.preferredPaymentMethod;
+    if (patch.debtAlertThreshold !== undefined) upd.debt_alert_threshold = (patch.debtAlertThreshold ?? 0) * 100;
+    if (patch.dueNotifications !== undefined) upd.due_notifications = patch.dueNotifications;
+    if (patch.tags !== undefined) upd.tags = patch.tags;
     if (patch.joiningDate !== undefined) upd.joining_date = patch.joiningDate;
     if (patch.creditLimit !== undefined) upd.credit_limit = (patch.creditLimit ?? 0) * 100;
     if (patch.dueDay !== undefined) upd.due_day = patch.dueDay;

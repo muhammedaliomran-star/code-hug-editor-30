@@ -27,6 +27,9 @@ export type {
 
 export type CustomerStatus = "committed" | "neutral" | "defaulter";
 export type CustomerType = "installment" | "cash";
+export type CustomerSegment = "regular" | "vip" | "wholesale" | "retail" | "new";
+export type CustomerContactPreference = "whatsapp" | "phone" | "sms" | "none";
+export type CustomerPaymentPreference = "cash" | "card" | "bank_transfer" | "other";
 export type InvoiceStatus = "paid" | "pending" | "cancelled";
 export type PurchasePaymentType = "cash" | "credit";
 export type ShipmentStatus = "pending" | "processing" | "shipped" | "delivered" | "returned" | "cancelled";
@@ -92,6 +95,13 @@ export interface Customer {
   dueDay: number;
   openingBalance: number;
   nationalId?: string;
+  segment?: CustomerSegment;
+  assignedStaffId?: string | null;
+  preferredContact?: CustomerContactPreference;
+  preferredPaymentMethod?: CustomerPaymentPreference;
+  debtAlertThreshold?: number;
+  dueNotifications?: boolean;
+  tags?: string[];
   createdAt: string;
 }
 

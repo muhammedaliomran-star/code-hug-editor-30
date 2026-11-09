@@ -460,10 +460,14 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          assigned_staff_id: string | null
+          customer_segment: string
           created_at: string
           credit_limit: number
           customer_type: string
           due_day: number
+          debt_alert_threshold: number
+          due_notifications: boolean
           frozen: boolean
           id: string
           joining_date: string
@@ -474,15 +478,22 @@ export type Database = {
           phone: string
           rating: number
           status: string
+          preferred_contact: string
+          preferred_payment_method: string
+          tags: string[]
           updated_at: string
           user_id: string
         }
         Insert: {
           address?: string | null
+          assigned_staff_id?: string | null
+          customer_segment?: string
           created_at?: string
           credit_limit?: number
           customer_type?: string
           due_day?: number
+          debt_alert_threshold?: number
+          due_notifications?: boolean
           frozen?: boolean
           id?: string
           joining_date?: string
@@ -493,15 +504,22 @@ export type Database = {
           phone?: string
           rating?: number
           status?: string
+          preferred_contact?: string
+          preferred_payment_method?: string
+          tags?: string[]
           updated_at?: string
           user_id: string
         }
         Update: {
           address?: string | null
+          assigned_staff_id?: string | null
+          customer_segment?: string
           created_at?: string
           credit_limit?: number
           customer_type?: string
           due_day?: number
+          debt_alert_threshold?: number
+          due_notifications?: boolean
           frozen?: boolean
           id?: string
           joining_date?: string
@@ -512,6 +530,9 @@ export type Database = {
           phone?: string
           rating?: number
           status?: string
+          preferred_contact?: string
+          preferred_payment_method?: string
+          tags?: string[]
           updated_at?: string
           user_id?: string
         }

@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { db, type Customer, type CustomerStatus, type CustomerType } from "@/lib/store";
+import {
+  db,
+  type Customer,
+  type CustomerStatus,
+  type CustomerType,
+  type CustomerSegment,
+  type CustomerContactPreference,
+  type CustomerPaymentPreference,
+  useShopSettings,
+} from "@/lib/store";
+import { useStaffAndShifts } from "@/lib/staff";
 import { ddmmyyyyToIso } from "@/lib/date-utils";
 import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
@@ -26,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   User,
   Info,
@@ -33,9 +44,15 @@ import {
   Sparkles,
   CreditCard,
   Banknote,
+  ChevronDown,
+  Tags,
+  MessageCircle,
+  WalletCards,
+  BellRing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { waLink } from "@/lib/whatsapp-templates";
 
 const EG_PHONE_RE = /^01[0125]\d{8}$/;
 const CUSTOMER_DRAFT_KEY = "segilly.customer.new.draft.v1";
@@ -101,6 +118,15 @@ export function CustomerDialog({
   const [address, setAddress] = useState(customer?.address ?? "");
   const [joiningDate, setJoiningDate] = useState(customer?.joiningDate ?? today);
   const [nationalId, setNationalId] = useState(customer?.nationalId ?? "");
+  const [segment, setSegment] = useState<CustomerSegment>(customer?.segment ?? "regular");
+  const [assignedStaffId, setAssignedStaffId] = useState(customer?.assignedStaffId ?? "none");
+  const [preferredContact, setPreferredContact] = useState<CustomerContactPreference>(customer?.preferredContact ?? "whatsapp");
+  const [preferredPaymentMethod, setPreferredPaymentMethod] = useState<CustomerPaymentPreference>(customer?.preferredPaymentMethod ?? "cash");
+  const [debtAlertThreshold, setDebtAlertThreshold] = useState(String(customer?.debtAlertThreshold ?? 0));
+  const [dueNotifications, setDueNotifications] = useState(customer?.dueNotifications ?? true);
+  const [tagsText, setTagsText] = useState((customer?.tags ?? []).join(", "));
+  const [sendWelcomeWhatsapp, setSendWelcomeWhatsapp] = useState(false);
+  const [creditSectionOpen, setCreditSectionOpen] = useState(customer?.customerType !== "cash");
   const [creditLimit, setCreditLimit] = useState<string>(String(customer?.creditLimit ?? 0));
   const [openingBalance, setOpeningBalance] = useState<string>(
     String(customer?.openingBalance ?? 0),
@@ -109,6 +135,8 @@ export function CustomerDialog({
   const [pressed, setPressed] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(Boolean(customer));
   const [saving, setSaving] = useState(false);
+  const { staffList } = useStaffAndShifts();
+  const { settings: shop } = useShopSettings();
 
   const phoneValid = EG_PHONE_RE.test(phone);
   const hasDraft = Boolean(
@@ -131,6 +159,13 @@ export function CustomerDialog({
         setAddress(draft.address ?? "");
         setJoiningDate(draft.joiningDate ?? ddmmyyyyToIso(draft.joiningDateInput) ?? today);
         setNationalId(draft.nationalId ?? "");
+        setSegment(draft.segment ?? "regular");
+        setAssignedStaffId(draft.assignedStaffId ?? "none");
+        setPreferredContact(draft.preferredContact ?? "whatsapp");
+        setPreferredPaymentMethod(draft.preferredPaymentMethod ?? "cash");
+        setDebtAlertThreshold(String(draft.debtAlertThreshold ?? 0));
+        setDueNotifications(draft.dueNotifications ?? true);
+        setTagsText(draft.tagsText ?? "");
         setCreditLimit(String(draft.creditLimit ?? 0));
         setOpeningBalance(String(draft.openingBalance ?? 0));
         setDueDay(draft.dueDay ?? 1);
@@ -147,9 +182,10 @@ export function CustomerDialog({
     if (customer || !draftHydrated) return;
     sessionStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify({
       name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId,
-      creditLimit, openingBalance, dueDay,
+      segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold,
+      dueNotifications, tagsText, creditLimit, openingBalance, dueDay,
     }));
-  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, creditLimit, openingBalance, dueDay]);
+  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold, dueNotifications, tagsText, creditLimit, openingBalance, dueDay]);
   const initials = name.trim()
     ? name
         .trim()
@@ -167,9 +203,12 @@ export function CustomerDialog({
     if (nationalId && nationalId.length !== 14) return toast.error("الرقم القومي يجب أن يتكون من 14 رقمًا");
     const numericCreditLimit = Number(creditLimit);
     const numericOpeningBalance = Number(openingBalance);
+    const numericDebtAlertThreshold = Number(debtAlertThreshold);
     if (!Number.isFinite(numericCreditLimit) || numericCreditLimit < 0) return toast.error("سقف المديونية غير صحيح");
     if (!Number.isFinite(numericOpeningBalance) || numericOpeningBalance < 0) return toast.error("الرصيد الافتتاحي غير صحيح");
+    if (!Number.isFinite(numericDebtAlertThreshold) || numericDebtAlertThreshold < 0) return toast.error("حد تنبيه المديونية غير صحيح");
     if (customerType === "installment" && numericCreditLimit > 0 && numericOpeningBalance > numericCreditLimit) return toast.error("الرصيد الافتتاحي أكبر من سقف المديونية");
+    if (customerType === "installment" && numericCreditLimit > 0 && numericDebtAlertThreshold > numericCreditLimit) return toast.error("حد التنبيه أكبر من سقف المديونية");
     const payload = {
       name,
       phone,
@@ -181,6 +220,13 @@ export function CustomerDialog({
       address: address || null,
       joiningDate,
       nationalId: nationalId.trim() || undefined,
+      segment,
+      assignedStaffId: assignedStaffId === "none" ? null : assignedStaffId,
+      preferredContact,
+      preferredPaymentMethod,
+      debtAlertThreshold: numericDebtAlertThreshold,
+      dueNotifications,
+      tags: tagsText.split(",").map((tag) => tag.trim()).filter(Boolean).slice(0, 10),
       creditLimit: numericCreditLimit,
       dueDay,
       openingBalance: numericOpeningBalance,
@@ -192,7 +238,13 @@ export function CustomerDialog({
         toast.success("تم التحديث");
       } else {
         const created = await db.addCustomer(payload);
-        if (created) await onCreated?.(created);
+        if (created) {
+          await onCreated?.(created);
+          if (sendWelcomeWhatsapp && phone) {
+            const message = `مرحباً ${name.trim()} 👋\nتم تسجيل حسابك لدى ${shop.shopName || "متجرنا"}.\nيسعدنا خدمتك دائماً.`;
+            window.open(waLink(phone, message), "_blank", "noopener,noreferrer");
+          }
+        }
         toast.success("تم إضافة العميل");
       }
     } catch {
@@ -303,6 +355,7 @@ export function CustomerDialog({
                     type="button"
                     onClick={() => {
                       setCustomerType(opt.key);
+                      setCreditSectionOpen(opt.key === "installment");
                       if (opt.key === "cash") {
                         setCreditLimit("0");
                         setDueDay(1);
@@ -339,21 +392,116 @@ export function CustomerDialog({
             />
           </div>
 
-          {/* Optional identity */}
-          <div>
-            <Label>الرقم القومي (اختياري)</Label>
-            <Input
-              value={nationalId}
-              onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
-              placeholder="14 رقمًا عند الحاجة"
-              inputMode="numeric"
-              dir="ltr"
-              maxLength={14}
-            />
-          </div>
+          <Collapsible defaultOpen={false} className="rounded-2xl bg-foreground/[0.025] p-3 ring-1 ring-inset ring-border/40">
+            <CollapsibleTrigger className="group flex w-full items-center justify-between text-right">
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[state=open]:rotate-180" />
+              <span className="flex items-center gap-2 font-bold">
+                <Tags className="h-4 w-4 text-primary" />
+                بيانات إضافية
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+              <div>
+                <Label>الرقم القومي (اختياري)</Label>
+                <Input
+                  value={nationalId}
+                  onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
+                  placeholder="14 رقمًا عند الحاجة"
+                  inputMode="numeric"
+                  dir="ltr"
+                  maxLength={14}
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label>تصنيف العميل</Label>
+                  <Select value={segment} onValueChange={(value) => setSegment(value as CustomerSegment)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="regular">عادي</SelectItem>
+                      <SelectItem value="vip">VIP</SelectItem>
+                      <SelectItem value="wholesale">جملة</SelectItem>
+                      <SelectItem value="retail">تجزئة</SelectItem>
+                      <SelectItem value="new">عميل جديد</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>مندوب المبيعات</Label>
+                  <Select value={assignedStaffId} onValueChange={setAssignedStaffId}>
+                    <SelectTrigger><SelectValue placeholder="بدون مندوب" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون مندوب</SelectItem>
+                      {staffList.filter((staff) => staff.active).map((staff) => (
+                        <SelectItem key={staff.id} value={staff.id}>{staff.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>وسيلة التواصل المفضلة</Label>
+                  <Select value={preferredContact} onValueChange={(value) => setPreferredContact(value as CustomerContactPreference)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="whatsapp">واتساب</SelectItem>
+                      <SelectItem value="phone">مكالمة هاتفية</SelectItem>
+                      <SelectItem value="sms">رسالة SMS</SelectItem>
+                      <SelectItem value="none">بدون تفضيل</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>وسيلة الدفع المفضلة</Label>
+                  <Select value={preferredPaymentMethod} onValueChange={(value) => setPreferredPaymentMethod(value as CustomerPaymentPreference)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">نقدي</SelectItem>
+                      <SelectItem value="card">بطاقة</SelectItem>
+                      <SelectItem value="bank_transfer">تحويل بنكي</SelectItem>
+                      <SelectItem value="other">أخرى</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label>وسوم العميل</Label>
+                <Input value={tagsText} onChange={(e) => setTagsText(e.target.value)} placeholder="VIP، جملة، مهم" maxLength={200} />
+                <p className="mt-1 text-[11px] text-muted-foreground">افصل بين الوسوم بفاصلة.</p>
+              </div>
+
+              <div>
+                <Label>ملاحظات (اختياري)</Label>
+                <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="أي ملاحظات إضافية..." maxLength={300} />
+              </div>
+
+              {!customer && (
+                <div className="flex items-center justify-between rounded-xl bg-success/[0.06] p-3">
+                  <Switch checked={sendWelcomeWhatsapp} onCheckedChange={setSendWelcomeWhatsapp} disabled={!phoneValid} />
+                  <div className="flex items-center gap-2 text-right">
+                    <MessageCircle className="h-4 w-4 text-success" />
+                    <div>
+                      <div className="text-sm font-bold">إرسال رسالة ترحيب عبر واتساب</div>
+                      <div className="text-[11px] text-muted-foreground">يتطلب رقم هاتف صحيحًا</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Installment settings / Cash info */}
-          <AnimatePresence mode="wait" initial={false}>
+          <Collapsible open={creditSectionOpen} onOpenChange={setCreditSectionOpen} className="rounded-2xl bg-foreground/[0.025] p-3 ring-1 ring-inset ring-border/40">
+            <CollapsibleTrigger className="group flex w-full items-center justify-between text-right">
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-[state=open]:rotate-180" />
+              <span className="flex items-center gap-2 font-bold">
+                <WalletCards className="h-4 w-4 text-primary" />
+                إعدادات ائتمانية
+              </span>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-4 pt-4">
+            <AnimatePresence mode="wait" initial={false}>
             {customerType === "installment" ? (
               <motion.div
                 key="type-installment"
@@ -408,7 +556,7 @@ export function CustomerDialog({
                 </span>
               </motion.div>
             )}
-          </AnimatePresence>
+            </AnimatePresence>
 
           {/* Opening balance */}
           <div>
@@ -437,6 +585,29 @@ export function CustomerDialog({
               dir="ltr"
             />
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label>حد تنبيه المديونية (ج.م)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={debtAlertThreshold}
+                onChange={(e) => setDebtAlertThreshold(e.target.value)}
+                placeholder="0 = بدون تنبيه"
+                dir="ltr"
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-xl bg-foreground/[0.04] px-3 py-2.5">
+              <Switch checked={dueNotifications} onCheckedChange={setDueNotifications} />
+              <div className="flex items-center gap-2 text-right">
+                <BellRing className="h-4 w-4 text-warning" />
+                <span className="text-sm font-bold">تنبيهات الاستحقاق</span>
+              </div>
+            </div>
+          </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Rating section (installment only) */}
           <AnimatePresence mode="wait" initial={false}>
@@ -505,16 +676,6 @@ export function CustomerDialog({
                   </div>
                 </div>
 
-                {/* Notes */}
-                <div>
-                  <Label>ملاحظات (اختياري)</Label>
-                  <Input
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    placeholder="أي ملاحظات إضافية..."
-                    maxLength={300}
-                  />
-                </div>
               </motion.div>
             )}
           </AnimatePresence>
