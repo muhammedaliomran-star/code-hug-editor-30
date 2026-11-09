@@ -111,20 +111,45 @@ export function findStockByBarcode(items: StockItem[], code: string): StockItem 
 export async function fetchStockHistory(stockItemId: string, name: string): Promise<StockHistoryEntry[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
-  const [pi, ii, adj] = await Promise.all([
-    supabase.from("purchase_items").select("id,name,quantity,created_at,purchase_id").eq("user_id", user.id).eq("name", name),
-    supabase.from("invoice_items").select("id,name,created_at,invoice_id").eq("user_id", user.id).eq("name", name),
-    supabase.from("stock_adjustments").select("id,delta,reason,notes,created_at").eq("user_id", user.id).eq("stock_item_id", stockItemId),
-  ]);
+  // Prefer the authoritative stock_movements ledger (by stock_item_id).
+  const { data: movements } = await supabase
+    .from("stock_movements")
+    .select("id,movement_type,quantity,unit_cost,reference_id,notes,created_at")
+    .eq("user_id", user.id)
+    .eq("stock_item_id", stockItemId)
+    .order("created_at", { ascending: false });
   const out: StockHistoryEntry[] = [];
-  for (const r of (pi.data ?? [])) {
-    out.push({ id: `p-${r.id}`, date: r.created_at, type: "purchase", qty: Number(r.quantity ?? 0), ref: "فاتورة شراء" });
+  for (const r of (movements ?? [])) {
+    const mt = r.movement_type as string;
+    const type: "purchase" | "sale" | "adjustment" =
+      mt === "purchase" ? "purchase" : mt === "sale" ? "sale" : "adjustment";
+    out.push({
+      id: `m-${r.id}`,
+      date: r.created_at,
+      type,
+      qty: Number(r.quantity ?? 0),
+      reason: r.notes ?? undefined,
+      notes: r.notes,
+      ref: mt === "purchase" ? "فاتورة شراء" : mt === "sale" ? "فاتورة بيع" : mt === "return" ? "مرتجع" : "تسوية",
+    });
   }
-  for (const r of (ii.data ?? [])) {
-    out.push({ id: `i-${r.id}`, date: r.created_at, type: "sale", qty: -1, ref: "فاتورة بيع" });
-  }
-  for (const r of (adj.data ?? [])) {
-    out.push({ id: `a-${r.id}`, date: r.created_at, type: "adjustment", qty: Number(r.delta ?? 0), reason: r.reason, notes: r.notes });
+  // If the ledger is empty (legacy data), fall back to name-based reconstruction
+  // using real invoice_items quantities instead of a hardcoded -1.
+  if (out.length === 0) {
+    const [pi, ii, adj] = await Promise.all([
+      supabase.from("purchase_items").select("id,quantity,created_at,purchase_id").eq("user_id", user.id).eq("name", name),
+      supabase.from("invoice_items").select("id,quantity,created_at,invoice_id").eq("user_id", user.id).eq("name", name),
+      supabase.from("stock_adjustments").select("id,delta,reason,notes,created_at").eq("user_id", user.id).eq("stock_item_id", stockItemId),
+    ]);
+    for (const r of (pi.data ?? [])) {
+      out.push({ id: `p-${r.id}`, date: r.created_at, type: "purchase", qty: Number(r.quantity ?? 0), ref: "فاتورة شراء" });
+    }
+    for (const r of (ii.data ?? [])) {
+      out.push({ id: `i-${r.id}`, date: r.created_at, type: "sale", qty: -Number(r.quantity ?? 1), ref: "فاتورة بيع" });
+    }
+    for (const r of (adj.data ?? [])) {
+      out.push({ id: `a-${r.id}`, date: r.created_at, type: "adjustment", qty: Number(r.delta ?? 0), reason: r.reason, notes: r.notes });
+    }
   }
   return out.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }

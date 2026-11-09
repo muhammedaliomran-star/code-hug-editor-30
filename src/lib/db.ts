@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { calculateLineFinancials } from "@/lib/financial-engine";
@@ -237,6 +237,11 @@ async function fetchAllInner() {
       size: r.size ?? null,
       itemType: r.item_type ?? null,
       minStock: Number(r.min_stock ?? 0),
+      archived: r.archived ?? false,
+      variants: Array.isArray(r.variants) ? r.variants : [],
+      imageUrl: r.image_url ?? null,
+      supplierId: r.supplier_id ?? null,
+      category: r.category ?? null,
       createdAt: r.created_at, updatedAt: r.updated_at,
     })),
     warehouseItems: (wh.data ?? []).map((r: TableRow<"warehouse_items">) => ({
@@ -396,6 +401,26 @@ export async function invalidateCache(table?: string) {
         partyName: r.party_name, partyPhone: r.party_phone,
       }),
     },
+    stock_items: {
+      cacheKey: "stockItems",
+      fetch: () => supabase.from("stock_items").select("*").order("name"),
+      map: (r) => ({
+        id: r.id, name: r.name,
+        quantity: Number(r.quantity ?? 0),
+        lastUnitCost: Number(r.last_unit_cost ?? 0) / 100,
+        salePrice: Number(r.sale_price ?? 0) / 100,
+        barcode: r.barcode ?? null,
+        size: r.size ?? null,
+        itemType: r.item_type ?? null,
+        minStock: Number(r.min_stock ?? 0),
+        archived: r.archived ?? false,
+        variants: Array.isArray(r.variants) ? r.variants : [],
+        imageUrl: r.image_url ?? null,
+        supplierId: r.supplier_id ?? null,
+        category: r.category ?? null,
+        createdAt: r.created_at, updatedAt: r.updated_at,
+      }),
+    },
   };
   const entry = table ? dailyMap[table] : undefined;
   if (!entry) {
@@ -542,7 +567,12 @@ export const db = {
       credit_limit: (c.creditLimit ?? 0) * 100, due_day: c.dueDay,
       opening_balance: (c.openingBalance ?? 0) * 100,
     }).select("id").single();
-    if (error) throw error;
+    if (error) {
+      if (isMissingColumnError(error)) {
+        throw new Error("CUSTOMER_PROFILE_MIGRATION_REQUIRED");
+      }
+      throw error;
+    }
     await fetchAll();
     return inserted
       ? cache.customers.find((item) => item.id === inserted.id) ?? ({ ...(c as any), id: inserted.id, createdAt: new Date().toISOString() } as Customer)
@@ -572,7 +602,12 @@ export const db = {
     if (patch.dueDay !== undefined) upd.due_day = patch.dueDay;
     if (patch.openingBalance !== undefined) upd.opening_balance = (patch.openingBalance ?? 0) * 100;
     const { error } = await supabase.from("customers").update(upd).eq("id", id);
-    if (error) throw error;
+    if (error) {
+      if (isMissingColumnError(error)) {
+        throw new Error("CUSTOMER_PROFILE_MIGRATION_REQUIRED");
+      }
+      throw error;
+    }
     await fetchAll();
   },
   async removeCustomer(id: string) {
@@ -1094,8 +1129,9 @@ export const db = {
 
   async updateStockItem(
     id: string,
-    patch: Partial<{ name: string; quantity: number; lastUnitCost: number; salePrice: number; barcode: string | null; size: string | null; itemType: string | null; minStock: number }>,
+    patch: Partial<{ name: string; quantity: number; lastUnitCost: number; salePrice: number; barcode: string | null; size: string | null; itemType: string | null; minStock: number; variants: any[]; imageUrl: string | null; supplierId: string | null; category: string | null }>,
     adjustment?: { delta: number; reason: string; notes?: string },
+    options?: { skipRefresh?: boolean },
   ) {
     const upd: any = {};
     if (patch.name !== undefined) upd.name = patch.name;
@@ -1106,59 +1142,153 @@ export const db = {
     if (patch.size !== undefined) upd.size = patch.size || null;
     if (patch.itemType !== undefined) upd.item_type = patch.itemType || null;
     if (patch.minStock !== undefined) upd.min_stock = patch.minStock;
-    const { error } = await supabase.from("stock_items").update(upd).eq("id", id);
-    if (error) throw error;
-    if (adjustment && adjustment.delta !== 0) {
-      const user_id = await uid();
-      await supabase.from("stock_adjustments").insert({
-        user_id, stock_item_id: id, delta: adjustment.delta,
-        reason: adjustment.reason, notes: adjustment.notes ?? null,
-      });
+    if (patch.variants !== undefined) upd.variants = patch.variants;
+    if (patch.imageUrl !== undefined) upd.image_url = patch.imageUrl;
+    if (patch.supplierId !== undefined) upd.supplier_id = patch.supplierId;
+    if (patch.category !== undefined) upd.category = patch.category;
+    try {
+      const { error } = await supabase.from("stock_items").update(upd).eq("id", id);
+      if (error) throw error;
+      if (adjustment && adjustment.delta !== 0) {
+        const user_id = await uid();
+        await supabase.from("stock_adjustments").insert({
+          user_id, stock_item_id: id, delta: adjustment.delta,
+          reason: adjustment.reason, notes: adjustment.notes ?? null,
+        });
+      }
+      if (!options?.skipRefresh) await fetchAll();
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        const payload: any = { id, ...upd };
+        enqueueOffline({ tableName: "stock_items", operation: "update", payload });
+      } catch { /* ignore */ }
+      throw err;
     }
-    await fetchAll();
+  },
+  async archiveStockItem(id: string) {
+    try {
+      const { error } = await supabase.from("stock_items").update({ archived: true }).eq("id", id);
+      if (error) throw error;
+      await fetchAll();
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        enqueueOffline({ tableName: "stock_items", operation: "update", payload: { id, archived: true } });
+      } catch { /* ignore */ }
+      throw err;
+    }
+  },
+  async restoreStockItem(id: string) {
+    try {
+      const { error } = await supabase.from("stock_items").update({ archived: false }).eq("id", id);
+      if (error) throw error;
+      await fetchAll();
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        enqueueOffline({ tableName: "stock_items", operation: "update", payload: { id, archived: false } });
+      } catch { /* ignore */ }
+      throw err;
+    }
+  },
+  async hardDeleteStockItem(id: string) {
+    try {
+      const { error } = await supabase.from("stock_items").delete().eq("id", id);
+      if (error) throw error;
+      await fetchAll();
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        enqueueOffline({ tableName: "stock_items", operation: "delete", payload: { id } });
+      } catch { /* ignore */ }
+      throw err;
+    }
   },
   async removeStockItem(id: string) {
-    const { error } = await supabase.from("stock_items").delete().eq("id", id);
-    if (error) throw error;
-    await fetchAll();
+    // Backwards-compatible alias → archive (soft delete).
+    return this.archiveStockItem(id);
   },
   async adjustStock(id: string, delta: number, reason: string, notes?: string) {
     if (!delta) throw new Error("أدخل كمية التعديل");
-    const user_id = await uid();
-    const { data: existing, error: e0 } = await supabase
-      .from("stock_items").select("quantity").eq("id", id).single();
-    if (e0) throw e0;
-    const next = Math.max(0, Number(existing?.quantity ?? 0) + delta);
-    const applied = next - Number(existing?.quantity ?? 0);
-    const { error: e1 } = await supabase.from("stock_items").update({ quantity: next }).eq("id", id);
-    if (e1) throw e1;
-    const { error: e2 } = await supabase.from("stock_adjustments").insert({
-      user_id, stock_item_id: id, delta: applied, reason, notes: notes?.trim() || null,
-    });
-    if (e2) throw e2;
-    await fetchAll();
-    return next;
+    try {
+      const { data, error } = await (supabase.rpc as any)("adjust_stock_atomic", {
+        p_stock_item_id: id,
+        p_delta: delta,
+        p_reason: reason,
+        p_notes: notes?.trim() || null,
+      });
+      if (error) throw error;
+      await fetchAll();
+      return Number(data ?? 0);
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        enqueueOffline({ tableName: "stock_items", operation: "update", payload: { id, quantity_delta: delta } });
+      } catch { /* ignore */ }
+      throw err;
+    }
   },
   async addStockItem(item: {
     name: string; quantity?: number; lastUnitCost?: number; salePrice?: number; barcode?: string | null;
     size?: string | null; itemType?: string | null; minStock?: number;
     lowStockAlert?: number; season?: string | null; category?: string | null; notes?: string | null;
-  }) {
-    const user_id = await uid();
-    const { data, error } = await supabase.from("stock_items").insert({
-      user_id,
-      name: item.name,
-      quantity: item.quantity ?? 0,
-      last_unit_cost: (item.lastUnitCost ?? 0) * 100,
-      sale_price: (item.salePrice ?? 0) * 100,
-      barcode: item.barcode ?? null,
-      size: item.size ?? null,
-      item_type: item.itemType ?? null,
-      min_stock: item.minStock ?? 0,
-    }).select("id").single();
-    if (error) throw error;
-    await fetchAll();
-    return data?.id as string | undefined;
+    variants?: any[]; imageUrl?: string | null; supplierId?: string | null;
+  }, options?: { skipRefresh?: boolean }) {
+    let user_id: string;
+    try {
+      user_id = await uid();
+    } catch {
+      try {
+        const { data } = await supabase.auth.getSession();
+        user_id = data.session?.user?.id ?? "";
+      } catch { user_id = ""; }
+      if (!user_id) throw new Error("Not authenticated");
+    }
+    try {
+      const { data, error } = await supabase.from("stock_items").insert({
+        user_id,
+        name: item.name,
+        quantity: item.quantity ?? 0,
+        last_unit_cost: (item.lastUnitCost ?? 0) * 100,
+        sale_price: (item.salePrice ?? 0) * 100,
+        barcode: item.barcode ?? null,
+        size: item.size ?? null,
+        item_type: item.itemType ?? null,
+        min_stock: item.minStock ?? 0,
+      variants: item.variants ?? [],
+      image_url: item.imageUrl ?? null,
+      supplier_id: item.supplierId ?? null,
+      category: item.category ?? null,
+      }).select("id").single();
+      if (error) throw error;
+      if (!options?.skipRefresh) await fetchAll();
+      return data?.id as string | undefined;
+    } catch (err) {
+      try {
+        const { enqueueOffline } = await import("./offline-queue");
+        const queuedId = `off-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        enqueueOffline({
+          tableName: "stock_items",
+          operation: "upsert",
+          payload: {
+            id: queuedId,
+            user_id,
+            name: item.name,
+            quantity: item.quantity ?? 0,
+            last_unit_cost: (item.lastUnitCost ?? 0) * 100,
+            sale_price: (item.salePrice ?? 0) * 100,
+            barcode: item.barcode ?? null,
+            size: item.size ?? null,
+            item_type: item.itemType ?? null,
+            min_stock: item.minStock ?? 0,
+          },
+          onConflict: "id",
+        });
+        return queuedId;
+      } catch { /* ignore */ }
+      throw err;
+    }
   },
 
   async addWarehouseItem(item: {

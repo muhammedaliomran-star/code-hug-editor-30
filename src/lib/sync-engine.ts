@@ -27,7 +27,7 @@ const SYNC_TABLES: Record<string, { select: string; orderBy: string }> = {
   purchases: { select: "id,supplier_id,total,payment_type,purchase_date,notes,created_at,updated_at", orderBy: "updated_at" },
   purchase_items: { select: "id,purchase_id,name,unit_cost,quantity,created_at,updated_at", orderBy: "updated_at" },
   supplier_payments: { select: "id,supplier_id,amount,paid_at,updated_at", orderBy: "updated_at" },
-  stock_items: { select: "id,name,quantity,last_unit_cost,sale_price,barcode,size,item_type,min_stock,created_at,updated_at", orderBy: "updated_at" },
+  stock_items: { select: "id,name,quantity,last_unit_cost,sale_price,barcode,size,item_type,min_stock,archived,variants,image_url,supplier_id,category,created_at,updated_at", orderBy: "updated_at" },
   return_records: { select: "id,invoice_id,type,total_amount,reason,notes,created_at,updated_at", orderBy: "updated_at" },
   return_items: { select: "id,return_id,name,unit_price,quantity,created_at,updated_at", orderBy: "updated_at" },
   branches: { select: "id,name,location,phone,manager_name,is_main,created_at,updated_at", orderBy: "updated_at" },

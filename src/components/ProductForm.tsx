@@ -14,6 +14,7 @@ import { CountUp } from "@/components/CountUp";
 import { motion, AnimatePresence } from "framer-motion";
 import { openPdfDocument, esc } from "@/lib/pdf-doc";
 import { toast } from "sonner";
+import { recordAuditLog } from "@/lib/audit";
 import { cn } from "@/lib/utils";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { generateBarcode } from "@/lib/barcode";
@@ -85,6 +86,7 @@ export function ProductForm({
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
   const [itemType, setItemType] = useState<string>(PRODUCT_TYPES[0]);
+  const [category, setCategory] = useState("");
   const [qty, setQty] = useState("1");
   const [cost, setCost] = useState("");
   const [price, setPrice] = useState("");
@@ -98,6 +100,7 @@ export function ProductForm({
 
   const reset = () => {
     setName(""); setSize(""); setItemType(PRODUCT_TYPES[0]);
+    setCategory("");
     setQty("1"); setCost(""); setPrice("");
     setPrefix(""); setMinStock("0"); setConfirmZeroPrice(false);
     setBarcode("");
@@ -166,6 +169,14 @@ export function ProductForm({
         size: size.trim() || null,
         itemType,
         minStock: Math.max(0, Number(minStock) || 0),
+        category: category.trim() || null,
+      });
+      void recordAuditLog({
+        action: "STOCK_CREATE",
+        module: "inventory",
+        title: `إضافة صنف: ${name.trim()}`,
+        entityName: name.trim(),
+        newValue: `${nQty} وحدة × ${nCost} شراء / ${nPrice} بيع`,
       });
       const savedName = name.trim();
       const savedSize = size.trim();
@@ -224,6 +235,10 @@ export function ProductForm({
                     {PRODUCT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>التصنيف (اختياري)</Label>
+                <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="مثال: ملابس / إلكترونيات" className="rounded-xl text-right" />
               </div>
             </div>
           </div>

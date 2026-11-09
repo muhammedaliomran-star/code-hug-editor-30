@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { ActionButton } from "@/components/ActionButton";
-import { Badge } from "@/components/ui/badge";
+
 import {
   Dialog,
   DialogContent,
@@ -86,17 +86,17 @@ import {
   PackagePlus,
   Scale,
   Loader2,
-  Check,
-  Wand2,
   Tag,
-  Calculator,
+  Copy,
+  RotateCcw,
+  Undo2,
 } from "lucide-react";
-import { CountUp } from "@/components/CountUp";
-import { motion, AnimatePresence } from "framer-motion";
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { usePrivacy } from "@/lib/privacy";
+import { invalidateCache } from "@/lib/db";
+import { recordAuditLog } from "@/lib/audit";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { generateBarcode } from "@/lib/barcode";
 import { AddProductDialog } from "@/components/AddProductDialog";
@@ -132,7 +132,6 @@ function InventoryPage() {
   const data = useDB();
   const { activeBranchId, activeBranch, isAllBranches } = useActiveBranch();
   const { privacy, toggle } = usePrivacy();
-  const [q, setQ] = useState("");
   const [tab, setTab] = useState<Tab>("all");
   const [editing, setEditing] = useState<StockItem | null>(null);
   const [historyItem, setHistoryItem] = useState<StockItem | null>(null);
@@ -145,6 +144,57 @@ function InventoryPage() {
   const [addPrefillBarcode, setAddPrefillBarcode] = useState<string | undefined>(undefined);
   const [labelItem, setLabelItem] = useState<StockItem | null>(null);
   const [excelOpen, setExcelOpen] = useState(false);
+  const [profitOpen, setProfitOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [sortKey, setSortKey] = useState<"qty" | "name" | "price" | "newest" | "low">("qty");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  // Realtime: refresh stock_items across devices when anything changes.
+  useEffect(() => {
+    let channel: any = null;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data } = await supabase.auth.getUser();
+        const uid = data?.user?.id;
+        if (!uid || cancelled) return;
+        channel = supabase
+          .channel("inventory-realtime")
+          .on("postgres_changes", { event: "*", schema: "public", table: "stock_items", filter: `user_id=eq.${uid}` }, () => {
+            invalidateCache("stock_items");
+          })
+          .subscribe();
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) {
+        import("@/integrations/supabase/client").then(({ supabase }) => supabase.removeChannel(channel)).catch(() => {});
+      }
+    };
+  }, []);
+  // Debounced search
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(searchInput), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+
+  const normalizeAr = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .replace(/[إأآا]/g, "ا")
+      .replace(/ة/g, "ه")
+      .replace(/ى/g, "ي")
+      .replace(/[ًٌٍَُِّْ]/g, "")
+      .trim();
 
   const onScanned = (code: string) => {
     setScanOpen(false);
@@ -176,7 +226,7 @@ function InventoryPage() {
       const val = calculateBranchStockValuation(activeBranch.id, data.stockItems);
       const low = data.stockItems.filter((it) => {
         const st = getProductStockInBranch(activeBranch.id, it.id, it.quantity);
-        return st.quantity <= (st.minStock || LOW_STOCK());
+        return st.quantity <= (st.minStock || it.minStock || LOW_STOCK());
       }).length;
       const avgCost = totalItems > 0 ? data.stockItems.reduce((s, it) => s + it.lastUnitCost, 0) / totalItems : 0;
       return { totalItems, value: val.totalCostValue, low, avgCost };
@@ -184,21 +234,43 @@ function InventoryPage() {
     const value = data.stockItems.reduce((s, it) => s + it.quantity * it.lastUnitCost, 0);
     const avgCost =
       totalItems > 0 ? data.stockItems.reduce((s, it) => s + it.lastUnitCost, 0) / totalItems : 0;
-    const low = data.stockItems.filter((it) => it.quantity < LOW_STOCK()).length;
+    const low = data.stockItems.filter((it) => it.quantity < (it.minStock || LOW_STOCK())).length;
     return { totalItems, value, low, avgCost };
   }, [data.stockItems, isAllBranches, activeBranch]);
 
   const list = useMemo(() => {
     return data.stockItems
+      .filter((it) => (showArchived ? true : !it.archived))
+      .filter((it) => (categoryFilter === "all" ? true : (it.category || "") === categoryFilter))
       .filter((it) => {
         const qty = branchQty(it.id, it.quantity);
+        const threshold = it.minStock || LOW_STOCK();
         if (tab === "out") return qty <= 0;
-        if (tab === "low") return qty > 0 && qty < LOW_STOCK();
+        if (tab === "low") return qty > 0 && qty < threshold;
         return true;
       })
-      .filter((it) => (q ? it.name.includes(q) || (it.barcode ?? "").includes(q) : true))
-      .sort((a, b) => branchQty(a.id, a.quantity) - branchQty(b.id, b.quantity));
+      .filter((it) => {
+        if (!debouncedQ) return true;
+        const nq = normalizeAr(debouncedQ);
+        return (
+          normalizeAr(it.name).includes(nq) ||
+          (it.barcode ?? "").toLowerCase().includes(debouncedQ.toLowerCase()) ||
+          normalizeAr(it.size ?? "").includes(nq) ||
+          normalizeAr(it.itemType ?? "").includes(nq)
+        );
+      })
+      .sort((a, b) => {
+        if (sortKey === "name") return a.name.localeCompare(b.name, "ar");
+        if (sortKey === "price") return b.salePrice - a.salePrice;
+        if (sortKey === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        if (sortKey === "low") return (a.minStock || LOW_STOCK()) - (b.minStock || LOW_STOCK());
+        return branchQty(a.id, a.quantity) - branchQty(b.id, b.quantity);
+      });
   }, [data.stockItems, q, tab, isAllBranches, activeBranchId]);
+
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const paginatedList = list.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   if (data.loading) return <PageLoadingSkeleton type="table" />;
 
@@ -225,7 +297,7 @@ function InventoryPage() {
 
   const exportPDF = () => {
     const totalValue = list.reduce((s, it) => s + it.quantity * it.lastUnitCost, 0);
-    const lowCount = list.filter((it) => it.quantity > 0 && it.quantity < LOW_STOCK()).length;
+    const lowCount = list.filter((it) => it.quantity > 0 && it.quantity < (it.minStock || LOW_STOCK())).length;
     const outCount = list.filter((it) => it.quantity <= 0).length;
     const body = `
 <h2 class="sec">قائمة الأصناف</h2>
@@ -236,7 +308,7 @@ function InventoryPage() {
 ${
   list
     .map((it) => {
-      const cls = it.quantity <= 0 ? "out" : it.quantity < LOW_STOCK() ? "low" : "";
+      const cls = it.quantity <= 0 ? "out" : it.quantity < (it.minStock || LOW_STOCK()) ? "low" : "";
       return `<tr class="${cls}">
     <td>${esc(it.name)}</td>
     <td class="num">${fmt(it.quantity)}</td>
@@ -307,7 +379,7 @@ ${
             <ActionButton
               tone={privacy ? "primary" : "surface"}
               onClick={toggle}
-              title="إخفاء الأرقام"
+              title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
               icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             >
             </ActionButton>
@@ -358,11 +430,57 @@ ${
           value={totals.low}
           tone={totals.low > 0 ? "danger" : "neutral"}
           format={(n) => String(Math.round(n))}
-          sub={`أقل من ${LOW_STOCK()} وحدات • مرتبط بالمنبه`}
+          sub={`أقل من الحد الأدنى لكل صنف • مرتبط بالمنبه`}
         />
       </div>
 
       <div className="sticky-search-bar">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Select value={sortKey} onValueChange={(v) => { setSortKey(v as any); setPage(1); }}>
+            <SelectTrigger className="h-9 w-[150px] rounded-xl text-xs">
+              <SelectValue placeholder="فرز" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="qty">حسب الكمية</SelectItem>
+              <SelectItem value="name">حسب الاسم</SelectItem>
+              <SelectItem value="price">حسب السعر</SelectItem>
+              <SelectItem value="newest">الأحدث</SelectItem>
+              <SelectItem value="low">الأكثر نقصًا</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant={showArchived ? "default" : "outline"} className="h-9 rounded-xl text-xs" onClick={() => { setShowArchived((v) => !v); setPage(1); }}>
+            {showArchived ? "إخفاء المؤرشف" : "عرض المؤرشف"}
+          </Button>
+          <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setPage(1); }}>
+            <SelectTrigger className="h-9 w-[140px] rounded-xl text-xs">
+              <SelectValue placeholder="تصنيف" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل التصنيفات</SelectItem>
+              {Array.from(new Set(data.stockItems.map((it) => it.category).filter(Boolean))).map((c) => (
+                <SelectItem key={c as string} value={c as string}>{c as string}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs" onClick={() => setProfitOpen(true)}>
+            تقرير أرباح
+          </Button>
+          <Button size="sm" variant="outline" className="h-9 rounded-xl text-xs gap-1" onClick={() => {
+            const items = paginatedList.filter((it) => it.barcode);
+            if (items.length === 0) { toast.error("لا توجد منتجات بباركود في هذه الصفحة"); return; }
+            const w = window.open("", "_blank");
+            if (!w) { toast.error("المتصفح منع فتح نافذة"); return; }
+            const html = `<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>ملصقات</title><style>@page{size:50mm 30mm;margin:2mm}body{margin:0;font-family:Tahoma,sans-serif}.label{width:46mm;text-align:center;margin:2mm}.name{font-size:9pt;font-weight:700}.price{font-size:11pt;font-weight:800;margin-top:1mm}.bars{height:11mm;display:flex;align-items:stretch;justify-content:center;gap:1px;margin:1.5mm 0 .5mm}.bars i{background:#0b1220;display:block}.bars b{background:#fff;display:block}.code{font-family:monospace;font-size:8pt;letter-spacing:1px;direction:ltr}</style></head><body>` +
+              items.map((it) => {
+                const bars = Array.from(it.barcode || "").map((d) => `<i style="width:${1 + (Number(d) % 4)}px"></i><b style="width:${1 + ((Number(d) + 2) % 3)}px"></b>`).join("");
+                return `<div class="label"><div class="name">${it.name}${it.size ? " — " + it.size : ""}</div><div class="price">${it.salePrice} ج.م</div><div class="bars">${bars}</div><div class="code">${it.barcode}</div></div>`;
+              }).join("") + `</body></html>`;
+            w.document.open(); w.document.write(html); w.document.close();
+            setTimeout(() => w.print(), 300);
+          }}>
+            طباعة ملصقات الصفحة
+          </Button>
+        </div>
         <StatTabs
           value={tab}
           onChange={(v) => setTab(v as Tab)}
@@ -372,7 +490,7 @@ ${
             {
               value: "low",
               label: "ناقص",
-              count: data.stockItems.filter((it) => it.quantity > 0 && it.quantity < LOW_STOCK()).length,
+              count: data.stockItems.filter((it) => it.quantity > 0 && it.quantity < (it.minStock || LOW_STOCK())).length,
             },
             {
               value: "out",
@@ -386,9 +504,9 @@ ${
           <div className="relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="ابحث باسم المنتج أو الباركود..."
+              value={searchInput}
+              onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+              placeholder="ابحث بالاسم، الباركود، المقاس أو النوع..."
               className="pr-10 pl-10"
             />
             <button
@@ -403,6 +521,18 @@ ${
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="mb-3 flex items-center gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-3">
+          <span className="text-xs font-bold">{selectedIds.size} محدد</span>
+          <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs" onClick={() => setSelectedIds(new Set())}>إلغاء التحديد</Button>
+          <Button size="sm" variant="destructive" className="h-8 rounded-xl text-xs" onClick={async () => {
+            if (!confirm(`أرشفة ${selectedIds.size} منتج؟`)) return;
+            for (const id of selectedIds) { try { await db.archiveStockItem(id); } catch {} }
+            setSelectedIds(new Set());
+            toast.success("تمت الأرشفة");
+          }}>أرشفة جماعية</Button>
+        </div>
+      )}
       <Reveal delay={140}>
         <div className="mb-3 flex items-center justify-between gap-3 px-2">
           <div className="flex items-center gap-1.5">
@@ -412,7 +542,7 @@ ${
           </div>
         </div>
 
-        {list.length === 0 ? (
+        {paginatedList.length === 0 && list.length === 0 ? (
           <div className="bezel-shell">
             <div className="bezel-core px-6 py-10">
               <EmptyState
@@ -437,12 +567,11 @@ ${
         ) : (
           <ScrollArea className="max-h-[64vh]">
             <div className="flex flex-col gap-3 pl-1">
-              {list.map((it, idx) => {
+              {paginatedList.map((it, idx) => {
                 const shownQty = branchQty(it.id, it.quantity);
                 const out = shownQty <= 0;
-                const low = !out && shownQty < LOW_STOCK();
+                const low = !out && shownQty < (it.minStock || LOW_STOCK());
                 const profit = it.salePrice - it.lastUnitCost;
-                const margin = it.salePrice > 0 ? (profit / it.salePrice) * 100 : 0;
 
                 return (
                   <div
@@ -453,13 +582,14 @@ ${
                     <div className="bezel-core grid grid-cols-1 items-center gap-5 p-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto] md:gap-6">
                       {/* الهوية */}
                       <div className="flex min-w-0 items-center gap-3">
+                        <input type="checkbox" className="h-4 w-4 shrink-0 cursor-pointer mt-1" checked={selectedIds.has(it.id)} onChange={(e) => { const ns = new Set(selectedIds); if (e.target.checked) ns.add(it.id); else ns.delete(it.id); setSelectedIds(ns); }} />
                         <span
                           className={cn(
                             "text-display grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg font-bold",
                             "bg-foreground/[0.06] text-muted-foreground ring-1 ring-border",
                           )}
                         >
-                          <Package className="h-5 w-5" />
+                          {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-5 w-5 rounded object-cover" /> : <Package className="h-5 w-5" />}
                         </span>
                         <div className="min-w-0">
                           <div className="truncate font-bold leading-tight">{it.name}</div>
@@ -520,6 +650,21 @@ ${
                               {fmt(profit)} <span className="text-[10px]">ج.م</span>
                             </div>
                           </div>
+                         {(() => {
+                           const since = Date.now() - 30 * 24 * 60 * 60 * 1000;
+                           const sold = data.invoiceItems
+                             .filter((ii) => (ii.stockItemId === it.id || ii.name === it.name) && new Date(ii.createdAt).getTime() >= since)
+                             .reduce((s, ii) => s + (ii.quantity || 1), 0);
+                           const daily = sold / 30;
+                           const suggested = Math.max(0, Math.ceil(daily * 14) - shownQty);
+                           if (suggested <= 0) return null;
+                           return (
+                             <div className="mt-2 text-[10px] text-warning font-bold">
+                               مقترح إعادة طلب: {suggested} وحدة (معدل بيع {daily.toFixed(1)}/يوم)
+                             </div>
+                           );
+                         })()}
+
                         </div>
 
                         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -625,6 +770,26 @@ ${
                               >
                                 <Boxes className="w-4 h-4" />
                               </Button>
+
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
+                                title="نسخ المنتج"
+                                onClick={async () => {
+                                  try {
+                                    await db.addStockItem({
+                                      name: ${it.name} (نسخة), quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null,
+                                    });
+                                    toast.success("تم نسخ المنتج");
+                                  } catch (e: any) { toast.error(e?.message ?? تعذر النسخ); }
+                                }}
+                              >
+                                
+
+                              <Button size="icon" variant="ghost" className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]" title="مرتجع للمورد" onClick={() => { window.location.assign(/returns?product=); }}>
+                                <Undo2 className="w-4 h-4" />
+                              </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">نقل للمخازن</TooltipContent>
                           </Tooltip>
@@ -633,14 +798,7 @@ ${
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn danger rounded-full text-danger hover:bg-danger/10 hover:text-danger"
-                                onClick={() => setDeleteId(it.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              {it.archived ? (\n                                 <Button size="icon" variant="ghost" className="action-btn rounded-full text-success hover:bg-success/10 hover:text-success" title="استعادة" onClick={async () => { try { await db.restoreStockItem(it.id); toast.success("تمت استعادة المنتج"); } catch (e: any) { toast.error(e?.message ?? "تعذر الاستعادة"); } }}>\n                                   <RotateCcw className="w-4 h-4" />\n                                 </Button>\n                               ) : (\n                                 <Button size="icon" variant="ghost" className="action-btn danger rounded-full text-danger hover:bg-danger/10 hover:text-danger" onClick={() => setDeleteId(it.id)}>\n                                   <Trash2 className="w-4 h-4" />\n                                 </Button>\n                               )}
                             </TooltipTrigger>
                             <TooltipContent side="top">حذف</TooltipContent>
                           </Tooltip>
@@ -652,6 +810,13 @@ ${
               })}
             </div>
           </ScrollArea>
+          {totalPages > 1 && (
+            <div className="mt-3 flex items-center justify-center gap-2">
+              <Button size="sm" variant="outline" disabled={safePage <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>السابق</Button>
+              <span className="text-xs text-muted-foreground">{safePage} / {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={safePage >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>التالي</Button>
+            </div>
+          )}
         )}
       </Reveal>
       <AdjustDialog item={adjustItem} onClose={() => setAdjustItem(null)} />
@@ -660,6 +825,7 @@ ${
         item={editing}
         onClose={() => setEditing(null)}
         existingBarcodes={data.stockItems.map((s) => s.barcode)}
+        suppliers={data.suppliers}
       />
 
       <BarcodeLabelModal
@@ -705,8 +871,15 @@ ${
               onClick={async () => {
                 if (!deleteId) return;
                 try {
-                  await db.removeStockItem(deleteId);
-                  toast.success("تم حذف المنتج");
+                  await db.archiveStockItem(deleteId);
+                  void recordAuditLog({
+                    action: "STOCK_DELETE",
+                    module: "inventory",
+                    title: "أرشفة صنف",
+                    entityId: deleteId,
+                    entityName: deleteId,
+                  });
+                  toast.success("تمت أرشفة المنتج");
                 } catch (e: any) {
                   toast.error(e?.message ?? "تعذر الحذف");
                 } finally {
@@ -719,6 +892,41 @@ ${
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={profitOpen} onOpenChange={setProfitOpen}>
+        <DialogContent dir="rtl" className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-right">تقرير أرباح المنتجات</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            {(() => {
+              const map = new Map<string, { name: string; revenue: number; cost: number; qty: number }>();
+              for (const ii of data.invoiceItems) {
+                const key = ii.stockItemId || ii.name;
+                const cur = map.get(key) || { name: ii.name, revenue: 0, cost: 0, qty: 0 };
+                cur.revenue += (ii.price || 0) * (ii.quantity || 1);
+                cur.cost += (ii.cost || 0) * (ii.quantity || 1);
+                cur.qty += (ii.quantity || 1);
+                map.set(key, cur);
+              }
+              const rows = Array.from(map.values()).sort((a, b) => (b.revenue - b.cost) - (a.revenue - a.cost));
+              if (rows.length === 0) return <div className="text-center text-muted-foreground py-8 text-sm">لا توجد مبيعات.</div>;
+              return rows.map((r, i) => {
+                const profit = r.revenue - r.cost;
+                return (
+                  <div key={i} className="flex items-center justify-between gap-3 rounded-2xl border p-3">
+                    <div className="min-w-0">
+                      <div className="font-bold truncate">{r.name}</div>
+                      <div className="text-[11px] text-muted-foreground">كمية: {r.qty} • إيراد: {fmt(r.revenue)} • تكلفة: {fmt(r.cost)}</div>
+                    </div>
+                    <div className={`font-extrabold tabular-nums ${profit >= 0 ? "text-success" : "text-danger"}`}>{fmt(profit)} ج.م</div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -758,6 +966,16 @@ function AdjustDialog({ item, onClose }: { item: StockItem | null; onClose: () =
         REASONS.find((r) => r.value === reason)?.label ?? reason,
         notes.trim() || undefined,
       );
+      void recordAuditLog({
+        action: "STOCK_DELTA",
+        module: "inventory",
+        title: `تسوية كمية: ${item.name}`,
+        entityId: item.id,
+        entityName: item.name,
+        oldValue: item.quantity,
+        newValue: Math.max(0, item.quantity + delta),
+        details: REASONS.find((r) => r.value === reason)?.label ?? reason,
+      });
       toast.success("تمت تسوية الكمية");
       onClose();
     } catch (e: any) {
@@ -1005,10 +1223,12 @@ function EditDialog({
   item,
   onClose,
   existingBarcodes,
+  suppliers = [],
 }: {
   item: StockItem | null;
   onClose: () => void;
   existingBarcodes: Array<string | null>;
+  suppliers?: Array<{ id: string; name: string }>;
 }) {
   const [name, setName] = useState("");
   const [size, setSize] = useState("");
@@ -1018,6 +1238,10 @@ function EditDialog({
   const [price, setPrice] = useState("0");
   const [barcode, setBarcode] = useState("");
   const [minStock, setMinStock] = useState("0");
+  const [variantsJson, setVariantsJson] = useState("[]");
+  const [imageUrl, setImageUrl] = useState("");
+  const [supplierId, setSupplierId] = useState("");
+  const [category, setCategory] = useState("");
   const [reason, setReason] = useState<string>("correction");
   const [reasonNotes, setReasonNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1033,6 +1257,10 @@ function EditDialog({
       setPrice(String(item.salePrice));
       setBarcode(item.barcode ?? "");
       setMinStock(String(item.minStock ?? 0));
+      setVariantsJson(JSON.stringify(item.variants ?? [], null, 2));
+      setImageUrl(item.imageUrl ?? "");
+      setSupplierId(item.supplierId ?? "");
+      setCategory(item.category ?? "");
       setReason("correction");
       setReasonNotes("");
     }
@@ -1081,6 +1309,10 @@ function EditDialog({
           salePrice: newPrice,
           barcode: code || null,
           minStock: Math.max(0, Number(minStock) || 0),
+          variants: (() => { try { const v = JSON.parse(variantsJson || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } })(),
+          imageUrl: imageUrl.trim() || null,
+          supplierId: supplierId || null,
+          category: category.trim() || null,
         },
         reasonRequired
           ? {
@@ -1090,6 +1322,15 @@ function EditDialog({
             }
           : undefined,
       );
+      void recordAuditLog({
+        action: "STOCK_UPDATE",
+        module: "inventory",
+        title: `تحديث صنف: ${item.name}`,
+        entityId: item.id,
+        entityName: item.name,
+        oldValue: `${item.quantity} وحدة / ${item.lastUnitCost} / ${item.salePrice}`,
+        newValue: `${newQty} وحدة / ${newCost} / ${newPrice}`,
+      });
       toast.success("تم تحديث المنتج");
       onClose();
     } catch (e: any) {
@@ -1282,6 +1523,32 @@ function EditDialog({
               </div>
             </div>
           </div>
+
+             <div className="mt-3 grid gap-1.5">
+               <Label>رابط الصورة (URL)</Label>
+               <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-2xl text-right" />
+             </div>
+             <div className="mt-3 grid gap-1.5">
+               <Label>المورد</Label>
+               <select value={supplierId} onChange={(e) => setSupplierId(e.target.value)} className="rounded-2xl border border-border bg-background p-2 text-sm">
+                 <option value="">— بدون مورد —</option>
+                 {suppliers.map((s) => (<option key={s.id} value={s.id}>{s.name}</option>))}
+               </select>
+             </div>
+             <div className="mt-3 grid gap-1.5">
+               <Label>التصنيف</Label>
+               <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="مثال: ملابس" className="rounded-2xl text-right" />
+             </div>
+             <div className="mt-3 grid gap-1.5">
+               <Label>متغيرات (Variants) - JSON</Label>
+               <textarea
+                 value={variantsJson}
+                 onChange={(e) => setVariantsJson(e.target.value)}
+                 rows={3}
+                 className="rounded-2xl border border-border bg-background p-2 font-mono text-xs"
+                 placeholder='[{"id":"1","name":"أحمر","size":"L","salePrice":1200}]'
+               />
+             </div>
 
           {reasonRequired && (
             <div className="grid gap-2.5 rounded-2xl border-2 border-warning/30 bg-warning/5 p-3 animate-[fade-in_0.2s_ease-out]">

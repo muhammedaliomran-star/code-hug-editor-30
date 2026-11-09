@@ -313,6 +313,9 @@ export interface StockItem {
   itemType: string | null;
   minStock: number;
   archived?: boolean;
+  imageUrl?: string | null;
+  supplierId?: string | null;
+  category?: string | null;
   createdAt: string;
   updatedAt: string;
   variants?: ProductVariant[];

@@ -253,8 +253,14 @@ export function CustomerDialog({
         }
         toast.success("تم إضافة العميل");
       }
-    } catch {
-      toast.error("تعذر حفظ بيانات العميل. حاول مرة أخرى.");
+    } catch (error) {
+      if (error instanceof Error && error.message === "CUSTOMER_PROFILE_MIGRATION_REQUIRED") {
+        toast.error("قاعدة البيانات تحتاج تحديثًا قبل حفظ بيانات العميل", {
+          description: "طبّق migration الخاصة بالعملاء على Supabase ثم أعد المحاولة.",
+        });
+      } else {
+        toast.error("تعذر حفظ بيانات العميل. حاول مرة أخرى.");
+      }
       return;
     } finally {
       setSaving(false);

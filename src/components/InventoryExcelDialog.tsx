@@ -45,6 +45,20 @@ export function InventoryExcelDialog({
     failed: number;
     errors: string[];
   } | null>(null);
+  const [preview, setPreview] = useState<{
+    rows: Array<{
+      name: string;
+      barcode: string;
+      qty: number;
+      salePrice: number;
+      costPrice: number;
+      minStock: number;
+      notes: string;
+      isUpdate: boolean;
+      existingId?: string;
+      error?: string;
+    }>;
+  } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,10 +69,10 @@ export function InventoryExcelDialog({
       "الكمية الحالية": item.quantity || 0,
       "سعر البيع": item.salePrice || 0,
       "سعر التكلفة": item.lastUnitCost || 0,
-      "حد الطلب الأدنى": item.lowStockAlert || 5,
-      "الموسم": item.season || "",
-      "التصنيف": item.category || "",
-      "ملاحظات": item.notes || "",
+      "حد الطلب الأدنى": item.minStock || 5,
+      "الموسم": "",
+      "التصنيف": "",
+      "ملاحظات": "",
     }));
 
     exportToExcel(
@@ -108,6 +122,7 @@ export function InventoryExcelDialog({
 
     setImporting(true);
     setImportResults(null);
+    setPreview(null);
 
     try {
       const rows = await parseExcelFile(file);
@@ -117,80 +132,125 @@ export function InventoryExcelDialog({
         return;
       }
 
-      let successCount = 0;
-      let failCount = 0;
-      const errMsgs: string[] = [];
+      const seen = new Set<string>();
+      const plan: Array<{
+        name: string;
+        barcode: string;
+        qty: number;
+        salePrice: number;
+        costPrice: number;
+        minStock: number;
+        notes: string;
+        isUpdate: boolean;
+        existingId?: string;
+        error?: string;
+      }> = [];
 
       for (const row of rows) {
-        // Find property names loosely
         const name =
           row["اسم المنتج"] || row["الاسم"] || row["name"] || row["Name"] || row["Product"];
-        const barcode =
+        const barcodeRaw =
           row["كود الباركود"] || row["الباركود"] || row["barcode"] || row["Barcode"] || "";
-        const qty = Number(
-          row["الكمية الحالية"] || row["الكمية"] || row["quantity"] || row["Qty"] || 0
-        );
-        const salePrice = Number(
-          row["سعر البيع"] || row["السعر"] || row["sale_price"] || row["Price"] || 0
-        );
-        const costPrice = Number(
-          row["سعر التكلفة"] || row["التكلفة"] || row["cost"] || row["Cost"] || 0
-        );
-        const lowStock = Number(row["حد الطلب الأدنى"] || row["حد الطلب"] || row["low_stock"] || 5);
-        const notes = row["ملاحظات"] || row["notes"] || "";
+        const barcode = String(barcodeRaw ?? "").trim();
+        const qty = Number(row["الكمية الحالية"] || row["الكمية"] || row["quantity"] || row["Qty"] || 0);
+        const salePrice = Number(row["سعر البيع"] || row["السعر"] || row["sale_price"] || row["Price"] || 0);
+        const costPrice = Number(row["سعر التكلفة"] || row["التكلفة"] || row["cost"] || row["Cost"] || 0);
+        const minStock = Number(row["حد الطلب الأدنى"] || row["حد الطلب"] || row["low_stock"] || row["min_stock"] || 5);
+        const notes = String(row["ملاحظات"] || row["notes"] || "");
 
         if (!name || String(name).trim() === "") {
-          failCount++;
-          errMsgs.push("صف بدون اسم منتج تم تخطيه");
+          plan.push({ name: "", barcode, qty, salePrice, costPrice, minStock, notes, isUpdate: false, error: "صف بدون اسم منتج تم تخطيه" });
           continue;
         }
-
-        try {
-          // Check if item already exists by barcode or name
-          const existing = stockItems.find(
-            (s) => (barcode && s.barcode === String(barcode).trim()) || s.name === String(name).trim()
-          );
-
-          if (existing) {
-            await db.updateStockItem(existing.id, {
-              quantity: existing.quantity + qty,
-              salePrice: salePrice || existing.salePrice,
-              lastUnitCost: costPrice || existing.lastUnitCost,
-            });
-          } else {
-            await db.addStockItem({
-              name: String(name).trim(),
-              barcode: barcode ? String(barcode).trim() : undefined,
-              quantity: qty,
-              salePrice,
-              lastUnitCost: costPrice,
-              lowStockAlert: lowStock,
-              notes: String(notes),
-            });
-          }
-          successCount++;
-        } catch (err: any) {
-          failCount++;
-          errMsgs.push(`تعذر حفظ (${name}): ${err?.message || "خطأ غير معروف"}`);
+        const cleanName = String(name).trim();
+        const key = barcode || cleanName;
+        if (seen.has(key)) {
+          plan.push({ name: cleanName, barcode, qty, salePrice, costPrice, minStock, notes, isUpdate: false, error: "مكرر داخل الملف — تم تخطيه" });
+          continue;
         }
+        seen.add(key);
+
+        const existing = stockItems.find(
+          (s) => (barcode && s.barcode === barcode) || s.name === cleanName
+        );
+        plan.push({
+          name: cleanName,
+          barcode,
+          qty,
+          salePrice,
+          costPrice,
+          minStock,
+          notes,
+          isUpdate: !!existing,
+          existingId: existing?.id,
+        });
       }
 
-      setImportResults({
-        total: rows.length,
-        success: successCount,
-        failed: failCount,
-        errors: errMsgs,
-      });
-
-      if (successCount > 0) {
-        toast.success(`تم استيراد ${successCount} منتج بنجاح إلى المخزن ✓`);
-      }
+      setPreview({ rows: plan });
     } catch (err: any) {
       toast.error(err?.message || "فشل قراءة ملف الإكسيل");
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  };
+
+  const confirmImport = async () => {
+    if (!preview) return;
+    setImporting(true);
+    setImportResults(null);
+    let successCount = 0;
+    let failCount = 0;
+    const errMsgs: string[] = [];
+
+    const validRows = preview.rows.filter((r) => !r.error && r.name);
+    for (const r of validRows) {
+      try {
+        if (r.isUpdate && r.existingId) {
+          const existing = stockItems.find((s) => s.id === r.existingId);
+          await db.updateStockItem(r.existingId, {
+            quantity: (existing?.quantity ?? 0) + r.qty,
+            salePrice: r.salePrice || existing?.salePrice,
+            lastUnitCost: r.costPrice || existing?.lastUnitCost,
+            minStock: r.minStock,
+            barcode: r.barcode || existing?.barcode,
+          }, undefined, { skipRefresh: true });
+        } else {
+          await db.addStockItem({
+            name: r.name,
+            barcode: r.barcode || undefined,
+            quantity: r.qty,
+            salePrice: r.salePrice,
+            lastUnitCost: r.costPrice,
+            minStock: r.minStock,
+            notes: r.notes,
+          }, { skipRefresh: true });
+        }
+        successCount++;
+      } catch (err: any) {
+        failCount++;
+        errMsgs.push(`تعذر حفظ (${r.name}): ${err?.message || "خطأ غير معروف"}`);
+      }
+    }
+    failCount += preview.rows.filter((r) => r.error).length;
+    for (const r of preview.rows.filter((r) => r.error)) {
+      errMsgs.push(`${r.name || "(صف)"}: ${r.error}`);
+    }
+
+    try {
+      const { invalidateCache } = await import("@/lib/db");
+      await invalidateCache();
+    } catch { /* ignore */ }
+
+    setImportResults({
+      total: preview.rows.length,
+      success: successCount,
+      failed: failCount,
+      errors: errMsgs,
+    });
+    setPreview(null);
+    if (successCount > 0) toast.success(`تم استيراد ${successCount} منتج بنجاح ✓`);
+    setImporting(false);
   };
 
   return (
@@ -269,6 +329,33 @@ export function InventoryExcelDialog({
                   className="hidden"
                 />
               </div>
+
+              {preview && (
+                <div className="space-y-2 pt-2">
+                  <div className="text-xs font-bold text-foreground">معاينة الاستيراد ({preview.rows.length} صف)</div>
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-success font-bold">✓ جديد: {preview.rows.filter((r) => !r.error && !r.isUpdate).length}</span>
+                    <span className="text-primary font-bold">↻ تحديث: {preview.rows.filter((r) => !r.error && r.isUpdate).length}</span>
+                    <span className="text-danger font-bold">✗ تخطي: {preview.rows.filter((r) => r.error).length}</span>
+                  </div>
+                  {preview.rows.filter((r) => r.error).length > 0 && (
+                    <div className="text-[10px] text-danger max-h-20 overflow-y-auto space-y-0.5 pt-1">
+                      {preview.rows.filter((r) => r.error).slice(0, 5).map((r, i) => (
+                        <div key={i}>• {r.name || "(صف)"}: {r.error}</div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button onClick={confirmImport} disabled={importing} className="flex-1 h-10 rounded-2xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+                      {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                      تأكيد الاستيراد
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setPreview(null)} className="h-10 rounded-2xl text-xs">
+                      إلغاء
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {importing && (
                 <div className="flex items-center justify-center gap-2 p-3 text-xs text-primary font-bold">
