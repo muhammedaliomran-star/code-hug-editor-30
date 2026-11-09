@@ -49,6 +49,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { usePrivacy } from "@/lib/privacy";
+import { useNavigate } from "@tanstack/react-router";
 
 export default function Page() {
   return (
@@ -65,6 +66,7 @@ type PurchaseStatus = "paid" | "credit" | "partial" | "cancelled";
 
 function SuppliersPage() {
   const data = useDB();
+  const navigate = useNavigate();
   const { privacy, toggle } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   const [q, setQ] = useState("");
@@ -325,6 +327,7 @@ function SuppliersPage() {
         open={openSupplier}
         onOpenChange={(v) => { setOpenSupplier(v); if (!v) setEditing(null); }}
         editing={editing}
+        onSaved={() => navigate({ to: "/suppliers" })}
       />
 
       <SupplierProfileDialog
@@ -380,8 +383,8 @@ function SupplierFormSection({
 }
 
 function SupplierFormDialog({
-  open, onOpenChange, editing,
-}: { open: boolean; onOpenChange: (v: boolean) => void; editing: Supplier | null }) {
+  open, onOpenChange, editing, onSaved,
+}: { open: boolean; onOpenChange: (v: boolean) => void; editing: Supplier | null; onSaved?: () => void }) {
   const data = useDB();
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
@@ -467,6 +470,7 @@ function SupplierFormDialog({
         setJoinDate(new Date().toISOString().slice(0, 10)); setSubmitted(false); setSections({ basic: true, contact: false, finance: false, extra: false });
       } else {
         onOpenChange(false);
+        onSaved?.();
       }
     } catch (e: any) { toast.error(e.message || "خطأ"); }
     finally { setBusy(false); }
