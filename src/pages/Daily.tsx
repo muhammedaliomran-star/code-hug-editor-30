@@ -964,10 +964,9 @@ function DailyPage() {
               <ActionButton
                 tone="surface"
                 onClick={toggle}
+                title={masked ? "إظهار الأرقام" : "إخفاء الأرقام"}
                 icon={masked ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              >
-                {masked ? "إظهار الأرقام" : "إخفاء الأرقام"}
-              </ActionButton>
+              />
               <ActionButton onClick={() => { setEditingExpense(null); setOpenExpense(true); }} icon={<Plus className="h-4 w-4" />}>
                 إضافة مصروف
               </ActionButton>

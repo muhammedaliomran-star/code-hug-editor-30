@@ -380,8 +380,7 @@ function ExpensesPage() {
               onClick={toggle}
               title="إخفاء الأرقام للحفاظ على الخصوصية"
               icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            >
-              <span className="hidden sm:inline">إخفاء الأرقام</span>
+               />
             </ActionButton>
             <ActionButton onClick={onAdd} icon={<Plus className="h-4 w-4" />}>
               تسجيل مصروف

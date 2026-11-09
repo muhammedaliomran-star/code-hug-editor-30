@@ -284,8 +284,7 @@ ${topItems.map((i) => `<tr><td>${escapeHtml(i.name)}</td><td class="num">${fmt(i
               onClick={toggle}
               title="إخفاء الأرقام"
               icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            >
-              <span className="hidden sm:inline">إخفاء الأرقام</span>
+               />
             </ActionButton>
           </div>
         }

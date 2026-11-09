@@ -363,9 +363,7 @@ function CustomersPage() {
                     onClick={toggle}
                     aria-pressed={privacy}
                     icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  >
-                    {privacy ? "إظهار" : "إخفاء الأرقام"}
-                  </ActionButton>
+                   />
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   يطمس كل المبالغ المالية في الجدول لإخفائها عن أعين المتطفلين.
