@@ -109,6 +109,39 @@ function LedgerRow({
   );
 }
 
+/** حالة فراغ للجداول — بدل سطر "لا توجد..." (أيقونة + عنوان + تلميح + إجراء). */
+function EmptyState({
+  icon, title, hint, actionLabel, onAction,
+}: {
+  icon: ReactNode;
+  title: string;
+  hint?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="flex h-full min-h-[14rem] flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-full bg-foreground/[0.05] text-muted-foreground ring-1 ring-inset ring-[var(--hairline)]">
+        {icon}
+      </span>
+      <div className="space-y-1">
+        <p className="text-sm font-bold text-foreground">{title}</p>
+        {hint && <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{hint}</p>}
+      </div>
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="press inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-sm"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function DailyPage() {
   const { invoices, customers, expenses, payments, returns, returnItems, paymentVouchers, invoiceItems, loading: dbLoading, fetchErrors, refresh } = useDB();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
@@ -1167,14 +1200,17 @@ function DailyPage() {
           </span>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="grid gap-4 items-stretch lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
           {/* Main Table Content */}
-          <Reveal>
-            <BezelCard variant="flat" innerClassName="overflow-hidden p-1.5">
+          <Reveal className="h-full">
+            <BezelCard variant="flat" className="flex h-full flex-col" innerClassName="flex min-h-0 flex-1 flex-col overflow-hidden p-1.5">
               {/* TAB 1: INVOICES */}
               {activeTab === "invoices" && (
-                <div className="no-scrollbar overflow-x-auto p-2 sm:p-3">
-                  <table className="w-full min-w-[44rem] text-right text-xs">
+  rows.length === 0 ? (
+    <EmptyState icon={<FileText className="h-5 w-5" />} title="لا توجد فواتير صادرة في هذا النطاق الزمني" hint="غيّر نطاق التاريخ أو أضف فاتورة جديدة لبدء تتبع الحركة." actionLabel="إضافة فاتورة" onAction={() => navigate({ to: "/invoices/new" })} />
+  ) : (
+    <div className="no-scrollbar flex-1 min-h-0 overflow-auto p-2 sm:p-3 lg:max-h-[calc(100vh-15rem)]">
+      <table className="w-full min-w-[44rem] text-right text-xs">
                     <thead>
                       <tr className="border-b border-[var(--hairline)] text-[11px] font-bold text-muted-foreground">
                         <th className="p-3">رقم الفاتورة</th>
@@ -1226,12 +1262,16 @@ function DailyPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              )
+            )}
 
               {/* TAB 2: PAYMENTS & INSTALLMENTS COLLECTED */}
               {activeTab === "payments" && (
-                <div className="no-scrollbar overflow-x-auto p-2 sm:p-3">
-                  <table className="w-full min-w-[36rem] text-right text-xs">
+  periodPayments.length === 0 ? (
+    <EmptyState icon={<CheckCircle2 className="h-5 w-5" />} title="لا توجد تحصيلات أو أقساط مسددة في هذه الفترة" hint="التحصيلات تُسجَّل تلقائياً عند استلام الأقساط." actionLabel="تسجيل تحصيل" onAction={() => navigate({ to: "/payments" })} />
+  ) : (
+    <div className="no-scrollbar flex-1 min-h-0 overflow-auto p-2 sm:p-3 lg:max-h-[calc(100vh-15rem)]">
+      <table className="w-full min-w-[36rem] text-right text-xs">
                     <thead>
                       <tr className="border-b border-[var(--hairline)] text-[11px] font-bold text-muted-foreground">
                         <th className="p-3">تاريخ ووقت التحصيل</th>
@@ -1268,12 +1308,16 @@ function DailyPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              )
+            )}
 
               {/* TAB 3: EXPENSES LIST */}
               {activeTab === "expenses" && (
-                <div className="no-scrollbar overflow-x-auto p-2 sm:p-3">
-                  <table className="w-full min-w-[36rem] text-right text-xs">
+  periodExpensesList.length === 0 ? (
+    <EmptyState icon={<Receipt className="h-5 w-5" />} title="لا توجد مصروفات مسجلة في هذا النطاق الزمني" hint="سجّل مصروفات الخزينة والفرع من هنا." actionLabel="إضافة مصروف" onAction={() => setOpenExpense(true)} />
+  ) : (
+    <div className="no-scrollbar flex-1 min-h-0 overflow-auto p-2 sm:p-3 lg:max-h-[calc(100vh-15rem)]">
+      <table className="w-full min-w-[36rem] text-right text-xs">
                     <thead>
                       <tr className="border-b border-[var(--hairline)] text-[11px] font-bold text-muted-foreground">
                         <th className="p-3">التاريخ</th>
@@ -1337,12 +1381,16 @@ function DailyPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              )
+            )}
 
               {/* TAB 4: RETURNS LIST */}
               {activeTab === "returns" && (
-                <div className="no-scrollbar overflow-x-auto p-2 sm:p-3">
-                  <table className="w-full min-w-[36rem] text-right text-xs">
+  periodReturnsList.length === 0 ? (
+    <EmptyState icon={<RotateCcw className="h-5 w-5" />} title="لا توجد مرتجعات مسجلة في هذه الفترة" hint="المرتجعات تُسجَّل من صفحة المرتجعات." actionLabel="تسجيل مرتجع" onAction={() => navigate({ to: "/returns" })} />
+  ) : (
+    <div className="no-scrollbar flex-1 min-h-0 overflow-auto p-2 sm:p-3 lg:max-h-[calc(100vh-15rem)]">
+      <table className="w-full min-w-[36rem] text-right text-xs">
                     <thead>
                       <tr className="border-b border-[var(--hairline)] text-[11px] font-bold text-muted-foreground">
                         <th className="p-3">تاريخ المرتجع</th>
@@ -1391,12 +1439,16 @@ function DailyPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              )
+            )}
 
               {/* TAB 5: RECEIPT / PAYMENT VOUCHERS (informational) */}
               {activeTab === "vouchers" && (
-                <div className="no-scrollbar overflow-x-auto p-2 sm:p-3">
-                  <table className="w-full min-w-[40rem] text-right text-xs">
+  periodVouchersList.length === 0 ? (
+    <EmptyState icon={<Wallet className="h-5 w-5" />} title="لا توجد سندات قبض أو صرف في هذه الفترة" hint="سندات القبض والصرف تُسجَّل من صفحة التحصيلات." actionLabel="إصدار سند" onAction={() => navigate({ to: "/payments" })} />
+  ) : (
+    <div className="no-scrollbar flex-1 min-h-0 overflow-auto p-2 sm:p-3 lg:max-h-[calc(100vh-15rem)]">
+      <table className="w-full min-w-[40rem] text-right text-xs">
                     <thead>
                       <tr className="border-b border-[var(--hairline)] text-[11px] font-bold text-muted-foreground">
                         <th className="p-3">التاريخ</th>
@@ -1442,7 +1494,8 @@ function DailyPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+              )
+            )}
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-3 py-3">
                   <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} className="press rounded-lg px-3 py-1.5 text-xs font-bold ring-1 ring-inset ring-[var(--hairline)] disabled:opacity-40">السابق</button>
@@ -1454,8 +1507,8 @@ function DailyPage() {
           </Reveal>
 
           {/* Right Side Summary & Note */}
-          <Reveal delay={90}>
-            <BezelCard variant="flat" innerClassName="flex flex-col gap-4 p-5 sm:p-6">
+          <Reveal delay={90} className="h-full">
+            <BezelCard variant="flat" className="flex h-full flex-col" innerClassName="flex flex-col gap-4 p-5 sm:p-6">
               {/* Header */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-2.5">
