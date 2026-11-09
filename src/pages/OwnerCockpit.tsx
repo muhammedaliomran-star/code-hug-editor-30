@@ -422,7 +422,7 @@ export default function OwnerCockpit() {
                   onClick={togglePrivacy}
                   title={privacy ? "إظهار الأرقام والأرباح" : "وضع الخصوصية (إخفاء الأرقام)"}
                   icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                   />
+                >
                 </ActionButton>
 
                 {/* Range Filter */}
