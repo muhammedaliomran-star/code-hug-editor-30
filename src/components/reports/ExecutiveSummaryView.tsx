@@ -89,7 +89,7 @@ export const ExecutiveSummaryView: React.FC<ExecutiveSummaryViewProps> = ({ data
             {fmt(data.grossProfit)} ج.م
           </span>
           <span className="text-[10px] text-emerald-600 font-semibold">
-            {data.grossMarginPercent.toFixed(1)}% هامش مجمل
+            {data.grossMarginPercent.toFixed(1)}% نسبة الربح الإجمالية
           </span>
         </div>
 

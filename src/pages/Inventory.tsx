@@ -606,7 +606,7 @@ ${
                 const out = shownQty <= 0;
                 const low = !out && shownQty < (it.minStock || LOW_STOCK());
                 const profit = it.salePrice - it.lastUnitCost;
-                const margin = it.salePrice > 0 ? (profit / it.salePrice) * 100 : 0;
+                const margin = it.lastUnitCost > 0 ? (profit / it.lastUnitCost) * 100 : 0;
                 const stockLabel = out ? "نافد" : low ? "منخفض" : "متوفر";
                 const stockTone = out ? "text-danger bg-danger/10 ring-danger/20" : low ? "text-warning bg-warning/10 ring-warning/20" : "text-success bg-success/10 ring-success/20";
 
@@ -701,7 +701,7 @@ ${
                               {profit >= 0 ? <TrendingUp className="mr-1 inline h-3.5 w-3.5" /> : <TrendingDown className="mr-1 inline h-3.5 w-3.5" />}
                               {fmt(profit)} <span className="text-[10px]">ج.م</span>
                             </div>
-                            <div className={cn("mt-1 text-[10px] font-bold", profit >= 0 ? "text-success/80" : "text-danger/80")}>هامش {margin.toFixed(1)}%</div>
+                            <div className={cn("mt-1 text-[10px] font-bold", profit >= 0 ? "text-success/80" : "text-danger/80")}>نسبة الربح {margin.toFixed(1)}%</div>
                           </div>
                         </div>
                         {(() => {
@@ -1209,7 +1209,7 @@ function EditDialog({
   const newPrice = Math.max(0, Number(price) || 0);
   const delta = item ? newQty - item.quantity : 0;
   const profit = newPrice - newCost;
-  const margin = newPrice > 0 ? (profit / newPrice) * 100 : 0;
+  const margin = newCost > 0 ? (profit / newCost) * 100 : 0;
   const reasonRequired = delta !== 0;
 
   const code = barcode.trim();
@@ -1396,7 +1396,7 @@ function EditDialog({
                 )}
                 {newPrice > 0 && (
                   <span className="me-2 text-xs font-normal text-muted-foreground">
-                    (هامش {fmt(Number(margin.toFixed(1)))}%)
+                    (نسبة الربح {fmt(Number(margin.toFixed(1)))}%)
                   </span>
                 )}
               </div>
@@ -1556,7 +1556,7 @@ function EditDialog({
 
 function ProductDetailsDialog({ item, onClose, onEdit }: { item: StockItem | null; onClose: () => void; onEdit: (item: StockItem) => void }) {
   const profit = item ? item.salePrice - item.lastUnitCost : 0;
-  const margin = item && item.salePrice > 0 ? (profit / item.salePrice) * 100 : 0;
+  const margin = item && item.lastUnitCost > 0 ? (profit / item.lastUnitCost) * 100 : 0;
   const out = !item || item.quantity <= 0;
   const low = !out && item.quantity < (item.minStock || LOW_STOCK());
 

@@ -63,7 +63,7 @@ export default function AnalyticsTab() {
                     <span className="font-bold text-sm">{item.branchName}</span>
                   </div>
                   <Badge variant="outline" className="text-[10px] font-bold">
-                    هامش {item.netMarginPct}%
+                    نسبة الربح {item.netMarginPct}%
                   </Badge>
                 </div>
 

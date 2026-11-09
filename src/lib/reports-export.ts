@@ -257,7 +257,7 @@ export function printFinancialReportPDF(
               <th class="num">إجمالي الإيراد</th>
               <th class="num">التكلفة</th>
               <th class="num">صافي الربح</th>
-              <th class="num">الهامش %</th>
+              <th class="num">نسبة الربح %</th>
             </tr>
           </thead>
           <tbody>

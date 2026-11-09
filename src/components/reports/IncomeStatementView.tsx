@@ -53,7 +53,7 @@ export const IncomeStatementView: React.FC<IncomeStatementViewProps> = ({ data, 
             </span>
           </div>
           <span className="text-[11px] text-emerald-700 font-semibold">
-            هامش مجمل الربح: {pl.grossMargin.toFixed(1)}%
+            نسبة الربح الإجمالية: {pl.grossMargin.toFixed(1)}%
           </span>
         </div>
 
@@ -76,7 +76,7 @@ export const IncomeStatementView: React.FC<IncomeStatementViewProps> = ({ data, 
               pl.netOperatingProfit >= 0 ? "text-emerald-700" : "text-rose-700"
             )}
           >
-            هامش صافي الربح: {pl.netMargin.toFixed(1)}%
+            نسبة صافي الربح: {pl.netMargin.toFixed(1)}%
           </span>
         </div>
       </div>
