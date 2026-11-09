@@ -472,11 +472,10 @@ function InvoicesPage() {
             <ActionButton
               tone={privacy ? "primary" : "surface"}
               onClick={toggle}
-              title="إخفاء الأرقام"
+              title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
+              aria-label={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
               icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            >
-              <span className="hidden sm:inline">إخفاء الأرقام</span>
-            </ActionButton>
+            />
             <ActionButton onClick={() => navigate({ to: "/invoices/new" })} icon={<Plus className="h-4 w-4" />}>
               فاتورة جديدة
             </ActionButton>
@@ -492,16 +491,20 @@ function InvoicesPage() {
       )}
 
 
-      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3 mb-14">
-        <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini className="h-full" icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini className="h-full" icon={FileText} label="عدد الفواتير" value={stats.invoiceCount} format={(n) => String(Math.round(n))} masked={privacy} />
-        <MetricCard mini className="h-full" icon={AlertCircle} label="الفواتير المتعثرة" value={stats.overdueCount} tone="danger" format={(n) => String(Math.round(n))} masked={privacy} />
-        <MetricCard mini className="h-full" icon={CalendarDays} label="تحصيلات الشهر الحالي" value={stats.monthCollections} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المبيعات النشطة" value={stats.activeSalesTotal} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini className="h-full" icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
-        <MetricCard mini className="h-full" icon={FileText} label="متوسط قيمة الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-        <MetricCard mini className="h-full" icon={CalendarDays} label="مبيعات الشهر الحالي" value={stats.monthSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+      <div className="mb-8 space-y-3">
+        <div className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4">
+          <MetricCard mini className="h-full" icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={Wallet} label="المتبقي للتحصيل" value={stats.activeSalesTotal} tone={stats.activeSalesTotal > 0 ? "danger" : undefined} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={FileText} label="عدد الفواتير" value={stats.invoiceCount} format={(n) => String(Math.round(n))} masked={privacy} />
+        </div>
+        <div className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-5">
+          <MetricCard mini className="h-full" icon={AlertCircle} label="الفواتير المتأخرة" value={stats.overdueCount} tone="danger" format={(n) => String(Math.round(n))} masked={privacy} />
+          <MetricCard mini className="h-full" icon={CalendarDays} label="تحصيلات الشهر" value={stats.monthCollections} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={FileText} label="متوسط الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={CalendarDays} label="مبيعات الشهر" value={stats.monthSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+        </div>
       </div>
 
       <div className="sticky-search-bar">
@@ -677,7 +680,7 @@ function InvoicesPage() {
       <Reveal delay={140}>
         <div className="flex flex-col gap-3">
           {list.length === 0 ? (
-            <BezelCard variant="flat" className="px-6 py-10">
+            <BezelCard variant="flat" className="px-6 py-6 min-h-[260px] flex items-center justify-center">
                 <EmptyState
                   icon={Receipt}
                   title={tab === "active" ? "لا توجد فواتير نشطة." : tab === "overdue" ? "لا توجد فواتير متأخرة." : "لا توجد فواتير."}

@@ -623,7 +623,7 @@ function PosPage() {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-2.5rem)] -m-4 md:-m-6 overflow-hidden">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto xl:overflow-hidden">
       {/* Top Header Bar */}
       <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 bg-card/80 backdrop-blur-md px-4 py-2.5 shrink-0">
         <div className="flex items-center gap-3">
@@ -728,9 +728,9 @@ function PosPage() {
       </header>
 
       {/* Main Grid: Products (Left) + Cart Sidebar (Right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] xl:grid-cols-[minmax(0,1fr)_420px] flex-1 min-h-0 overflow-hidden">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_420px] xl:flex-1 xl:min-h-0 xl:gap-0">
         {/* Products Section */}
-        <div className="flex flex-col min-h-0 border-b lg:border-b-0 lg:border-l border-border/40 bg-background/50 p-3 sm:p-4 overflow-hidden">
+        <div className="flex min-h-[540px] flex-col border-b border-border/40 bg-background/50 p-3 sm:p-4 xl:min-h-0 xl:overflow-hidden xl:border-b-0 xl:border-l">
           {/* Search, Barcode & Category Filters */}
           <div className="space-y-2.5 shrink-0 mb-3">
             <div className="flex items-center gap-2">
@@ -793,7 +793,7 @@ function PosPage() {
           </div>
 
           {/* Products Grid */}
-          <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
+          <div className="flex-1 min-h-0 overflow-visible pr-1 xl:overflow-y-auto xl:custom-scrollbar">
             {filteredProducts.length === 0 ? (
               <div className="h-full flex items-center justify-center p-5 text-center text-muted-foreground">
                 <div className="w-full max-w-sm rounded-2xl border border-dashed border-border/50 bg-card/40 px-5 py-6">
@@ -889,7 +889,7 @@ function PosPage() {
         </div>
 
         {/* Cart & Fast Checkout Sidebar */}
-        <div className="flex flex-col min-h-0 bg-card p-3.5 sm:p-4 space-y-3 shadow-lg">
+        <div className="flex min-h-[620px] flex-col space-y-3 bg-card p-3.5 shadow-lg sm:p-4 xl:min-h-0">
           {/* Customer Selection Row */}
           <div className="py-2.5 flex items-center justify-between gap-2 shrink-0 border-b border-border/40">
             <div className="flex items-center gap-2 min-w-0">
@@ -930,7 +930,7 @@ function PosPage() {
           </div>
 
           {/* Cart Items List */}
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 custom-scrollbar pr-1">
+          <div className="flex-1 min-h-0 overflow-visible space-y-2 pr-1 xl:overflow-y-auto xl:custom-scrollbar">
             {cart.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center p-6 text-center text-muted-foreground space-y-2 border-2 border-dashed border-border/40 rounded-2xl">
                 <ShoppingCart className="h-10 w-10 text-muted-foreground/30" />

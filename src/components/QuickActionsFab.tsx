@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { Plus, X, ShoppingBag, UserPlus, Wallet, Receipt } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,11 @@ export function QuickActionsFab() {
   const [mode, setMode] = useState<Mode>(null);
   const { customers, invoices } = useDB();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // The invoices screen already has a dedicated primary action. Hiding the
+  // global FAB there removes a duplicate "+" and keeps the header focused.
+  if (location.pathname === "/invoices" || location.pathname === "/invoices/") return null;
 
   const close = () => { setMode(null); setOpen(false); };
 
