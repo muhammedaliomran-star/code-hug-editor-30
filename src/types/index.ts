@@ -241,6 +241,7 @@ export interface SupplierPayment {
 export interface ReturnRecord {
   id: string;
   invoiceId: string | null;
+  purchaseId?: string | null;
   type: "sale" | "supplier";
   totalAmount: number;
   reason: string | null;

@@ -246,6 +246,7 @@ async function fetchAllInner() {
     })),
     returns: (rr.data ?? []).map((r: TableRow<"return_records">) => ({
       id: r.id, invoiceId: r.invoice_id, type: r.type as "sale" | "supplier",
+      purchaseId: (r as any).purchase_id ?? null,
       totalAmount: Number(r.total_amount) / 100, reason: r.reason, notes: r.notes, createdAt: r.created_at,
     })),
     returnItems: (ri.data ?? []).map((r: TableRow<"return_items">) => ({
@@ -1177,6 +1178,7 @@ export const db = {
 
   async addReturn(r: {
     invoiceId: string | null;
+    purchaseId?: string | null;
     type: "sale" | "supplier";
     totalAmount: number;
     reason: string | null;
@@ -1188,6 +1190,16 @@ export const db = {
         p_invoice_id: r.invoiceId,
         p_reason: r.reason?.trim() || "مرتجع بيع",
         p_items: r.items.map((item) => ({ name: item.name, unit_price: (item.unitPrice ?? 0) * 100, quantity: item.quantity })),
+      });
+      if (error) throw error;
+      await fetchAll();
+      return;
+    }
+    if (r.type === "supplier" && r.purchaseId) {
+      const { error } = await (supabase.rpc as any)("create_supplier_return", {
+        p_purchase_id: r.purchaseId,
+        p_reason: r.reason?.trim() || "مرتجع مورد",
+        p_items: r.items.map((item) => ({ name: item.name, unit_cost: (item.unitPrice ?? 0) * 100, quantity: item.quantity })),
       });
       if (error) throw error;
       await fetchAll();

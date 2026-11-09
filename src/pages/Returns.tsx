@@ -18,7 +18,7 @@ import { usePrivacy } from "@/lib/privacy";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -27,6 +27,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Page() {
   return (
@@ -44,43 +51,83 @@ function ReturnsPage() {
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
   
   const [returnType, setReturnType] = useState<"sale" | "supplier">("sale");
-  const [invoiceId, setInvoiceId] = useState("");
+  const [sourceId, setSourceId] = useState("");
   const [reason, setReason] = useState("");
-  const [items, setItems] = useState<Array<{ id: string; name: string; unitPrice: number; quantity: number }>>([]);
-  const [newItem, setNewItem] = useState({ name: "", unitPrice: 0, quantity: 1 });
+  const [newItemId, setNewItemId] = useState("");
+  const [newQuantity, setNewQuantity] = useState(1);
+  const [items, setItems] = useState<Array<{ id: string; name: string; unitPrice: number; quantity: number; maxQuantity: number }>>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
   if (data.loading) return <PageLoadingSkeleton type="table" />;
 
+  const selectedSource = returnType === "sale"
+    ? data.invoices.find((invoice) => invoice.id === sourceId)
+    : data.purchases.find((purchase) => purchase.id === sourceId);
+  const sourceItems = returnType === "sale"
+    ? data.invoiceItems.filter((item) => item.invoiceId === sourceId)
+    : data.purchaseItems.filter((item) => item.purchaseId === sourceId);
+
+  const availableItems = useMemo(() => sourceItems.map((sourceItem: any) => {
+    const alreadyReturned = data.returnItems
+      .filter((item: any) => item.name === sourceItem.name)
+      .filter((item: any) => data.returns.some((record: any) => record.id === item.returnId && record.type === returnType && (returnType === "sale" ? record.invoiceId === sourceId : record.purchaseId === sourceId)))
+      .reduce((sum: number, item: any) => sum + Number(item.quantity || 0), 0);
+    const originalQuantity = Number(sourceItem.quantity || 0);
+    return {
+      id: sourceItem.id,
+      name: sourceItem.name,
+      unitPrice: Number(returnType === "sale" ? sourceItem.price : sourceItem.unitCost || 0),
+      maxQuantity: Math.max(0, originalQuantity - alreadyReturned),
+    };
+  }).filter((item) => item.maxQuantity > 0), [data.invoiceItems, data.purchaseItems, data.returnItems, data.returns, returnType, sourceId, sourceItems]);
+
+  const total = items.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0);
+
   const handleAddReturn = async () => {
-    if (items.length === 0) return;
-    const total = items.reduce((acc, it) => acc + (it.unitPrice * it.quantity), 0);
+    if (!sourceId || !reason.trim() || items.length === 0) {
+      toast.error("اختر المستند وأضف السبب والصنف المرتجع أولاً");
+      return;
+    }
     await db.addReturn({
-      invoiceId: invoiceId || null,
+      invoiceId: returnType === "sale" ? sourceId : null,
+      purchaseId: returnType === "supplier" ? sourceId : null,
       type: returnType,
       totalAmount: total,
       reason,
       notes: null,
       items
     });
-    setInvoiceId("");
+    setSourceId("");
     setReason("");
     setItems([]);
+    setNewItemId("");
+    setNewQuantity(1);
     setIsDialogOpen(false);
     toast.success("تم تسجيل المرتجع بنجاح");
   };
 
   const addItem = () => {
-    if (!newItem.name || newItem.quantity <= 0) return;
-    setItems([...items, { ...newItem, id: (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `it-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`) }]);
-    setNewItem({ name: "", unitPrice: 0, quantity: 1 });
+    const sourceItem = availableItems.find((item) => item.id === newItemId);
+    if (!sourceItem || newQuantity < 1) return;
+    const existing = items.find((item) => item.id === sourceItem.id);
+    const nextQuantity = (existing?.quantity || 0) + newQuantity;
+    if (nextQuantity > sourceItem.maxQuantity) {
+      toast.error(`الكمية المتاحة للمرتجع: ${sourceItem.maxQuantity}`);
+      return;
+    }
+    setItems(existing
+      ? items.map((item) => item.id === sourceItem.id ? { ...item, quantity: nextQuantity } : item)
+      : [...items, { ...sourceItem, quantity: newQuantity }]);
+    setNewItemId("");
+    setNewQuantity(1);
   };
 
   const filteredReturns = data.returns.filter(r => {
     const term = searchQuery.toLowerCase();
     return (
       r.invoiceId?.toLowerCase().includes(term) ||
+      r.purchaseId?.toLowerCase().includes(term) ||
       r.reason?.toLowerCase().includes(term) ||
       (r.type === 'sale' ? 'مرتجع بيع' : 'مرتجع مورد').includes(term)
     );
@@ -99,142 +146,76 @@ function ReturnsPage() {
                 تسجيل مرتجع جديد
               </ActionButton>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl overflow-hidden p-0 border-none bg-card/95 ">
-              <DialogHeader className="p-6 pb-2 sticky top-0 bg-card z-20 border-b border-[var(--hairline)]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-foreground/[0.06] flex items-center justify-center">
-                      <Undo2 className="w-5 h-5 text-foreground" />
-                    </div>
-                    <div>
-                      <DialogTitle className="text-right text-xl font-black">تسجيل مرتجع جديد</DialogTitle>
-                      <p className="text-xs text-muted-foreground uppercase tracking-[0.12em] font-bold mt-0.5">Register New Return Entry</p>
-                    </div>
-                  </div>
-                </div>
+            <DialogContent className="flex h-[min(760px,calc(100dvh-1rem))] w-[min(94vw,760px)] max-w-none flex-col overflow-hidden border-none bg-card/95 p-0">
+              <DialogHeader className="shrink-0 border-b border-[var(--hairline)] bg-card/95 p-5 sm:p-6">
+                <DialogTitle className="text-right text-xl font-black">تسجيل مرتجع جديد</DialogTitle>
+                <p className="mt-1 text-right text-xs font-bold text-muted-foreground">اربط المرتجع بالمستند الأصلي لتحديث المخزون تلقائياً.</p>
               </DialogHeader>
-              
-              <ScrollArea className="max-h-[80vh] p-6">
-                <div className="space-y-6 text-right" dir="rtl">
-                  {/* Type Selection */}
-                  <div className="space-y-3">
-                    <Label className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">نوع المرتجع</Label>
-                    <div className="grid grid-cols-2 gap-2 p-1.5 bg-muted/20 rounded-2xl ring-1 ring-inset ring-[var(--hairline)] relative overflow-hidden">
-                      <motion.div 
-                        layoutId="active-tab"
-                        className={cn(
-                          "absolute inset-y-1 w-[calc(50%-6px)] rounded-xl shadow-lg z-0",
-                          returnType === "sale" ? "bg-primary left-1.5" : "bg-warning right-1.5"
-                        )}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                      />
-                      <Button 
-                        variant="ghost"
-                        className={cn(
-                          "relative z-10 rounded-xl h-11 font-black transition-colors",
-                          returnType === "sale" ? "text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-                        )}
-                        onClick={() => setReturnType("sale")}
-                      >
-                        مرتجع بيع
-                      </Button>
-                      <Button 
-                        variant="ghost"
-                        className={cn(
-                          "relative z-10 rounded-xl h-11 font-black transition-colors",
-                          returnType === "supplier" ? "text-warning-foreground" : "text-muted-foreground hover:text-foreground"
-                        )}
-                        onClick={() => setReturnType("supplier")}
-                      >
-                        مرتجع مورد
-                      </Button>
+
+              <ScrollArea className="min-h-0 flex-1">
+                <div className="space-y-5 p-4 text-right sm:p-6" dir="rtl">
+                  <div className="grid grid-cols-2 gap-2 rounded-2xl bg-muted/20 p-1.5 ring-1 ring-inset ring-[var(--hairline)]">
+                    <Button type="button" variant={returnType === "sale" ? "default" : "ghost"} className="h-11 rounded-xl font-black" onClick={() => { setReturnType("sale"); setSourceId(""); setItems([]); }}>
+                      مرتجع بيع
+                    </Button>
+                    <Button type="button" variant={returnType === "supplier" ? "default" : "ghost"} className={cn("h-11 rounded-xl font-black", returnType === "supplier" && "bg-warning text-warning-foreground hover:bg-warning/90")} onClick={() => { setReturnType("supplier"); setSourceId(""); setItems([]); }}>
+                      مرتجع مورد
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 rounded-2xl bg-muted/15 p-4 ring-1 ring-inset ring-[var(--hairline)]">
+                    <Label className="text-xs font-black text-muted-foreground">{returnType === "sale" ? "الفاتورة الأصلية" : "المشتريات الأصلية"}</Label>
+                    <Select value={sourceId} onValueChange={(value) => { setSourceId(value); setItems([]); }}>
+                      <SelectTrigger className="h-12 bg-background/50 text-right font-bold"><SelectValue placeholder={returnType === "sale" ? "اختر فاتورة" : "اختر عملية شراء"} /></SelectTrigger>
+                      <SelectContent>
+                        {(returnType === "sale" ? data.invoices : data.purchases).map((source: any) => (
+                          <SelectItem key={source.id} value={source.id}>
+                            {returnType === "sale" ? `فاتورة ${source.invoiceNumber || source.id.slice(0, 8)}` : `شراء ${source.id.slice(0, 8)}`} — {fmt(Number(source.total || 0))} ج.م
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedSource && <p className="text-xs font-bold text-muted-foreground">المستند المختار جاهز لاختيار الأصناف المتاحة للمرتجع.</p>}
+                  </div>
+
+                  <div className="space-y-3 rounded-2xl border border-[var(--hairline)] bg-muted/10 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label className="text-xs font-black text-muted-foreground">إضافة أصناف المرتجع</Label>
+                      <Badge variant="outline" className="rounded-full">{returnType === "sale" ? "تُضاف للمخزون" : "تُخصم من المخزون"}</Badge>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-[1fr_110px_auto]">
+                      <Select value={newItemId} onValueChange={setNewItemId} disabled={!sourceId || availableItems.length === 0}>
+                        <SelectTrigger className="h-11 text-right font-bold"><SelectValue placeholder={sourceId ? "اختر الصنف" : "اختر المستند أولاً"} /></SelectTrigger>
+                        <SelectContent>{availableItems.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} — متاح {item.maxQuantity}</SelectItem>)}</SelectContent>
+                      </Select>
+                      <Input type="number" min={1} value={newQuantity} onChange={(event) => setNewQuantity(Math.max(1, Number(event.target.value) || 1))} className="h-11 text-right font-black" aria-label="الكمية" />
+                      <Button type="button" onClick={addItem} disabled={!newItemId} className="h-11 gap-2 rounded-xl font-black"><Plus className="h-4 w-4" />إضافة</Button>
                     </div>
                   </div>
 
-                  {/* Invoice ID */}
-                  <div className="space-y-3 p-4 bg-muted/20 rounded-2xl ring-1 ring-inset ring-[var(--hairline)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:ring-primary/40 group/field">
-                    <Label className="text-[11px] font-black uppercase tracking-[0.12em] text-muted-foreground group-focus-within/field:text-primary transition-colors">رقم الفاتورة (اختياري)</Label>
-                    <Input value={invoiceId} onChange={(e) => setInvoiceId(e.target.value)} placeholder="مثال: #INV-001" className="text-right h-12 bg-background/50 border-none focus-visible:ring-2 focus-visible:ring-primary/30 font-bold" />
-                  </div>
+                  <AnimatePresence initial={false}>
+                    {items.length > 0 && <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 rounded-2xl bg-muted/15 p-4 ring-1 ring-inset ring-[var(--hairline)]">
+                      {items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 border-b border-[var(--hairline)]/60 py-2 last:border-0">
+                        <button type="button" onClick={() => setItems(items.filter((current) => current.id !== item.id))} className="rounded-xl p-2 text-danger hover:bg-danger/10" aria-label={`حذف ${item.name}`}><X className="h-4 w-4" /></button>
+                        <div className="min-w-0 flex-1"><div className="truncate font-black">{item.name}</div><div className="text-xs font-bold text-muted-foreground">{item.quantity} × {fmt(item.unitPrice)} ج.م</div></div>
+                        <div className={cn("shrink-0 font-black text-primary", blurCls)}>{fmt(item.unitPrice * item.quantity)} ج.م</div>
+                      </div>)}
+                    </motion.div>}
+                  </AnimatePresence>
 
-                  {/* Add Items Section */}
-                  <div className="space-y-4 border-t border-[var(--hairline)] pt-6">
-                    <Label className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">إضافة أصناف المرتجع</Label>
-                    <div className="space-y-4 p-5 bg-muted/10 rounded-2xl ring-1 ring-inset ring-[var(--hairline)]">
-                      <div className="space-y-2 group/subfield">
-                        <Label className="text-xs font-bold text-muted-foreground mr-2 group-focus-within/subfield:text-primary transition-colors">اسم الصنف</Label>
-                        <Input placeholder="اسم الصنف" value={newItem.name} onChange={(e) => setNewItem({ ...newItem, name: e.target.value })} className="text-right h-11 bg-background/40 border-none focus-visible:ring-2 focus-visible:ring-primary/30 font-bold" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2 group/subfield">
-                          <Label className="text-xs font-bold text-muted-foreground mr-2 group-focus-within/subfield:text-primary transition-colors">السعر</Label>
-                          <Input type="number" placeholder="0.00" value={newItem.unitPrice || ""} onChange={(e) => setNewItem({ ...newItem, unitPrice: Number(e.target.value) })} className="text-right h-11 bg-background/40 border-none focus-visible:ring-2 focus-visible:ring-primary/30 font-black" />
-                        </div>
-                        <div className="space-y-2 group/subfield">
-                          <Label className="text-xs font-bold text-muted-foreground mr-2 group-focus-within/subfield:text-primary transition-colors">الكمية</Label>
-                          <Input type="number" placeholder="1" value={newItem.quantity || ""} onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) })} className="text-right h-11 bg-background/40 border-none focus-visible:ring-2 focus-visible:ring-primary/30 font-black" />
-                        </div>
-                      </div>
-                      <Button onClick={addItem} className="w-full gap-2 rounded-xl h-12 bg-background/50 hover:bg-background border-[var(--hairline)] font-bold transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:scale-[1.01]" variant="outline">
-                        <Plus className="w-4 h-4" /> إضافة للمرتجع
-                      </Button>
-                    </div>
-                    
-                    {/* Selected Items Preview */}
-                    <AnimatePresence>
-                      {items.length > 0 && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          className="bg-muted/20 rounded-2xl p-5 space-y-3 ring-1 ring-inset ring-[var(--hairline)]"
-                        >
-                          {items.map((it) => (
-                            <div key={it.id} className="flex justify-between items-center text-sm border-b border-[var(--hairline)]/50 pb-3 last:border-0">
-                              <div className="flex items-center gap-3">
-                                <button onClick={() => setItems(items.filter((x) => x.id !== it.id))} className="w-10 h-10 flex items-center justify-center rounded-xl bg-danger/10 text-danger hover:scale-110 transition-transform"><X className="w-4 h-4" /></button>
-                                <div className="text-left">
-                                  <span className={cn("font-black text-numeric text-primary block", blurCls)}>{fmt(it.unitPrice * it.quantity)} <span className="text-xs">ج.م</span></span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-foreground font-black block">{it.name}</span>
-                                <span className="text-xs text-muted-foreground uppercase font-bold">{it.quantity} قطعة × {fmt(it.unitPrice)}</span>
-                              </div>
-                            </div>
-                          ))}
-                          <div className="flex justify-between items-center font-black pt-4 border-t border-[var(--hairline)]">
-                            <div className="text-left">
-                              <span className={cn("text-primary text-2xl text-numeric", blurCls)}>{fmt(items.reduce((acc, it) => acc + (it.unitPrice * it.quantity), 0))} <span className="text-xs">ج.م</span></span>
-                            </div>
-                            <span className="text-xs uppercase tracking-[0.12em] text-muted-foreground">الإجمالي النهائي للمرتجع</span>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                  <div className="space-y-2 rounded-2xl bg-muted/15 p-4 ring-1 ring-inset ring-[var(--hairline)]">
+                    <Label className="text-xs font-black text-muted-foreground">السبب / ملاحظات <span className="text-danger">*</span></Label>
+                    <Input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="مثال: تلف في المنتج أو خطأ في المقاس..." className="h-12 text-right font-bold" />
                   </div>
-
-                  {/* Reason */}
-                  <div className="space-y-3 p-4 bg-muted/20 rounded-2xl ring-1 ring-inset ring-[var(--hairline)] transition-[background-color,border-color,color,box-shadow,transform,opacity] hover:ring-primary/40 group/field">
-                    <Label className="text-[11px] font-black uppercase tracking-[0.12em] text-muted-foreground group-focus-within/field:text-primary transition-colors">السبب / ملاحظات</Label>
-                    <Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="مثال: تلف في المنتج أو خطأ في المقاس..." className="text-right h-12 bg-background/50 border-none focus-visible:ring-2 focus-visible:ring-primary/30" />
-                  </div>
-
-                  <Button 
-                    className={cn(
-                      "w-full gap-2 py-8 text-xl rounded-2xl shadow-lg transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-500 font-black relative overflow-hidden group",
-                      returnType === 'sale' 
-                        ? "bg-primary text-primary-foreground hover:shadow-primary/30" 
-                        : "bg-warning text-warning-foreground hover:shadow-warning/30"
-                    )} 
-                    disabled={items.length === 0} 
-                    onClick={handleAddReturn}
-                  >
-                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
-                    <Check className="w-6 h-6 relative z-10" /> <span className="relative z-10">تأكيد وتسجيل المرتجع</span>
-                  </Button>
                 </div>
               </ScrollArea>
+
+              <div className="shrink-0 border-t border-[var(--hairline)] bg-card/95 p-4 sm:p-6">
+                <div className="mb-3 flex items-center justify-between gap-3"><span className="text-xs font-black text-muted-foreground">الإجمالي النهائي</span><span className={cn("text-xl font-black text-primary", blurCls)}>{fmt(total)} ج.م</span></div>
+                <Button type="button" className={cn("w-full gap-2 rounded-2xl py-6 text-lg font-black", returnType === "supplier" && "bg-warning text-warning-foreground hover:bg-warning/90")} disabled={!sourceId || !reason.trim() || items.length === 0} onClick={handleAddReturn}>
+                  <Check className="h-5 w-5" /> تأكيد وتسجيل المرتجع
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         }
