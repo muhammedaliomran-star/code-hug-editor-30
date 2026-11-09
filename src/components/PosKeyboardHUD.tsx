@@ -5,13 +5,9 @@ import {
   Search,
   Zap,
   Layers,
-  Clock,
   Undo2,
-  Tv,
-  Trash2,
   Keyboard,
   Pause,
-  FolderOpen,
 } from "lucide-react";
 
 interface PosKeyboardHUDProps {
@@ -44,21 +40,21 @@ export function PosKeyboardHUD({
   const shortcuts = [
     {
       key: "F2",
-      label: "بحث وباركود",
+      label: "بحث",
       icon: <Search className="h-3 w-3" />,
       action: onSearchFocus,
       tone: "default",
     },
     {
       key: "F3",
-      label: "مرتجع سريع",
+      label: "مرتجع",
       icon: <Undo2 className="h-3 w-3" />,
       action: onQuickRefund,
       tone: "danger",
     },
     {
       key: "F4",
-      label: "كاش فوري",
+      label: "بيع كاش",
       icon: <Zap className="h-3 w-3" />,
       action: onInstantCheckout,
       tone: "primary",
@@ -66,7 +62,7 @@ export function PosKeyboardHUD({
     },
     {
       key: "F6",
-      label: "دفع متعدد (Split)",
+      label: "دفع متعدد",
       icon: <Layers className="h-3 w-3" />,
       action: onSplitPayment,
       tone: "secondary",
@@ -74,33 +70,10 @@ export function PosKeyboardHUD({
     },
     {
       key: "F8",
-      label: "تعليق الفاتورة",
+      label: "تعليق",
       icon: <Pause className="h-3 w-3" />,
       action: onHoldCart,
       tone: "warning",
-      disabled: cartCount === 0,
-    },
-    {
-      key: "F9",
-      label: `معلقة (${heldCount})`,
-      icon: <FolderOpen className="h-3 w-3" />,
-      action: onRecallHeld,
-      tone: "default",
-      highlight: heldCount > 0,
-    },
-    {
-      key: "F10",
-      label: "شاشة العميل",
-      icon: <Tv className="h-3 w-3" />,
-      action: onCustomerDisplay,
-      tone: "default",
-    },
-    {
-      key: "Esc",
-      label: "مسح السلة",
-      icon: <Trash2 className="h-3 w-3" />,
-      action: onClearCart,
-      tone: "danger",
       disabled: cartCount === 0,
     },
   ];
@@ -120,7 +93,7 @@ export function PosKeyboardHUD({
             onClick={sc.action}
             disabled={sc.disabled}
             className={cn(
-              "flex items-center gap-1 px-2.5 min-h-[40px] rounded-lg border transition-[background-color,border-color,color] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold",
+              "flex items-center gap-1 px-2.5 min-h-[36px] rounded-lg border transition-[background-color,border-color,color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-semibold active:scale-[0.98]",
               sc.highlight
                 ? "bg-foreground/[0.05] border-border/50 text-amber-600 font-bold"
                 : sc.tone === "primary"
@@ -137,6 +110,19 @@ export function PosKeyboardHUD({
             <span>{sc.label}</span>
           </button>
         ))}
+        <span className="hidden xl:inline-flex items-center gap-1.5 mr-1 text-[10px] text-muted-foreground border-r border-border/50 pr-2">
+          <button type="button" onClick={onRecallHeld} className="hover:text-foreground">
+            <kbd className="font-mono font-bold">F9</kbd> معلّق{heldCount > 0 ? ` (${heldCount})` : ""}
+          </button>
+          <span>·</span>
+          <button type="button" onClick={onCustomerDisplay} className="hover:text-foreground">
+            <kbd className="font-mono font-bold">F10</kbd> شاشة العميل
+          </button>
+          <span>·</span>
+          <button type="button" disabled={cartCount === 0} onClick={onClearCart} className="hover:text-danger disabled:opacity-40">
+            <kbd className="font-mono font-bold">Esc</kbd> مسح
+          </button>
+        </span>
       </div>
     </div>
   );

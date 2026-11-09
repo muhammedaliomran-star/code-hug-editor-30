@@ -159,6 +159,7 @@ function PosPage() {
   const profit = total - totalCost;
   const receivedNum = Number(cashReceived || 0);
   const change = Math.max(0, receivedNum - total);
+  const remaining = Math.max(0, total - receivedNum);
 
   // Add Product to Cart
   const addToCart = (product: StockItem) => {
@@ -794,13 +795,18 @@ function PosPage() {
           {/* Products Grid */}
           <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar pr-1">
             {filteredProducts.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground space-y-3">
-                <Package className="h-12 w-12 text-muted-foreground/30" />
-                <div>
-                  <p className="text-sm font-bold">لم يتم العثور على أي منتجات مطابقة</p>
+              <div className="h-full flex items-center justify-center p-5 text-center text-muted-foreground">
+                <div className="w-full max-w-sm rounded-2xl border border-dashed border-border/50 bg-card/40 px-5 py-6">
+                  <Package className="h-9 w-9 text-muted-foreground/35 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-foreground">مفيش أصناف مطابقة</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    جرب البحث بكلمات أخرى أو أضف منتجات جديدة للمخزن.
+                    جرّب كلمة بحث مختلفة أو امسح الباركود لإضافة صنف بسرعة.
                   </p>
+                  {search && (
+                    <button type="button" onClick={() => setSearch("")} className="mt-3 text-xs font-bold text-primary hover:underline">
+                      مسح البحث
+                    </button>
+                  )}
                 </div>
               </div>
             ) : (
@@ -908,7 +914,7 @@ function PosPage() {
                 onClick={() => setCustSelectOpen(true)}
                 className="h-10 text-xs font-bold px-3 rounded-xl text-primary hover:bg-primary/10"
               >
-                {customer ? "تغيير" : "تحديد عميل"}
+                {customer ? "تغيير العميل" : "اختيار عميل"}
               </Button>
               <Button
                 type="button"
@@ -1086,14 +1092,27 @@ function PosPage() {
               )}
             </div>
 
-            {/* Total Big Display */}
-            <div className="p-3 rounded-2xl bg-foreground text-background flex items-center justify-between shadow-sm">
-              <span className="text-xs font-bold text-background/80">
-                المجموع المستحق
-              </span>
-              <span className="text-xl sm:text-2xl font-black font-mono">
-                {fmt(total)} <span className="text-xs font-normal">ج.م</span>
-              </span>
+            {/* Invoice Summary */}
+            <div className="rounded-2xl border border-border/50 bg-background/60 p-3 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">إجمالي الأصناف</span>
+                <span className="font-mono font-bold">{fmt(subtotal)} ج.م</span>
+              </div>
+              {discountAmount > 0 && (
+                <div className="flex items-center justify-between text-xs text-danger">
+                  <span>الخصم</span>
+                  <span className="font-mono font-bold">− {fmt(discountAmount)} ج.م</span>
+                </div>
+              )}
+              <div className="flex items-end justify-between gap-3 border-t border-border/40 pt-2">
+                <div>
+                  <div className="text-[11px] font-bold text-muted-foreground">المطلوب تحصيله</div>
+                  <div className="text-xl sm:text-2xl font-black font-mono text-foreground">
+                    {fmt(total)} <span className="text-xs font-normal">ج.م</span>
+                  </div>
+                </div>
+                <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">فاتورة نقدية</Badge>
+              </div>
             </div>
 
             {/* Quick Cash Bills Helper */}
@@ -1107,8 +1126,13 @@ function PosPage() {
                   className="h-10 text-xs font-mono text-center rounded-xl bg-background"
                 />
                 {change > 0 && (
-                  <div className="text-xs font-bold text-success whitespace-nowrap px-2 py-1 bg-success/10 rounded-xl">
+                  <div className="text-xs font-bold text-success whitespace-nowrap px-2 py-1.5 bg-success/10 rounded-xl">
                     الباقي: {fmt(change)} ج.م
+                  </div>
+                )}
+                {receivedNum > 0 && receivedNum < total && (
+                  <div className="text-xs font-bold text-warning whitespace-nowrap px-2 py-1.5 bg-warning/10 rounded-xl">
+                    متبقي: {fmt(remaining)} ج.م
                   </div>
                 )}
               </div>
@@ -1140,20 +1164,22 @@ function PosPage() {
                   type="button"
                   disabled={cart.length === 0 || saving}
                   onClick={() => handleInstantCashCheckout(true)}
-                   className="h-11 rounded-2xl bg-success hover:bg-success/90 text-white font-extrabold text-xs gap-1.5 shadow-md transition-[background-color,box-shadow,transform] active:scale-[0.99]"
+                   className="h-12 rounded-2xl bg-success hover:bg-success/90 text-white font-extrabold text-xs gap-1.5 shadow-md transition-[background-color,box-shadow,transform] active:scale-[0.99]"
                 >
                   <Zap className="h-4 w-4" />
-                   <span>{saving ? "جاري الحفظ..." : "كاش فوري (F4)"}</span>
+                   <span>{saving ? "جاري الحفظ..." : "إتمام البيع كاش"}</span>
+                   <kbd className="rounded-md bg-white/15 px-1.5 py-0.5 text-[10px] font-mono">F4</kbd>
                 </Button>
 
                 <Button
                   type="button"
                   disabled={cart.length === 0 || saving}
                   onClick={() => setSplitModalOpen(true)}
-                   className="h-11 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs gap-1.5 shadow-md transition-[background-color,box-shadow,transform] active:scale-[0.99]"
+                   className="h-12 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-extrabold text-xs gap-1.5 shadow-md transition-[background-color,box-shadow,transform] active:scale-[0.99]"
                 >
                   <Layers className="h-4 w-4" />
-                  <span>دفع متعدد (F6)</span>
+                  <span>دفع بأكثر من طريقة</span>
+                  <kbd className="rounded-md bg-black/10 px-1.5 py-0.5 text-[10px] font-mono">F6</kbd>
                 </Button>
               </div>
 
