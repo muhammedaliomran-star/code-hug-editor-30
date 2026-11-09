@@ -29,6 +29,12 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -66,6 +72,7 @@ import {
   Wallet,
   TrendingUp,
   BadgeCheck,
+  MoreVertical,
 } from "lucide-react";
 import { MetricCard } from "@/components/MetricCard";
 import { FilterChips } from "@/components/FilterChips";
@@ -161,16 +168,24 @@ function CustomersPage() {
     const now = Date.now();
     const week = 7 * 86400000;
     let thisWeek = 0,
-      prevWeek = 0;
+      prevWeek = 0,
+      thisMonth = 0,
+      dueTodayAmount = 0;
+    const nowDate = new Date();
+    const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).getTime();
     for (const p of data.payments) {
       const t = new Date(p.paidAt).getTime();
       if (now - t <= week) thisWeek += p.amount;
       else if (now - t <= 2 * week) prevWeek += p.amount;
+      if (t >= monthStart && t <= now) thisMonth += p.amount;
     }
     const debtors = enriched.filter((x) => x.m.balance > 0).length;
+    dueTodayAmount = enriched
+      .filter(({ c, m }) => c.customerType !== "cash" && isDueDay(c.dueDay) && m.balance > 0)
+      .reduce((sum, { m }) => sum + m.balance, 0);
     const trendPct =
       prevWeek > 0 ? Math.round(((thisWeek - prevWeek) / prevWeek) * 100) : thisWeek > 0 ? 100 : 0;
-    return { totalDebt, thisWeek, trendPct, debtors };
+    return { totalDebt, thisWeek, thisMonth, dueTodayAmount, trendPct, debtors };
   }, [enriched, data.payments]);
 
   const list = useMemo(() => {
@@ -464,6 +479,42 @@ function CustomersPage() {
             masked={privacy}
           />
         </Reveal>
+        <Reveal className="h-full">
+          <MetricCard
+            mini
+            className="h-full"
+            icon={Users}
+            label="إجمالي العملاء"
+            value={counts.all}
+            tone="info"
+            format={(n) => String(Math.round(n))}
+          />
+        </Reveal>
+        <Reveal className="h-full">
+          <MetricCard
+            mini
+            className="h-full"
+            icon={CalendarClock}
+            label="مستحق اليوم"
+            value={counts.dueToday}
+            tone="warning"
+            format={(n) => String(Math.round(n))}
+            sub={`${fmt(debtStats.dueTodayAmount)} ج.م`}
+            masked={privacy}
+          />
+        </Reveal>
+        <Reveal className="h-full">
+          <MetricCard
+            mini
+            className="h-full"
+            icon={Wallet}
+            label="تحصيلات هذا الشهر"
+            value={debtStats.thisMonth}
+            tone="positive"
+            format={(n) => `${fmt(n)} ج.م`}
+            masked={privacy}
+          />
+        </Reveal>
       </div>
 
       {/* شريط التحكّم: فلاتر + بحث + يوم القسط */}
@@ -562,15 +613,31 @@ function CustomersPage() {
                 const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
                 const overLimit = c.creditLimit > 0 && m.balance >= c.creditLimit;
                 const initial = c.name.trim().slice(0, 1) || "؟";
+                const nextInstallment = c.customerType === "installment"
+                  ? data.invoices
+                      .filter((invoice) => invoice.customerId === c.id && invoice.status !== "cancelled" && invoice.paid < invoice.total)
+                      .sort((a, b) => a.firstDueDate.localeCompare(b.firstDueDate))[0]
+                  : undefined;
                 return (
                   <div
                     key={c.id}
-                    className="group bezel-shell bezel-lift animate-[fade-in_0.5s_cubic-bezier(0.32,0.72,0,1)_both]"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`عرض تفاصيل العميل ${c.name}`}
+                    onClick={(event) => {
+                      const target = event.target as HTMLElement;
+                      if (target.closest("button, a, [role=menuitem]")) return;
+                      setViewFor(c);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") setViewFor(c);
+                    }}
+                    className="group bezel-shell bezel-lift cursor-pointer animate-[fade-in_0.5s_cubic-bezier(0.32,0.72,0,1)_both]"
                     style={{ animationDelay: `${Math.min(idx, 12) * 45}ms` }}
                   >
-                    <div className="bezel-core grid grid-cols-1 items-center gap-5 p-5 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto] md:gap-6">
+                    <div dir="ltr" className="bezel-core grid grid-cols-1 items-center gap-5 p-4 sm:p-5 md:grid-cols-[auto_minmax(0,1fr)_minmax(0,1.1fr)] md:gap-6">
                       {/* الهوية */}
-                      <div className="flex min-w-0 items-center gap-3">
+                      <div dir="rtl" className="flex min-w-0 items-center gap-3 md:order-3 md:justify-self-end">
                         <span
                           className={cn(
                             "text-display grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg font-bold",
@@ -585,11 +652,11 @@ function CustomersPage() {
                         </span>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="truncate font-bold leading-tight">{c.name}</span>
-                            <button
+                            <span className="truncate text-base font-black leading-tight">{c.name}</span>
+                             <button
                               type="button"
                               onClick={() => setCardFor({ customer: c, balance: m.balance })}
-                              className="inline-flex items-center gap-1 rounded-md bg-foreground/[0.05] hover:bg-primary/15 hover:text-primary px-2 py-0.5 text-[11px] font-mono font-bold text-muted-foreground transition-colors shrink-0"
+                               className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-mono font-black text-primary ring-1 ring-primary/20 transition-[background-color,transform] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-primary/15 active:scale-[0.98] shrink-0"
                               title="عرض بطاقة و QR العميل"
                             >
                               <QrCode className="h-3 w-3" />
@@ -626,20 +693,20 @@ function CustomersPage() {
                             ) : (
                               <StatusBadge status={c.status} />
                             )}
-                            <CustomerTypeBadge type={c.customerType} />
-                            {c.customerType === "installment" && (
-                              <Badge variant="outline" className="bg-foreground/[0.04] text-muted-foreground text-[10px] gap-1 font-medium">
-                                <CalendarClock className="w-3 h-3" />
-                                يوم {c.dueDay}
-                              </Badge>
-                            )}
+                             <CustomerTypeBadge type={c.customerType} />
+                             {c.customerType === "installment" && (
+                               <Badge variant="outline" className="bg-foreground/[0.04] text-muted-foreground text-[10px] gap-1 font-medium">
+                                 <CalendarClock className="w-3 h-3" />
+                                 {nextInstallment ? `القسط القادم ${isoToDDMMYYYY(nextInstallment.firstDueDate)}` : "لا يوجد قسط مجدول"}
+                               </Badge>
+                             )}
                             <StarRating value={c.rating} />
                           </div>
                         </div>
                       </div>
 
                       {/* المديونية */}
-                      <div className="min-w-0">
+                      <div dir="rtl" className="min-w-0 md:order-2">
                         <div className="flex items-center gap-2">
                           <div
                             className={cn(
@@ -680,104 +747,61 @@ function CustomersPage() {
                             </TooltipProvider>
                           )}
                         </div>
-                        <Progress value={m.paidPct} className="mt-2.5 h-1" />
-                        <div
-                          className={cn(
-                            "mt-1.5 text-[11px] text-muted-foreground",
-                            privacy && "privacy-blur",
-                          )}
-                        >
-                          مسدد {m.paidPct}٪ من {fmt(m.totalCharged)}
-                        </div>
+                         <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] font-bold text-muted-foreground">
+                           <span className={cn(privacy && "privacy-blur")}>إجمالي<br /><b className="text-foreground">{fmt(m.totalCharged)} ج.م</b></span>
+                           <span className={cn(privacy && "privacy-blur")}>مسدد<br /><b className="text-success">{fmt(m.totalPaid)} ج.م</b></span>
+                           <span className={cn(privacy && "privacy-blur")}>متبقي<br /><b className={overdue7 ? "text-danger" : "text-foreground"}>{fmt(Math.max(0, m.balance))} ج.م</b></span>
+                         </div>
+                         <Progress value={m.paidPct} className="mt-2.5 h-1" />
                       </div>
 
                       {/* الإجراءات */}
-                      <div className="flex flex-wrap items-center justify-end gap-1.5 md:opacity-70 md:transition-opacity md:duration-500 md:ease-[cubic-bezier(0.32,0.72,0,1)] md:group-hover:opacity-100 md:focus-within:opacity-100">
-                        {/* زر السداد السريع المباشر */}
+                      <div dir="rtl" className="flex items-center justify-end gap-2 md:order-1 md:justify-self-start md:opacity-80 md:transition-opacity md:duration-500 md:ease-[cubic-bezier(0.32,0.72,0,1)] md:group-hover:opacity-100 md:focus-within:opacity-100">
                         <Button
                           type="button"
                           size="sm"
                           variant="outline"
-                          className="h-8.5 gap-1.5 rounded-full border-success/40 bg-success/10 text-success hover:bg-success/20 font-bold px-3 text-xs"
+                          className="h-9 gap-1.5 rounded-full border-success/40 bg-success/10 px-3 text-xs font-black text-success hover:bg-success/20"
                           onClick={() => setQuickPayFor({ customer: c, balance: m.balance })}
                         >
                           <Banknote className="h-3.5 w-3.5" />
                           تسجيل دفعة
                         </Button>
-
-                        <button
-                          type="button"
-                          onClick={() => setScriptFor(c)}
-                          className="island-btn group/cta bg-primary/12 text-primary ring-1 ring-primary/25 hover:bg-primary/18"
-                        >
-                          هقوله إيه؟
-                          <span className="island-btn-icon bg-primary/20 text-primary transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover/cta:-translate-x-0.5 group-hover/cta:scale-105">
-                            <MessageCircle className="h-4 w-4" />
-                          </span>
-                        </button>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <a
-                                href={waUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="action-btn grid h-9 w-9 place-items-center rounded-full text-success hover:bg-success/10"
-                                aria-label="إرسال واتساب"
-                              >
-                                <WhatsAppIcon className="h-4 w-4" />
-                              </a>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              إرسال الرسالة المقترحة على واتساب
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-primary hover:bg-primary/10"
-                                onClick={() => setHistoryFor(c)}
-                                aria-label="سجل المدفوعات"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">عرض سجل المدفوعات الكامل</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:bg-muted/50"
-                                onClick={() => setViewFor(c)}
-                                aria-label="تفاصيل العميل"
-                              >
-                                <Info className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">تفاصيل العميل وكشف الحساب</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <CustomerDialog
-                          customer={c}
-                          trigger={
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="action-btn rounded-full"
-                              aria-label="تعديل"
-                            >
-                              <Pencil className="h-4 w-4" />
+                        <DropdownMenu dir="rtl">
+                          <DropdownMenuTrigger asChild>
+                            <Button type="button" size="icon" variant="ghost" className="h-9 w-9 rounded-full text-muted-foreground hover:bg-primary/10 hover:text-primary" aria-label="إجراءات العميل">
+                              <MoreVertical className="h-4 w-4" />
                             </Button>
-                          }
-                        />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="min-w-48 text-right">
+                            <DropdownMenuItem onClick={() => setHistoryFor(c)}>
+                              <Eye className="me-2 h-4 w-4 text-primary" /> سجل المدفوعات
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setViewFor(c)}>
+                              <Info className="me-2 h-4 w-4" /> تفاصيل العميل
+                            </DropdownMenuItem>
+                            <CustomerDialog
+                              customer={c}
+                              trigger={
+                                <DropdownMenuItem>
+                                  <Pencil className="me-2 h-4 w-4" /> تعديل بيانات العميل
+                                </DropdownMenuItem>
+                              }
+                            />
+                            <DropdownMenuItem asChild>
+                              <a href={waUrl} target="_blank" rel="noopener noreferrer">
+                                <WhatsAppIcon className="me-2 h-4 w-4 text-success" /> إرسال واتساب
+                              </a>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setScriptFor(c)}>
+                              <MessageCircle className="me-2 h-4 w-4 text-primary" /> اقتراح رسالة
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setCardFor({ customer: c, balance: m.balance })}>
+                              <QrCode className="me-2 h-4 w-4" /> بطاقة العميل وQR
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                        <div className="border-s border-border/50 ps-1">
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -809,6 +833,7 @@ function CustomersPage() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        </div>
                       </div>
                     </div>
                   </div>
