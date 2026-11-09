@@ -43,6 +43,7 @@ function AddProductPage() {
       <div className="mx-auto flex min-h-[60vh] max-w-3xl flex-col">
         <ProductForm
           existingBarcodes={data.stockItems.map((s) => s.barcode)}
+          productCode={Math.max(0, ...data.stockItems.map((s) => s.productCode || 0)) + 1}
           onSaved={() => navigate({ to: "/inventory" })}
           onCancel={() => navigate({ to: "/inventory" })}
           cancelLabel="إلغاء والرجوع"

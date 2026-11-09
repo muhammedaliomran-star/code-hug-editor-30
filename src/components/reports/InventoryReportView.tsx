@@ -65,7 +65,7 @@ export const InventoryReportView: React.FC<InventoryReportViewProps> = ({ data, 
             <TrendingUp className="w-4 h-4 text-emerald-600" />
             <div>
               <h3 className="text-sm font-bold text-foreground">الأصناف الأكثر مساهمة في الأرباح والمبيعات</h3>
-              <p className="text-xs text-muted-foreground">مرتبة حسب حجم الإيرادات وهامش الربح المحقق في الفترة</p>
+              <p className="text-xs text-muted-foreground">مرتبة حسب حجم الإيرادات ونسبة الربح المحققة في الفترة</p>
             </div>
           </div>
           <span className="text-xs text-muted-foreground">{inv.topSellingItems.length} صنف</span>
@@ -87,7 +87,7 @@ export const InventoryReportView: React.FC<InventoryReportViewProps> = ({ data, 
                   <th className="text-right p-3.5 font-semibold">إجمالي الإيراد</th>
                   <th className="text-right p-3.5 font-semibold">إجمالي التكلفة</th>
                   <th className="text-right p-3.5 font-semibold">صافي الربح</th>
-                  <th className="text-right p-3.5 font-semibold">هامش الربح %</th>
+                  <th className="text-right p-3.5 font-semibold">نسبة الربح %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">

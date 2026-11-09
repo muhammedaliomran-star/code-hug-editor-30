@@ -229,7 +229,7 @@ async function fetchAllInner() {
       id: r.id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
     })),
     stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
-      id: r.id, name: r.name,
+       id: r.id, productCode: Number(r.product_code ?? 0), name: r.name,
       quantity: Number(r.quantity ?? 0),
       lastUnitCost: Number(r.last_unit_cost ?? 0) / 100,
       salePrice: Number(r.sale_price ?? 0) / 100,

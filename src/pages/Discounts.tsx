@@ -426,7 +426,7 @@ export default function Discounts() {
           {/* Header */}
           <PageHeader
             title="الخصومات والعروض الترويجية"
-            subtitle="إدارة الكوبونات، عروض الكميات والباقات، نقاط الولاء، وحماية هامش الربحية"
+            subtitle="إدارة الكوبونات، عروض الكميات والباقات، نقاط الولاء، وحماية نسبة الربح"
             eyebrow="مُحرك المبيعات"
             action={
               <div className="flex items-center gap-2">
@@ -1083,7 +1083,7 @@ export default function Discounts() {
                 <div className="space-y-3">
                   <div className="py-1 space-y-2">
                     <Label className="text-xs font-bold text-foreground">
-                      الحد الأدنى لنسبة هامش الربح المحمي (%)
+                      الحد الأدنى لنسبة الربح المحمية (%)
                     </Label>
                     <div className="flex items-center gap-3">
                       <Input
@@ -1097,7 +1097,7 @@ export default function Discounts() {
                         className="h-10 font-mono text-base font-bold text-center w-28"
                       />
                       <span className="text-xs text-muted-foreground">
-                        لن يُسمح بأي خصم يجعل هامش ربح الفاتورة أقل من {marginGuard.minMarginPct}%
+                        لن يُسمح بأي خصم يجعل نسبة ربح الفاتورة أقل من {marginGuard.minMarginPct}%
                       </span>
                     </div>
                   </div>
@@ -1106,7 +1106,7 @@ export default function Discounts() {
                     <div className="font-bold text-foreground mb-1 flex items-center gap-1.5">
                       <HelpCircle className="w-3.5 h-3.5 text-primary" /> كيف تعمل هذه الميزة؟
                     </div>
-                    عند كتابة كود خصم أو خصم يدوي أثناء إنشاء الفاتورة، يقوم النظام بحساب مجموع تكلفة الأصناف ومقارنتها بالسعر بعد الخصم. إذا نزل هامش الربح عن {marginGuard.minMarginPct}%، يتم إظهار تنبيه فوري يوضح أقصى خصم آمن مسموح به لمنع تآكل الأرباح.
+                    عند كتابة كود خصم أو خصم يدوي أثناء إنشاء الفاتورة، يقوم النظام بحساب مجموع تكلفة الأصناف ومقارنتها بالسعر بعد الخصم. إذا نزلت نسبة الربح عن {marginGuard.minMarginPct}%، يتم إظهار تنبيه فوري يوضح أقصى خصم آمن مسموح به لمنع تآكل الأرباح.
                   </div>
                 </div>
               </div>

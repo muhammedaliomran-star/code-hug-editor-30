@@ -72,12 +72,14 @@ body { margin:0; font-family: 'Tahoma', sans-serif; color:#0b1220; }
  */
 export function ProductForm({
   existingBarcodes,
+  productCode,
   prefillBarcode,
   onSaved,
   onCancel,
   cancelLabel = "إلغاء",
 }: {
   existingBarcodes: Array<string | null>;
+  productCode: number;
   prefillBarcode?: string;
   onSaved?: () => void;
   onCancel?: () => void;
@@ -214,6 +216,11 @@ export function ProductForm({
         <div className="space-y-4">
           <SectionHeader number="١" icon={Tag} label="بيانات المنتج" open={openSections.identity} onToggle={() => setOpenSections((s) => ({ ...s, identity: !s.identity }))} />
           {openSections.identity && <div className="space-y-4">
+          <div className="grid gap-1.5">
+            <Label>كود المنتج</Label>
+            <Input value={String(productCode)} readOnly aria-readonly="true" dir="ltr" className="h-10 rounded-xl bg-muted/30 font-mono font-bold text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">رقم تسلسلي تلقائي وغير قابل للتعديل.</span>
+          </div>
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label className="text-[13px] font-bold">

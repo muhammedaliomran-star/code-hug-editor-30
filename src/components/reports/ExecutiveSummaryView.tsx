@@ -74,7 +74,7 @@ export const ExecutiveSummaryView: React.FC<ExecutiveSummaryViewProps> = ({ data
         <KpiCard
           label="صافي الربح"
           value={data.netProfit}
-          subLabel={`هامش الربح: ${data.netMarginPercent.toFixed(1)}%`}
+          subLabel={`نسبة الربح: ${data.netMarginPercent.toFixed(1)}%`}
           icon={data.netProfit >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
           tone={data.netProfit >= 0 ? "success" : "danger"}
           blurCls={blurCls}

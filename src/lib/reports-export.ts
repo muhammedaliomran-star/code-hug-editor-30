@@ -75,7 +75,7 @@ export async function exportComprehensiveExcel(data: ComprehensiveReportData, sh
         "إجمالي الإيراد": Math.round(item.revenue),
         "إجمالي التكلفة": Math.round(item.cost),
         "صافي الربح": Math.round(item.profit),
-        "هامش الربح %": `${item.marginPercent.toFixed(1)}%`,
+        "نسبة الربح %": `${item.marginPercent.toFixed(1)}%`,
       }));
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(topItemsRows), "الأصناف الأكثر ربحا");
     }

@@ -1063,7 +1063,7 @@ function PosPage() {
               {!privacy && cart.length > 0 && (
                 <div className="flex items-center justify-between text-xs px-2 py-1.5 rounded-lg bg-muted/40 border border-border/40">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground">هامش الربح:</span>
+                    <span className="text-muted-foreground">نسبة الربح:</span>
                     <span className={cn("font-bold font-mono", profit >= 0 ? "text-success" : "text-danger")}>
                       {fmt(profit)} ج.م {subtotal > 0 ? `(${Math.round((profit / subtotal) * 100)}%)` : ""}
                     </span>

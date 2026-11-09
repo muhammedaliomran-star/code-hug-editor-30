@@ -283,7 +283,7 @@ export function runComprehensiveReconciliation(
             severity: "warning",
             title: `أصناف بتكلفة صفرية في الفاتورة #${invoice.id.slice(0, 8)}`,
             description: `يوجد ${zeroCostItems.length} صنف مسجل بتكلفة 0 ج.م (${zeroCostItems.map((i) => i.name).join("، ")}).`,
-            impact: "تضخيم هامش الربح المحاسبي بصورة غير واقعية.",
+            impact: "تضخيم نسبة الربح المحاسبية بصورة غير واقعية.",
             targetId: invoice.id,
             targetType: "invoice",
             targetLabel: invoiceLabel,

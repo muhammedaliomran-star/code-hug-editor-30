@@ -47,7 +47,7 @@ export default function ProfitabilityTab() {
             {fmt(pl.netProfit)} {cur}
           </div>
           <span className="text-[11px] font-bold text-foreground/80">
-            هامش الربح الصافي: {pl.netMarginPct}%
+            نسبة الربح الصافي: {pl.netMarginPct}%
           </span>
         </div>
       </div>

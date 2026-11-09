@@ -483,7 +483,7 @@ export default function OwnerCockpit() {
                   format={(n) => `ج.م ${fmt(n)}`}
                   tone={stats.netProfit >= 0 ? "positive" : "danger"}
                   masked={privacy}
-                  sub={<>هامش الربح الصافي: <strong className="text-foreground">{stats.profitMargin}%</strong></>}
+                  sub={<>نسبة الربح الصافي: <strong className="text-foreground">{stats.profitMargin}%</strong></>}
                 />
                 <MetricCard
                   className="h-full"

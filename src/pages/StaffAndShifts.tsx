@@ -917,7 +917,7 @@ export default function StaffAndShifts() {
                           </div>
 
                           <div className="flex items-center justify-between text-[11px]">
-                            <span className="text-muted-foreground">رؤية التكلفة وهامش الربح:</span>
+                            <span className="text-muted-foreground">رؤية التكلفة ونسبة الربح:</span>
                             <span className={st.permissions.canViewCostAndProfit ? "text-success font-bold" : "text-danger"}>
                               {st.permissions.canViewCostAndProfit ? "مسموح" : "مخفي 🔒"}
                             </span>

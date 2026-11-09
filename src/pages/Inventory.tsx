@@ -230,15 +230,14 @@ function InventoryPage() {
         const st = getProductStockInBranch(activeBranch.id, it.id, it.quantity);
         return st.quantity > 0 && st.quantity < (st.minStock || it.minStock || LOW_STOCK());
       }).length;
-      const avgCost = totalItems > 0 ? data.stockItems.reduce((s, it) => s + it.lastUnitCost, 0) / totalItems : 0;
-      return { totalItems, value: val.totalCostValue, low, out, avgCost };
+      return { totalItems, value: val.totalCostValue, retailValue: val.totalRetailValue, profit: val.potentialProfit, low, out };
     }
     const value = data.stockItems.reduce((s, it) => s + it.quantity * it.lastUnitCost, 0);
-    const avgCost =
-      totalItems > 0 ? data.stockItems.reduce((s, it) => s + it.lastUnitCost, 0) / totalItems : 0;
+    const retailValue = data.stockItems.reduce((s, it) => s + it.quantity * it.salePrice, 0);
+    const profit = retailValue - value;
     const out = data.stockItems.filter((it) => it.quantity <= 0).length;
     const low = data.stockItems.filter((it) => it.quantity > 0 && it.quantity < (it.minStock || LOW_STOCK())).length;
-    return { totalItems, value, low, out, avgCost };
+    return { totalItems, value, retailValue, profit, low, out };
   }, [data.stockItems, isAllBranches, activeBranch]);
 
   const list = useMemo(() => {
@@ -286,7 +285,7 @@ function InventoryPage() {
         "سعر الشراء": it.lastUnitCost,
         "سعر البيع": it.salePrice,
         "قيمة المخزن": it.quantity * it.lastUnitCost,
-        "هامش الربح": it.salePrice - it.lastUnitCost,
+        "نسبة الربح": it.salePrice - it.lastUnitCost,
       }));
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
@@ -415,7 +414,7 @@ ${
         }
       />
 
-      <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4 mb-14">
+      <div className="mb-14 grid auto-rows-fr grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
         <MetricCard
           className="h-full"
           icon={Boxes}
@@ -437,22 +436,41 @@ ${
         />
         <MetricCard
           className="h-full"
-          icon={TrendingUp}
-          label="متوسط سعر الشراء"
-          value={totals.avgCost}
+          icon={Wallet}
+          label="قيمة البيع المتوقعة"
+          value={totals.retailValue}
           tone="info"
           format={(n) => `${fmt(n)} ج.م`}
           masked={privacy}
-          sub="متوسط على كل الأصناف"
+          sub="الكمية × سعر البيع"
+        />
+        <MetricCard
+          className="h-full"
+          icon={TrendingUp}
+          label="الربح المتوقع"
+          value={totals.profit}
+          tone={totals.profit >= 0 ? "positive" : "danger"}
+          format={(n) => `${fmt(n)} ج.م`}
+          masked={privacy}
+          sub="قيمة البيع − التكلفة"
         />
         <MetricCard
           className="h-full"
           icon={AlertTriangle}
-          label="نواقص"
-          value={totals.low + totals.out}
-          tone={totals.out > 0 ? "danger" : totals.low > 0 ? "warning" : "positive"}
+          label="منخفض"
+          value={totals.low}
+          tone={totals.low > 0 ? "warning" : "positive"}
           format={(n) => String(Math.round(n))}
-          sub={totals.out > 0 ? `${totals.out} نافد • يحتاج تدخلًا` : totals.low > 0 ? "أقل من الحد الأدنى • يحتاج متابعة" : "المخزون في الحدود الآمنة"}
+          sub={totals.low > 0 ? "أقل من الحد الأدنى • يحتاج متابعة" : "لا توجد أصناف منخفضة"}
+        />
+        <MetricCard
+          className="h-full"
+          icon={AlertTriangle}
+          label="نافد"
+          value={totals.out}
+          tone={totals.out > 0 ? "danger" : "positive"}
+          format={(n) => String(Math.round(n))}
+          sub={totals.out > 0 ? "يحتاج إعادة توريد" : "لا توجد أصناف نافدة"}
         />
       </div>
 
@@ -624,7 +642,7 @@ ${
                           {it.imageUrl ? <img src={it.imageUrl} alt="" className="h-5 w-5 rounded object-cover" /> : <Package className="h-5 w-5" />}
                         </span>
                         <div className="min-w-0">
-                          <div className="truncate text-base font-black leading-tight">{it.name}</div>
+                          <div className="truncate text-base font-black leading-tight"><span className="me-2 font-mono text-xs text-primary">#{it.productCode ?? "—"}</span>{it.name}</div>
                           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                             {(it.itemType || it.size) && (
                               <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -743,6 +761,7 @@ ${
         item={editing}
         onClose={() => setEditing(null)}
         existingBarcodes={data.stockItems.map((s) => s.barcode)}
+        productCode={Math.max(0, ...data.stockItems.map((s) => s.productCode || 0)) + 1}
         suppliers={data.suppliers}
       />
       <ProductDetailsDialog item={detailItem} onClose={() => setDetailItem(null)} onEdit={(product) => setEditing(product)} />
@@ -1568,7 +1587,7 @@ function ProductDetailsDialog({ item, onClose, onEdit }: { item: StockItem | nul
             <span className={cn("font-bold", out ? "text-danger" : low ? "text-warning" : "text-success")}>{out ? "نافد" : low ? "منخفض" : "متوفر"}</span>
           </div>
           <div className="flex items-center justify-between rounded-xl bg-foreground/[0.03] px-3 py-2 text-sm">
-            <span className="text-muted-foreground">هامش الربح</span>
+            <span className="text-muted-foreground">نسبة الربح</span>
             <span className={cn("font-bold", profit >= 0 ? "text-success" : "text-danger")}>{margin.toFixed(1)}%</span>
           </div>
         </div>

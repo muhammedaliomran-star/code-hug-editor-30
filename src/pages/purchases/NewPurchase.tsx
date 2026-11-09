@@ -417,7 +417,7 @@ export function NewPurchasePage() {
                               </span>
                               {Number(it.salePrice) > 0 && Number(it.unitCost) > 0 && (
                                 <span className="text-success text-[11px] font-semibold">
-                                  هامش الربح المتوقع: +{fmt(Number(it.salePrice) - Number(it.unitCost))} ج.م (
+                                  نسبة الربح المتوقعة: +{fmt(Number(it.salePrice) - Number(it.unitCost))} ج.م (
                                   {Math.round(((Number(it.salePrice) - Number(it.unitCost)) / Number(it.unitCost)) * 100)}%)
                                 </span>
                               )}

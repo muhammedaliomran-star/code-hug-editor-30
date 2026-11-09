@@ -2198,6 +2198,7 @@ export type Database = {
           archived: boolean
           image_url: string | null
           supplier_id: string | null
+          product_code: number
         }
         Insert: {
           barcode?: string | null
@@ -2220,6 +2221,7 @@ export type Database = {
           archived?: boolean
           image_url?: string | null
           supplier_id?: string | null
+          product_code?: never
         }
         Update: {
           barcode?: string | null
@@ -2242,6 +2244,7 @@ export type Database = {
           archived?: boolean
           image_url?: string | null
           supplier_id?: string | null
+          product_code?: number
         }
         Relationships: []
       }

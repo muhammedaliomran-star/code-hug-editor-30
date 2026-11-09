@@ -298,7 +298,7 @@ export function evaluateMarginSafety(
     if (profit < 0) {
       warning = `تحذير: هذا الخصم يسبب خسارة مباشرة قدرها ${Math.abs(Math.round(profit))} ج.م (السعر بعد الخصم أقل من التكلفة)`;
     } else {
-      warning = `تنبيه حماية الربح: هامش الربح (${profitMarginPct.toFixed(1)}%) أقل من الحد الأدنى المسموح به (${marginGuard.minMarginPct}%). أقصى خصم آمن: ${Math.round(maxSafeDiscount)} ج.م`;
+      warning = `تنبيه حماية الربح: نسبة الربح (${profitMarginPct.toFixed(1)}%) أقل من الحد الأدنى المسموح به (${marginGuard.minMarginPct}%). أقصى خصم آمن: ${Math.round(maxSafeDiscount)} ج.م`;
     }
   }
 

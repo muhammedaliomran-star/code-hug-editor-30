@@ -304,6 +304,7 @@ export interface SplitPaymentDetail {
 
 export interface StockItem {
   id: string;
+  productCode?: number;
   name: string;
   quantity: number;
   lastUnitCost: number;
