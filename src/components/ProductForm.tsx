@@ -8,7 +8,7 @@ import {
 import { db, fmt, PRODUCT_TYPES } from "@/lib/store";
 import {
   AlertTriangle, Boxes, Wallet, ScanLine, Plus, Sparkles, Scale, Loader2,
-  Check, Wand2, Tag, Calculator,
+  Check, Wand2, Tag, Calculator, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { CountUp } from "@/components/CountUp";
 import { motion, AnimatePresence } from "framer-motion";
@@ -97,6 +97,8 @@ export function ProductForm({
   const [scanOpen, setScanOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmZeroPrice, setConfirmZeroPrice] = useState(false);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [openSections, setOpenSections] = useState({ identity: true, pricing: true, stock: true });
 
   const reset = () => {
     setName(""); setSize(""); setItemType(PRODUCT_TYPES[0]);
@@ -104,6 +106,8 @@ export function ProductForm({
     setQty("1"); setCost(""); setPrice("");
     setPrefix(""); setMinStock("0"); setConfirmZeroPrice(false);
     setBarcode("");
+    setNameTouched(false);
+    setOpenSections({ identity: true, pricing: true, stock: true });
   };
 
   useEffect(() => {
@@ -122,6 +126,9 @@ export function ProductForm({
   const netProfit = totalSale - totalCost;
   const marginPct = totalCost > 0 ? (netProfit / totalCost) * 100 : 0;
   const lossy = hasPrice && nPrice < nCost;
+  const nameError = nameTouched && !name.trim();
+  const stockState = nQty <= 0 ? "نافد" : nQty < (Number(minStock) || 0) ? "منخفض" : "متوفر";
+  const stockTone = stockState === "نافد" ? "text-danger bg-danger/10 ring-danger/20" : stockState === "منخفض" ? "text-warning bg-warning/10 ring-warning/20" : "text-success bg-success/10 ring-success/20";
 
   const taken = useMemo(
     () => new Set(existingBarcodes.filter(Boolean).map((b) => String(b).trim())),
@@ -202,23 +209,18 @@ export function ProductForm({
       className="flex min-h-0 flex-1 flex-col"
       onSubmit={(e) => { e.preventDefault(); if (!busy) void submit(false); }}
     >
-      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pb-4">
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pb-28 sm:pb-4">
         {/* ١ — هوية المنتج */}
         <div className="space-y-4">
-          <GroupLabel icon={Tag}>هوية المنتج</GroupLabel>
+          <SectionHeader number="١" icon={Tag} label="بيانات المنتج" open={openSections.identity} onToggle={() => setOpenSections((s) => ({ ...s, identity: !s.identity }))} />
+          {openSections.identity && <div className="space-y-4">
           <div className="grid gap-3">
             <div className="grid gap-1.5">
               <Label className="text-[13px] font-bold">
                 اسم المنتج <span className="text-danger">*</span>
               </Label>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={100}
-                placeholder="مثال: قميص رجالي قطن..."
-                className="h-12 rounded-xl text-right text-base font-semibold"
-                autoFocus
-              />
+              <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => setNameTouched(true)} maxLength={100} placeholder="مثال: قميص رجالي قطن..." className={cn("h-12 rounded-xl text-right text-base font-semibold", nameError && "border-danger focus-visible:ring-danger")} autoFocus />
+              {nameError && <span className="text-xs font-medium text-danger">اسم المنتج مطلوب.</span>}
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="grid gap-1.5">
@@ -243,23 +245,25 @@ export function ProductForm({
             </div>
           </div>
           <div className="h-px bg-[var(--hairline)]" />
+          </div>}
         </div>
 
         {/* ٢ — التسعير والكمية */}
         <div className="space-y-4">
-          <GroupLabel icon={Wallet}>التسعير والكمية</GroupLabel>
+          <SectionHeader number="٢" icon={Wallet} label="الأسعار والكمية" open={openSections.pricing} onToggle={() => setOpenSections((s) => ({ ...s, pricing: !s.pricing }))} />
+          {openSections.pricing && <div className="space-y-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="grid gap-1.5">
               <Label>الكمية</Label>
-              <Input inputMode="decimal" value={qty} onChange={(e) => setQty(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} className={cn("rounded-xl", NUM_CLS)} />
+              <div className="relative"><Input inputMode="decimal" value={qty} onChange={(e) => setQty(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">وحدة</span></div>
             </div>
             <div className="grid gap-1.5">
               <Label>سعر الشراء</Label>
-              <Input inputMode="decimal" value={cost} onChange={(e) => setCost(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} placeholder="0" className={cn("rounded-xl", NUM_CLS)} />
+              <div className="relative"><Input inputMode="decimal" value={cost} onChange={(e) => setCost(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} placeholder="0" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ج.م</span></div>
             </div>
             <div className="grid gap-1.5">
               <Label>سعر البيع</Label>
-              <Input inputMode="decimal" value={price} onChange={(e) => { setPrice(posNum(e.target.value)); setConfirmZeroPrice(false); }} onFocus={(e) => e.currentTarget.select()} placeholder="0" className={cn("rounded-xl", NUM_CLS)} />
+              <div className="relative"><Input inputMode="decimal" value={price} onChange={(e) => { setPrice(posNum(e.target.value)); setConfirmZeroPrice(false); }} onFocus={(e) => e.currentTarget.select()} placeholder="0" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">ج.م</span></div>
             </div>
           </div>
 
@@ -292,11 +296,13 @@ export function ProductForm({
             )}
           </AnimatePresence>
           <div className="h-px bg-[var(--hairline)]" />
+          </div>}
         </div>
 
         {/* ٣ — الباركود والمخزون */}
         <div className="space-y-4">
-          <GroupLabel icon={ScanLine}>الباركود والمخزون</GroupLabel>
+          <SectionHeader number="٣" icon={ScanLine} label="الباركود والمخزون" open={openSections.stock} onToggle={() => setOpenSections((s) => ({ ...s, stock: !s.stock }))} />
+          {openSections.stock && <div className="space-y-4">
 
           <div className="mb-3 flex w-max items-center gap-1">
             {([
@@ -391,14 +397,16 @@ export function ProductForm({
 
           <div className="mt-4 grid gap-1.5">
             <Label>الحد الأدنى للمخزون</Label>
-            <Input inputMode="decimal" value={minStock} onChange={(e) => setMinStock(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} placeholder="5" className={cn("rounded-xl", NUM_CLS)} />
+            <div className="relative"><Input inputMode="decimal" value={minStock} onChange={(e) => setMinStock(posNum(e.target.value))} onFocus={(e) => e.currentTarget.select()} placeholder="5" className={cn("rounded-xl pl-14", NUM_CLS)} /><span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">وحدة</span></div>
             <div className="text-xs text-muted-foreground">يعتبر المنتج منخفضًا إذا كانت الكمية أقل من هذا الرقم.</div>
           </div>
+          <div className={cn("flex items-center justify-between rounded-xl px-3 py-2 text-sm font-bold ring-1", stockTone)}><span>معاينة حالة المخزون</span><span>{stockState}</span></div>
+          </div>}
         </div>
       </div>
 
       {/* شريط sticky: الحساب + أزرار الحفظ — ظاهر دائمًا بدون تمرير */}
-      <div className="sticky bottom-0 z-10 -mx-1 mt-auto px-1 pb-1 pt-3 supports-[padding:env(safe-area-inset-bottom)]:pb-[max(0.25rem,env(safe-area-inset-bottom))]">
+      <div className="sticky bottom-0 z-10 -mx-1 mt-auto border-t border-[var(--hairline)] bg-background/95 px-1 pb-2 pt-3 backdrop-blur-sm supports-[padding:env(safe-area-inset-bottom)]:pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="mb-3 flex items-center gap-2 px-1">
           <Calculator className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">حساب الصفقة</span>
@@ -425,7 +433,7 @@ export function ProductForm({
             disabled={busy || !name.trim() || codeDuplicate}
             className="group rounded-full ps-5 pe-1.5"
           >
-            {confirmZeroPrice && !hasPrice ? "تأكيد الإضافة بدون سعر" : "إضافة"}
+            {confirmZeroPrice && !hasPrice ? "حفظ بدون سعر" : "حفظ المنتج"}
             <span className="ms-3 grid h-8 w-8 place-items-center rounded-full bg-foreground/10 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             </span>
@@ -453,6 +461,18 @@ export function ProductForm({
         title="مسح باركود المنتج الجديد"
       />
     </form>
+  );
+}
+
+function SectionHeader({ number, icon: Icon, label, open, onToggle }: { number: string; icon: typeof Tag; label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button type="button" onClick={onToggle} aria-expanded={open} className="group flex w-full items-center gap-2 rounded-xl px-1 py-1 text-right transition-[color,background-color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-foreground/[0.04]">
+      <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-black text-primary">{number}</span>
+      <Icon className="h-4 w-4 text-primary" />
+      <span className="text-sm font-black">{label}</span>
+      <span className="h-px flex-1 bg-[var(--hairline)]" />
+      {open ? <ChevronUp className="h-5 w-5 text-muted-foreground transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]" /> : <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]" />}
+    </button>
   );
 }
 
