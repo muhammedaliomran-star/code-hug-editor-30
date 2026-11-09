@@ -77,6 +77,11 @@ let lastFetchErrors: string[] = [];
 
 function notify() { listeners.forEach((l) => l()); }
 
+function isMissingSupplierSchema(error: unknown) {
+  const message = String((error as { message?: string } | null)?.message ?? error).toLowerCase();
+  return message.includes("schema cache") && (message.includes("suppliers") || message.includes("supplier"));
+}
+
 /**
  * Hydrate the in-memory cache from IndexedDB.
  * This runs before fetchAll() so the user sees data immediately,
@@ -971,7 +976,7 @@ export const db = {
   },
   async addSupplier(s: Omit<Supplier, "id" | "createdAt">) {
     const user_id = await uid();
-    const { error } = await supabase.from("suppliers").insert({
+    const fullInsert = {
       user_id, supplier_code: s.code ?? null, name: s.name, contact: s.contact, notes: s.notes,
       email: s.email ?? null, address: s.address ?? null, category: s.category ?? null, tags: s.tags ?? [],
       tax_number: s.taxNumber ?? null, commercial_register: s.commercialRegister ?? null,
@@ -979,8 +984,17 @@ export const db = {
       payment_term_days: s.paymentTermDays ?? 0, credit_limit: (s.creditLimit ?? 0) * 100,
       status: s.status ?? "active", joined_at: s.joinedAt ?? new Date().toISOString().slice(0, 10), attachment_url: s.attachmentUrl ?? null,
       opening_balance: (s.openingBalance ?? 0) * 100,
-    });
-    if (error) throw error;
+    };
+    const { error } = await supabase.from("suppliers").insert(fullInsert);
+    if (error) {
+      if (!isMissingSupplierSchema(error)) throw error;
+      const legacy = await supabase.from("suppliers").insert({
+        user_id, name: s.name, contact: s.contact, notes: s.notes,
+        opening_balance: (s.openingBalance ?? 0) * 100,
+      });
+      if (legacy.error) throw legacy.error;
+      toast.info("تم حفظ المورد بالحقول الأساسية. طبّق تحديث قاعدة البيانات لحفظ باقي التفاصيل.");
+    }
     await fetchAll();
   },
   async updateSupplier(id: string, patch: Partial<Omit<Supplier, "id" | "createdAt">>) {
@@ -1003,7 +1017,17 @@ export const db = {
     if (patch.notes !== undefined) upd.notes = patch.notes;
     if (patch.openingBalance !== undefined) upd.opening_balance = (patch.openingBalance ?? 0) * 100;
     const { error } = await supabase.from("suppliers").update(upd).eq("id", id);
-    if (error) throw error;
+    if (error) {
+      if (!isMissingSupplierSchema(error)) throw error;
+      const legacyUpd: Record<string, unknown> = {};
+      if (patch.name !== undefined) legacyUpd.name = patch.name;
+      if (patch.contact !== undefined) legacyUpd.contact = patch.contact;
+      if (patch.notes !== undefined) legacyUpd.notes = patch.notes;
+      if (patch.openingBalance !== undefined) legacyUpd.opening_balance = (patch.openingBalance ?? 0) * 100;
+      const legacy = await supabase.from("suppliers").update(legacyUpd).eq("id", id);
+      if (legacy.error) throw legacy.error;
+      toast.info("تم تحديث البيانات الأساسية. طبّق تحديث قاعدة البيانات لحفظ باقي التفاصيل.");
+    }
     await fetchAll();
   },
   async removeSupplier(id: string) {
