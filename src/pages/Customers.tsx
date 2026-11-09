@@ -411,7 +411,7 @@ function CustomersPage() {
       />
 
       {/* ===== Bento: KPI + بحث + فلاتر ===== */}
-      <div className="mb-14 grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-3">
+      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-3">
         <Reveal className="col-span-full h-full">
           <MetricCard
             hero
@@ -432,6 +432,7 @@ function CustomersPage() {
         </Reveal>
         <Reveal className="h-full">
           <MetricCard
+            mini
             className="h-full"
             icon={TrendingUp}
             label="محصّل هذا الأسبوع"
@@ -443,6 +444,7 @@ function CustomersPage() {
         </Reveal>
         <Reveal className="h-full">
           <MetricCard
+            mini
             className="h-full"
             icon={AlertTriangle}
             label="متأخرون"
@@ -454,6 +456,7 @@ function CustomersPage() {
         </Reveal>
         <Reveal className="h-full">
           <MetricCard
+            mini
             className="h-full"
             icon={BadgeCheck}
             label="خالصون"

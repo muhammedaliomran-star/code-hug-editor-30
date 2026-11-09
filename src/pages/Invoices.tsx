@@ -13,7 +13,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useActiveBranch } from "@/hooks/use-active-branch";
 import { getInvoicesForBranch, getInvoiceBranchId } from "@/lib/branch-system";
 import { format, addMonths } from "date-fns";
-import { CalendarIcon } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { useDB, db, daysLate, fmt, customerBalance, getShopSettings, invoiceNumber, useShopSettings, type Invoice, type Customer, type InvoiceItem } from "@/lib/store";
@@ -42,6 +41,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
 import { TableSkeleton } from "@/components/LoadingSkeletons";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
+import { DatePickerField } from "@/components/DatePickerField";
 
 import { findStockByBarcode } from "@/lib/store";
 import { motion, AnimatePresence } from "framer-motion";
@@ -533,33 +533,20 @@ function InvoicesPage() {
               <ScanLine className="w-4 h-4" />
             </button>
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 justify-start font-normal">
-                <CalendarIcon className="w-4 h-4" />
-                {dateFrom || dateTo ? (
-                  <span dir="ltr" className="text-xs">
-                    {dateFrom ? format(dateFrom, "dd/MM/yy") : "..."} – {dateTo ? format(dateTo, "dd/MM/yy") : "..."}
-                  </span>
-                ) : <span>تصفية بالتاريخ</span>}
-                {(dateFrom || dateTo) && (
-                  <X
-                    className="w-3.5 h-3.5 opacity-60 hover:opacity-100"
-                    onClick={(e) => { e.stopPropagation(); setDateFrom(undefined); setDateTo(undefined); }}
-                  />
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                selected={{ from: dateFrom, to: dateTo }}
-                onSelect={(r: any) => { setDateFrom(r?.from); setDateTo(r?.to); }}
-                numberOfMonths={1}
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
+          <div className="flex items-center gap-1.5">
+            <DatePickerField
+              value={dateFrom ? format(dateFrom, "yyyy-MM-dd") : ""}
+              onChange={(value) => setDateFrom(value ? new Date(`${value}T00:00:00`) : undefined)}
+              placeholder="من تاريخ"
+              className="w-[148px]"
+            />
+            <DatePickerField
+              value={dateTo ? format(dateTo, "yyyy-MM-dd") : ""}
+              onChange={(value) => setDateTo(value ? new Date(`${value}T00:00:00`) : undefined)}
+              placeholder="إلى تاريخ"
+              className="w-[148px]"
+            />
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">

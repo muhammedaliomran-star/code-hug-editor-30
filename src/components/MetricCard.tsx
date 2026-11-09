@@ -73,7 +73,7 @@ export function MetricCard({
       className={cn("transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5", className)}
       innerClassName={cn(
         "relative flex flex-col overflow-hidden",
-        hero ? "gap-6 p-7 sm:p-9" : compact ? "gap-2.5 p-4" : "gap-4 p-5",
+        hero ? "gap-4 p-5 sm:p-6" : compact ? "gap-2.5 p-4" : "gap-4 p-5",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -81,7 +81,7 @@ export function MetricCard({
           className={cn(
             "grid shrink-0 place-items-center rounded-full ring-1",
             toneChip[tone],
-            hero ? "h-11 w-11" : compact ? "h-8 w-8" : "h-9 w-9",
+            hero ? "h-10 w-10" : compact ? "h-8 w-8" : "h-9 w-9",
           )}
         >
           <Icon className={hero ? "h-5 w-5" : compact ? "h-3.5 w-3.5" : "h-4 w-4"} />
@@ -96,7 +96,7 @@ export function MetricCard({
             toneText[tone],
             masked && "privacy-blur",
             hero
-              ? "text-[clamp(2.4rem,6vw,4rem)]"
+              ? "text-[clamp(2rem,5vw,3rem)]"
               : compact
                 ? "text-[clamp(1.15rem,2.6vw,1.5rem)]"
                 : "text-[clamp(1.4rem,3.2vw,2rem)]",

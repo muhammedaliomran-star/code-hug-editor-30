@@ -22,6 +22,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { ActionButton } from "@/components/ActionButton";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger,
@@ -393,16 +394,7 @@ function SupplierFormDialog({
           <div><Label>رقم الهاتف</Label><Input value={contact} onChange={(e) => setContact(e.target.value)} dir="ltr" maxLength={30} /></div>
           <div>
             <Label>تاريخ انضمام المورد</Label>
-            <div className="relative">
-              <CalendarDays className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-              <Input
-                type="date"
-                value={joinDate}
-                onChange={(e) => setJoinDate(e.target.value)}
-                className="pr-9 text-left"
-                dir="ltr"
-              />
-            </div>
+            <DatePickerField value={joinDate} onChange={setJoinDate} />
             <div className="flex gap-2 justify-end mt-2">
               <Button type="button" variant="outline" size="sm" className="h-10 rounded-full px-4 text-xs"
                 onClick={() => setJoinDate(firstOfMonth())}>أول الشهر</Button>
@@ -599,7 +591,7 @@ export function NewPurchaseDialog({
             </div>
             <div>
               <Label>تاريخ الفاتورة</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} dir="ltr" />
+              <DatePickerField value={date} onChange={setDate} />
             </div>
           </div>
 

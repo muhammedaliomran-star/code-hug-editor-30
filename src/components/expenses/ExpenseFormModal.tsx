@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DatePickerField } from "@/components/DatePickerField";
 import { db, useDB, type Expense } from "@/lib/store";
 import {
   getAllExpenseCategories,
@@ -432,12 +433,7 @@ export function ExpenseFormModal({
                 <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
                 تاريخ الصرف
               </Label>
-              <Input
-                type="date"
-                value={expenseDate}
-                onChange={(e) => setExpenseDate(e.target.value)}
-                className="mt-1"
-              />
+              <DatePickerField value={expenseDate} onChange={setExpenseDate} className="mt-1" />
             </div>
           </div>
 

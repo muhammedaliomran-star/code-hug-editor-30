@@ -30,6 +30,7 @@ import { useNavigate } from "@/lib/router-compat";
 import { MetricCard } from "@/components/MetricCard";
 import { StatTabs } from "@/components/StatTabs";
 import { ActionButton } from "@/components/ActionButton";
+import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -784,12 +785,7 @@ function EditPurchaseDialog({
             </div>
             <div className="space-y-1">
               <Label className="text-xs font-bold">تاريخ الفاتورة</Label>
-              <Input 
-                type="date" 
-                value={date} 
-                onChange={(e) => setDate(e.target.value)} 
-                className="h-10 rounded-xl font-mono text-right" 
-              />
+              <DatePickerField value={date} onChange={setDate} />
             </div>
           </div>
 

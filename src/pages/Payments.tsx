@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import { ar } from "date-fns/locale";
 import { useLocation } from "@/lib/router-compat";
+import { DatePickerField } from "@/components/DatePickerField";
 
 
 export default function PaymentsPage() {
@@ -33,6 +34,7 @@ export default function PaymentsPage() {
     from: format(startOfMonth(new Date()), "yyyy-MM-dd"),
     to: format(endOfMonth(new Date()), "yyyy-MM-dd")
   });
+  const [voucherDate, setVoucherDate] = useState(format(new Date(), "yyyy-MM-dd"));
 
   useEffect(() => {
     const create = new URLSearchParams(location.search).get("create");
@@ -138,17 +140,15 @@ export default function PaymentsPage() {
               <div className="flex items-center gap-2 px-3 border-l border-[var(--hairline)]">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <div className="flex items-center gap-1">
-                  <Input 
-                    type="date" 
-                    value={dateFilter.from} 
-                    onChange={(e) => setDateFilter(prev => ({ ...prev, from: e.target.value }))}
+                  <DatePickerField
+                    value={dateFilter.from}
+                    onChange={(value) => setDateFilter(prev => ({ ...prev, from: value }))}
                     className="h-8 w-32 border-none bg-transparent p-0 text-xs font-bold"
                   />
                   <span className="text-[10px] font-bold text-muted-foreground">إلى</span>
-                  <Input 
-                    type="date" 
-                    value={dateFilter.to} 
-                    onChange={(e) => setDateFilter(prev => ({ ...prev, to: e.target.value }))}
+                  <DatePickerField
+                    value={dateFilter.to}
+                    onChange={(value) => setDateFilter(prev => ({ ...prev, to: value }))}
                     className="h-8 w-32 border-none bg-transparent p-0 text-xs font-bold"
                   />
                 </div>
@@ -325,16 +325,13 @@ export default function PaymentsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground pr-1">تاريخ السند</Label>
-                  <div className="relative">
-                    <Calendar className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="voucherDate" 
-                      name="voucherDate" 
-                      type="date" 
-                      defaultValue={format(new Date(), "yyyy-MM-dd")} 
-                      className="h-12 rounded-2xl bg-foreground/[0.02] border-foreground/5 focus:bg-background transition-[background-color,border-color,color,box-shadow,transform,opacity] pr-11 text-xs font-bold" 
-                    />
-                  </div>
+                  <DatePickerField
+                    value={voucherDate}
+                    onChange={setVoucherDate}
+                    id="voucherDate"
+                    name="voucherDate"
+                    className="h-12 rounded-2xl bg-foreground/[0.02] border-foreground/5 text-xs font-bold"
+                  />
                 </div>
               </div>
 

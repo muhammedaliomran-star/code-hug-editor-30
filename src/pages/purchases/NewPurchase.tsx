@@ -16,6 +16,7 @@ import {
   Search, Info, Eye, EyeOff, ScanLine, Tag, ArrowRight, CheckCircle2
 } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { DatePickerField } from "@/components/DatePickerField";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -278,12 +279,7 @@ export function NewPurchasePage() {
                     </div>
                     <div className="space-y-2">
                       <Label className="font-bold text-sm">تاريخ الفاتورة</Label>
-                      <Input 
-                        type="date" 
-                        value={date} 
-                        onChange={(e) => setDate(e.target.value)} 
-                        className="h-12 rounded-xl text-right font-mono" 
-                      />
+                      <DatePickerField value={date} onChange={setDate} className="h-12" />
                     </div>
                   </div>
 

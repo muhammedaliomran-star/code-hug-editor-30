@@ -11,6 +11,7 @@ import { Truck, Package, MapPin, Phone, User, Check, ArrowRight } from "lucide-r
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { calculateShippingCost, expectedDeliveryDate } from "@/lib/shipping-pricing";
+import { DatePickerField } from "@/components/DatePickerField";
 
 export function CreateInvoiceShipmentDialog({
   inv,
@@ -323,12 +324,7 @@ export function CreateInvoiceShipmentDialog({
             </div>
             <div>
               <Label className="text-xs font-bold">التسليم المتوقع</Label>
-              <Input
-                type="date"
-                value={expectedDate}
-                onChange={(e) => setExpectedDate(e.target.value)}
-                className="text-center text-xs"
-              />
+              <DatePickerField value={expectedDate} onChange={setExpectedDate} />
             </div>
           </div>
 

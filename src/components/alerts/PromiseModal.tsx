@@ -10,6 +10,7 @@ import { Handshake, PhoneCall, Calendar, Check, Trash2, Clock, CheckCircle2 } fr
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { DatePickerField } from "@/components/DatePickerField";
 
 interface PromiseModalProps {
   open: boolean;
@@ -180,12 +181,7 @@ export function PromiseModal({
                 </div>
               </div>
 
-              <Input
-                type="date"
-                value={promisedDate}
-                onChange={(e) => setPromisedDate(e.target.value)}
-                className="text-right font-mono"
-              />
+              <DatePickerField value={promisedDate} onChange={setPromisedDate} />
 
               <div className="space-y-1.5 text-right">
                 <Label className="text-xs font-bold text-muted-foreground">المبلغ الموعود بسداده (ج.م):</Label>

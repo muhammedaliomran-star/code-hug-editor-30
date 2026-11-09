@@ -7,6 +7,7 @@ import { useCashbox } from "./context";
 import { fmt } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { DatePickerField } from "@/components/DatePickerField";
 
 export function ManualTxDialog() {
   const {
@@ -117,12 +118,7 @@ export function ManualTxDialog() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">التاريخ</Label>
-              <Input
-                type="date"
-                value={manualDate}
-                onChange={(e) => setManualDate(e.target.value)}
-                className="h-9 rounded-xl text-xs"
-              />
+              <DatePickerField value={manualDate} onChange={setManualDate} className="h-9 text-xs" />
             </div>
           </div>
 
