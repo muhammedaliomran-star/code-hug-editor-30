@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { db, type Customer, type CustomerStatus, type CustomerType } from "@/lib/store";
-import { isoToDDMMYYYY, ddmmyyyyToIso } from "@/lib/date-utils";
+import { ddmmyyyyToIso } from "@/lib/date-utils";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -99,21 +100,19 @@ export function CustomerDialog({
   const [frozen, setFrozen] = useState(customer?.frozen ?? false);
   const [address, setAddress] = useState(customer?.address ?? "");
   const [joiningDate, setJoiningDate] = useState(customer?.joiningDate ?? today);
+  const [nationalId, setNationalId] = useState(customer?.nationalId ?? "");
   const [creditLimit, setCreditLimit] = useState<string>(String(customer?.creditLimit ?? 0));
   const [openingBalance, setOpeningBalance] = useState<string>(
     String(customer?.openingBalance ?? 0),
   );
   const [dueDay, setDueDay] = useState<number>(customer?.dueDay ?? 1);
-  const [joiningDateInput, setJoiningDateInput] = useState<string>(
-    isoToDDMMYYYY(customer?.joiningDate ?? today),
-  );
   const [pressed, setPressed] = useState(false);
   const [draftHydrated, setDraftHydrated] = useState(Boolean(customer));
   const [saving, setSaving] = useState(false);
 
   const phoneValid = EG_PHONE_RE.test(phone);
   const hasDraft = Boolean(
-    name.trim() || phone.trim() || address.trim() || notes.trim() || Number(creditLimit) > 0 || Number(openingBalance) > 0,
+    name.trim() || phone.trim() || address.trim() || nationalId.trim() || notes.trim() || Number(creditLimit) > 0 || Number(openingBalance) > 0,
   );
 
   useEffect(() => {
@@ -130,11 +129,11 @@ export function CustomerDialog({
         setNotes(draft.notes ?? "");
         setFrozen(Boolean(draft.frozen));
         setAddress(draft.address ?? "");
-        setJoiningDate(draft.joiningDate ?? today);
+        setJoiningDate(draft.joiningDate ?? ddmmyyyyToIso(draft.joiningDateInput) ?? today);
+        setNationalId(draft.nationalId ?? "");
         setCreditLimit(String(draft.creditLimit ?? 0));
         setOpeningBalance(String(draft.openingBalance ?? 0));
         setDueDay(draft.dueDay ?? 1);
-        setJoiningDateInput(draft.joiningDateInput ?? isoToDDMMYYYY(draft.joiningDate ?? today));
         setOpen(true);
       }
     } catch {
@@ -147,10 +146,10 @@ export function CustomerDialog({
   useEffect(() => {
     if (customer || !draftHydrated) return;
     sessionStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify({
-      name, phone, rating, status, customerType, notes, frozen, address, joiningDate,
-      creditLimit, openingBalance, dueDay, joiningDateInput,
+      name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId,
+      creditLimit, openingBalance, dueDay,
     }));
-  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, creditLimit, openingBalance, dueDay, joiningDateInput]);
+  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, creditLimit, openingBalance, dueDay]);
   const initials = name.trim()
     ? name
         .trim()
@@ -164,8 +163,8 @@ export function CustomerDialog({
     if (!name.trim()) return toast.error("الاسم مطلوب");
     if (!phoneValid)
       return toast.error("رقم الهاتف يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويتكون من 11 رقم");
-    const iso = ddmmyyyyToIso(joiningDateInput);
-    if (!iso) return toast.error("تاريخ الانضمام غير صحيح. الصيغة: يوم/شهر/سنة");
+    if (!joiningDate) return toast.error("اختر تاريخ الانضمام");
+    if (nationalId && nationalId.length !== 14) return toast.error("الرقم القومي يجب أن يتكون من 14 رقمًا");
     const numericCreditLimit = Number(creditLimit);
     const numericOpeningBalance = Number(openingBalance);
     if (!Number.isFinite(numericCreditLimit) || numericCreditLimit < 0) return toast.error("سقف المديونية غير صحيح");
@@ -180,7 +179,8 @@ export function CustomerDialog({
       notes,
       frozen,
       address: address || null,
-      joiningDate: iso,
+      joiningDate,
+      nationalId: nationalId.trim() || undefined,
       creditLimit: numericCreditLimit,
       dueDay,
       openingBalance: numericOpeningBalance,
@@ -278,12 +278,25 @@ export function CustomerDialog({
             <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
               نوع العميل
             </Label>
-            <div className="grid grid-cols-2 gap-1.5 rounded-2xl bg-foreground/[0.04] p-1.5">
+            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-foreground/[0.04] p-1.5">
               {[
-                { key: "installment" as const, label: "أقساط", hint: "بيع آجل بدفعات شهرية" },
-                { key: "cash" as const, label: "فوري (نقدي)", hint: "سداد كامل عند الشراء" },
+                {
+                  key: "installment" as const,
+                  label: "أقساط",
+                  hint: "بيع آجل بدفعات شهرية",
+                  active: "bg-primary/15 text-primary ring-primary/30",
+                  icon: CreditCard,
+                },
+                {
+                  key: "cash" as const,
+                  label: "فوري (نقدي)",
+                  hint: "سداد كامل عند الشراء",
+                  active: "bg-success/15 text-success ring-success/30",
+                  icon: Banknote,
+                },
               ].map((opt) => {
                 const active = customerType === opt.key;
+                const Icon = opt.icon;
                 return (
                   <button
                     key={opt.key}
@@ -299,11 +312,14 @@ export function CustomerDialog({
                     className={cn(
                       "rounded-[1.1rem] px-4 py-3 text-center transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]",
                       active
-                        ? "bg-foreground text-background ring-1 ring-border"
+                        ? cn(opt.active, "ring-1")
                         : "text-muted-foreground hover:bg-foreground/[0.04]",
                     )}
                   >
-                    <span className="block text-sm font-extrabold">{opt.label}</span>
+                    <span className="flex items-center justify-center gap-2 text-sm font-extrabold">
+                      <Icon className="h-4 w-4" />
+                      {opt.label}
+                    </span>
                     <span className="mt-0.5 block text-[11px] opacity-70">{opt.hint}</span>
                   </button>
                 );
@@ -314,22 +330,25 @@ export function CustomerDialog({
           {/* Joining date */}
           <div>
             <Label>تاريخ الانضمام</Label>
+            <DatePickerField
+              value={joiningDate}
+              onChange={setJoiningDate}
+              placeholder="اختار تاريخ الانضمام"
+              aria-label="تاريخ الانضمام"
+              disabledDates={{ after: new Date() }}
+            />
+          </div>
+
+          {/* Optional identity */}
+          <div>
+            <Label>الرقم القومي (اختياري)</Label>
             <Input
-              type="text"
+              value={nationalId}
+              onChange={(e) => setNationalId(e.target.value.replace(/\D/g, "").slice(0, 14))}
+              placeholder="14 رقمًا عند الحاجة"
               inputMode="numeric"
-              value={joiningDateInput}
-              onChange={(e) => {
-                let v = e.target.value.replace(/[^\d/]/g, "").slice(0, 10);
-                const digits = v.replace(/\//g, "");
-                if (digits.length >= 5)
-                  v = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
-                else if (digits.length >= 3) v = `${digits.slice(0, 2)}/${digits.slice(2)}`;
-                else v = digits;
-                setJoiningDateInput(v);
-              }}
-              placeholder="يوم/شهر/سنة"
               dir="ltr"
-              maxLength={10}
+              maxLength={14}
             />
           </div>
 

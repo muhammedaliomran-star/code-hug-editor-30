@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { format, isValid, parseISO } from "date-fns";
 import { ar } from "date-fns/locale";
+import type { Matcher } from "react-day-picker";
 import { CalendarDays, Check, RotateCcw } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ interface DatePickerFieldProps {
   id?: string;
   name?: string;
   "aria-label"?: string;
+  disabledDates?: Matcher | Matcher[];
 }
 
 function parseValue(value?: string) {
@@ -34,6 +36,7 @@ export function DatePickerField({
   id,
   name,
   "aria-label": ariaLabel,
+  disabledDates,
 }: DatePickerFieldProps) {
   const [open, setOpen] = useState(false);
   const selected = useMemo(() => parseValue(value), [value]);
@@ -86,6 +89,7 @@ export function DatePickerField({
             captionLayout="dropdown"
             fromYear={new Date().getFullYear() - 10}
             toYear={new Date().getFullYear() + 10}
+            disabled={disabledDates}
             className="p-2"
           />
         </div>

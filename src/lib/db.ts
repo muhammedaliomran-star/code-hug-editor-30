@@ -523,7 +523,7 @@ export const db = {
       user_id, name: c.name, phone: c.phone ?? "", rating: c.rating, status: c.status,
       customer_type: c.customerType ?? 'installment',
       notes: c.notes, frozen: c.frozen,
-      address: c.address, joining_date: c.joiningDate,
+      address: c.address, joining_date: c.joiningDate, national_id: c.nationalId,
       credit_limit: (c.creditLimit ?? 0) * 100, due_day: c.dueDay,
       opening_balance: (c.openingBalance ?? 0) * 100,
     }).select("id").single();
@@ -541,6 +541,7 @@ export const db = {
     if (patch.notes !== undefined) upd.notes = patch.notes;
     if (patch.frozen !== undefined) upd.frozen = patch.frozen;
     if (patch.address !== undefined) upd.address = patch.address;
+    if (patch.nationalId !== undefined) upd.national_id = patch.nationalId;
     if (patch.joiningDate !== undefined) upd.joining_date = patch.joiningDate;
     if (patch.creditLimit !== undefined) upd.credit_limit = (patch.creditLimit ?? 0) * 100;
     if (patch.dueDay !== undefined) upd.due_day = patch.dueDay;
