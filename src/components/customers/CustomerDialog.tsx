@@ -174,7 +174,6 @@ export function CustomerDialog({
         setCreditLimit(String(draft.creditLimit ?? 0));
         setOpeningBalance(String(draft.openingBalance ?? 0));
         setDueDay(draft.dueDay ?? 1);
-        setOpen(true);
       }
     } catch {
       sessionStorage.removeItem(CUSTOMER_DRAFT_KEY);
@@ -185,12 +184,16 @@ export function CustomerDialog({
 
   useEffect(() => {
     if (customer || !draftHydrated) return;
+    if (!hasDraft) {
+      sessionStorage.removeItem(CUSTOMER_DRAFT_KEY);
+      return;
+    }
     sessionStorage.setItem(CUSTOMER_DRAFT_KEY, JSON.stringify({
       name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, paperLedgerNumber,
       segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold,
       dueNotifications, tagsText, creditLimit, openingBalance, dueDay,
     }));
-  }, [customer, draftHydrated, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, paperLedgerNumber, segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold, dueNotifications, tagsText, creditLimit, openingBalance, dueDay]);
+  }, [customer, draftHydrated, hasDraft, name, phone, rating, status, customerType, notes, frozen, address, joiningDate, nationalId, paperLedgerNumber, segment, assignedStaffId, preferredContact, preferredPaymentMethod, debtAlertThreshold, dueNotifications, tagsText, creditLimit, openingBalance, dueDay]);
   const initials = name.trim()
     ? name
         .trim()

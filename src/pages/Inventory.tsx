@@ -762,39 +762,41 @@ ${
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                onClick={() => setMoveItem(it)}
-                              >
-                                <Boxes className="w-4 h-4" />
-                              </Button>
+                              <span className="inline-flex items-center gap-1">
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
+                                  onClick={() => setMoveItem(it)}
+                                >
+                                  <Boxes className="w-4 h-4" />
+                                </Button>
 
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                title="نسخ المنتج"
-                                onClick={async () => {
-                                  try {
-                                    await db.addStockItem({ name: `${it.name} (نسخة)`, quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null });
-                                    toast.success("تم نسخ المنتج");
-                                  } catch (e: any) { toast.error(e?.message ?? "تعذر النسخ"); }
-                                }}
-                              >
-                                <Copy className="w-4 h-4" />
-                              </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
+                                  title="نسخ المنتج"
+                                  onClick={async () => {
+                                    try {
+                                      await db.addStockItem({ name: `${it.name} (نسخة)`, quantity: it.quantity, lastUnitCost: it.lastUnitCost, salePrice: it.salePrice, size: it.size, itemType: it.itemType, minStock: it.minStock, barcode: null });
+                                      toast.success("تم نسخ المنتج");
+                                    } catch (e: any) { toast.error(e?.message ?? "تعذر النسخ"); }
+                                  }}
+                                >
+                                  <Copy className="w-4 h-4" />
+                                </Button>
 
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
-                                title="مرتجع للمورد"
-                                onClick={() => { window.location.assign(`/returns?product=${encodeURIComponent(it.name)}`); }}
-                              >
-                                <Undo2 className="w-4 h-4" />
-                              </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="action-btn rounded-full text-muted-foreground hover:text-foreground hover:bg-foreground/[0.08]"
+                                  title="مرتجع للمورد"
+                                  onClick={() => { window.location.assign(`/returns?product=${encodeURIComponent(it.name)}`); }}
+                                >
+                                  <Undo2 className="w-4 h-4" />
+                                </Button>
+                              </span>
                             </TooltipTrigger>
                             <TooltipContent side="top">نقل للمخازن</TooltipContent>
                           </Tooltip>
