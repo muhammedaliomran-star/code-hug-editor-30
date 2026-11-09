@@ -355,25 +355,27 @@ ${
             <ActionButton
               tone="surface"
               onClick={() => setExcelOpen(true)}
-              icon={<FileSpreadsheet className="h-4 w-4" />}
+              title="استيراد بيانات المنتجات من Excel"
+              icon={<FileSpreadsheet className="h-4 w-4 shrink-0" />}
             >
-              <span className="hidden sm:inline">إكسيل (استيراد/تصدير)</span>
+              <span className="hidden sm:inline">استيراد Excel</span>
             </ActionButton>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <ActionButton
                   tone="surface"
-                  icon={<Download className="h-4 w-4" />}
+                  title="تصدير البيانات"
+                  icon={<Download className="h-4 w-4 shrink-0" />}
                 >
                   <span className="hidden sm:inline">تصدير</span>
                 </ActionButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={exportExcel} className="gap-2">
-                  <FileSpreadsheet className="w-4 h-4 text-foreground" /> Excel (.xlsx)
+                  <FileSpreadsheet className="h-4 w-4 shrink-0 text-foreground" /> تصدير Excel (.xlsx)
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={exportPDF} className="gap-2">
-                  <FileText className="w-4 h-4 text-foreground" /> PDF (للجرد)
+                  <FileText className="h-4 w-4 shrink-0 text-foreground" /> PDF (للجرد)
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -381,7 +383,7 @@ ${
               tone={privacy ? "primary" : "surface"}
               onClick={toggle}
               title={privacy ? "إظهار الأرقام" : "إخفاء الأرقام"}
-              icon={privacy ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              icon={privacy ? <EyeOff className="h-4 w-4 shrink-0" /> : <Eye className="h-4 w-4 shrink-0" />}
             >
             </ActionButton>
             <ActionButton
@@ -389,7 +391,7 @@ ${
                 setAddPrefillBarcode(undefined);
                 setAddOpen(true);
               }}
-              icon={<PackagePlus className="h-4 w-4" />}
+               icon={<PackagePlus className="h-4 w-4 shrink-0" />}
             >
               <span className="hidden sm:inline">إضافة منتج</span>
             </ActionButton>
