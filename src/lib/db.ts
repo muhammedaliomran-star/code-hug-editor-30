@@ -87,6 +87,11 @@ function isSchemaCacheError(error: unknown) {
   return message.includes("schema cache") && message.includes("column");
 }
 
+function isMissingPurchaseWorkflowRpc(error: unknown) {
+  const message = error instanceof Error ? error.message : String((error as any)?.message ?? error ?? "");
+  return /record_purchase_with_inventory/i.test(message) && /schema cache|could not find the function/i.test(message);
+}
+
 /**
  * Hydrate the in-memory cache from IndexedDB.
  * This runs before fetchAll() so the user sees data immediately,
@@ -1053,7 +1058,8 @@ export const db = {
   async addPurchase(
     p: Omit<Purchase, "id" | "createdAt"> & { items: Array<{ name: string; unitCost: number; quantity: number; unit?: string; batchNumber?: string | null; expiryDate?: string | null }> }
   ) {
-    const { error } = await (supabase as any).rpc("record_purchase_with_inventory", {
+    const items = p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity, unit: item.unit ?? "قطعة", batchNumber: item.batchNumber ?? null, expiryDate: item.expiryDate ?? null }));
+    const workflowPayload = {
       p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
       p_purchase_date: p.purchaseDate, p_notes: p.notes, p_purchase_id: undefined,
       p_supplier_invoice_number: p.supplierInvoiceNumber ?? null, p_due_date: p.dueDate ?? null,
@@ -1061,8 +1067,22 @@ export const db = {
       p_discount_amount: (p.discountAmount ?? 0) * 100, p_tax_amount: (p.taxAmount ?? 0) * 100,
       p_shipping_amount: (p.shippingAmount ?? 0) * 100, p_subtotal: (p.subtotal ?? p.total) * 100,
       p_status: p.status ?? "posted",
-      p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity, unit: item.unit ?? "قطعة", batchNumber: item.batchNumber ?? null, expiryDate: item.expiryDate ?? null })),
-    });
+      p_items: items,
+    };
+    let { error } = await (supabase as any).rpc("record_purchase_with_inventory", workflowPayload);
+    if (error && isMissingPurchaseWorkflowRpc(error)) {
+      if (p.status === "draft") {
+        throw new Error("لا يمكن حفظ المسودة قبل تطبيق تحديث قاعدة البيانات. طبّق Migration الخاصة بفواتير الشراء أولاً.");
+      }
+      const legacyItems = p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity }));
+      const legacyNotes = [p.supplierInvoiceNumber ? `رقم فاتورة المورد: ${p.supplierInvoiceNumber}` : "", p.notes ?? ""].filter(Boolean).join(" — ") || null;
+      const legacy = await (supabase as any).rpc("record_purchase_with_inventory", {
+        p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
+        p_purchase_date: p.purchaseDate, p_notes: legacyNotes, p_items: legacyItems,
+      });
+      error = legacy.error;
+      if (!error) toast.info("تم حفظ الفاتورة بالوضع المتوافق. طبّق Migration فواتير الشراء لتفعيل الكود والتفاصيل الإضافية.");
+    }
     if (error) throw error;
     if (p.attachmentPath) {
       const latest = await supabase.from("purchases").select("id").eq("supplier_id", p.supplierId).eq("purchase_date", p.purchaseDate).order("created_at", { ascending: false }).limit(1).maybeSingle();
