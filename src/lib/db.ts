@@ -1132,6 +1132,11 @@ export const db = {
     if (error) throw error;
     await fetchAll();
   },
+  async permanentlyDeletePurchase(id: string) {
+    const { error } = await (supabase as any).rpc("permanently_delete_purchase", { p_purchase_id: id });
+    if (error) throw error;
+    await fetchAll();
+  },
   async getFinancialReport(start: Date, end: Date) {
     const s = start.toISOString();
     const e = end.toISOString();

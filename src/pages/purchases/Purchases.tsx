@@ -52,6 +52,7 @@ export function PurchasesPage() {
   const [detailPurchase, setDetailPurchase] = useState<Purchase | null>(null);
   const [editPurchase, setEditPurchase] = useState<Purchase | null>(null);
   const [deletePurchaseId, setDeletePurchaseId] = useState<string | null>(null);
+  const [permanentDeletePurchaseId, setPermanentDeletePurchaseId] = useState<string | null>(null);
   const [archivePurchaseId, setArchivePurchaseId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
@@ -537,21 +538,29 @@ export function PurchasesPage() {
                             </Tooltip>
                           </TooltipProvider>
 
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button 
-                                  size="icon" 
-                                  variant="ghost" 
-                                  className="h-9 w-9 rounded-full text-muted-foreground hover:text-danger hover:bg-danger/10"
-                                  onClick={() => setDeletePurchaseId(p.id)}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>حذف الفاتورة</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                          {!p.deleted ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-muted-foreground hover:text-danger hover:bg-danger/10" onClick={() => setDeletePurchaseId(p.id)}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>نقل إلى سلة المحذوفات</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-danger hover:bg-danger/10" onClick={() => setPermanentDeletePurchaseId(p.id)}>
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>حذف نهائي</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </div>
                     </motion.div>
@@ -620,6 +629,26 @@ export function PurchasesPage() {
               >
                 حذف الفاتورة
               </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={!!permanentDeletePurchaseId} onOpenChange={(open) => !open && setPermanentDeletePurchaseId(null)}>
+          <AlertDialogContent dir="rtl">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-right text-danger">حذف نهائي للفواتير؟</AlertDialogTitle>
+              <AlertDialogDescription className="text-right leading-relaxed">
+                سيتم حذف الفاتورة ومرفقاتها وبياناتها نهائيًا من سلة المحذوفات. لا يمكن استعادتها بعد ذلك.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row-reverse gap-2">
+              <AlertDialogCancel>إلغاء</AlertDialogCancel>
+              <AlertDialogAction onClick={async () => {
+                if (!permanentDeletePurchaseId) return;
+                try { await db.permanentlyDeletePurchase(permanentDeletePurchaseId); toast.success("تم حذف الفاتورة نهائيًا"); }
+                catch (e: any) { toast.error(e.message || "تعذر الحذف النهائي"); }
+                setPermanentDeletePurchaseId(null);
+              }} className="bg-danger text-danger-foreground hover:bg-danger/90 font-bold">حذف نهائي</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
