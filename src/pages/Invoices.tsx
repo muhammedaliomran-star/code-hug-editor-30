@@ -552,9 +552,9 @@ function InvoicesPage() {
           ]}
         />
 
-        <div className="mb-5 overflow-x-auto pb-1">
-          <div className="flex min-w-max flex-wrap items-center gap-2">
-          <div className="relative w-full md:w-72">
+        <div className="mb-5">
+          <div className="grid min-w-0 grid-cols-1 items-center gap-2 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
+          <div className="relative min-w-0 w-full sm:col-span-2 2xl:col-span-2">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث بالاسم أو الهاتف أو رقم الفاتورة..." className="pr-10 pl-10" />
             <button
@@ -567,14 +567,14 @@ function InvoicesPage() {
             </button>
           </div>
           <Select value={customerFilter} onValueChange={setCustomerFilter}>
-            <SelectTrigger className="w-[170px]"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل العملاء</SelectItem>
               {data.customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={paymentFilter} onValueChange={(value) => setPaymentFilter(value as typeof paymentFilter)}>
-            <SelectTrigger className="w-[150px]"><SelectValue placeholder="كل أنواع البيع" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder="كل أنواع البيع" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل أنواع البيع</SelectItem>
               <SelectItem value="cash">نقدي</SelectItem>
@@ -583,7 +583,7 @@ function InvoicesPage() {
           </Select>
           {data.branches.length > 0 && (
             <Select value={branchFilter} onValueChange={setBranchFilter}>
-              <SelectTrigger className="w-[150px]"><SelectValue placeholder="كل الفروع" /></SelectTrigger>
+              <SelectTrigger className="w-full"><SelectValue placeholder="كل الفروع" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">كل الفروع</SelectItem>
                 {data.branches.map((branch) => <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>)}
@@ -591,7 +591,7 @@ function InvoicesPage() {
             </Select>
           )}
           <Select value={datePreset} onValueChange={(value) => applyDatePreset(value as DatePreset)}>
-            <SelectTrigger className="w-[145px]"><SelectValue placeholder="فترة التاريخ" /></SelectTrigger>
+            <SelectTrigger className="w-full"><SelectValue placeholder="فترة التاريخ" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل التواريخ</SelectItem>
               <SelectItem value="today">اليوم</SelectItem>
@@ -600,26 +600,26 @@ function InvoicesPage() {
               <SelectItem value="custom">نطاق مخصص</SelectItem>
             </SelectContent>
           </Select>
-          <div className="flex items-center gap-1.5">
+          <div className="flex min-w-0 items-center gap-1.5 sm:col-span-2 2xl:col-span-2">
             <DatePickerField
               value={dateFrom ? format(dateFrom, "yyyy-MM-dd") : ""}
               onChange={(value) => { setDatePreset("custom"); setDateFrom(value ? new Date(`${value}T00:00:00`) : undefined); }}
               placeholder="من تاريخ"
-              className="w-[135px]"
+              className="min-w-0 flex-1"
             />
             <DatePickerField
               value={dateTo ? format(dateTo, "yyyy-MM-dd") : ""}
               onChange={(value) => { setDatePreset("custom"); setDateTo(value ? new Date(`${value}T00:00:00`) : undefined); }}
               placeholder="إلى تاريخ"
-              className="w-[135px]"
+              className="min-w-0 flex-1"
             />
           </div>
-          <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="gap-1.5 text-muted-foreground hover:text-danger">
+          <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="w-full gap-1.5 text-muted-foreground hover:text-danger">
             <X className="h-4 w-4" /> مسح الفلاتر
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="outline" size="sm" className="w-full gap-2">
                 <Download className="w-4 h-4" />
                 تصدير التقرير
               </Button>
@@ -635,7 +635,7 @@ function InvoicesPage() {
           </DropdownMenu>
 
           {list.length > 0 && (
-            <div className="flex items-center gap-2 px-2 py-1 rounded-xl bg-foreground/[0.03] border border-border/50 text-xs">
+            <div className="flex min-w-0 items-center gap-2 rounded-xl border border-border/50 bg-foreground/[0.03] px-2 py-1 text-xs">
               <Checkbox
                 checked={selectedIds.size === list.length && list.length > 0}
                 onCheckedChange={toggleSelectAll}
@@ -647,7 +647,7 @@ function InvoicesPage() {
             </div>
           )}
 
-          <div className="md:ms-auto text-xs text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             {list.length} فاتورة
           </div>
           </div>
