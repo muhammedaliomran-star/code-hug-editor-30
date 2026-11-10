@@ -250,6 +250,9 @@ async function fetchAllInner() {
       paidAmount: Number((r as any).paid_amount ?? (r.payment_type === "cash" ? r.total : 0)) / 100,
       dueDate: (r as any).due_date ?? null,
       status: ((r as any).status ?? "posted") as any,
+      archived: Boolean((r as any).archived),
+      archivedAt: (r as any).archived_at ?? null,
+      archiveReason: (r as any).archive_reason ?? null,
       paymentType: r.payment_type as PurchasePaymentType,
       purchaseDate: r.purchase_date, notes: r.notes, attachmentPath: (r as any).attachment_path ?? null, createdAt: r.created_at,
     })),
@@ -1103,6 +1106,16 @@ export const db = {
   },
   async postPurchaseDraft(id: string) {
     const { error } = await (supabase as any).rpc("post_purchase_draft", { p_purchase_id: id });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async archivePurchase(id: string, reason?: string) {
+    const { error } = await (supabase as any).rpc("archive_purchase", { p_purchase_id: id, p_reason: reason || null });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async unarchivePurchase(id: string) {
+    const { error } = await (supabase as any).rpc("unarchive_purchase", { p_purchase_id: id });
     if (error) throw error;
     await fetchAll();
   },

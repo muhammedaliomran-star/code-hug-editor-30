@@ -23,7 +23,7 @@ import { usePrivacy } from "@/lib/privacy";
 import { 
   Truck, Search, Plus, Wallet, Banknote, CalendarDays, Eye, EyeOff, 
   Pencil, Trash2, Printer, FileText, X, ArrowUpDown, Filter, Package,
-  Info, CheckCircle2, DollarSign, Receipt, Clock, Sparkles,
+  Info, CheckCircle2, DollarSign, Receipt, Clock, Sparkles, Archive, RotateCcw,
   Download, ExternalLink, FileImage, Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +36,7 @@ import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-type FilterTab = "all" | "month" | "week" | "today" | "cash" | "credit" | "paid" | "partial" | "overdue";
+type FilterTab = "all" | "month" | "week" | "today" | "cash" | "credit" | "paid" | "partial" | "overdue" | "archived";
 
 export function PurchasesPage() {
   const data = useDB();
@@ -52,6 +52,8 @@ export function PurchasesPage() {
   const [detailPurchase, setDetailPurchase] = useState<Purchase | null>(null);
   const [editPurchase, setEditPurchase] = useState<Purchase | null>(null);
   const [deletePurchaseId, setDeletePurchaseId] = useState<string | null>(null);
+  const [archivePurchaseId, setArchivePurchaseId] = useState<string | null>(null);
+  const [archiveReason, setArchiveReason] = useState("");
   const [printPurchase, setPrintPurchase] = useState<Purchase | null>(null);
 
   const suppliersMap = useMemo(() => 
@@ -83,7 +85,7 @@ export function PurchasesPage() {
     let totalPaid = 0;
     let totalRemaining = 0;
 
-    data.purchases.forEach(p => {
+    data.purchases.filter(p => !p.archived).forEach(p => {
       totalAll += p.total;
       totalPaid += p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0);
       totalRemaining += Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
@@ -120,6 +122,8 @@ export function PurchasesPage() {
 
     return data.purchases
       .filter((p) => {
+        if (tab === "archived") return Boolean(p.archived);
+        if (p.archived) return false;
         const remaining = Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
         const today = new Date();
         const purchaseDate = new Date(p.purchaseDate);
@@ -293,7 +297,7 @@ export function PurchasesPage() {
                   value={tab}
                   onChange={(v) => setTab(v as FilterTab)}
                   options={[
-                    { value: "all", label: "الكل", count: data.purchases.length },
+                    { value: "all", label: "الكل", count: data.purchases.filter(p => !p.archived).length },
                     { value: "month", label: "هذا الشهر" },
                     { value: "week", label: "هذا الأسبوع" },
                     { value: "today", label: "اليوم" },
@@ -302,6 +306,7 @@ export function PurchasesPage() {
                     { value: "paid", label: "مدفوعة", icon: <CheckCircle2 className="w-3.5 h-3.5 text-success" /> },
                     { value: "partial", label: "جزئية", icon: <Clock className="w-3.5 h-3.5 text-warning" /> },
                     { value: "overdue", label: "متأخرة", icon: <Info className="w-3.5 h-3.5 text-danger" /> },
+                    { value: "archived", label: "مؤرشفة", count: data.purchases.filter(p => p.archived).length, icon: <Archive className="w-3.5 h-3.5 text-muted-foreground" /> },
                   ]}
                 />
 
@@ -460,6 +465,29 @@ export function PurchasesPage() {
                             </Button>
                           )}
 
+                          {p.archived ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-primary hover:bg-primary/10" onClick={async () => {
+                                    try { await db.unarchivePurchase(p.id); toast.success("تمت استعادة الفاتورة من الأرشيف"); }
+                                    catch (e: any) { toast.error(e.message || "تعذرت استعادة الفاتورة"); }
+                                  }}><RotateCcw className="w-4 h-4" /></Button>
+                                </TooltipTrigger>
+                                <TooltipContent>استعادة من الأرشيف</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-muted-foreground hover:text-primary hover:bg-primary/10" onClick={() => { setArchivePurchaseId(p.id); setArchiveReason(""); }}><Archive className="w-4 h-4" /></Button>
+                                </TooltipTrigger>
+                                <TooltipContent>أرشفة الفاتورة</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -573,6 +601,27 @@ export function PurchasesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={!!archivePurchaseId} onOpenChange={(open) => { if (!open) { setArchivePurchaseId(null); setArchiveReason(""); } }}>
+          <DialogContent dir="rtl" className="sm:max-w-md">
+            <DialogHeader className="text-right">
+              <DialogTitle>أرشفة فاتورة الشراء؟</DialogTitle>
+              <DialogDescription>ستختفي الفاتورة من العرض التشغيلي، لكنها ستبقى محفوظة في التقارير ويمكن استعادتها لاحقًا.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 py-2">
+              <Label>سبب الأرشفة (اختياري)</Label>
+              <Input value={archiveReason} onChange={(e) => setArchiveReason(e.target.value)} placeholder="مثال: فاتورة قديمة أو مكررة" className="rounded-xl" />
+            </div>
+            <DialogFooter className="flex-row-reverse gap-2">
+              <Button variant="outline" onClick={() => { setArchivePurchaseId(null); setArchiveReason(""); }}>إلغاء</Button>
+              <Button className="gap-2 bg-primary text-primary-foreground" onClick={async () => {
+                if (!archivePurchaseId) return;
+                try { await db.archivePurchase(archivePurchaseId, archiveReason); toast.success("تمت أرشفة الفاتورة ويمكن استعادتها من تبويب المؤرشفة"); setArchivePurchaseId(null); setArchiveReason(""); }
+                catch (e: any) { toast.error(e.message || "تعذرت أرشفة الفاتورة"); }
+              }}><Archive className="h-4 w-4" /> أرشفة الفاتورة</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       </PageTransition>
     </AppShell>

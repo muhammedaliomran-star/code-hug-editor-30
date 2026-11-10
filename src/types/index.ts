@@ -252,6 +252,9 @@ export interface Purchase {
   paidAmount?: number;
   dueDate?: string | null;
   status?: PurchaseStatus;
+  archived?: boolean;
+  archivedAt?: string | null;
+  archiveReason?: string | null;
   paymentType: PurchasePaymentType;
   purchaseDate: string;
   notes: string | null;
