@@ -280,8 +280,11 @@ export interface PurchaseItem {
 export interface SupplierPayment {
   id: string;
   supplierId: string;
+  purchaseId?: string | null;
   amount: number;
   paidAt: string;
+  paymentMethod?: string | null;
+  notes?: string | null;
 }
 
 export interface ReturnRecord {

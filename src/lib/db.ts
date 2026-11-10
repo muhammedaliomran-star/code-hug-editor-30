@@ -265,7 +265,8 @@ async function fetchAllInner() {
       unit: (r as any).unit ?? "قطعة", batchNumber: (r as any).batch_number ?? null, expiryDate: (r as any).expiry_date ?? null,
     })),
     supplierPayments: (sp.data ?? []).map((r: TableRow<"supplier_payments">) => ({
-      id: r.id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
+      id: r.id, supplierId: r.supplier_id, purchaseId: (r as any).purchase_id ?? null, amount: Number(r.amount) / 100, paidAt: r.paid_at,
+      paymentMethod: (r as any).payment_method ?? null, notes: (r as any).notes ?? null,
     })),
     stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
        id: r.id, productCode: Number(r.product_code ?? 0), name: r.name,
@@ -1134,6 +1135,13 @@ export const db = {
   },
   async permanentlyDeletePurchase(id: string) {
     const { error } = await (supabase as any).rpc("permanently_delete_purchase", { p_purchase_id: id });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async recordPurchasePayment(id: string, amount: number, paymentMethod = "cash", notes?: string) {
+    const { error } = await (supabase as any).rpc("record_purchase_payment", {
+      p_purchase_id: id, p_amount: amount * 100, p_payment_method: paymentMethod, p_notes: notes || null,
+    });
     if (error) throw error;
     await fetchAll();
   },

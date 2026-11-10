@@ -53,6 +53,8 @@ export function PurchasesPage() {
   const [editPurchase, setEditPurchase] = useState<Purchase | null>(null);
   const [deletePurchaseId, setDeletePurchaseId] = useState<string | null>(null);
   const [permanentDeletePurchaseId, setPermanentDeletePurchaseId] = useState<string | null>(null);
+  const [paymentPurchaseId, setPaymentPurchaseId] = useState<string | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState("");
   const [archivePurchaseId, setArchivePurchaseId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
   const [deleteReason, setDeleteReason] = useState("");
@@ -105,7 +107,7 @@ export function PurchasesPage() {
     });
 
     return {
-      totalInvoicesCount: data.purchases.length,
+      totalInvoicesCount: data.purchases.filter(p => !p.archived && !p.deleted).length,
       monthTotal,
       cashMonth,
       creditMonth,
@@ -471,6 +473,12 @@ export function PurchasesPage() {
                             </Button>
                           )}
 
+                          {!p.deleted && p.paymentType === "credit" && Math.max(0, p.total - (p.paidAmount || 0)) > 0.005 && (
+                            <Button size="sm" variant="outline" className="h-9 rounded-full border-success/30 text-success hover:bg-success/10" onClick={() => { setPaymentPurchaseId(p.id); setPaymentAmount(String(Math.max(0, p.total - (p.paidAmount || 0)))); }}>
+                              <DollarSign className="me-1 h-3.5 w-3.5" /> تسجيل دفعة
+                            </Button>
+                          )}
+
                           {p.deleted ? (
                             <TooltipProvider>
                               <Tooltip>
@@ -652,6 +660,14 @@ export function PurchasesPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        <Dialog open={!!paymentPurchaseId} onOpenChange={(open) => { if (!open) { setPaymentPurchaseId(null); setPaymentAmount(""); } }}>
+          <DialogContent dir="rtl" className="sm:max-w-sm">
+            <DialogHeader className="text-right"><DialogTitle>تسجيل دفعة للمورد</DialogTitle><DialogDescription>لن يسمح النظام بدفعة أكبر من المتبقي على الفاتورة.</DialogDescription></DialogHeader>
+            <div className="space-y-2 py-2 text-right"><Label>مبلغ الدفعة (ج.م)</Label><Input type="number" min="0" step="any" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} className="rounded-xl font-mono" /></div>
+            <DialogFooter className="flex-row-reverse gap-2"><Button variant="outline" onClick={() => { setPaymentPurchaseId(null); setPaymentAmount(""); }}>إلغاء</Button><Button className="bg-success text-success-foreground" onClick={async () => { if (!paymentPurchaseId) return; try { await db.recordPurchasePayment(paymentPurchaseId, Number(paymentAmount)); toast.success("تم تسجيل الدفعة وتحديث المتبقي"); setPaymentPurchaseId(null); setPaymentAmount(""); } catch (e: any) { toast.error(e.message || "تعذر تسجيل الدفعة"); } }}>حفظ الدفعة</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={!!archivePurchaseId} onOpenChange={(open) => { if (!open) { setArchivePurchaseId(null); setArchiveReason(""); } }}>
           <DialogContent dir="rtl" className="sm:max-w-md">
