@@ -461,27 +461,27 @@ export type Database = {
         Row: {
           address: string | null
           assigned_staff_id: string | null
-          customer_segment: string
-          customer_code: number
           created_at: string
           credit_limit: number
+          customer_code: number | null
+          customer_segment: string
           customer_type: string
-          due_day: number
           debt_alert_threshold: number
+          due_day: number
           due_notifications: boolean
           frozen: boolean
           id: string
           joining_date: string
           name: string
           national_id: string | null
-          paper_ledger_number: string | null
           notes: string | null
           opening_balance: number
+          paper_ledger_number: string | null
           phone: string
-          rating: number
-          status: string
           preferred_contact: string
           preferred_payment_method: string
+          rating: number
+          status: string
           tags: string[]
           updated_at: string
           user_id: string
@@ -489,27 +489,27 @@ export type Database = {
         Insert: {
           address?: string | null
           assigned_staff_id?: string | null
-          customer_segment?: string
-          customer_code?: number
           created_at?: string
           credit_limit?: number
+          customer_code?: number | null
+          customer_segment?: string
           customer_type?: string
-          due_day?: number
           debt_alert_threshold?: number
+          due_day?: number
           due_notifications?: boolean
           frozen?: boolean
           id?: string
           joining_date?: string
           name: string
           national_id?: string | null
-          paper_ledger_number?: string | null
           notes?: string | null
           opening_balance?: number
+          paper_ledger_number?: string | null
           phone?: string
-          rating?: number
-          status?: string
           preferred_contact?: string
           preferred_payment_method?: string
+          rating?: number
+          status?: string
           tags?: string[]
           updated_at?: string
           user_id: string
@@ -517,27 +517,27 @@ export type Database = {
         Update: {
           address?: string | null
           assigned_staff_id?: string | null
-          customer_segment?: string
-          customer_code?: number
           created_at?: string
           credit_limit?: number
+          customer_code?: number | null
+          customer_segment?: string
           customer_type?: string
-          due_day?: number
           debt_alert_threshold?: number
+          due_day?: number
           due_notifications?: boolean
           frozen?: boolean
           id?: string
           joining_date?: string
           name?: string
           national_id?: string | null
-          paper_ledger_number?: string | null
           notes?: string | null
           opening_balance?: number
+          paper_ledger_number?: string | null
           phone?: string
-          rating?: number
-          status?: string
           preferred_contact?: string
           preferred_payment_method?: string
+          rating?: number
+          status?: string
           tags?: string[]
           updated_at?: string
           user_id?: string
@@ -1324,7 +1324,6 @@ export type Database = {
       }
       purchases: {
         Row: {
-          attachment_path: string | null
           created_at: string
           id: string
           notes: string | null
@@ -1336,7 +1335,6 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          attachment_path?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1348,7 +1346,6 @@ export type Database = {
           user_id: string
         }
         Update: {
-          attachment_path?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -2181,10 +2178,12 @@ export type Database = {
       }
       stock_items: {
         Row: {
+          archived: boolean
           barcode: string | null
           category: string | null
           created_at: string
           id: string
+          image_url: string | null
           item_type: string | null
           last_unit_cost: number
           low_stock_alert: number | null
@@ -2195,19 +2194,18 @@ export type Database = {
           sale_price: number
           season: string | null
           size: string | null
+          supplier_id: string | null
           updated_at: string
           user_id: string
           variants: Json
-          archived: boolean
-          image_url: string | null
-          supplier_id: string | null
-          product_code: number
         }
         Insert: {
+          archived?: boolean
           barcode?: string | null
           category?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           item_type?: string | null
           last_unit_cost?: number
           low_stock_alert?: number | null
@@ -2218,19 +2216,18 @@ export type Database = {
           sale_price?: number
           season?: string | null
           size?: string | null
+          supplier_id?: string | null
           updated_at?: string
           user_id: string
           variants?: Json
-          archived?: boolean
-          image_url?: string | null
-          supplier_id?: string | null
-          product_code?: never
         }
         Update: {
+          archived?: boolean
           barcode?: string | null
           category?: string | null
           created_at?: string
           id?: string
+          image_url?: string | null
           item_type?: string | null
           last_unit_cost?: number
           low_stock_alert?: number | null
@@ -2241,15 +2238,20 @@ export type Database = {
           sale_price?: number
           season?: string | null
           size?: string | null
+          supplier_id?: string | null
           updated_at?: string
           user_id?: string
           variants?: Json
-          archived?: boolean
-          image_url?: string | null
-          supplier_id?: string | null
-          product_code?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_items_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -2332,77 +2334,35 @@ export type Database = {
       }
       suppliers: {
         Row: {
-          address: string | null
-          attachment_url: string | null
-          category: string | null
           contact: string
-          credit_limit: number
-          commercial_register: string | null
           created_at: string
-          email: string | null
           id: string
-          joined_at: string | null
           name: string
           national_id: string | null
           notes: string | null
           opening_balance: number
-          payment_term_days: number
-          preferred_contact_method: string | null
-          preferred_payment_method: string | null
-          status: string
-          supplier_code: number | null
-          tags: Json
-          tax_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
-          address?: string | null
-          attachment_url?: string | null
-          category?: string | null
           contact?: string
-          credit_limit?: number
-          commercial_register?: string | null
           created_at?: string
-          email?: string | null
           id?: string
-          joined_at?: string | null
           name: string
           national_id?: string | null
           notes?: string | null
           opening_balance?: number
-          payment_term_days?: number
-          preferred_contact_method?: string | null
-          preferred_payment_method?: string | null
-          status?: string
-          supplier_code?: number | null
-          tags?: Json
-          tax_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
-          address?: string | null
-          attachment_url?: string | null
-          category?: string | null
           contact?: string
-          credit_limit?: number
-          commercial_register?: string | null
           created_at?: string
-          email?: string | null
           id?: string
-          joined_at?: string | null
           name?: string
           national_id?: string | null
           notes?: string | null
           opening_balance?: number
-          payment_term_days?: number
-          preferred_contact_method?: string | null
-          preferred_payment_method?: string | null
-          status?: string
-          supplier_code?: number | null
-          tags?: Json
-          tax_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2713,6 +2673,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_stock_atomic: {
+        Args: {
+          p_delta: number
+          p_notes?: string
+          p_reason: string
+          p_stock_item_id: string
+        }
+        Returns: number
+      }
       assert_backup_manager: { Args: never; Returns: undefined }
       assign_storefront_shipment: {
         Args: {
