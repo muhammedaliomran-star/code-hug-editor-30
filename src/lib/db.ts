@@ -1134,8 +1134,15 @@ export const db = {
     await fetchAll();
   },
   async permanentlyDeletePurchase(id: string) {
+    const { data: purchase } = await supabase.from("purchases").select("attachment_path").eq("id", id).maybeSingle();
     const { error } = await (supabase as any).rpc("permanently_delete_purchase", { p_purchase_id: id });
     if (error) throw error;
+    const paths = String((purchase as any)?.attachment_path ?? "")
+      .split("|").map((path) => path.trim()).filter(Boolean);
+    if (paths.length > 0) {
+      const { error: storageError } = await supabase.storage.from("purchase-invoices").remove(paths);
+      if (storageError) toast.warning("تم حذف الفاتورة، لكن تعذر حذف أحد المرفقات من التخزين.");
+    }
     await fetchAll();
   },
   async recordPurchasePayment(id: string, amount: number, paymentMethod = "cash", notes?: string) {
@@ -1151,7 +1158,7 @@ export const db = {
     
     const [sales, purchases, expenses, returns, saleItems] = await Promise.all([
       supabase.from("invoices").select("id, total, tax_amount, status").gte("created_at", s).lte("created_at", e),
-      supabase.from("purchases").select("total").gte("purchase_date", s).lte("purchase_date", e),
+      supabase.from("purchases").select("total, payment_type").eq("deleted", false).gte("purchase_date", s).lte("purchase_date", e),
       supabase.from("expenses").select("amount, category").gte("expense_date", s).lte("expense_date", e),
       supabase.from("return_records").select("total_amount").gte("created_at", s).lte("created_at", e),
       supabase.from("invoice_items").select("invoice_id, cost"),

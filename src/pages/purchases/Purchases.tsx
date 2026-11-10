@@ -126,9 +126,9 @@ export function PurchasesPage() {
 
     return data.purchases
       .filter((p) => {
-        if (tab === "deleted") return Boolean(p.deleted);
-        if (tab === "archived") return Boolean(p.archived) && !p.deleted;
-        if (p.archived || p.deleted) return false;
+        if (tab === "deleted" && !p.deleted) return false;
+        if (tab === "archived" && (!p.archived || p.deleted)) return false;
+        if (tab !== "deleted" && tab !== "archived" && (p.archived || p.deleted)) return false;
         const remaining = Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
         const today = new Date();
         const purchaseDate = new Date(p.purchaseDate);
@@ -173,6 +173,25 @@ export function PurchasesPage() {
       })
       .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
   }, [data.purchases, q, tab, selectedSupplierId, suppliersMap, itemsByPurchase]);
+
+  const exportFilteredPurchases = () => {
+    const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+    const rows = [
+      ["كود الفاتورة", "رقم فاتورة المورد", "المورد", "التاريخ", "الإجمالي", "المدفوع", "المتبقي", "الحالة"],
+      ...filteredPurchases.map((p) => {
+        const paid = p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0);
+        const remaining = Math.max(0, p.total - paid);
+        return [p.purchaseNumber ?? "", p.supplierInvoiceNumber ?? "", suppliersMap.get(p.supplierId) ?? "", p.purchaseDate, p.total, paid, remaining, p.deleted ? "محذوفة" : p.archived ? "مؤرشفة" : p.paymentType === "cash" ? "نقدي" : "آجل"];
+      }),
+    ];
+    const csv = "\uFEFF" + rows.map((row) => row.map(escape).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `فواتير-المشتريات-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <AppShell>
@@ -316,8 +335,11 @@ export function PurchasesPage() {
                   ]}
                 />
 
-                <div className="text-xs text-muted-foreground font-medium">
-                  عرض <span className="font-bold text-foreground">{filteredPurchases.length}</span> فاتورة
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                  <span>عرض <span className="font-bold text-foreground">{filteredPurchases.length}</span> فاتورة</span>
+                  <Button type="button" variant="outline" size="sm" onClick={exportFilteredPurchases} disabled={filteredPurchases.length === 0} className="h-8 rounded-full text-xs">
+                    <Download className="me-1 h-3.5 w-3.5" /> تصدير النتائج
+                  </Button>
                 </div>
               </div>
             </div>
@@ -933,7 +955,13 @@ function EditPurchaseDialog({
   const [date, setDate] = useState("");
   const [paymentType, setPaymentType] = useState<PurchasePaymentType>("cash");
   const [notes, setNotes] = useState("");
-  const [items, setItems] = useState<Array<{ id: string; name: string; unitCost: string; quantity: string }>>([]);
+  const [supplierInvoiceNumber, setSupplierInvoiceNumber] = useState("");
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [taxAmount, setTaxAmount] = useState("");
+  const [shippingAmount, setShippingAmount] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [items, setItems] = useState<Array<{ id: string; name: string; unitCost: string; quantity: string; unit: string; batchNumber: string; expiryDate: string }>>([]);
   const [busy, setBusy] = useState(false);
 
   // Initialize form on open
@@ -943,6 +971,12 @@ function EditPurchaseDialog({
       setDate(purchase.purchaseDate);
       setPaymentType(purchase.paymentType);
       setNotes(purchase.notes || "");
+      setSupplierInvoiceNumber(purchase.supplierInvoiceNumber || "");
+      setDiscountAmount(String(purchase.discountAmount ?? 0));
+      setTaxAmount(String(purchase.taxAmount ?? 0));
+      setShippingAmount(String(purchase.shippingAmount ?? 0));
+      setPaidAmount(String(purchase.paidAmount ?? (purchase.paymentType === "cash" ? purchase.total : 0)));
+      setDueDate(purchase.dueDate || "");
 
       const existingItems = data.purchaseItems
         .filter(it => it.purchaseId === purchase.id)
@@ -950,22 +984,26 @@ function EditPurchaseDialog({
           id: crypto.randomUUID(),
           name: it.name,
           unitCost: String(it.unitCost),
-          quantity: String(it.quantity)
+          quantity: String(it.quantity),
+          unit: it.unit || "قطعة",
+          batchNumber: it.batchNumber || "",
+          expiryDate: it.expiryDate || "",
         }));
 
       setItems(existingItems.length > 0 ? existingItems : [{
-        id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1"
+        id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1", unit: "قطعة", batchNumber: "", expiryDate: ""
       }]);
     }
   }, [purchase, open, data.purchaseItems]);
 
-  const total = useMemo(() => 
+  const subtotal = useMemo(() =>
     items.reduce((sum, it) => sum + (Number(it.unitCost) || 0) * (Number(it.quantity) || 0), 0),
     [items]
   );
+  const total = Math.max(0, subtotal - (Number(discountAmount) || 0) + (Number(taxAmount) || 0) + (Number(shippingAmount) || 0));
 
   const addItem = () => {
-    setItems([...items, { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1" }]);
+    setItems([...items, { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1", unit: "قطعة", batchNumber: "", expiryDate: "" }]);
   };
 
   const removeItem = (id: string) => {
@@ -973,7 +1011,7 @@ function EditPurchaseDialog({
     setItems(items.filter(it => it.id !== id));
   };
 
-  const updateItem = (id: string, patch: Partial<{ name: string; unitCost: string; quantity: string }>) => {
+  const updateItem = (id: string, patch: Partial<{ name: string; unitCost: string; quantity: string; unit: string; batchNumber: string; expiryDate: string }>) => {
     setItems(items.map(it => it.id === id ? { ...it, ...patch } : it));
   };
 
@@ -988,6 +1026,19 @@ function EditPurchaseDialog({
       toast.error("أضف صنفاً واحداً على الأقل بسعر وكمية صحيحة");
       return;
     }
+    if ((Number(discountAmount) || 0) > subtotal) {
+      toast.error("الخصم لا يمكن أن يتجاوز إجمالي الأصناف");
+      return;
+    }
+    const paid = paymentType === "cash" ? total : (Number(paidAmount) || 0);
+    if (paid > total) {
+      toast.error("المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة");
+      return;
+    }
+    if (paymentType === "credit" && paid < total && !dueDate) {
+      toast.error("حدد تاريخ الاستحقاق للفواتير الآجلة");
+      return;
+    }
 
     setBusy(true);
     try {
@@ -997,10 +1048,20 @@ function EditPurchaseDialog({
         paymentType,
         purchaseDate: date,
         notes: notes.trim() || null,
+        supplierInvoiceNumber: supplierInvoiceNumber.trim() || null,
+        dueDate: dueDate || null,
+        paidAmount: paid,
+        subtotal,
+        discountAmount: Number(discountAmount) || 0,
+        taxAmount: Number(taxAmount) || 0,
+        shippingAmount: Number(shippingAmount) || 0,
         items: validItems.map(it => ({
           name: it.name.trim(),
           unitCost: Number(it.unitCost),
-          quantity: Number(it.quantity)
+          quantity: Number(it.quantity),
+          unit: it.unit || "قطعة",
+          batchNumber: it.batchNumber.trim() || null,
+          expiryDate: it.expiryDate || null,
         }))
       });
 
@@ -1043,6 +1104,17 @@ function EditPurchaseDialog({
             <div className="space-y-1">
               <Label className="text-xs font-bold">تاريخ الفاتورة</Label>
               <DatePickerField value={date} onChange={setDate} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">رقم فاتورة المورد</Label>
+              <Input value={supplierInvoiceNumber} onChange={(e) => setSupplierInvoiceNumber(e.target.value)} className="h-10 rounded-xl" placeholder="اختياري" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-bold">تاريخ الاستحقاق</Label>
+              <DatePickerField value={dueDate} onChange={setDueDate} disabled={paymentType === "cash"} />
             </div>
           </div>
 
@@ -1128,9 +1200,21 @@ function EditPurchaseDialog({
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div><Label className="text-[11px] text-muted-foreground">الوحدة</Label><Input value={it.unit} onChange={(e) => updateItem(it.id, { unit: e.target.value })} className="h-9 rounded-lg text-xs" /></div>
+                    <div><Label className="text-[11px] text-muted-foreground">رقم التشغيلة</Label><Input value={it.batchNumber} onChange={(e) => updateItem(it.id, { batchNumber: e.target.value })} className="h-9 rounded-lg text-xs" /></div>
+                    <div><Label className="text-[11px] text-muted-foreground">تاريخ الانتهاء</Label><DatePickerField value={it.expiryDate} onChange={(value) => updateItem(it.id, { expiryDate: value })} /></div>
+                  </div>
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-border/40 pt-3">
+            <div><Label className="text-[11px] text-muted-foreground">الخصم</Label><Input type="number" min="0" value={discountAmount} onChange={(e) => setDiscountAmount(e.target.value)} className="h-9 rounded-lg text-xs" /></div>
+            <div><Label className="text-[11px] text-muted-foreground">الضريبة</Label><Input type="number" min="0" value={taxAmount} onChange={(e) => setTaxAmount(e.target.value)} className="h-9 rounded-lg text-xs" /></div>
+            <div><Label className="text-[11px] text-muted-foreground">الشحن</Label><Input type="number" min="0" value={shippingAmount} onChange={(e) => setShippingAmount(e.target.value)} className="h-9 rounded-lg text-xs" /></div>
+            <div><Label className="text-[11px] text-muted-foreground">المدفوع</Label><Input type="number" min="0" value={paymentType === "cash" ? total : paidAmount} onChange={(e) => setPaidAmount(e.target.value)} disabled={paymentType === "cash"} className="h-9 rounded-lg text-xs" /></div>
           </div>
 
           <div className="space-y-1">

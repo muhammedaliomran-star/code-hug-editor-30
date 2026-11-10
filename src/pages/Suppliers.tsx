@@ -988,7 +988,7 @@ function buildPurchaseRows(purchases: Purchase[], payments: SupplierPayment[], i
   payments.forEach((payment) => paidBySupplier.set(payment.supplierId, (paidBySupplier.get(payment.supplierId) ?? 0) + payment.amount));
   const allocations = new Map<string, number>();
   const bySupplier = new Map<string, Purchase[]>();
-  purchases.filter((p) => p.paymentType === "credit").forEach((p) => {
+  purchases.filter((p) => p.paymentType === "credit" && !p.deleted).forEach((p) => {
     const group = bySupplier.get(p.supplierId) ?? [];
     group.push(p);
     bySupplier.set(p.supplierId, group);
@@ -1001,7 +1001,7 @@ function buildPurchaseRows(purchases: Purchase[], payments: SupplierPayment[], i
       available -= paid;
     });
   });
-  return purchases.map((p) => {
+  return purchases.filter((p) => !p.deleted).map((p) => {
     const paid = p.paymentType === "cash" ? p.total : allocations.get(p.id) ?? 0;
     const remaining = Math.max(0, p.total - paid);
     const status: PurchaseStatus = p.paymentType === "cash" || remaining <= 0.005 ? "paid" : paid > 0 ? "partial" : "credit";
