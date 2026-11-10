@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Printer, Truck, MessageCircle, Undo2, Copy, Pencil, CreditCard, Wallet } from "lucide-react";
 import { format } from "date-fns";
+import { getInvoicePaymentStatus, getInvoiceStatusMeta, getPaymentStatusMeta } from "@/lib/invoice-status";
 
 export function ViewInvoiceDialog({
   inv,
@@ -54,6 +55,8 @@ export function ViewInvoiceDialog({
   const remaining = inv.total - inv.paid;
   const late = daysLate(inv);
   const isOverdue = remaining > 0 && late > 0;
+  const invoiceStatusMeta = getInvoiceStatusMeta(inv.status);
+  const paymentStatusMeta = getPaymentStatusMeta(getInvoicePaymentStatus(inv));
   const invItems = items.filter((it) => it.invoiceId === inv.id);
   const invPayments = payments.filter((p) => p.invoiceId === inv.id);
 
@@ -67,14 +70,10 @@ export function ViewInvoiceDialog({
         <DialogHeader>
           <div className="flex items-center justify-between gap-3 border-b border-border/60 pb-3">
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className={cn(
-                "font-bold text-xs px-2.5 py-0.5",
-                remaining === 0 ? "bg-success/15 text-success border-success/30" :
-                isOverdue ? "bg-danger/15 text-danger border-danger/30" :
-                "bg-primary/15 text-primary border-primary/30"
-              )}>
-                {remaining === 0 ? "مسددة بالكامل" : isOverdue ? `متأخرة ${late} يوم` : "نشطة وجارية"}
-              </Badge>
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="outline" className={cn("font-bold text-xs px-2.5 py-0.5", invoiceStatusMeta.className)}>{invoiceStatusMeta.label}</Badge>
+                <Badge variant="outline" className={cn("font-bold text-xs px-2.5 py-0.5", paymentStatusMeta.className)}>{paymentStatusMeta.label}{isOverdue ? ` (${late} يوم)` : ""}</Badge>
+              </div>
             </div>
             <div className="text-right">
               <DialogTitle className="text-lg font-bold">فاتورة #{inv.id.slice(0, 6)}</DialogTitle>

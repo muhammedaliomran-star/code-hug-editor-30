@@ -50,6 +50,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { toast } from "sonner";
 import { toArabicDigits } from "@/lib/arabic-digits";
 import { cn } from "@/lib/utils";
+import { getInvoicePaymentStatus, getInvoiceStatusMeta, getPaymentStatusMeta, type InvoicePaymentStatus } from "@/lib/invoice-status";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 import {
   HistoryDialog,
@@ -99,6 +100,7 @@ function InvoicesPage() {
   const [datePreset, setDatePreset] = useState<DatePreset>("all");
   const [customerFilter, setCustomerFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "installments">("all");
+  const [invoicePaymentStatusFilter, setInvoicePaymentStatusFilter] = useState<"all" | InvoicePaymentStatus>("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [searchScanOpen, setSearchScanOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -388,7 +390,7 @@ function InvoicesPage() {
   };
 
   const clearFilters = () => {
-    setQ(""); setTab("active"); setCustomerFilter("all"); setPaymentFilter("all"); setBranchFilter("all");
+    setQ(""); setTab("active"); setCustomerFilter("all"); setPaymentFilter("all"); setInvoicePaymentStatusFilter("all"); setBranchFilter("all");
     applyDatePreset("all");
   };
 
@@ -416,6 +418,7 @@ function InvoicesPage() {
       })
       .filter((i) => customerFilter === "all" || i.customerId === customerFilter)
       .filter((i) => paymentFilter === "all" || (paymentFilter === "installments" ? i.monthlyInstallment > 0 || i.paid < i.total : i.monthlyInstallment <= 0 && i.paid >= i.total))
+      .filter((i) => invoicePaymentStatusFilter === "all" || getInvoicePaymentStatus(i) === invoicePaymentStatusFilter)
       .filter((i) => branchFilter === "all" || getInvoiceBranchId(i.id) === branchFilter)
       .filter((i) => {
         if (!q) return true;
@@ -434,7 +437,7 @@ function InvoicesPage() {
         return true;
       })
       .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-  }, [data, q, tab, dateFrom, dateTo, customerFilter, paymentFilter, branchFilter, isAllBranches, activeBranchId, mainBranchId, shopSettings.invoicePrefix]);
+  }, [data, q, tab, dateFrom, dateTo, customerFilter, paymentFilter, invoicePaymentStatusFilter, branchFilter, isAllBranches, activeBranchId, mainBranchId, shopSettings.invoicePrefix]);
 
   if (data.loading) return <PageLoadingSkeleton type="table" />;
 
@@ -586,6 +589,16 @@ function InvoicesPage() {
               <SelectItem value="all">كل أنواع البيع</SelectItem>
               <SelectItem value="cash">نقدي</SelectItem>
               <SelectItem value="installments">تقسيط / آجل</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={invoicePaymentStatusFilter} onValueChange={(value) => setInvoicePaymentStatusFilter(value as typeof invoicePaymentStatusFilter)}>
+            <SelectTrigger className="w-full"><SelectValue placeholder="حالة السداد" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل حالات السداد</SelectItem>
+              <SelectItem value="unpaid">غير مدفوعة</SelectItem>
+              <SelectItem value="partial">مدفوعة جزئيًا</SelectItem>
+              <SelectItem value="paid">مدفوعة بالكامل</SelectItem>
+              <SelectItem value="overdue">متأخرة</SelectItem>
             </SelectContent>
           </Select>
           {data.branches.length > 0 && (
@@ -759,7 +772,10 @@ function InvoicesPage() {
               const isDeleted = Boolean(inv.deleted);
               const isArchived = Boolean(inv.archived) && !isDeleted;
               const isOverdue = !isDeleted && !isArchived && remaining > 0 && late > 0;
-              const status = isDeleted ? "في سلة المحذوفات" : isArchived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : isOverdue ? `متأخرة (${late} يوم)` : "نشطة";
+              const paymentStatus = getInvoicePaymentStatus(inv);
+              const paymentMeta = getPaymentStatusMeta(paymentStatus);
+              const invoiceMeta = getInvoiceStatusMeta(inv.status);
+              const status = isDeleted ? "في سلة المحذوفات" : isArchived ? "مؤرشفة" : invoiceMeta.label;
               const cust = findCustomer(inv.customerId);
               const isSelected = selectedIds.has(inv.id);
               
@@ -783,7 +799,7 @@ function InvoicesPage() {
                       <div className={cn(
                         "text-display grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg font-bold ring-1",
                         isDeleted ? "bg-danger/12 text-danger ring-danger/25" : isArchived ? "bg-warning/12 text-warning ring-warning/25" : remaining === 0 ? "bg-success/12 text-success ring-success/25" :
-                        isOverdue ? "bg-danger/12 text-danger ring-danger/25" : 
+                        isOverdue ? "bg-danger/12 text-danger ring-danger/25" :
                         "bg-primary/12 text-primary ring-primary/25"
                       )}>
                         <CreditCard className="h-5 w-5" />
@@ -791,6 +807,10 @@ function InvoicesPage() {
                       <div className="min-w-0 text-right">
                         <div className="font-mono text-xs font-bold text-muted-foreground">#{invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix)}</div>
                         <div className="font-bold truncate">{cust?.name ?? "عميل محذوف"}</div>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0", isDeleted || isArchived ? "bg-foreground/[0.06] text-muted-foreground border-border/30" : invoiceMeta.className)}>{status}</Badge>
+                          {!isDeleted && !isArchived && <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0", paymentMeta.className)}>{paymentMeta.label}</Badge>}
+                        </div>
                       </div>
                     </div>
 
