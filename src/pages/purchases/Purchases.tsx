@@ -35,6 +35,7 @@ import { ActionButton } from "@/components/ActionButton";
 import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 
 type FilterTab = "all" | "month" | "week" | "today" | "cash" | "credit" | "paid" | "partial" | "overdue" | "archived" | "deleted";
 
@@ -174,15 +175,21 @@ export function PurchasesPage() {
       .sort((a, b) => new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime());
   }, [data.purchases, q, tab, selectedSupplierId, suppliersMap, itemsByPurchase]);
 
+  const formatExportDate = (value: string) => {
+    const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return match ? `${match[3]}/${match[2]}/${match[1]}` : value;
+  };
+
+  const purchaseExportRows = () => filteredPurchases.map((p) => {
+    const paid = p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0);
+    return { purchase: p, supplier: suppliersMap.get(p.supplierId) ?? "مورد غير معروف", date: formatExportDate(p.purchaseDate), paid, remaining: Math.max(0, p.total - paid), status: p.deleted ? "محذوفة" : p.archived ? "مؤرشفة" : p.paymentType === "cash" ? "نقدي" : "آجل" };
+  });
+
   const exportFilteredPurchases = () => {
     const escape = (value: unknown) => `"${String(value ?? "").replace(/"/g, '""')}"`;
     const rows = [
       ["كود الفاتورة", "رقم فاتورة المورد", "المورد", "التاريخ", "الإجمالي", "المدفوع", "المتبقي", "الحالة"],
-      ...filteredPurchases.map((p) => {
-        const paid = p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0);
-        const remaining = Math.max(0, p.total - paid);
-        return [p.purchaseNumber ?? "", p.supplierInvoiceNumber ?? "", suppliersMap.get(p.supplierId) ?? "", p.purchaseDate, p.total, paid, remaining, p.deleted ? "محذوفة" : p.archived ? "مؤرشفة" : p.paymentType === "cash" ? "نقدي" : "آجل"];
-      }),
+      ...purchaseExportRows().map(({ purchase: p, supplier, date, paid, remaining, status }) => [p.purchaseNumber ?? "", p.supplierInvoiceNumber ?? "", supplier, `'${date}`, p.total, paid, remaining, status]),
     ];
     const csv = "\uFEFF" + rows.map((row) => row.map(escape).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -191,6 +198,19 @@ export function PurchasesPage() {
     link.download = `فواتير-المشتريات-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const exportFilteredPurchasesPdf = () => {
+    const rows = purchaseExportRows();
+    const body = `<h2 class="sec">فواتير المشتريات المفلترة</h2><div class="t-wrap"><table><thead><tr><th>الكود</th><th>رقم فاتورة المورد</th><th>المورد</th><th>التاريخ</th><th class="num">الإجمالي</th><th class="num">المدفوع</th><th class="num">المتبقي</th><th>الحالة</th></tr></thead><tbody>${rows.map(({ purchase: p, supplier, date, paid, remaining, status }) => `<tr><td class="num">${esc(p.purchaseNumber ?? "—")}</td><td>${esc(p.supplierInvoiceNumber ?? "—")}</td><td>${esc(supplier)}</td><td dir="ltr">${esc(date)}</td><td class="num">${esc(fmt(p.total))} ج.م</td><td class="num ok">${esc(fmt(paid))} ج.م</td><td class="num ${remaining > 0 ? "due" : "ok"}">${esc(fmt(remaining))} ج.م</td><td>${esc(status)}</td></tr>`).join("")}</tbody></table></div>`;
+    const html = pdfDocument({
+      docTitle: "تقرير فواتير المشتريات", badge: "تقرير مشتريات", title: "فواتير المشتريات",
+      lede: `نتائج الفلترة الحالية — ${rows.length} فاتورة`,
+      meta: [{ label: "تاريخ الإصدار", value: formatExportDate(new Date().toISOString().slice(0, 10)) }],
+      kpis: [{ label: "عدد الفواتير", value: String(rows.length) }, { label: "الإجمالي", value: `${fmt(rows.reduce((sum, row) => sum + row.purchase.total, 0))} ج.م`, tone: "brand" }],
+      body, page: "A4 landscape",
+    });
+    if (!openPdfDocument(html, { autoPrint: true })) toast.error("اسمح بفتح النوافذ المنبثقة لتصدير PDF");
   };
 
   return (
@@ -338,7 +358,10 @@ export function PurchasesPage() {
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                   <span>عرض <span className="font-bold text-foreground">{filteredPurchases.length}</span> فاتورة</span>
                   <Button type="button" variant="outline" size="sm" onClick={exportFilteredPurchases} disabled={filteredPurchases.length === 0} className="h-8 rounded-full text-xs">
-                    <Download className="me-1 h-3.5 w-3.5" /> تصدير النتائج
+                    <Download className="me-1 h-3.5 w-3.5" /> Excel / CSV
+                  </Button>
+                  <Button type="button" variant="outline" size="sm" onClick={exportFilteredPurchasesPdf} disabled={filteredPurchases.length === 0} className="h-8 rounded-full text-xs">
+                    <FileText className="me-1 h-3.5 w-3.5" /> PDF
                   </Button>
                 </div>
               </div>
