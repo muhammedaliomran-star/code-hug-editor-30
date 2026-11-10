@@ -106,6 +106,7 @@ function NewInvoicePage() {
   const [saleType, setSaleType] = useState<"cash" | "installments">("installments");
   const [cashPaid, setCashPaid] = useState("");
   const [step, setStep] = useState(1);
+  const [saleMode, setSaleMode] = useState<"quick" | "advanced">("quick");
   const [discountPct, setDiscountPct] = useState("");
   const [discountAmt, setDiscountAmt] = useState("");
   const [taxPct, setTaxPct] = useState("");
@@ -555,7 +556,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         addProduct();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "س")) {
         e.preventDefault();
-        if (!blockReason) submit(false);
+        if (!blockReason) submit(saleMode === "quick");
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "h" || e.key === "ا")) {
         e.preventDefault();
         toggle();
@@ -651,11 +652,33 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         </div>
       </div>
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/30 bg-foreground/[0.025] p-2">
+        <div className="flex items-center gap-1 rounded-xl bg-foreground/[0.04] p-1">
+          <button
+            type="button"
+            onClick={() => setSaleMode("quick")}
+            className={cn("rounded-lg px-4 py-2 text-xs font-black transition-colors", saleMode === "quick" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-foreground/[0.06]")}
+          >
+            بيع سريع <span className="font-mono opacity-70">F9</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSaleMode("advanced")}
+            className={cn("rounded-lg px-4 py-2 text-xs font-black transition-colors", saleMode === "advanced" ? "bg-foreground text-background shadow-sm" : "text-muted-foreground hover:bg-foreground/[0.06]")}
+          >
+            فاتورة متقدمة
+          </button>
+        </div>
+        <span className="px-2 text-[11px] text-muted-foreground">
+          {saleMode === "quick" ? "العميل والمنتجات والدفع في شاشة واحدة — الشحن والخيارات الإضافية اختيارية" : "قسّم الفاتورة إلى خطوات لمراجعة كل التفاصيل"}
+        </span>
+      </div>
+
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ===== العمود الرئيسي ===== */}
         <div className="order-2 space-y-4 text-right lg:order-1">
           {/* الخطوات */}
-          <div className="plate flex items-center gap-1.5 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-1.5">
+          {saleMode === "advanced" && <div className="plate flex items-center gap-1.5 rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-1.5">
             {[
               { n: 1, label: "العميل والنوع" },
               { n: 2, label: `المنتجات والباركود (${products.length})` },
@@ -684,9 +707,9 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                 <span className="truncate">{s.label}</span>
               </button>
             ))}
-          </div>
+          </div>}
 
-          {step === 1 && (
+          {(saleMode === "quick" || step === 1) && (
             <div className="space-y-4">
               {/* العميل */}
               <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-2">
@@ -823,7 +846,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             </div>
           )}
 
-          {step === 2 && (
+          {(saleMode === "quick" || step === 2) && (
             <div className="space-y-3">
               {/* ماسح الباركود السريع المتتالي */}
               <form
@@ -1163,7 +1186,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             </div>
           )}
 
-          {step === 3 && (
+          {(saleMode === "quick" || step === 3) && (
             <div className="space-y-4">
               <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-6">
                 <div className="flex items-center justify-between gap-3">
@@ -1240,7 +1263,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             </div>
           )}
 
-          {step === 4 && (
+          {(saleMode === "quick" || step === 4) && (
             <div className="space-y-4">
               <div className="rounded-[1.75rem] border border-border/30 p-5">
                 <AnimatePresence mode="wait" initial={false}>
@@ -1634,7 +1657,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
           )}
 
           {/* تنقل الخطوات */}
-          <div className="hidden items-center justify-between gap-3 lg:flex">
+          {saleMode === "advanced" && <div className="hidden items-center justify-between gap-3 lg:flex">
             <Button
               type="button"
               variant="outline"
@@ -1653,7 +1676,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             >
               الخطوة السابقة
             </Button>
-          </div>
+          </div>}
         </div>
 
         {/* ===== العمود الجانبي ===== */}
@@ -1726,7 +1749,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             </Button>
 
             <Button
-              onClick={() => submit(false, false)}
+              onClick={() => submit(saleMode === "quick", false)}
               disabled={!!blockReason}
               className="h-12 w-full rounded-2xl bg-primary text-primary-foreground font-black text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
@@ -1766,11 +1789,11 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/10 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => (step < 4 ? setStep(step + 1) : submit(false))}
-            disabled={step === 4 && !!blockReason}
+            onClick={() => (saleMode === "quick" ? submit(true) : step < 4 ? setStep(step + 1) : submit(false))}
+            disabled={saleMode === "quick" ? !!blockReason : step === 4 && !!blockReason}
             className="h-12 flex-1 rounded-2xl font-black"
           >
-            {step < 4 ? "التالي" : "حفظ الفاتورة"}
+            {saleMode === "quick" || step === 4 ? "حفظ الفاتورة" : "التالي"}
           </Button>
           <Button
             onClick={() => submit(true, true)}
