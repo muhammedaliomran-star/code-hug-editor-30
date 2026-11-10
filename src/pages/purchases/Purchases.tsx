@@ -34,7 +34,7 @@ import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-type FilterTab = "all" | "month" | "cash" | "credit";
+type FilterTab = "all" | "month" | "week" | "today" | "cash" | "credit" | "paid" | "partial" | "overdue";
 
 export function PurchasesPage() {
   const data = useDB();
@@ -78,9 +78,13 @@ export function PurchasesPage() {
     let monthTotal = 0;
     let cashMonth = 0;
     let creditMonth = 0;
+    let totalPaid = 0;
+    let totalRemaining = 0;
 
     data.purchases.forEach(p => {
       totalAll += p.total;
+      totalPaid += p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0);
+      totalRemaining += Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
       const d = new Date(p.purchaseDate);
       const isThisMonth = d.getMonth() === currentMonth && d.getFullYear() === currentYear;
 
@@ -100,6 +104,8 @@ export function PurchasesPage() {
       cashMonth,
       creditMonth,
       totalAll,
+      totalPaid,
+      totalRemaining,
     };
   }, [data.purchases]);
 
@@ -112,6 +118,9 @@ export function PurchasesPage() {
 
     return data.purchases
       .filter((p) => {
+        const remaining = Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
+        const today = new Date();
+        const purchaseDate = new Date(p.purchaseDate);
         // Tab filter
         if (tab === "month") {
           const d = new Date(p.purchaseDate);
@@ -120,6 +129,18 @@ export function PurchasesPage() {
           if (p.paymentType !== "cash") return false;
         } else if (tab === "credit") {
           if (p.paymentType !== "credit") return false;
+        } else if (tab === "paid") {
+          if (remaining > 0.005) return false;
+        } else if (tab === "partial") {
+          if (remaining <= 0.005 || remaining >= p.total) return false;
+        } else if (tab === "overdue") {
+          if (remaining <= 0.005 || !p.dueDate || new Date(p.dueDate) >= today) return false;
+        } else if (tab === "today") {
+          if (p.purchaseDate !== today.toISOString().slice(0, 10)) return false;
+        } else if (tab === "week") {
+          const weekAgo = new Date(today);
+          weekAgo.setDate(today.getDate() - 7);
+          if (purchaseDate < weekAgo || purchaseDate > today) return false;
         }
 
         // Supplier filter
@@ -166,7 +187,7 @@ export function PurchasesPage() {
           />
 
           {/* Top Statistics Bar */}
-          <div className="grid auto-rows-fr grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid auto-rows-fr grid-cols-2 gap-4 xl:grid-cols-6">
             <MetricCard
             className="h-full"
               icon={Receipt}
@@ -202,6 +223,26 @@ export function PurchasesPage() {
               value={stats.totalInvoicesCount}
               format={(n) => String(Math.round(n))}
               sub="كل فواتير الشراء المسجلة"
+            />
+            <MetricCard
+              className="h-full"
+              icon={CheckCircle2}
+              label="إجمالي المدفوع"
+              value={stats.totalPaid}
+              tone="positive"
+              format={(n) => `${fmt(n)} ج.م`}
+              masked={privacy}
+              sub="المدفوع فعلياً للموردين"
+            />
+            <MetricCard
+              className="h-full"
+              icon={Clock}
+              label="المتبقي للموردين"
+              value={stats.totalRemaining}
+              tone="warning"
+              format={(n) => `${fmt(n)} ج.م`}
+              masked={privacy}
+              sub="إجمالي المديونية الحالية"
             />
           </div>
 
@@ -252,8 +293,13 @@ export function PurchasesPage() {
                   options={[
                     { value: "all", label: "الكل", count: data.purchases.length },
                     { value: "month", label: "هذا الشهر" },
+                    { value: "week", label: "هذا الأسبوع" },
+                    { value: "today", label: "اليوم" },
                     { value: "cash", label: "نقدي", icon: <Banknote className="w-3.5 h-3.5 text-success" /> },
                     { value: "credit", label: "آجل", icon: <Wallet className="w-3.5 h-3.5 text-warning" /> },
+                    { value: "paid", label: "مدفوعة", icon: <CheckCircle2 className="w-3.5 h-3.5 text-success" /> },
+                    { value: "partial", label: "جزئية", icon: <Clock className="w-3.5 h-3.5 text-warning" /> },
+                    { value: "overdue", label: "متأخرة", icon: <Info className="w-3.5 h-3.5 text-danger" /> },
                   ]}
                 />
 
@@ -363,6 +409,11 @@ export function PurchasesPage() {
                               </Badge>
                             )}
                           </div>
+                          {p.paymentType === "credit" && p.dueDate && (
+                            <div className={cn("mt-1 text-xs font-semibold", new Date(p.dueDate) < new Date() && (p.total - (p.paidAmount || 0)) > 0 ? "text-danger" : "text-muted-foreground")}>
+                              الاستحقاق: <span dir="ltr">{p.dueDate}</span>
+                            </div>
+                          )}
                           {p.notes && (
                             <div className="text-xs text-muted-foreground truncate mt-1 max-w-[200px]" title={p.notes}>
                               «{p.notes}»
