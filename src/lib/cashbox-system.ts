@@ -252,6 +252,40 @@ export function deleteManualTransaction(id: string): void {
   cloud((m) => m.removeManualTransaction(id));
 }
 
+/** حركة شراء مرتبطة بالفاتورة — قابلة لإعادة المزامنة بدون تكرار. */
+export function syncPurchaseCashOutflow(params: {
+  purchaseId: string;
+  amount: number;
+  date: string;
+  supplierName?: string;
+}): void {
+  if (!params.purchaseId || !(params.amount > 0)) return;
+  const referenceNumber = `purchase:${params.purchaseId}`;
+  const title = `شراء بضاعة — ${params.supplierName || "مورد"}`;
+  const existing = getManualTransactions().find((tx) => tx.referenceNumber === referenceNumber);
+  const patch = {
+    accountId: "acc-cash-main",
+    type: "out" as const,
+    category: "مشتريات",
+    amount: params.amount,
+    date: params.date,
+    title,
+    notes: "حركة مرتبطة بفاتورة شراء",
+    referenceNumber,
+    paymentMethod: "cash",
+    performedBy: "system",
+  };
+  if (existing) updateManualTransaction(existing.id, patch);
+  else addManualTransaction(patch);
+}
+
+export function removePurchaseCashOutflow(purchaseId: string): void {
+  const referencePrefix = `purchase:${purchaseId}`;
+  getManualTransactions()
+    .filter((tx) => tx.referenceNumber?.startsWith(referencePrefix))
+    .forEach((tx) => deleteManualTransaction(tx.id));
+}
+
 // ==================== 3. التحويلات الداخلية بين الحسابات ====================
 
 export function getInternalTransfers(): InternalTransfer[] {

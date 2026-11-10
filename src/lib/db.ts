@@ -1101,6 +1101,11 @@ export const db = {
         if (attached.error && !isSchemaCacheError(attached.error)) throw attached.error;
       }
     }
+    if (p.paymentType === "cash" && typeof purchaseId === "string") {
+      const { syncPurchaseCashOutflow } = await import("@/lib/cashbox-system");
+      const supplier = cache.suppliers.find((item) => item.id === p.supplierId);
+      syncPurchaseCashOutflow({ purchaseId, amount: p.total ?? 0, date: p.purchaseDate, supplierName: supplier?.name });
+    }
     await fetchAll();
   },
   async getNextPurchaseNumber() {
@@ -1111,6 +1116,12 @@ export const db = {
   async postPurchaseDraft(id: string) {
     const { error } = await (supabase as any).rpc("post_purchase_draft", { p_purchase_id: id });
     if (error) throw error;
+    const purchase = cache.purchases.find((item) => item.id === id);
+    if (purchase?.paymentType === "cash") {
+      const { syncPurchaseCashOutflow } = await import("@/lib/cashbox-system");
+      const supplier = cache.suppliers.find((item) => item.id === purchase.supplierId);
+      syncPurchaseCashOutflow({ purchaseId: id, amount: purchase.total, date: purchase.purchaseDate, supplierName: supplier?.name });
+    }
     await fetchAll();
   },
   async archivePurchase(id: string, reason?: string) {
@@ -1124,13 +1135,24 @@ export const db = {
     await fetchAll();
   },
   async removePurchase(id: string, reason?: string) {
+    const purchase = cache.purchases.find((item) => item.id === id);
     const { error } = await (supabase as any).rpc("delete_purchase_with_inventory", { p_purchase_id: id, p_reason: reason || null });
     if (error) throw error;
+    if (purchase?.paymentType === "cash") {
+      const { removePurchaseCashOutflow } = await import("@/lib/cashbox-system");
+      removePurchaseCashOutflow(id);
+    }
     await fetchAll();
   },
   async restorePurchase(id: string) {
     const { error } = await (supabase as any).rpc("restore_purchase_from_trash", { p_purchase_id: id });
     if (error) throw error;
+    const purchase = cache.purchases.find((item) => item.id === id);
+    if (purchase?.paymentType === "cash") {
+      const { syncPurchaseCashOutflow } = await import("@/lib/cashbox-system");
+      const supplier = cache.suppliers.find((item) => item.id === purchase.supplierId);
+      syncPurchaseCashOutflow({ purchaseId: id, amount: purchase.total, date: purchase.purchaseDate, supplierName: supplier?.name });
+    }
     await fetchAll();
   },
   async permanentlyDeletePurchase(id: string) {
@@ -1146,10 +1168,18 @@ export const db = {
     await fetchAll();
   },
   async recordPurchasePayment(id: string, amount: number, paymentMethod = "cash", notes?: string) {
-    const { error } = await (supabase as any).rpc("record_purchase_payment", {
+    const { data: paymentId, error } = await (supabase as any).rpc("record_purchase_payment", {
       p_purchase_id: id, p_amount: amount * 100, p_payment_method: paymentMethod, p_notes: notes || null,
     });
     if (error) throw error;
+    if (paymentMethod === "cash") {
+      const purchase = cache.purchases.find((item) => item.id === id);
+      if (purchase) {
+        const { syncPurchaseCashOutflow } = await import("@/lib/cashbox-system");
+        const supplier = cache.suppliers.find((item) => item.id === purchase.supplierId);
+        syncPurchaseCashOutflow({ purchaseId: `${id}:payment:${paymentId}`, amount, date: new Date().toISOString().slice(0, 10), supplierName: supplier?.name });
+      }
+    }
     await fetchAll();
   },
   async getFinancialReport(start: Date, end: Date) {
@@ -1210,6 +1240,13 @@ export const db = {
       p_items: p.items.map((item) => ({ name: item.name, unitCost: item.unitCost * 100, quantity: item.quantity, unit: item.unit ?? "قطعة", batchNumber: item.batchNumber ?? null, expiryDate: item.expiryDate ?? null })),
     });
     if (error) throw error;
+    const { syncPurchaseCashOutflow, removePurchaseCashOutflow } = await import("@/lib/cashbox-system");
+    if (p.paymentType === "cash") {
+      const supplier = cache.suppliers.find((item) => item.id === p.supplierId);
+      syncPurchaseCashOutflow({ purchaseId: id, amount: p.total, date: p.purchaseDate, supplierName: supplier?.name });
+    } else {
+      removePurchaseCashOutflow(id);
+    }
     await fetchAll();
   },
 
