@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { parsePurchaseInvoiceWithLovable, checkInvoiceAiWithLovable } from "@/lib/invoice-ai.functions";
 
 export type InvoiceAiItem = {
   name: string;
@@ -41,25 +41,16 @@ async function optimizeInvoiceFile(file: File): Promise<File> {
 export async function parsePurchaseInvoice(files: File[]): Promise<InvoiceAiResult> {
   if (!files.length) throw new Error("اختر صورة أو ملف PDF أولاً");
   const optimizedFiles = await Promise.all(files.map(optimizeInvoiceFile));
-  const form = new FormData();
-  optimizedFiles.forEach((file) => form.append("files", file, file.name));
-  const { data, error } = await supabase.functions.invoke("parse-purchase-invoice", { body: form });
-  if (error) {
-    let message = error.message || "تعذر قراءة الفاتورة";
-    const context = (error as { context?: unknown }).context;
-    if (context instanceof Response) {
-      const body = await context.json().catch(() => null) as { error?: string } | null;
-      if (body?.error) message = body.error;
-    }
-    throw new Error(message);
-  }
-  if (!data?.result) throw new Error("لم تُرجع خدمة الذكاء الاصطناعي بيانات صالحة");
-  return data.result as InvoiceAiResult;
+  const filesWithData = await Promise.all(optimizedFiles.map(async (file) => {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let binary = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+    return { name: file.name, type: file.type || "application/octet-stream", dataUrl: `data:${file.type || "application/octet-stream"};base64,${btoa(binary)}` };
+  }));
+  return parsePurchaseInvoiceWithLovable({ data: { files: filesWithData } }) as Promise<InvoiceAiResult>;
 }
 
 export async function checkInvoiceAiConnection(): Promise<{ configured: boolean; reachable: boolean }> {
-  const { data, error } = await supabase.functions.invoke("parse-purchase-invoice", { body: { check: true } });
-  if (error) throw new Error(error.message || "تعذر اختبار الاتصال");
-  if (data?.error) throw new Error(data.error);
-  return { configured: data?.configured === true, reachable: data?.reachable === true };
+  return checkInvoiceAiWithLovable();
 }
