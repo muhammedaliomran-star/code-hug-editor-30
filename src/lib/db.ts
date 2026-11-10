@@ -253,6 +253,9 @@ async function fetchAllInner() {
       archived: Boolean((r as any).archived),
       archivedAt: (r as any).archived_at ?? null,
       archiveReason: (r as any).archive_reason ?? null,
+      deleted: Boolean((r as any).deleted),
+      deletedAt: (r as any).deleted_at ?? null,
+      deleteReason: (r as any).delete_reason ?? null,
       paymentType: r.payment_type as PurchasePaymentType,
       purchaseDate: r.purchase_date, notes: r.notes, attachmentPath: (r as any).attachment_path ?? null, createdAt: r.created_at,
     })),
@@ -1119,8 +1122,13 @@ export const db = {
     if (error) throw error;
     await fetchAll();
   },
-  async removePurchase(id: string) {
-    const { error } = await supabase.rpc("delete_purchase_with_inventory", { p_purchase_id: id });
+  async removePurchase(id: string, reason?: string) {
+    const { error } = await (supabase as any).rpc("delete_purchase_with_inventory", { p_purchase_id: id, p_reason: reason || null });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async restorePurchase(id: string) {
+    const { error } = await (supabase as any).rpc("restore_purchase_from_trash", { p_purchase_id: id });
     if (error) throw error;
     await fetchAll();
   },

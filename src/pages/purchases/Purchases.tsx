@@ -36,7 +36,7 @@ import { DatePickerField } from "@/components/DatePickerField";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
-type FilterTab = "all" | "month" | "week" | "today" | "cash" | "credit" | "paid" | "partial" | "overdue" | "archived";
+type FilterTab = "all" | "month" | "week" | "today" | "cash" | "credit" | "paid" | "partial" | "overdue" | "archived" | "deleted";
 
 export function PurchasesPage() {
   const data = useDB();
@@ -54,6 +54,7 @@ export function PurchasesPage() {
   const [deletePurchaseId, setDeletePurchaseId] = useState<string | null>(null);
   const [archivePurchaseId, setArchivePurchaseId] = useState<string | null>(null);
   const [archiveReason, setArchiveReason] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
   const [printPurchase, setPrintPurchase] = useState<Purchase | null>(null);
 
   const suppliersMap = useMemo(() => 
@@ -85,7 +86,7 @@ export function PurchasesPage() {
     let totalPaid = 0;
     let totalRemaining = 0;
 
-    data.purchases.filter(p => !p.archived).forEach(p => {
+    data.purchases.filter(p => !p.archived && !p.deleted).forEach(p => {
       totalAll += p.total;
       totalPaid += p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0);
       totalRemaining += Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
@@ -122,8 +123,9 @@ export function PurchasesPage() {
 
     return data.purchases
       .filter((p) => {
-        if (tab === "archived") return Boolean(p.archived);
-        if (p.archived) return false;
+        if (tab === "deleted") return Boolean(p.deleted);
+        if (tab === "archived") return Boolean(p.archived) && !p.deleted;
+        if (p.archived || p.deleted) return false;
         const remaining = Math.max(0, p.total - (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)));
         const today = new Date();
         const purchaseDate = new Date(p.purchaseDate);
@@ -297,7 +299,7 @@ export function PurchasesPage() {
                   value={tab}
                   onChange={(v) => setTab(v as FilterTab)}
                   options={[
-                    { value: "all", label: "الكل", count: data.purchases.filter(p => !p.archived).length },
+                    { value: "all", label: "الكل", count: data.purchases.filter(p => !p.archived && !p.deleted).length },
                     { value: "month", label: "هذا الشهر" },
                     { value: "week", label: "هذا الأسبوع" },
                     { value: "today", label: "اليوم" },
@@ -306,7 +308,8 @@ export function PurchasesPage() {
                     { value: "paid", label: "مدفوعة", icon: <CheckCircle2 className="w-3.5 h-3.5 text-success" /> },
                     { value: "partial", label: "جزئية", icon: <Clock className="w-3.5 h-3.5 text-warning" /> },
                     { value: "overdue", label: "متأخرة", icon: <Info className="w-3.5 h-3.5 text-danger" /> },
-                    { value: "archived", label: "مؤرشفة", count: data.purchases.filter(p => p.archived).length, icon: <Archive className="w-3.5 h-3.5 text-muted-foreground" /> },
+                    { value: "archived", label: "مؤرشفة", count: data.purchases.filter(p => p.archived && !p.deleted).length, icon: <Archive className="w-3.5 h-3.5 text-muted-foreground" /> },
+                    { value: "deleted", label: "سلة المحذوفات", count: data.purchases.filter(p => p.deleted).length, icon: <Trash2 className="w-3.5 h-3.5 text-danger" /> },
                   ]}
                 />
 
@@ -406,6 +409,8 @@ export function PurchasesPage() {
                             طريقة السداد
                           </div>
                           <div className="flex items-center gap-2">
+                            {p.deleted && <Badge variant="outline" className="rounded-xl border-danger/30 bg-danger/10 text-danger px-2.5 py-1 text-xs font-bold">محذوفة</Badge>}
+                            {p.archived && !p.deleted && <Badge variant="outline" className="rounded-xl border-muted-foreground/30 bg-muted/30 text-muted-foreground px-2.5 py-1 text-xs font-bold">مؤرشفة</Badge>}
                             {p.status === "draft" && <Badge variant="outline" className="rounded-xl border-info/30 bg-info/10 text-info px-2.5 py-1 text-xs font-bold">مسودة</Badge>}
                             {p.paymentType === "cash" ? (
                               <Badge variant="outline" className="gap-1 rounded-xl bg-success/10 text-success border-success/30 px-2.5 py-1 text-xs font-bold">
@@ -465,7 +470,19 @@ export function PurchasesPage() {
                             </Button>
                           )}
 
-                          {p.archived ? (
+                          {p.deleted ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-9 w-9 rounded-full text-primary hover:bg-primary/10" onClick={async () => {
+                                    try { await db.restorePurchase(p.id); toast.success("تمت استعادة الفاتورة وإعادة تأثيرها على المخزون"); }
+                                    catch (e: any) { toast.error(e.message || "تعذرت استعادة الفاتورة"); }
+                                  }}><RotateCcw className="w-4 h-4" /></Button>
+                                </TooltipTrigger>
+                                <TooltipContent>استعادة من سلة المحذوفات</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : p.archived ? (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -573,26 +590,31 @@ export function PurchasesPage() {
         />
 
         {/* Delete Confirmation Alert Dialog */}
-        <AlertDialog open={!!deletePurchaseId} onOpenChange={(v) => !v && setDeletePurchaseId(null)}>
+        <AlertDialog open={!!deletePurchaseId} onOpenChange={(v) => { if (!v) { setDeletePurchaseId(null); setDeleteReason(""); } }}>
           <AlertDialogContent dir="rtl">
             <AlertDialogHeader>
               <AlertDialogTitle className="text-right">حذف فاتورة الشراء؟</AlertDialogTitle>
               <AlertDialogDescription className="text-right leading-relaxed">
-                سيتم حذف الفاتورة وخصم كميات الأصناف المشتراة من المخزون تلقائياً، وعكس حركة الخزينة أو المديونية. لا يمكن التراجع عن هذا الإجراء.
+                سيتم نقل الفاتورة إلى سلة المحذوفات وعكس كمياتها من المخزون. يمكنك استعادتها لاحقًا من تبويب «سلة المحذوفات».
               </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="space-y-2 py-2 text-right">
+              <Label>سبب الحذف (اختياري)</Label>
+              <Input value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} placeholder="مثال: فاتورة مكررة" className="rounded-xl" />
+            </div>
             <AlertDialogFooter className="flex-row-reverse gap-2">
               <AlertDialogCancel>إلغاء</AlertDialogCancel>
               <AlertDialogAction
                 onClick={async () => {
                   if (!deletePurchaseId) return;
                   try {
-                    await db.removePurchase(deletePurchaseId);
-                    toast.success("تم حذف فاتورة الشراء وتحديث المخزون بنجاح");
+                    await db.removePurchase(deletePurchaseId, deleteReason);
+                    toast.success("تم نقل الفاتورة إلى سلة المحذوفات وتحديث المخزون");
                   } catch (e: any) {
                     toast.error(e.message || "حدث خطأ أثناء حذف الفاتورة");
                   }
                   setDeletePurchaseId(null);
+                  setDeleteReason("");
                 }}
                 className="bg-danger text-danger-foreground hover:bg-danger/90 font-bold"
               >

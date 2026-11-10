@@ -255,6 +255,9 @@ export interface Purchase {
   archived?: boolean;
   archivedAt?: string | null;
   archiveReason?: string | null;
+  deleted?: boolean;
+  deletedAt?: string | null;
+  deleteReason?: string | null;
   paymentType: PurchasePaymentType;
   purchaseDate: string;
   notes: string | null;
