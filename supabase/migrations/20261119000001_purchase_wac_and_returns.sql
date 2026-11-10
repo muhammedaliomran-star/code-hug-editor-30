@@ -1,5 +1,21 @@
 -- Weighted-average purchase cost and accounting-safe supplier returns.
 
+create or replace function public.recalculate_stock_average_cost(p_stock_item_id uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare v_qty numeric; v_value numeric;
+begin
+  select coalesce(sum(quantity), 0), coalesce(sum(quantity * unit_cost), 0)
+  into v_qty, v_value
+  from public.stock_movements
+  where stock_item_id = p_stock_item_id
+    and movement_type in ('purchase', 'reversal', 'return');
+  update public.stock_items
+  set last_unit_cost = case when v_qty > 0 then round(v_value / v_qty, 2) else last_unit_cost end,
+      updated_at = now()
+  where id = p_stock_item_id;
+end;
+$$;
+
 create or replace function public.record_purchase_with_inventory(
   p_supplier_id uuid, p_total numeric, p_payment_type text, p_purchase_date date,
   p_notes text, p_items jsonb, p_purchase_id uuid default gen_random_uuid(),
@@ -109,6 +125,7 @@ begin
     insert into public.return_items(user_id, return_id, name, unit_price, quantity) values(auth.uid(), v_return_id, v_name, round(v_cost, 2), v_qty);
     update public.stock_items set quantity = quantity - v_qty, updated_at = now() where id = v_stock.id;
     insert into public.stock_movements(user_id, stock_item_id, movement_type, quantity, unit_cost, reference_id, notes) values(auth.uid(), v_stock.id, 'return', -v_qty, round(v_cost, 2), p_purchase_id, 'مرتجع إلى المورد');
+    perform public.recalculate_stock_average_cost(v_stock.id);
     v_total := v_total + round(v_cost, 2) * v_qty;
   end loop;
   update public.return_records set total_amount = round(v_total, 2) where id = v_return_id;

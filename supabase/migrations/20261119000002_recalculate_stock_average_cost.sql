@@ -17,42 +17,13 @@ begin
     and movement_type in ('purchase', 'reversal', 'return');
 
   update public.stock_items
-  set last_unit_cost = case when v_qty > 0 then round(v_value / v_qty, 2) else 0 end,
+  set last_unit_cost = case when v_qty > 0 then round(v_value / v_qty, 2) else last_unit_cost end,
       updated_at = now()
   where id = p_stock_item_id;
 end;
 $$;
 
-create or replace function public.stock_movement_recalculate_average_cost()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if tg_op = 'DELETE' then
-    perform public.recalculate_stock_average_cost(old.stock_item_id);
-    return old;
-  end if;
-  perform public.recalculate_stock_average_cost(new.stock_item_id);
-  if tg_op = 'UPDATE' and old.stock_item_id is distinct from new.stock_item_id then
-    perform public.recalculate_stock_average_cost(old.stock_item_id);
-  end if;
-  return new;
-end;
-$$;
-
-drop trigger if exists stock_movement_average_cost_trigger on public.stock_movements;
-create trigger stock_movement_average_cost_trigger
-after insert or update or delete on public.stock_movements
-for each row execute function public.stock_movement_recalculate_average_cost();
-
--- Repair existing products once using their movement ledger.
-do $$
-declare v_stock record;
-begin
-  for v_stock in select id from public.stock_items loop
-    perform public.recalculate_stock_average_cost(v_stock.id);
-  end loop;
-end;
-$$;
+-- The application calls this helper only after a complete movement-backed
+-- operation. We intentionally do not install a global trigger or rewrite all
+-- existing products: legacy products may predate stock_movements and their
+-- current cost must not be reset to zero.
