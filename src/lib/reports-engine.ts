@@ -200,7 +200,7 @@ export function computeComprehensiveReports(
   const filteredInvoices = db.invoices.filter((i) => i.status !== "cancelled" && inRange(i.createdAt));
   const filteredPayments = db.payments.filter((p) => inRange(p.paidAt));
   const filteredExpenses = db.expenses.filter((e) => inRange(e.expenseDate));
-  const filteredPurchases = db.purchases.filter((p) => inRange(p.purchaseDate));
+  const filteredPurchases = db.purchases.filter((p) => !p.deleted && inRange(p.purchaseDate));
   const filteredSupplierPayments = db.supplierPayments.filter((sp) => inRange(sp.paidAt));
   const filteredReturns = db.returns.filter((r) => inRange(r.createdAt));
 
@@ -469,7 +469,7 @@ export function computeComprehensiveReports(
       const pData = supplierPurchaseMap.get(sup.id) || { purchasesCount: 0, totalPurchases: 0 };
       const paid = supplierPaidMap.get(sup.id) || 0;
       // calculate total historical due
-      const allSupPurchases = db.purchases.filter((p) => p.supplierId === sup.id);
+      const allSupPurchases = db.purchases.filter((p) => p.supplierId === sup.id && !p.deleted);
       const allSupPayments = db.supplierPayments.filter((sp) => sp.supplierId === sup.id);
       const histPurchases = allSupPurchases.reduce((s, p) => s + p.total, 0);
       const histPaid = allSupPayments.reduce((s, p) => s + p.amount, 0);

@@ -1302,9 +1302,11 @@ export const db = {
     await fetchAll();
   },
   async recordSupplierPayment(supplierId: string, amount: number) {
-    const user_id = await uid();
-    const { error } = await supabase.from("supplier_payments").insert({
-      user_id, supplier_id: supplierId, amount: (amount ?? 0) * 100,
+    const { error } = await (supabase as any).rpc("record_supplier_payment_fifo", {
+      p_supplier_id: supplierId,
+      p_amount: (amount ?? 0) * 100,
+      p_payment_method: "cash",
+      p_notes: null,
     });
     if (error) throw error;
     await fetchAll();

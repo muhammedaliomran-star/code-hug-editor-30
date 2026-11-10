@@ -111,7 +111,7 @@ function ReportsPage() {
       const row = base.get(monthKey(new Date(e.expenseDate)));
       if (row) row.expenses += e.amount;
     }
-    for (const pu of purchases) {
+    for (const pu of purchases.filter((purchase) => !purchase.deleted)) {
       const row = base.get(monthKey(new Date(pu.purchaseDate)));
       if (!row) continue;
       // Cash purchases are like immediate expenses for cash flow/net profit purposes in this view

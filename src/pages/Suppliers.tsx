@@ -86,11 +86,12 @@ function SuppliersPage() {
 
   const totals = useMemo(() => {
     const totalDebt = enriched.reduce((sum, x) => sum + Math.max(0, x.balance), 0);
-    const totalPurchases = data.purchases.reduce((sum, p) => sum + p.total, 0);
-    const cashPurchases = data.purchases.filter((p) => p.paymentType === "cash").reduce((sum, p) => sum + p.total, 0);
+    const activePurchases = data.purchases.filter((p) => !p.deleted);
+    const totalPurchases = activePurchases.reduce((sum, p) => sum + p.total, 0);
+    const cashPurchases = activePurchases.filter((p) => p.paymentType === "cash").reduce((sum, p) => sum + p.total, 0);
     const supplierPayments = data.supplierPayments.reduce((sum, p) => sum + p.amount, 0);
     const totalPaid = cashPurchases + supplierPayments;
-    const creditPurchases = data.purchases.filter((p) => p.paymentType === "credit").reduce((sum, p) => sum + p.total, 0);
+    const creditPurchases = activePurchases.filter((p) => p.paymentType === "credit").reduce((sum, p) => sum + p.total, 0);
     const owing = enriched.filter((x) => x.balance > 0).length;
     return { totalDebt, owing, totalPurchases, totalPaid, creditPurchases, cashPurchases };
   }, [enriched, data.purchases, data.supplierPayments]);
