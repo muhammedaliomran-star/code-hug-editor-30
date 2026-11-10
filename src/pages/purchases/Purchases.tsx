@@ -399,6 +399,7 @@ export function PurchasesPage() {
                             طريقة السداد
                           </div>
                           <div className="flex items-center gap-2">
+                            {p.status === "draft" && <Badge variant="outline" className="rounded-xl border-info/30 bg-info/10 text-info px-2.5 py-1 text-xs font-bold">مسودة</Badge>}
                             {p.paymentType === "cash" ? (
                               <Badge variant="outline" className="gap-1 rounded-xl bg-success/10 text-success border-success/30 px-2.5 py-1 text-xs font-bold">
                                 <Banknote className="w-3.5 h-3.5" /> نقدي (خزينة)
@@ -438,6 +439,24 @@ export function PurchasesPage() {
                               <TooltipContent>عرض الأصناف والتفاصيل</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
+
+                          {p.status === "draft" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-9 rounded-full border-primary/30 text-primary hover:bg-primary/10"
+                              onClick={async () => {
+                                try {
+                                  await db.postPurchaseDraft(p.id);
+                                  toast.success("تم ترحيل المسودة وتحديث المخزون");
+                                } catch (e: any) {
+                                  toast.error(e.message || "تعذر ترحيل المسودة");
+                                }
+                              }}
+                            >
+                              ترحيل للمخزون
+                            </Button>
+                          )}
 
                           <TooltipProvider>
                             <Tooltip>

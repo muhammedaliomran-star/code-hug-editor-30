@@ -1078,6 +1078,11 @@ export const db = {
     if (error) throw error;
     return Number(data ?? 1);
   },
+  async postPurchaseDraft(id: string) {
+    const { error } = await (supabase as any).rpc("post_purchase_draft", { p_purchase_id: id });
+    if (error) throw error;
+    await fetchAll();
+  },
   async removePurchase(id: string) {
     const { error } = await supabase.rpc("delete_purchase_with_inventory", { p_purchase_id: id });
     if (error) throw error;

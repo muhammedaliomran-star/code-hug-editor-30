@@ -203,7 +203,7 @@ export function NewPurchasePage() {
     }));
   }, [data.stockItems, data.purchaseItems]);
 
-  const submit = async () => {
+  const submit = async (status: "posted" | "draft" = "posted") => {
     if (!supplierId) {
       toast.error("يرجى اختيار المورد أولاً");
       return;
@@ -266,6 +266,7 @@ export function NewPurchasePage() {
         paidAmount: paid,
         dueDate: dueDate || null,
         supplierInvoiceNumber: invoiceNumber.trim(),
+        status,
         paymentType,
         purchaseDate: date,
         notes: notes.trim() || null,
@@ -301,7 +302,7 @@ export function NewPurchasePage() {
         }
       }
 
-      toast.success(paymentType === "cash" 
+      toast.success(status === "draft" ? "تم حفظ فاتورة الشراء كمسودة بدون تحديث المخزون" : paymentType === "cash"
         ? "تم تسجيل الفاتورة وخصمها من الخزينة وتحديث المخزون بنجاح" 
         : "تم تسجيل الفاتورة وإضافتها لمديونية المورد وتحديث المخزون بنجاح");
       
@@ -323,6 +324,15 @@ export function NewPurchasePage() {
             icon={<ShoppingCart className="w-7 h-7 text-primary" />}
             action={
               <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => submit("draft")}
+                  disabled={!canSubmit}
+                  className="hidden rounded-full h-9 md:inline-flex"
+                >
+                  حفظ كمسودة
+                </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
