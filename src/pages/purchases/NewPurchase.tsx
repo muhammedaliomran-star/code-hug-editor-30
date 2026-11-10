@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
@@ -14,7 +14,7 @@ import { usePrivacy } from "@/lib/privacy";
 import { useNavigate, Link } from "@/lib/router-compat";
 import { 
   ShoppingCart, Save, X, Plus, Trash2, Banknote, Wallet, 
-  Search, Info, Eye, EyeOff, ScanLine, ScanSearch, ArrowRight, CheckCircle2
+  Search, Info, Eye, EyeOff, ScanLine, ScanSearch, ArrowRight, CheckCircle2, Paperclip, Upload, ChevronDown
 } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { InvoiceAiDialog } from "@/components/InvoiceAiDialog";
@@ -30,6 +30,9 @@ export interface PurchaseLineItem {
   unitCost: string;
   quantity: string;
   barcode?: string;
+  unit?: string;
+  batchNumber?: string;
+  expiryDate?: string;
 }
 
 export function NewPurchasePage() {
@@ -40,9 +43,17 @@ export function NewPurchasePage() {
 
   const [supplierId, setSupplierId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [purchaseNumber, setPurchaseNumber] = useState<number | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [paymentType, setPaymentType] = useState<PurchasePaymentType>("cash");
   const [notes, setNotes] = useState("");
+  const [discountAmount, setDiscountAmount] = useState("");
+  const [taxAmount, setTaxAmount] = useState("");
+  const [shippingAmount, setShippingAmount] = useState("");
+  const [paidAmount, setPaidAmount] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [attachmentsOpen, setAttachmentsOpen] = useState(true);
+  const [financialOpen, setFinancialOpen] = useState(true);
   const [items, setItems] = useState<PurchaseLineItem[]>([
     { id: crypto.randomUUID(), name: "", unitCost: "", quantity: "1" }
   ]);
@@ -50,11 +61,18 @@ export function NewPurchasePage() {
   const [scanOpen, setScanOpen] = useState(false);
   const [invoiceAiOpen, setInvoiceAiOpen] = useState(false);
   const [invoiceFiles, setInvoiceFiles] = useState<File[]>([]);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
 
-  const total = useMemo(() => 
+  const subtotal = useMemo(() =>
     items.reduce((sum, it) => sum + (Number(it.unitCost) || 0) * (Number(it.quantity) || 0), 0),
     [items]
   );
+  const discount = Math.max(0, Number(discountAmount) || 0);
+  const tax = Math.max(0, Number(taxAmount) || 0);
+  const shipping = Math.max(0, Number(shippingAmount) || 0);
+  const total = Math.max(0, subtotal - discount + tax + shipping);
+  const paid = paymentType === "cash" ? total : Math.max(0, Number(paidAmount) || 0);
+  const remaining = Math.max(0, total - paid);
 
   const totalUnits = useMemo(() =>
     items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0),
@@ -64,7 +82,16 @@ export function NewPurchasePage() {
   const incompleteItems = useMemo(() => items.filter(it =>
     !it.name.trim() || Number(it.unitCost) <= 0 || Number(it.quantity) <= 0
   ), [items]);
-  const canSubmit = Boolean(supplierId && items.length > 0 && incompleteItems.length === 0 && total > 0 && !busy);
+  const canSubmit = Boolean(supplierId && invoiceNumber.trim() && items.length > 0 && incompleteItems.length === 0 && total > 0 &&
+    discount <= subtotal && paid <= total && (paymentType === "cash" || !remaining || dueDate) && !busy);
+
+  useEffect(() => {
+    db.getNextPurchaseNumber().then(setPurchaseNumber).catch(() => setPurchaseNumber(null));
+  }, []);
+
+  useEffect(() => {
+    if (paymentType === "cash") setPaidAmount(total ? String(total) : "");
+  }, [paymentType, total]);
 
   const addItem = () => {
     setItems(prev => [
@@ -92,6 +119,15 @@ export function NewPurchasePage() {
     setInvoiceFiles(files);
     setItems(result.items.map((item) => ({ id: crypto.randomUUID(), name: item.name, unitCost: String(item.unitCost || ""), quantity: String(item.quantity || 1), barcode: item.barcode || undefined })));
     toast.success(`تمت إضافة ${result.items.length} صنف من قراءة الفاتورة. راجع البيانات قبل الحفظ.`);
+  };
+
+  const addAttachments = (files: FileList | null) => {
+    if (!files) return;
+    const incoming = Array.from(files).filter(file => file.type.startsWith("image/") || file.type === "application/pdf");
+    setInvoiceFiles(prev => {
+      const keys = new Set(prev.map(file => `${file.name}:${file.size}:${file.lastModified}`));
+      return [...prev, ...incoming.filter(file => !keys.has(`${file.name}:${file.size}:${file.lastModified}`))];
+    });
   };
 
   const handleBarcodeDetected = (code: string) => {
@@ -172,6 +208,22 @@ export function NewPurchasePage() {
       toast.error("يرجى اختيار المورد أولاً");
       return;
     }
+    if (!invoiceNumber.trim()) {
+      toast.error("رقم فاتورة المورد إجباري");
+      return;
+    }
+    if (discount > subtotal) {
+      toast.error("الخصم لا يمكن أن يتجاوز إجمالي الأصناف");
+      return;
+    }
+    if (paid > total) {
+      toast.error("المبلغ المدفوع لا يمكن أن يتجاوز إجمالي الفاتورة");
+      return;
+    }
+    if (paymentType === "credit" && remaining > 0 && !dueDate) {
+      toast.error("حدد تاريخ استحقاق الفاتورة الآجلة");
+      return;
+    }
     const validItems = items.filter(it => it.name.trim() && Number(it.unitCost) > 0 && Number(it.quantity) > 0);
 
     if (incompleteItems.length > 0) {
@@ -207,14 +259,24 @@ export function NewPurchasePage() {
       await db.addPurchase({
         supplierId,
         total,
+        subtotal,
+        discountAmount: discount,
+        taxAmount: tax,
+        shippingAmount: shipping,
+        paidAmount: paid,
+        dueDate: dueDate || null,
+        supplierInvoiceNumber: invoiceNumber.trim(),
         paymentType,
         purchaseDate: date,
-        notes: [invoiceNumber.trim() ? `رقم الفاتورة: ${invoiceNumber.trim()}` : "", notes.trim()].filter(Boolean).join(" — ") || null,
+        notes: notes.trim() || null,
         attachmentPath,
         items: validItems.map(it => ({
           name: it.name.trim(),
           unitCost: Number(it.unitCost),
-          quantity: Number(it.quantity)
+          quantity: Number(it.quantity),
+          unit: it.unit || "قطعة",
+          batchNumber: it.batchNumber?.trim() || null,
+          expiryDate: it.expiryDate || null,
         }))
       });
 
@@ -292,7 +354,7 @@ export function NewPurchasePage() {
               <Reveal>
                 <div className="space-y-6 rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
                   {/* Supplier & Date selection */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-right">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-right">
                     <div className="space-y-2">
                       <Label className="font-bold text-sm">المورد <span className="text-danger">*</span></Label>
                       <Select value={supplierId} onValueChange={setSupplierId}>
@@ -317,13 +379,20 @@ export function NewPurchasePage() {
                       <DatePickerField value={date} onChange={setDate} className="h-12" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-bold text-sm">رقم الفاتورة <span className="text-muted-foreground font-normal">(اختياري)</span></Label>
+                      <Label className="font-bold text-sm">رقم فاتورة المورد <span className="text-danger">*</span></Label>
                       <Input
                         value={invoiceNumber}
                         onChange={(e) => setInvoiceNumber(e.target.value)}
                         placeholder="مثال: 20603"
                         className="h-12 rounded-xl"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-sm">كود فاتورة الشراء</Label>
+                      <div className="relative">
+                        <Input value={purchaseNumber ? String(purchaseNumber) : "تلقائي عند الحفظ"} readOnly disabled className="h-12 rounded-xl pe-20 font-mono font-bold opacity-100" />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-info/10 px-2 py-0.5 text-[10px] font-bold text-info">تلقائي</span>
+                      </div>
                     </div>
                   </div>
 
@@ -445,7 +514,26 @@ export function NewPurchasePage() {
                                 />
                               </div>
 
+                              <div className="space-y-1 text-right">
+                                <Label className="text-xs text-muted-foreground font-semibold">الوحدة</Label>
+                                <Input value={it.unit || "قطعة"} onChange={(e) => updateItem(it.id, { unit: e.target.value })} placeholder="قطعة" className="rounded-xl" />
+                              </div>
+
                             </div>
+
+                            <details className="rounded-xl border border-border/30 bg-background/30 px-3 py-2 text-right">
+                              <summary className="cursor-pointer list-none text-xs font-bold text-muted-foreground">تفاصيل إضافية للصنف <ChevronDown className="ms-1 inline h-3.5 w-3.5" /></summary>
+                              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">رقم التشغيلة / الدفعة</Label>
+                                  <Input value={it.batchNumber || ""} onChange={(e) => updateItem(it.id, { batchNumber: e.target.value })} placeholder="اختياري" className="rounded-xl" />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-xs text-muted-foreground">تاريخ الانتهاء</Label>
+                                  <DatePickerField value={it.expiryDate} onChange={(value) => updateItem(it.id, { expiryDate: value })} className="h-10" placeholder="اختياري" />
+                                </div>
+                              </div>
+                            </details>
 
                             {/* Subtotal of line item */}
                             <div className="flex items-center justify-between pt-2 border-t border-border/20 text-xs">
@@ -461,6 +549,69 @@ export function NewPurchasePage() {
                     <datalist id="stock-suggestions">
                       {suggestions.map(s => <option key={s.name} value={s.name} />)}
                     </datalist>
+                  </div>
+
+                  {/* Additional financial data */}
+                  <div className="space-y-4 text-right pt-2 border-t border-border/40">
+                    <button type="button" onClick={() => setFinancialOpen(v => !v)} className="flex w-full items-center justify-between text-sm font-bold">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", !financialOpen && "-rotate-90")} />
+                      <span>التكاليف والإجمالي النهائي</span>
+                    </button>
+                    {financialOpen && (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {[
+                          ["الخصم", discountAmount, setDiscountAmount],
+                          ["الضريبة", taxAmount, setTaxAmount],
+                          ["الشحن والمصاريف", shippingAmount, setShippingAmount],
+                        ].map(([label, value, setter]) => (
+                          <div key={String(label)} className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">{label} (ج.م)</Label>
+                            <Input type="number" min="0" step="any" value={String(value)} onChange={(e) => (setter as (v: string) => void)(e.target.value)} className="rounded-xl font-mono" placeholder="0.00" />
+                          </div>
+                        ))}
+                        <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+                          <div className="text-xs text-muted-foreground">الإجمالي النهائي</div>
+                          <div className={cn("mt-1 text-lg font-black text-primary", blurCls)}>{fmt(total)} ج.م</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment terms */}
+                  <div className="space-y-4 text-right pt-2 border-t border-border/40">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-bold">المبلغ المدفوع (ج.م)</Label>
+                        <Input type="number" min="0" step="any" disabled={paymentType === "cash"} value={paymentType === "cash" ? String(total) : paidAmount} onChange={(e) => setPaidAmount(e.target.value)} className="h-11 rounded-xl font-mono" placeholder="0.00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-bold">تاريخ الاستحقاق {paymentType === "credit" && remaining > 0 && <span className="text-danger">*</span>}</Label>
+                        <DatePickerField value={dueDate} onChange={setDueDate} disabled={paymentType === "cash" || remaining === 0} className="h-11" placeholder={paymentType === "cash" ? "غير مطلوب للنقدي" : "اختر تاريخ الاستحقاق"} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between rounded-xl bg-warning/10 px-3 py-2 text-sm">
+                      <span className={cn("font-black text-warning", blurCls)}>{fmt(remaining)} ج.م</span><span className="text-muted-foreground">المتبقي على المورد</span>
+                    </div>
+                  </div>
+
+                  {/* Paper invoice attachments */}
+                  <div className="space-y-3 text-right pt-2 border-t border-border/40">
+                    <button type="button" onClick={() => setAttachmentsOpen(v => !v)} className="flex w-full items-center justify-between text-sm font-bold">
+                      <ChevronDown className={cn("h-4 w-4 transition-transform", !attachmentsOpen && "-rotate-90")} />
+                      <span className="inline-flex items-center gap-2"><Paperclip className="h-4 w-4 text-info" /> صورة / ملف الفاتورة الورقية</span>
+                    </button>
+                    {attachmentsOpen && <>
+                      <input ref={attachmentInputRef} type="file" accept="image/*,.pdf" capture="environment" multiple className="hidden" onChange={(e) => addAttachments(e.target.files)} />
+                      <button type="button" onClick={() => attachmentInputRef.current?.click()} className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-info/50 bg-info/5 px-4 py-4 text-sm font-bold text-info hover:bg-info/10">
+                        <Upload className="h-4 w-4" /> رفع صورة أو PDF / التصوير بالكاميرا
+                      </button>
+                      {invoiceFiles.length > 0 && <div className="space-y-2">
+                        {invoiceFiles.map((file, index) => <div key={`${file.name}-${file.lastModified}`} className="flex items-center justify-between rounded-lg bg-foreground/[0.04] px-3 py-2 text-xs">
+                          <button type="button" onClick={() => setInvoiceFiles(prev => prev.filter((_, i) => i !== index))} className="text-danger hover:underline">إزالة</button>
+                          <span className="truncate">{file.name}</span>
+                        </div>)}
+                      </div>}
+                    </>}
                   </div>
 
                   {/* Notes / Reference */}

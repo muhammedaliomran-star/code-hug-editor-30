@@ -32,6 +32,7 @@ export type CustomerContactPreference = "whatsapp" | "phone" | "sms" | "none";
 export type CustomerPaymentPreference = "cash" | "card" | "bank_transfer" | "other";
 export type InvoiceStatus = "paid" | "pending" | "cancelled";
 export type PurchasePaymentType = "cash" | "credit";
+export type PurchaseStatus = "draft" | "posted" | "cancelled";
 export type ShipmentStatus = "pending" | "processing" | "shipped" | "delivered" | "returned" | "cancelled";
 export type ShipmentCollectionStatus = "uncollected" | "collected" | "settled";
 export type AuthProvider = "google" | "email" | "unknown";
@@ -241,7 +242,16 @@ export interface Supplier {
 export interface Purchase {
   id: string;
   supplierId: string;
+  purchaseNumber?: number;
+  supplierInvoiceNumber?: string | null;
   total: number;
+  subtotal?: number;
+  discountAmount?: number;
+  taxAmount?: number;
+  shippingAmount?: number;
+  paidAmount?: number;
+  dueDate?: string | null;
+  status?: PurchaseStatus;
   paymentType: PurchasePaymentType;
   purchaseDate: string;
   notes: string | null;
@@ -255,6 +265,9 @@ export interface PurchaseItem {
   name: string;
   unitCost: number;
   quantity: number;
+  unit?: string;
+  batchNumber?: string | null;
+  expiryDate?: string | null;
   createdAt: string;
 }
 

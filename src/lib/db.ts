@@ -236,12 +236,22 @@ async function fetchAllInner() {
     })),
     purchases: (pu.data ?? []).map((r: TableRow<"purchases">) => ({
       id: r.id, supplierId: r.supplier_id, total: Number(r.total) / 100,
+      purchaseNumber: Number((r as any).purchase_number ?? 0) || undefined,
+      supplierInvoiceNumber: (r as any).supplier_invoice_number ?? null,
+      subtotal: Number((r as any).subtotal ?? r.total) / 100,
+      discountAmount: Number((r as any).discount_amount ?? 0) / 100,
+      taxAmount: Number((r as any).tax_amount ?? 0) / 100,
+      shippingAmount: Number((r as any).shipping_amount ?? 0) / 100,
+      paidAmount: Number((r as any).paid_amount ?? (r.payment_type === "cash" ? r.total : 0)) / 100,
+      dueDate: (r as any).due_date ?? null,
+      status: ((r as any).status ?? "posted") as any,
       paymentType: r.payment_type as PurchasePaymentType,
       purchaseDate: r.purchase_date, notes: r.notes, attachmentPath: (r as any).attachment_path ?? null, createdAt: r.created_at,
     })),
     purchaseItems: (pi.data ?? []).map((r: TableRow<"purchase_items">) => ({
       id: r.id, purchaseId: r.purchase_id, name: r.name,
       unitCost: Number(r.unit_cost ?? 0) / 100, quantity: Number(r.quantity ?? 1), createdAt: r.created_at,
+      unit: (r as any).unit ?? "قطعة", batchNumber: (r as any).batch_number ?? null, expiryDate: (r as any).expiry_date ?? null,
     })),
     supplierPayments: (sp.data ?? []).map((r: TableRow<"supplier_payments">) => ({
       id: r.id, supplierId: r.supplier_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
@@ -1041,11 +1051,17 @@ export const db = {
     await fetchAll();
   },
   async addPurchase(
-    p: Omit<Purchase, "id" | "createdAt"> & { items: Array<{ name: string; unitCost: number; quantity: number }> }
+    p: Omit<Purchase, "id" | "createdAt"> & { items: Array<{ name: string; unitCost: number; quantity: number; unit?: string; batchNumber?: string | null; expiryDate?: string | null }> }
   ) {
     const { error } = await (supabase as any).rpc("record_purchase_with_inventory", {
       p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
-      p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity })),
+      p_purchase_date: p.purchaseDate, p_notes: p.notes, p_purchase_id: undefined,
+      p_supplier_invoice_number: p.supplierInvoiceNumber ?? null, p_due_date: p.dueDate ?? null,
+      p_paid_amount: (p.paidAmount ?? (p.paymentType === "cash" ? p.total : 0)) * 100,
+      p_discount_amount: (p.discountAmount ?? 0) * 100, p_tax_amount: (p.taxAmount ?? 0) * 100,
+      p_shipping_amount: (p.shippingAmount ?? 0) * 100, p_subtotal: (p.subtotal ?? p.total) * 100,
+      p_status: p.status ?? "posted",
+      p_items: p.items.map((item) => ({ name: item.name, unitCost: (item.unitCost ?? 0) * 100, quantity: item.quantity, unit: item.unit ?? "قطعة", batchNumber: item.batchNumber ?? null, expiryDate: item.expiryDate ?? null })),
     });
     if (error) throw error;
     if (p.attachmentPath) {
@@ -1056,6 +1072,11 @@ export const db = {
       }
     }
     await fetchAll();
+  },
+  async getNextPurchaseNumber() {
+    const { data, error } = await (supabase as any).rpc("get_next_purchase_number");
+    if (error) throw error;
+    return Number(data ?? 1);
   },
   async removePurchase(id: string) {
     const { error } = await supabase.rpc("delete_purchase_with_inventory", { p_purchase_id: id });
@@ -1106,13 +1127,18 @@ export const db = {
     id: string,
     p: {
       supplierId: string; total: number; paymentType: PurchasePaymentType;
-      purchaseDate: string; notes: string | null;
-      items: Array<{ name: string; unitCost: number; quantity: number }>;
+      purchaseDate: string; notes: string | null; supplierInvoiceNumber?: string | null;
+      dueDate?: string | null; paidAmount?: number; subtotal?: number; discountAmount?: number; taxAmount?: number; shippingAmount?: number;
+      items: Array<{ name: string; unitCost: number; quantity: number; unit?: string; batchNumber?: string | null; expiryDate?: string | null }>;
     },
   ) {
     const { error } = await (supabase as any).rpc("update_purchase_with_inventory", {
-      p_purchase_id: id, p_supplier_id: p.supplierId, p_total: p.total, p_payment_type: p.paymentType,
-      p_purchase_date: p.purchaseDate, p_notes: p.notes, p_items: p.items.map((item) => ({ name: item.name, unitCost: item.unitCost, quantity: item.quantity })),
+      p_purchase_id: id, p_supplier_id: p.supplierId, p_total: p.total * 100, p_payment_type: p.paymentType,
+      p_purchase_date: p.purchaseDate, p_notes: p.notes,
+      p_supplier_invoice_number: p.supplierInvoiceNumber ?? null, p_due_date: p.dueDate ?? null,
+      p_paid_amount: (p.paidAmount ?? 0) * 100, p_subtotal: (p.subtotal ?? p.total) * 100,
+      p_discount_amount: (p.discountAmount ?? 0) * 100, p_tax_amount: (p.taxAmount ?? 0) * 100, p_shipping_amount: (p.shippingAmount ?? 0) * 100,
+      p_items: p.items.map((item) => ({ name: item.name, unitCost: item.unitCost * 100, quantity: item.quantity, unit: item.unit ?? "قطعة", batchNumber: item.batchNumber ?? null, expiryDate: item.expiryDate ?? null })),
     });
     if (error) throw error;
     await fetchAll();

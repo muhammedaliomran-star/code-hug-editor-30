@@ -315,6 +315,9 @@ export function PurchasesPage() {
                               {supplierName}
                             </div>
                             <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-muted-foreground">
+                              {p.purchaseNumber && <span className="font-mono font-bold text-info">كود #{p.purchaseNumber}</span>}
+                              {p.supplierInvoiceNumber && <span className="font-mono">فاتورة المورد: {p.supplierInvoiceNumber}</span>}
+                              <span className="text-border">•</span>
                               <span className="inline-flex items-center gap-1">
                                 <CalendarDays className="w-3.5 h-3.5" />
                                 <span dir="ltr">{p.purchaseDate}</span>
@@ -338,6 +341,7 @@ export function PurchasesPage() {
                           <div className={cn("text-xl font-extrabold text-foreground tabular-nums", blurCls)}>
                             {fmt(p.total)} <span className="text-xs font-bold text-muted-foreground">ج.م</span>
                           </div>
+                          {p.paymentType === "credit" && <div className="mt-1 text-xs font-bold text-warning">متبقي: {fmt(Math.max(0, (p.total || 0) - (p.paidAmount || 0)))} ج.م</div>}
                         </div>
 
                         {/* Payment Type & Notes snippet */}
@@ -534,17 +538,18 @@ function PurchaseDetailModal({
               {purchase.paymentType === "cash" ? "مسددة نقداً (خزينة)" : "آجلة (مديونية مورد)"}
             </Badge>
             <DialogTitle className="text-lg font-bold text-foreground">
-              فاتورة شراء بضاعة
+              فاتورة شراء بضاعة {purchase.purchaseNumber ? `#${purchase.purchaseNumber}` : ""}
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
             المورد: <span className="font-bold text-foreground">{supplierName}</span> — تاريخ الفاتورة: <span dir="ltr" className="font-mono">{purchase.purchaseDate}</span>
+            {purchase.supplierInvoiceNumber && <> — رقم المورد: <span className="font-mono font-bold">{purchase.supplierInvoiceNumber}</span></>}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-right mt-2">
           {/* Summary Box */}
-          <div className="grid grid-cols-3 gap-3 py-1 text-center divide-x divide-x-reverse divide-border/40">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 py-1 text-center divide-x divide-x-reverse divide-border/40">
             <div>
               <div className="text-[11px] text-muted-foreground font-semibold">إجمالي الفاتورة</div>
               <div className={cn("text-lg font-black text-primary mt-0.5", blurCls)}>
@@ -561,6 +566,12 @@ function PurchaseDetailModal({
               <div className="text-[11px] text-muted-foreground font-semibold">إجمالي القطع</div>
               <div className="text-lg font-black text-foreground mt-0.5">
                 {totalUnits}
+              </div>
+            </div>
+            <div>
+              <div className="text-[11px] text-muted-foreground font-semibold">المتبقي</div>
+              <div className={cn("text-lg font-black text-warning mt-0.5", blurCls)}>
+                {fmt(Math.max(0, purchase.total - (purchase.paidAmount ?? (purchase.paymentType === "cash" ? purchase.total : 0))))} ج.م
               </div>
             </div>
           </div>
