@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from "react";
+import { useMemo, useState, useRef, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
@@ -23,8 +23,10 @@ import { usePrivacy } from "@/lib/privacy";
 import { 
   Truck, Search, Plus, Wallet, Banknote, CalendarDays, Eye, EyeOff, 
   Pencil, Trash2, Printer, FileText, X, ArrowUpDown, Filter, Package,
-  Info, CheckCircle2, DollarSign, Receipt, Clock, Sparkles
+  Info, CheckCircle2, DollarSign, Receipt, Clock, Sparkles,
+  Download, ExternalLink, FileImage, Loader2
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@/lib/router-compat";
 import { MetricCard } from "@/components/MetricCard";
@@ -706,6 +708,8 @@ function PurchaseDetailModal({
               <span className="text-muted-foreground">{purchase.notes}</span>
             </div>
           )}
+
+          <PurchaseAttachments attachmentPath={purchase.attachmentPath} />
         </div>
 
         <DialogFooter className="flex-row items-center justify-between gap-2 pt-3 border-t border-border/40 mt-3">
@@ -741,6 +745,62 @@ function PurchaseDetailModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PurchaseAttachments({ attachmentPath }: { attachmentPath?: string | null }) {
+  const [urls, setUrls] = useState<Array<{ path: string; url: string }>>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const paths = (attachmentPath || "").split("|").map((path) => path.trim()).filter(Boolean);
+    setUrls([]);
+    setError(false);
+    if (!paths.length) return () => { active = false; };
+    setLoading(true);
+    Promise.all(paths.map(async (path) => {
+      const result = await supabase.storage.from("purchase-invoices").createSignedUrl(path, 60 * 60);
+      if (result.error || !result.data?.signedUrl) throw result.error || new Error("تعذر إنشاء رابط المرفق");
+      return { path, url: result.data.signedUrl };
+    })).then((next) => {
+      if (active) setUrls(next);
+    }).catch(() => {
+      if (active) setError(true);
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, [attachmentPath]);
+
+  if (!attachmentPath) return null;
+  const isPdf = (path: string) => /\.pdf$/i.test(path);
+
+  return (
+    <div className="space-y-3 border-t border-border/40 pt-3 text-right">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-bold inline-flex items-center gap-2"><FileImage className="h-4 w-4 text-info" /> صورة / ملف الفاتورة الورقية</span>
+        <span className="text-[11px] text-muted-foreground">{urls.length || attachmentPath.split("|").filter(Boolean).length} مرفق</span>
+      </div>
+      {loading && <div className="flex items-center justify-center gap-2 rounded-xl border border-info/20 bg-info/5 px-3 py-5 text-xs text-info"><Loader2 className="h-4 w-4 animate-spin" /> جارٍ تجهيز المعاينة...</div>}
+      {error && <div className="rounded-xl border border-danger/30 bg-danger/5 px-3 py-3 text-xs text-danger">تعذر فتح المرفق. تأكد من تطبيق سياسات Storage الخاصة بفواتير الشراء.</div>}
+      {urls.length > 0 && <div className="grid gap-3 sm:grid-cols-2">
+        {urls.map(({ path, url }) => (
+          <div key={path} className="overflow-hidden rounded-xl border border-border/50 bg-background/40">
+            {isPdf(path) ? (
+              <div className="flex h-40 flex-col items-center justify-center gap-3 text-sm text-muted-foreground"><FileText className="h-10 w-10 text-info" /><span className="max-w-full truncate px-3 text-xs">{path.split("/").pop()}</span></div>
+            ) : (
+              <img src={url} alt="صورة الفاتورة الورقية" className="h-40 w-full object-contain bg-black/10" />
+            )}
+            <div className="flex items-center justify-between border-t border-border/40 px-2 py-2">
+              <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline"><ExternalLink className="h-3.5 w-3.5" /> فتح</a>
+              <a href={url} download className="inline-flex items-center gap-1 text-xs font-bold text-muted-foreground hover:text-foreground"><Download className="h-3.5 w-3.5" /> تحميل</a>
+            </div>
+          </div>
+        ))}
+      </div>}
+    </div>
   );
 }
 
