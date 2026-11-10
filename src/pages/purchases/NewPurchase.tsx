@@ -40,6 +40,7 @@ export function NewPurchasePage() {
 
   const [supplierId, setSupplierId] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [invoiceNumber, setInvoiceNumber] = useState("");
   const [paymentType, setPaymentType] = useState<PurchasePaymentType>("cash");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<PurchaseLineItem[]>([
@@ -59,6 +60,11 @@ export function NewPurchasePage() {
     items.reduce((sum, it) => sum + (Number(it.quantity) || 0), 0),
     [items]
   );
+
+  const incompleteItems = useMemo(() => items.filter(it =>
+    !it.name.trim() || Number(it.unitCost) <= 0 || Number(it.quantity) <= 0
+  ), [items]);
+  const canSubmit = Boolean(supplierId && items.length > 0 && incompleteItems.length === 0 && total > 0 && !busy);
 
   const addItem = () => {
     setItems(prev => [
@@ -82,8 +88,7 @@ export function NewPurchasePage() {
   const applyAiInvoice = (result: InvoiceAiResult, matchedSupplierId: string | null, files: File[]) => {
     if (matchedSupplierId) setSupplierId(matchedSupplierId);
     if (result.invoiceDate && /^\d{4}-\d{2}-\d{2}$/.test(result.invoiceDate)) setDate(result.invoiceDate);
-    const attachmentNote = files.length ? `مرفق الفاتورة: ${files.map((file) => file.name).join("، ")}` : "";
-    setNotes([result.invoiceNumber ? `رقم الفاتورة: ${result.invoiceNumber}` : "", attachmentNote].filter(Boolean).join(" — "));
+    if (result.invoiceNumber) setInvoiceNumber(result.invoiceNumber);
     setInvoiceFiles(files);
     setItems(result.items.map((item) => ({ id: crypto.randomUUID(), name: item.name, unitCost: String(item.unitCost || ""), quantity: String(item.quantity || 1), barcode: item.barcode || undefined })));
     toast.success(`تمت إضافة ${result.items.length} صنف من قراءة الفاتورة. راجع البيانات قبل الحفظ.`);
@@ -167,9 +172,12 @@ export function NewPurchasePage() {
       toast.error("يرجى اختيار المورد أولاً");
       return;
     }
-    const validItems = items.filter(it => 
-      it.name.trim() && Number(it.unitCost) > 0 && Number(it.quantity) > 0
-    );
+    const validItems = items.filter(it => it.name.trim() && Number(it.unitCost) > 0 && Number(it.quantity) > 0);
+
+    if (incompleteItems.length > 0) {
+      toast.error("راجع الأصناف الناقصة: اكتب الاسم والكمية وسعر التكلفة لكل صنف أو احذفه");
+      return;
+    }
 
     if (validItems.length === 0) {
       toast.error("أضف صنفاً واحداً على الأقل بسعر تكلفة وكمية صحيحة أكبر من الصفر");
@@ -201,7 +209,7 @@ export function NewPurchasePage() {
         total,
         paymentType,
         purchaseDate: date,
-        notes: notes.trim() || null,
+        notes: [invoiceNumber.trim() ? `رقم الفاتورة: ${invoiceNumber.trim()}` : "", notes.trim()].filter(Boolean).join(" — ") || null,
         attachmentPath,
         items: validItems.map(it => ({
           name: it.name.trim(),
@@ -270,7 +278,7 @@ export function NewPurchasePage() {
                 <Button 
                   size="sm" 
                   onClick={submit} 
-                  disabled={busy} 
+                  disabled={!canSubmit}
                   className="rounded-full h-9 shadow-sm bg-primary text-primary-foreground font-bold"
                 >
                   <Save className="w-4 h-4 me-1.5" /> حفظ الفاتورة
@@ -284,7 +292,7 @@ export function NewPurchasePage() {
               <Reveal>
                 <div className="space-y-6 rounded-2xl border border-border/40 bg-card p-6 shadow-sm">
                   {/* Supplier & Date selection */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-right">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-right">
                     <div className="space-y-2">
                       <Label className="font-bold text-sm">المورد <span className="text-danger">*</span></Label>
                       <Select value={supplierId} onValueChange={setSupplierId}>
@@ -307,6 +315,15 @@ export function NewPurchasePage() {
                     <div className="space-y-2">
                       <Label className="font-bold text-sm">تاريخ الفاتورة</Label>
                       <DatePickerField value={date} onChange={setDate} className="h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="font-bold text-sm">رقم الفاتورة <span className="text-muted-foreground font-normal">(اختياري)</span></Label>
+                      <Input
+                        value={invoiceNumber}
+                        onChange={(e) => setInvoiceNumber(e.target.value)}
+                        placeholder="مثال: 20603"
+                        className="h-12 rounded-xl"
+                      />
                     </div>
                   </div>
 
@@ -449,11 +466,12 @@ export function NewPurchasePage() {
                   {/* Notes / Reference */}
                   <div className="space-y-2 text-right pt-2 border-t border-border/40">
                     <Label className="font-bold text-sm">ملاحظات الفاتورة / رقم الإذن الورقي</Label>
-                    <Input 
+                    <Textarea
                       value={notes} 
                       onChange={(e) => setNotes(e.target.value)} 
                       placeholder="رقم الفاتورة الورقية عند المورد، بيانات الشحن، إلخ..."
-                      className="rounded-xl"
+                      rows={2}
+                      className="rounded-xl resize-none"
                     />
                   </div>
                 </div>
@@ -463,7 +481,7 @@ export function NewPurchasePage() {
             {/* Sidebar Summary */}
             <aside className="space-y-4">
               <Reveal delay={100}>
-                <div className="space-y-5 sticky top-24 rounded-2xl border border-border/40 bg-card p-5 shadow-sm">
+                <div className="space-y-5 lg:sticky lg:top-24 rounded-2xl border border-border/40 bg-card p-5 shadow-sm">
                   <div className="text-right">
                     <Label className="text-muted-foreground text-xs uppercase tracking-widest font-bold">
                       إجمالي الفاتورة
@@ -474,6 +492,11 @@ export function NewPurchasePage() {
                     <div className="text-xs text-muted-foreground mt-1 font-medium">
                       إجمالي {items.length} صنف / {totalUnits} قطعة
                     </div>
+                    {incompleteItems.length > 0 && (
+                      <div className="mt-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2 text-xs font-semibold text-warning">
+                        يوجد {incompleteItems.length} صنف يحتاج بيانات قبل الحفظ
+                      </div>
+                    )}
                   </div>
 
                   {/* Payment Type Toggle */}
@@ -522,9 +545,16 @@ export function NewPurchasePage() {
                     </p>
                   </div>
 
+                  <div className="flex items-center justify-between rounded-xl border border-border/30 bg-foreground/[0.03] px-3 py-2 text-sm">
+                    <span className={cn("font-extrabold tabular-nums", paymentType === "credit" ? "text-warning" : "text-success", blurCls)}>
+                      {fmt(total)} ج.م
+                    </span>
+                    <span className="text-muted-foreground">{paymentType === "credit" ? "المتبقي على المورد" : "المدفوع نقدًا"}</span>
+                  </div>
+
                   <Button 
                     onClick={submit} 
-                    disabled={busy} 
+                    disabled={!canSubmit}
                     className="w-full h-12 rounded-xl text-base font-bold shadow bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     <Save className="w-5 h-5 me-2" /> حفظ الفاتورة والمخزون
@@ -532,6 +562,16 @@ export function NewPurchasePage() {
                 </div>
               </Reveal>
             </aside>
+          </div>
+
+          <div className="sticky bottom-3 z-20 mt-4 lg:hidden">
+            <Button
+              onClick={submit}
+              disabled={!canSubmit}
+              className="h-12 w-full rounded-2xl text-base font-bold shadow-lg bg-primary text-primary-foreground"
+            >
+              <Save className="w-5 h-5 me-2" /> حفظ الفاتورة والمخزون
+            </Button>
           </div>
         </div>
 
