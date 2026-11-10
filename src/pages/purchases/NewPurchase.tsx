@@ -349,7 +349,7 @@ export function NewPurchasePage() {
                 </Button>
                 <Button 
                   size="sm" 
-                  onClick={submit} 
+                  onClick={() => submit()}
                   disabled={!canSubmit}
                   className="rounded-full h-9 shadow-sm bg-primary text-primary-foreground font-bold"
                 >
@@ -714,7 +714,7 @@ export function NewPurchasePage() {
                   </div>
 
                   <Button 
-                    onClick={submit} 
+                    onClick={() => submit()}
                     disabled={!canSubmit}
                     className="w-full h-12 rounded-xl text-base font-bold shadow bg-primary text-primary-foreground hover:bg-primary/90"
                   >
@@ -727,7 +727,7 @@ export function NewPurchasePage() {
 
           <div className="sticky bottom-3 z-20 mt-4 lg:hidden">
             <Button
-              onClick={submit}
+              onClick={() => submit()}
               disabled={!canSubmit}
               className="h-12 w-full rounded-2xl text-base font-bold shadow-lg bg-primary text-primary-foreground"
             >
