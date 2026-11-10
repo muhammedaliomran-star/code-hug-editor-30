@@ -12,7 +12,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useActiveBranch } from "@/hooks/use-active-branch";
 import { getInvoicesForBranch, getInvoiceBranchId } from "@/lib/branch-system";
-import { format, addMonths } from "date-fns";
+import { format, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
 import { useDB, db, daysLate, fmt, customerBalance, getShopSettings, invoiceNumber, useShopSettings, type Invoice, type Customer, type InvoiceItem } from "@/lib/store";
@@ -63,7 +63,8 @@ import {
   StockProductPicker,
 } from "@/components/invoices";
 
-type Tab = "active" | "overdue" | "settled" | "all";
+type Tab = "active" | "overdue" | "settled" | "cancelled" | "all";
+type DatePreset = "all" | "today" | "week" | "month" | "custom";
 
 function isoToDDMMYYYY(iso: string): string {
   if (!iso) return "";
@@ -95,6 +96,10 @@ function InvoicesPage() {
   const { settings: shopSettings } = useShopSettings();
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [datePreset, setDatePreset] = useState<DatePreset>("all");
+  const [customerFilter, setCustomerFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState<"all" | "cash" | "installments">("all");
+  const [branchFilter, setBranchFilter] = useState("all");
   const [searchScanOpen, setSearchScanOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [customPrintInv, setCustomPrintInv] = useState<Invoice | null>(null);
@@ -219,7 +224,7 @@ function InvoicesPage() {
       const c = findCustomer(inv.customerId);
       const remaining = inv.total - inv.paid;
       const late = daysLate(inv);
-      const status = remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
+      const status = inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
       return [
         invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix),
         c?.name ?? "—",
@@ -312,14 +317,15 @@ function InvoicesPage() {
   };
 
   const counts = useMemo(() => {
-    let active = 0, overdue = 0, settled = 0;
+    let active = 0, overdue = 0, settled = 0, cancelled = 0;
     for (const i of data.invoices) {
+      if (i.status === "cancelled") { cancelled++; continue; }
       const remaining = i.total - i.paid;
       if (remaining <= 0) settled++;
       else if (daysLate(i) > 0) { overdue++; active++; }
       else active++;
     }
-    return { active, overdue, settled, all: data.invoices.length };
+    return { active, overdue, settled, cancelled, all: data.invoices.length };
   }, [data.invoices, data.returns]);
 
   const stats = useMemo(() => {
@@ -329,13 +335,14 @@ function InvoicesPage() {
     
     let totalPaid = 0;
     let totalSales = 0;
-    let invoiceCount = data.invoices.length;
+    const liveInvoices = data.invoices.filter((invoice) => invoice.status !== "cancelled");
+    let invoiceCount = liveInvoices.length;
     let overdueCount = 0;
     let monthCollections = 0;
     let activeSalesTotal = 0;
     let monthSales = 0;
 
-    for (const i of data.invoices) {
+    for (const i of liveInvoices) {
       totalSales += i.total;
       totalPaid += i.paid;
       const remaining = i.total - i.paid;
@@ -369,9 +376,25 @@ function InvoicesPage() {
     };
   }, [data.invoices, data.payments]);
 
+  const applyDatePreset = (preset: DatePreset) => {
+    setDatePreset(preset);
+    const now = new Date();
+    if (preset === "all") { setDateFrom(undefined); setDateTo(undefined); return; }
+    if (preset === "today") { setDateFrom(new Date(now.getFullYear(), now.getMonth(), now.getDate())); setDateTo(new Date(now.getFullYear(), now.getMonth(), now.getDate())); return; }
+    if (preset === "week") { setDateFrom(startOfWeek(now, { weekStartsOn: 6 })); setDateTo(endOfWeek(now, { weekStartsOn: 6 })); return; }
+    if (preset === "month") { setDateFrom(startOfMonth(now)); setDateTo(endOfMonth(now)); return; }
+  };
+
+  const clearFilters = () => {
+    setQ(""); setTab("active"); setCustomerFilter("all"); setPaymentFilter("all"); setBranchFilter("all");
+    applyDatePreset("all");
+  };
+
   const list = useMemo(() => {
     // Filtered list based on tab, search and active branch
-    const branchScoped = isAllBranches
+    const branchScoped = branchFilter !== "all"
+      ? data.invoices
+      : isAllBranches
       ? data.invoices
       : getInvoicesForBranch(activeBranchId, data.invoices, mainBranchId);
     const fromTs = dateFrom ? new Date(dateFrom.getFullYear(), dateFrom.getMonth(), dateFrom.getDate()).getTime() : null;
@@ -379,11 +402,16 @@ function InvoicesPage() {
     return branchScoped
       .filter((i) => {
         const remaining = i.total - i.paid;
+        if (tab === "cancelled") return i.status === "cancelled";
+        if (i.status === "cancelled") return false;
         if (tab === "active") return remaining > 0;
         if (tab === "overdue") return remaining > 0 && daysLate(i) > 0;
         if (tab === "settled") return remaining <= 0;
         return true;
       })
+      .filter((i) => customerFilter === "all" || i.customerId === customerFilter)
+      .filter((i) => paymentFilter === "all" || (paymentFilter === "installments" ? i.monthlyInstallment > 0 || i.paid < i.total : i.monthlyInstallment <= 0 && i.paid >= i.total))
+      .filter((i) => branchFilter === "all" || getInvoiceBranchId(i.id) === branchFilter)
       .filter((i) => {
         if (!q) return true;
         const c = data.customers.find((c) => c.id === i.customerId);
@@ -401,7 +429,7 @@ function InvoicesPage() {
         return true;
       })
       .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-  }, [data, q, tab, dateFrom, dateTo, isAllBranches, activeBranchId, mainBranchId]);
+  }, [data, q, tab, dateFrom, dateTo, customerFilter, paymentFilter, branchFilter, isAllBranches, activeBranchId, mainBranchId, shopSettings.invoicePrefix]);
 
   if (data.loading) return <PageLoadingSkeleton type="table" />;
 
@@ -413,7 +441,7 @@ function InvoicesPage() {
       const c = findCustomer(inv.customerId);
       const remaining = inv.total - inv.paid;
       const late = daysLate(inv);
-      const status = remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
+      const status = inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
       return [inv.id.slice(0, 6), c?.name ?? "—", c?.phone ?? "—", inv.total, inv.paid, remaining, inv.monthlyInstallment, isoToDDMMYYYY(inv.firstDueDate), format(new Date(inv.createdAt), "dd/MM/yyyy"), status];
     });
     const csv = "\uFEFF" + [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -519,14 +547,16 @@ function InvoicesPage() {
             { value: "active", label: "فواتير نشطة", count: counts.active },
             { value: "overdue", label: "متأخرة", count: counts.overdue },
             { value: "settled", label: "تم التحصيل", count: counts.settled },
+            { value: "cancelled", label: "ملغاة", count: counts.cancelled },
             { value: "all", label: "الكل", count: counts.all },
           ]}
         />
 
-        <div className="mb-5 flex flex-col md:flex-row md:items-center gap-2">
-          <div className="relative md:w-72">
+        <div className="mb-5 overflow-x-auto pb-1">
+          <div className="flex min-w-max flex-wrap items-center gap-2">
+          <div className="relative w-full md:w-72">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث بالاسم أو الهاتف..." className="pr-10 pl-10" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="بحث بالاسم أو الهاتف أو رقم الفاتورة..." className="pr-10 pl-10" />
             <button
               type="button"
               onClick={() => setSearchScanOpen(true)}
@@ -536,20 +566,57 @@ function InvoicesPage() {
               <ScanLine className="w-4 h-4" />
             </button>
           </div>
+          <Select value={customerFilter} onValueChange={setCustomerFilter}>
+            <SelectTrigger className="w-[170px]"><SelectValue placeholder="كل العملاء" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل العملاء</SelectItem>
+              {data.customers.map((customer) => <SelectItem key={customer.id} value={customer.id}>{customer.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={paymentFilter} onValueChange={(value) => setPaymentFilter(value as typeof paymentFilter)}>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder="كل أنواع البيع" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل أنواع البيع</SelectItem>
+              <SelectItem value="cash">نقدي</SelectItem>
+              <SelectItem value="installments">تقسيط / آجل</SelectItem>
+            </SelectContent>
+          </Select>
+          {data.branches.length > 0 && (
+            <Select value={branchFilter} onValueChange={setBranchFilter}>
+              <SelectTrigger className="w-[150px]"><SelectValue placeholder="كل الفروع" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">كل الفروع</SelectItem>
+                {data.branches.map((branch) => <SelectItem key={branch.id} value={branch.id}>{branch.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
+          <Select value={datePreset} onValueChange={(value) => applyDatePreset(value as DatePreset)}>
+            <SelectTrigger className="w-[145px]"><SelectValue placeholder="فترة التاريخ" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل التواريخ</SelectItem>
+              <SelectItem value="today">اليوم</SelectItem>
+              <SelectItem value="week">هذا الأسبوع</SelectItem>
+              <SelectItem value="month">هذا الشهر</SelectItem>
+              <SelectItem value="custom">نطاق مخصص</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-1.5">
             <DatePickerField
               value={dateFrom ? format(dateFrom, "yyyy-MM-dd") : ""}
-              onChange={(value) => setDateFrom(value ? new Date(`${value}T00:00:00`) : undefined)}
+              onChange={(value) => { setDatePreset("custom"); setDateFrom(value ? new Date(`${value}T00:00:00`) : undefined); }}
               placeholder="من تاريخ"
-              className="w-[148px]"
+              className="w-[135px]"
             />
             <DatePickerField
               value={dateTo ? format(dateTo, "yyyy-MM-dd") : ""}
-              onChange={(value) => setDateTo(value ? new Date(`${value}T00:00:00`) : undefined)}
+              onChange={(value) => { setDatePreset("custom"); setDateTo(value ? new Date(`${value}T00:00:00`) : undefined); }}
               placeholder="إلى تاريخ"
-              className="w-[148px]"
+              className="w-[135px]"
             />
           </div>
+          <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="gap-1.5 text-muted-foreground hover:text-danger">
+            <X className="h-4 w-4" /> مسح الفلاتر
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2">
@@ -582,6 +649,7 @@ function InvoicesPage() {
 
           <div className="md:ms-auto text-xs text-muted-foreground">
             {list.length} فاتورة
+          </div>
           </div>
         </div>
 
