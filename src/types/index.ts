@@ -123,6 +123,12 @@ export interface Invoice {
   taxPct?: number;
   taxAmount?: number;
   status?: InvoiceStatus;
+  archived?: boolean;
+  archivedAt?: string | null;
+  archiveReason?: string | null;
+  deleted?: boolean;
+  deletedAt?: string | null;
+  deleteReason?: string | null;
   invoiceNumber?: string;
   date?: string;
   receiptToken?: string;

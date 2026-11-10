@@ -19,7 +19,7 @@ const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 /** Tables to sync and their primary key fields */
 const SYNC_TABLES: Record<string, { select: string; orderBy: string }> = {
   customers: { select: "id,name,phone,rating,status,customer_type,notes,frozen,address,joining_date,credit_limit,due_day,opening_balance,national_id,created_at,updated_at", orderBy: "updated_at" },
-  invoices: { select: "id,customer_id,total,down_payment,monthly_installment,first_due_date,paid,notes,created_at,discount_pct,discount_amount,tax_pct,tax_amount,status,invoice_number,date,receipt_token,updated_at", orderBy: "updated_at" },
+  invoices: { select: "id,customer_id,total,down_payment,monthly_installment,first_due_date,paid,notes,created_at,discount_pct,discount_amount,tax_pct,tax_amount,status,invoice_number,date,receipt_token,archived,archived_at,archive_reason,deleted,deleted_at,deleted_by,delete_reason,updated_at", orderBy: "updated_at" },
   payments: { select: "id,invoice_id,amount,paid_at,updated_at", orderBy: "updated_at" },
   expenses: { select: "id,amount,category,expense_date,notes,created_at,updated_at", orderBy: "updated_at" },
   invoice_items: { select: "id,invoice_id,name,cost,price,quantity,discount_pct,discount_amount,tax_pct,tax_amount,line_total,serial_numbers,created_at,updated_at", orderBy: "updated_at" },

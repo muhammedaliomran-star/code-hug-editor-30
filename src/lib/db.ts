@@ -209,6 +209,9 @@ async function fetchAllInner() {
       taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
       status: (r.status ?? "pending") as InvoiceStatus, invoiceNumber: r.invoice_number, date: r.date || r.created_at,
       receiptToken: r.receipt_token,
+      archived: Boolean((r as any).archived), archivedAt: (r as any).archived_at ?? null,
+      archiveReason: (r as any).archive_reason ?? null, deleted: Boolean((r as any).deleted),
+      deletedAt: (r as any).deleted_at ?? null, deleteReason: (r as any).delete_reason ?? null,
       downPaymentMethod: (r as any).down_payment_method ?? "cash",
       downPaymentAccountId: (r as any).down_payment_account_id ?? null,
       downPaymentReference: (r as any).down_payment_reference ?? null,
@@ -384,6 +387,9 @@ export async function invalidateCache(table?: string) {
         taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
         status: r.status ?? "pending", invoiceNumber: r.invoice_number, date: r.date || r.created_at,
         receiptToken: r.receipt_token,
+        archived: Boolean((r as any).archived), archivedAt: (r as any).archived_at ?? null,
+        archiveReason: (r as any).archive_reason ?? null, deleted: Boolean((r as any).deleted),
+        deletedAt: (r as any).deleted_at ?? null, deleteReason: (r as any).delete_reason ?? null,
       }),
     },
     payments: {
@@ -835,7 +841,22 @@ export const db = {
     await fetchAll();
   },
   async removeInvoice(id: string) {
-    const { error } = await (supabase.rpc as any)("delete_invoice_with_stock", { p_invoice_id: id });
+    const { error } = await (supabase.rpc as any)("soft_delete_sale_invoice", { p_invoice_id: id, p_reason: "نقل الفاتورة إلى سلة المحذوفات" });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async archiveInvoice(id: string, reason?: string) {
+    const { error } = await (supabase.rpc as any)("archive_sale_invoice", { p_invoice_id: id, p_reason: reason ?? null });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async restoreInvoice(id: string) {
+    const { error } = await (supabase.rpc as any)("restore_sale_invoice", { p_invoice_id: id });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async restoreDeletedInvoice(id: string) {
+    const { error } = await (supabase.rpc as any)("restore_deleted_sale_invoice", { p_invoice_id: id });
     if (error) throw error;
     await fetchAll();
   },

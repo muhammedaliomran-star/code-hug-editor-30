@@ -34,7 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { InstallmentScheduleMatrix } from "@/components/InstallmentScheduleMatrix";
 import { CreateInvoiceShipmentDialog } from "@/components/CreateInvoiceShipmentDialog";
 import { InvoicePrintCustomizerDialog } from "@/components/InvoicePrintCustomizerDialog";
-import { Plus, Search, Wallet, AlertTriangle, Printer, ShieldAlert, Eye, Pencil, Trash2, Bell, History, TrendingUp, CalendarDays, AlertCircle, MessageCircle, EyeOff, Download, FileSpreadsheet, FileText, X, ChevronsUpDown, Check, Package, ScanLine, Info, CreditCard, Receipt, Undo2, Copy, Share2, MoreVertical, Layers, CheckCircle2, Truck, CheckSquare, Square, GitBranch } from "lucide-react";
+import { Plus, Search, Wallet, AlertTriangle, Printer, ShieldAlert, Eye, Pencil, Trash2, Bell, History, TrendingUp, CalendarDays, AlertCircle, MessageCircle, EyeOff, Download, FileSpreadsheet, FileText, X, ChevronsUpDown, Check, Package, ScanLine, Info, CreditCard, Receipt, Undo2, Copy, Share2, MoreVertical, Layers, CheckCircle2, Truck, CheckSquare, Square, GitBranch, Archive } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
@@ -63,7 +63,7 @@ import {
   StockProductPicker,
 } from "@/components/invoices";
 
-type Tab = "active" | "overdue" | "settled" | "cancelled" | "all";
+type Tab = "active" | "overdue" | "settled" | "cancelled" | "archived" | "deleted" | "all";
 type DatePreset = "all" | "today" | "week" | "month" | "custom";
 
 function isoToDDMMYYYY(iso: string): string {
@@ -317,15 +317,17 @@ function InvoicesPage() {
   };
 
   const counts = useMemo(() => {
-    let active = 0, overdue = 0, settled = 0, cancelled = 0;
+    let active = 0, overdue = 0, settled = 0, cancelled = 0, archived = 0, deleted = 0;
     for (const i of data.invoices) {
+      if (i.deleted) { deleted++; continue; }
+      if (i.archived) { archived++; continue; }
       if (i.status === "cancelled") { cancelled++; continue; }
       const remaining = i.total - i.paid;
       if (remaining <= 0) settled++;
       else if (daysLate(i) > 0) { overdue++; active++; }
       else active++;
     }
-    return { active, overdue, settled, cancelled, all: data.invoices.length };
+    return { active, overdue, settled, cancelled, archived, deleted, all: data.invoices.filter((i) => !i.deleted).length };
   }, [data.invoices, data.returns]);
 
   const stats = useMemo(() => {
@@ -335,7 +337,7 @@ function InvoicesPage() {
     
     let totalPaid = 0;
     let totalSales = 0;
-    const liveInvoices = data.invoices.filter((invoice) => invoice.status !== "cancelled");
+    const liveInvoices = data.invoices.filter((invoice) => !invoice.deleted && !invoice.archived && invoice.status !== "cancelled");
     let invoiceCount = liveInvoices.length;
     let overdueCount = 0;
     let monthCollections = 0;
@@ -402,6 +404,9 @@ function InvoicesPage() {
     return branchScoped
       .filter((i) => {
         const remaining = i.total - i.paid;
+        if (tab === "deleted") return Boolean(i.deleted);
+        if (tab === "archived") return Boolean(i.archived) && !i.deleted;
+        if (i.deleted || (i.archived && tab !== "all")) return false;
         if (tab === "cancelled") return i.status === "cancelled";
         if (i.status === "cancelled") return false;
         if (tab === "active") return remaining > 0;
@@ -441,7 +446,7 @@ function InvoicesPage() {
       const c = findCustomer(inv.customerId);
       const remaining = inv.total - inv.paid;
       const late = daysLate(inv);
-      const status = inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
+      const status = inv.deleted ? "في سلة المحذوفات" : inv.archived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
       return [inv.id.slice(0, 6), c?.name ?? "—", c?.phone ?? "—", inv.total, inv.paid, remaining, inv.monthlyInstallment, isoToDDMMYYYY(inv.firstDueDate), format(new Date(inv.createdAt), "dd/MM/yyyy"), status];
     });
     const csv = "\uFEFF" + [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -462,7 +467,7 @@ function InvoicesPage() {
       const late = daysLate(inv);
       sumTotal += inv.total; sumPaid += inv.paid; sumRemaining += Math.max(0, remaining);
       if (remaining > 0 && late > 0) lateCount++;
-      const status = remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
+      const status = inv.deleted ? "في سلة المحذوفات" : inv.archived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
       const tag = remaining === 0 ? "payment" : late > 0 ? "purchase" : "opening";
       return `<tr><td>#${escapeHtml(inv.id.slice(0,6))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)}</td><td class="num ok">${fmt(inv.paid)}</td><td class="num ${remaining > 0 ? "due" : ""}">${fmt(remaining)}</td><td dir="ltr">${escapeHtml(isoToDDMMYYYY(inv.firstDueDate))}</td><td><span class="tag ${tag}">${escapeHtml(status)}</span></td></tr>`;
     }).join("");
@@ -548,6 +553,8 @@ function InvoicesPage() {
             { value: "overdue", label: "متأخرة", count: counts.overdue },
             { value: "settled", label: "تم التحصيل", count: counts.settled },
             { value: "cancelled", label: "ملغاة", count: counts.cancelled },
+            { value: "archived", label: "مؤرشفة", count: counts.archived },
+            { value: "deleted", label: "سلة المحذوفات", count: counts.deleted },
             { value: "all", label: "الكل", count: counts.all },
           ]}
         />
@@ -718,13 +725,13 @@ function InvoicesPage() {
                     <AlertDialogHeader>
                       <AlertDialogTitle className="text-right">حذف الفواتير المحددة ({selectedIds.size})</AlertDialogTitle>
                       <AlertDialogDescription className="text-right">
-                        هل أنت متأكد من حذف {selectedIds.size} فاتورة نهائياً؟ سيتم إرجاع كميات المخزون وحذف كافة السجلات المالية المرتبطة بها.
+                        سيتم نقل {selectedIds.size} فاتورة إلى سلة المحذوفات مع الاحتفاظ بالمخزون وسجل الدفعات كما هو. يمكنك استعادتها لاحقًا.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="gap-2">
                       <AlertDialogCancel>إلغاء</AlertDialogCancel>
                       <AlertDialogAction onClick={handleBulkDelete} className="bg-danger text-danger-foreground">
-                        نعم، حذف الكل
+                        نقل إلى السلة
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
@@ -741,16 +748,18 @@ function InvoicesPage() {
             <BezelCard variant="flat" className="px-6 py-6 min-h-[260px] flex items-center justify-center">
                 <EmptyState
                   icon={Receipt}
-                  title={tab === "active" ? "لا توجد فواتير نشطة." : tab === "overdue" ? "لا توجد فواتير متأخرة." : "لا توجد فواتير."}
-                  hint={tab === "active" ? "كل الفواتير مسددة بالكامل." : tab === "overdue" ? "لا توجد مديونيات متأخرة حالياً." : "سجّل أول فاتورة وابدأ تتبع التحصيلات."}
+                  title={tab === "active" ? "لا توجد فواتير نشطة." : tab === "overdue" ? "لا توجد فواتير متأخرة." : tab === "archived" ? "لا توجد فواتير مؤرشفة." : tab === "deleted" ? "سلة المحذوفات فارغة." : "لا توجد فواتير."}
+                  hint={tab === "active" ? "كل الفواتير مسددة بالكامل أو تم نقلها للأرشيف." : tab === "overdue" ? "لا توجد مديونيات متأخرة حالياً." : tab === "archived" ? "يمكنك أرشفة الفواتير المكتملة من قائمة الإجراءات." : tab === "deleted" ? "الفواتير المحذوفة مؤقتًا ستظهر هنا ويمكن استعادتها." : "سجّل أول فاتورة وابدأ تتبع التحصيلات."}
                 />
             </BezelCard>
           ) : (
             list.map((inv, idx) => {
               const remaining = inv.total - inv.paid;
               const late = daysLate(inv);
-              const isOverdue = remaining > 0 && late > 0;
-              const status = remaining === 0 ? "مسددة" : isOverdue ? `متأخرة (${late} يوم)` : "نشطة";
+              const isDeleted = Boolean(inv.deleted);
+              const isArchived = Boolean(inv.archived) && !isDeleted;
+              const isOverdue = !isDeleted && !isArchived && remaining > 0 && late > 0;
+              const status = isDeleted ? "في سلة المحذوفات" : isArchived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : isOverdue ? `متأخرة (${late} يوم)` : "نشطة";
               const cust = findCustomer(inv.customerId);
               const isSelected = selectedIds.has(inv.id);
               
@@ -773,7 +782,7 @@ function InvoicesPage() {
                       />
                       <div className={cn(
                         "text-display grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg font-bold ring-1",
-                        remaining === 0 ? "bg-success/12 text-success ring-success/25" : 
+                        isDeleted ? "bg-danger/12 text-danger ring-danger/25" : isArchived ? "bg-warning/12 text-warning ring-warning/25" : remaining === 0 ? "bg-success/12 text-success ring-success/25" :
                         isOverdue ? "bg-danger/12 text-danger ring-danger/25" : 
                         "bg-primary/12 text-primary ring-primary/25"
                       )}>
@@ -831,7 +840,7 @@ function InvoicesPage() {
                           <TooltipContent>تخصيص وطباعة الفاتورة</TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      {remaining > 0 && (
+                      {!isDeleted && !isArchived && remaining > 0 && (
                         <PaymentDialog
                           invoiceId={inv.id}
                           max={remaining}
@@ -888,18 +897,40 @@ function InvoicesPage() {
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (confirm("هل أنت متأكد من حذف هذه الفاتورة؟ سيتم إرجاع المنتجات للمخزن وحذف القيود المتعلقة بها.")) {
-                                db.removeInvoice(inv.id);
-                                toast.success("تم حذف الفاتورة");
-                              }
-                            }}
-                            className="gap-2 justify-end text-danger focus:text-danger focus:bg-danger/10"
-                          >
-                            <span>حذف الفاتورة</span>
-                            <Trash2 className="w-4 h-4" />
-                          </DropdownMenuItem>
+                          {isDeleted ? (
+                            <DropdownMenuItem
+                              onClick={async () => { try { await db.restoreDeletedInvoice(inv.id); toast.success("تمت استعادة الفاتورة من السلة"); } catch (err: any) { toast.error(err?.message || "تعذرت استعادة الفاتورة"); } }}
+                              className="gap-2 justify-end text-success focus:text-success focus:bg-success/10"
+                            >
+                              <span>استعادة من سلة المحذوفات</span>
+                              <Undo2 className="w-4 h-4" />
+                            </DropdownMenuItem>
+                          ) : isArchived ? (
+                            <DropdownMenuItem
+                              onClick={async () => { try { await db.restoreInvoice(inv.id); toast.success("تمت استعادة الفاتورة من الأرشيف"); } catch (err: any) { toast.error(err?.message || "تعذرت استعادة الفاتورة"); } }}
+                              className="gap-2 justify-end text-success focus:text-success focus:bg-success/10"
+                            >
+                              <span>استعادة من الأرشيف</span>
+                              <Undo2 className="w-4 h-4" />
+                            </DropdownMenuItem>
+                          ) : (
+                            <>
+                              <DropdownMenuItem
+                                onClick={async () => { try { await db.archiveInvoice(inv.id); toast.success("تمت أرشفة الفاتورة"); } catch (err: any) { toast.error(err?.message || "تعذرت أرشفة الفاتورة"); } }}
+                                className="gap-2 justify-end text-warning focus:text-warning focus:bg-warning/10"
+                              >
+                                <span>أرشفة الفاتورة</span>
+                                <Archive className="w-4 h-4" />
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={async () => { if (!confirm("سيتم نقل الفاتورة إلى سلة المحذوفات دون حذف المخزون أو سجل الدفعات. هل تريد المتابعة؟")) return; try { await db.removeInvoice(inv.id); toast.success("تم نقل الفاتورة إلى سلة المحذوفات"); } catch (err: any) { toast.error(err?.message || "تعذر نقل الفاتورة إلى السلة"); } }}
+                                className="gap-2 justify-end text-danger focus:text-danger focus:bg-danger/10"
+                              >
+                                <span>نقل إلى سلة المحذوفات</span>
+                                <Trash2 className="w-4 h-4" />
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
