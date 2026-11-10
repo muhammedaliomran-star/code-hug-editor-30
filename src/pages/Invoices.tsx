@@ -496,17 +496,17 @@ function InvoicesPage() {
 
       <div className="mb-8 space-y-3">
         <div className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-4">
-          <MetricCard mini className="h-full" icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-          <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-          <MetricCard mini className="h-full" icon={Wallet} label="المتبقي للتحصيل" value={stats.activeSalesTotal} tone={stats.activeSalesTotal > 0 ? "danger" : undefined} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={TrendingUp} label="إجمالي المبيعات" value={stats.totalSales} tone="info" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={Wallet} label="إجمالي المسدد" value={stats.totalPaid} tone="positive" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={Wallet} label="المتبقي للتحصيل" value={stats.activeSalesTotal} tone={stats.activeSalesTotal > 0 ? "danger" : "positive"} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
           <MetricCard mini className="h-full" icon={FileText} label="عدد الفواتير" value={stats.invoiceCount} format={(n) => String(Math.round(n))} masked={privacy} />
         </div>
         <div className="grid auto-rows-fr grid-cols-2 gap-3 lg:grid-cols-5">
           <MetricCard mini className="h-full" icon={AlertCircle} label="الفواتير المتأخرة" value={stats.overdueCount} tone="danger" format={(n) => String(Math.round(n))} masked={privacy} />
-          <MetricCard mini className="h-full" icon={CalendarDays} label="تحصيلات الشهر" value={stats.monthCollections} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-          <MetricCard mini className="h-full" icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={CalendarDays} label="تحصيلات الشهر" value={stats.monthCollections} tone="positive" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={TrendingUp} label="نسبة التحصيل" value={stats.collectionRate} tone={stats.collectionRate >= 80 ? "positive" : stats.collectionRate > 0 ? "warning" : "neutral"} format={(n) => `%${n.toFixed(1)}`} masked={privacy} />
           <MetricCard mini className="h-full" icon={FileText} label="متوسط الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
-          <MetricCard mini className="h-full" icon={CalendarDays} label="مبيعات الشهر" value={stats.monthSales} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
+          <MetricCard mini className="h-full" icon={CalendarDays} label="مبيعات الشهر" value={stats.monthSales} tone="info" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
         </div>
       </div>
 
