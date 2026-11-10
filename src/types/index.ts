@@ -126,6 +126,12 @@ export interface Invoice {
   invoiceNumber?: string;
   date?: string;
   receiptToken?: string;
+  downPaymentMethod?: string;
+  downPaymentAccountId?: string | null;
+  downPaymentReference?: string | null;
+  splitCashAmount?: number;
+  splitElectronicAmount?: number;
+  splitElectronicMethod?: string | null;
 }
 
 export interface Payment {
@@ -133,6 +139,9 @@ export interface Payment {
   invoiceId: string;
   amount: number;
   paidAt: string;
+  paymentMethod?: string;
+  accountId?: string | null;
+  referenceNumber?: string | null;
 }
 
 export interface InvoiceItem {

@@ -75,22 +75,19 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
     if (!isCash && (!Number(monthly) || !date)) return toast.error("املأ بيانات الأقساط");
     const iso = isCash ? format(new Date(), "yyyy-MM-dd") : format(date as Date, "yyyy-MM-dd");
 
+    await db.replaceInvoiceItems(inv.id, totalPrice, valid.map((p) => ({
+      name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0),
+      quantity: Math.max(1, Math.floor(Number(p.quantity || 1))),
+      discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0),
+      serialNumbers: (p.serialNumbers || "").split(/[,\n]+/).map((value) => value.trim()).filter(Boolean),
+      stockId: p.stockId ?? null,
+    })));
     await db.updateInvoice(inv.id, {
-      total: totalPrice,
       downPayment: isCash ? totalPrice : Number(down || 0),
       monthlyInstallment: isCash ? 0 : Number(monthly),
       firstDueDate: iso,
       notes,
     });
-
-    const existingIds = new Set(data.invoiceItems.filter((it) => it.invoiceId === inv.id).map((it) => it.id));
-    const keptIds = new Set(valid.filter((p) => existingIds.has(p.id)).map((p) => p.id));
-    for (const oldId of existingIds) if (!keptIds.has(oldId)) await db.removeInvoiceItem(oldId);
-    for (const p of valid) {
-      const payload = { name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0), quantity: Math.max(1, Math.floor(Number(p.quantity || 1))), discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0), serialNumbers: (p.serialNumbers || "").split(/[,\n]+/).map((value) => value.trim()).filter(Boolean), stockId: p.stockId ?? null };
-      if (existingIds.has(p.id)) await db.updateInvoiceItem(p.id, payload);
-      else await db.addInvoiceItem(inv.id, payload);
-    }
 
     toast.success("تم تحديث الفاتورة");
     onClose();

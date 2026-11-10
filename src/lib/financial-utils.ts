@@ -83,6 +83,8 @@ export function isDueDay(
 }
 
 export function invoiceNumber(invoices: Invoice[], invoiceId: string, prefix = shopCache?.invoicePrefix ?? "") {
+  const stored = invoices.find((invoice) => invoice.id === invoiceId)?.invoiceNumber;
+  if (stored) return stored.replace(/^#/, "");
   const ordered = [...invoices].sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );

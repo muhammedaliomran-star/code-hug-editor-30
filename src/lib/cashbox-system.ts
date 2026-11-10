@@ -428,15 +428,23 @@ export function calculateAccountBalance(
 
   const isMainCash = account.id === "acc-cash-main" || account.isDefault;
 
+  const cashDownPayment = (inv: Invoice) =>
+    inv.splitCashAmount !== undefined
+      ? inv.splitCashAmount
+      : (inv.downPaymentMethod && inv.downPaymentMethod !== "cash" ? 0 : inv.downPayment);
+
   // Invoices downpayments (default to main cash if not tagged)
   if (isMainCash) {
     invoices.forEach((inv) => {
-      inflows += inv.downPayment || 0;
-    });
-    payments.forEach((pay) => {
-      inflows += pay.amount || 0;
+      if (isMainCash) inflows += cashDownPayment(inv) || 0;
     });
   }
+  payments.forEach((pay) => {
+    const targetAccount = pay.accountId || "acc-cash-main";
+    if (targetAccount === account.id && (pay.paymentMethod ?? "cash") !== "none") {
+      inflows += pay.amount || 0;
+    }
+  });
 
   // Expenses deducted from specific treasury account
   expenses.forEach((exp) => {
@@ -489,14 +497,17 @@ export function getUnifiedCashLedger(
 
   // Invoices
   invoices.forEach((inv) => {
-    if (inv.downPayment > 0) {
+    const cashDown = inv.splitCashAmount !== undefined
+      ? inv.splitCashAmount
+      : (inv.downPaymentMethod && inv.downPaymentMethod !== "cash" ? 0 : inv.downPayment);
+    if (cashDown > 0) {
       ledger.push({
         id: `inv-${inv.id}`,
         date: inv.createdAt,
         type: "in",
         category: "مقدم فاتورة / مبيعات كاش",
         title: `مقدم فاتورة رقم #${inv.id.slice(0, 6)}`,
-        amount: inv.downPayment,
+        amount: cashDown,
         source: "invoice_downpayment",
         accountId: "acc-cash-main",
         referenceId: inv.id,
@@ -510,11 +521,11 @@ export function getUnifiedCashLedger(
       id: `pay-${pay.id}`,
       date: pay.paidAt,
       type: "in",
-      category: "تحصيل قسط",
+      category: (pay.paymentMethod ?? "cash") === "cash" ? "تحصيل قسط نقدي" : "تحصيل إلكتروني",
       title: `قسط مستحق #${pay.id.slice(0, 6)}`,
       amount: pay.amount,
       source: "payment_installment",
-      accountId: "acc-cash-main",
+      accountId: pay.accountId || "acc-cash-main",
       referenceId: pay.invoiceId,
     });
   });

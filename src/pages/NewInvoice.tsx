@@ -14,11 +14,9 @@ import {
   fmt,
   customerBalance,
   useShopSettings,
-  uid,
   type ProductVariant,
   type SplitPaymentDetail,
 } from "@/lib/store";
-import { supabase } from "@/integrations/supabase/client";
 import { linkInvoiceToBranch, resolveStampBranchId } from "@/lib/branch-system";
 
 import { Button } from "@/components/ui/button";
@@ -131,6 +129,8 @@ function NewInvoicePage() {
   const [splitRef, setSplitRef] = useState("");
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const submitLockRef = useRef(false);
+  const workflowInvoiceIdRef = useRef<string | null>(null);
 
   const defaultFirstDue = () => {
     const day = Math.min(28, Math.max(1, shop.defaultDueDay || 1));
@@ -367,6 +367,7 @@ function NewInvoicePage() {
   };
 
   const executeSubmit = async (stay = false, printDirectThermal = false) => {
+    if (submitLockRef.current) return;
     if (!customerId) return toast.error("اختر عميل");
     if (blocked) return toast.error("هذا العميل محظور من فتح فواتير جديدة");
     const validProducts = products.filter(
@@ -411,8 +412,10 @@ function NewInvoicePage() {
       .join("، ");
     const productNotes = `${summary}${notes ? ` — ${notes}` : ""}`;
 
+    submitLockRef.current = true;
     try {
-      const userId = await uid();
+      const workflowInvoiceId = workflowInvoiceIdRef.current ?? crypto.randomUUID();
+      workflowInvoiceIdRef.current = workflowInvoiceId;
       const invId = await db.addInvoice({
         customerId,
         total: t,
@@ -426,6 +429,20 @@ function NewInvoicePage() {
         taxPct: Number(taxPct || 0),
         taxAmount: taxValue,
         status: isCash ? "paid" : status,
+        workflowInvoiceId,
+        downPaymentMethod: enableSplitPayment ? (splitElecNum > 0 && splitCashNum > 0 ? "split" : splitElecNum > 0 ? splitMethod : "cash") : "cash",
+        downPaymentReference: enableSplitPayment ? splitRef : null,
+        splitCashAmount: enableSplitPayment ? splitCashNum : (isCash ? t : d),
+        splitElectronicAmount: enableSplitPayment ? splitElecNum : 0,
+        splitElectronicMethod: enableSplitPayment ? splitMethod : null,
+        shipment: shippingCarrierId ? {
+          carrierId: shippingCarrierId,
+          zoneId: shippingZoneId || undefined,
+          trackingNumber: trackingNumber || undefined,
+          recipientName: customer?.name,
+          recipientPhone: customer?.phone,
+          deliveryAddress: shippingAddress || customer?.address || undefined,
+        } : undefined,
         items: validProducts.map((p) => ({
           name: p.name.trim(),
           cost: Number(p.cost || 0),
@@ -438,25 +455,10 @@ function NewInvoicePage() {
         })),
       });
       if (!invId) throw new Error("تعذر إنشاء الفاتورة");
+      const savedInvoiceCode = (await db.getInvoiceNumber(invId)) || invoiceCode;
 
       // ختم الفاتورة بالفرع النشط
       linkInvoiceToBranch(invId, resolveStampBranchId(data.branches));
-
-      // Add Shipment if carrier selected
-      if (shippingCarrierId && invId) {
-        const { error: shipErr } = await supabase.from("shipments").insert({
-          user_id: userId,
-          invoice_id: invId,
-          carrier_id: shippingCarrierId,
-          zone_id: shippingZoneId || null,
-          tracking_number: trackingNumber || null,
-          status: "pending",
-          recipient_name: customer?.name,
-          recipient_phone: customer?.phone,
-          delivery_address: shippingAddress || customer?.address,
-        });
-        if (shipErr) throw shipErr;
-      }
 
       playCashSound();
 
@@ -479,12 +481,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
 <div style="text-align:center;font-size:10px;margin-top:8px;color:#555;">شكراً لزيارتكم!</div>`;
 
         const html = pdfDocument({
-          docTitle: `فاتورة ${invoiceCode}`,
+          docTitle: `فاتورة ${savedInvoiceCode}`,
           badge: isCash ? "فاتورة مبيعات نقدية" : "فاتورة مبيعات تقسيط",
           title: esc(shop.shopName || "فاتورة ضريبية مبسطة"),
           brandSub: shop.shopName ? esc(shop.shopName) : undefined,
           meta: [
-            { label: "رقم الفاتورة", value: invoiceCode },
+            { label: "رقم الفاتورة", value: savedInvoiceCode },
             { label: "التاريخ", value: format(new Date(), "yyyy/MM/dd HH:mm") },
             ...(shop.taxNumber ? [{ label: "الرقم الضريبي", value: esc(shop.taxNumber) }] : []),
           ],
@@ -493,7 +495,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
           paper: shop.printPaper || "thermal",
           thermalWidth: shop.thermalPaperWidth || "80mm",
           kickCashDrawer: shop.openCashDrawerOnPrint ?? true,
-          barcodeValue: invoiceCode.replace("#", ""),
+          barcodeValue: savedInvoiceCode.replace("#", ""),
         });
         openPdfDocument(html, {
           autoPrint: true,
@@ -504,9 +506,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
       toast.success(isCash ? "تم إنشاء فاتورة البيع النقدي ✓ وطباعة الإيصال" : "تم إنشاء الفاتورة بنجاح ✓");
     } catch (e: any) {
       toast.error(e?.message ?? "تعذّر إنشاء الفاتورة");
+      submitLockRef.current = false;
       return;
     }
     reset();
+    workflowInvoiceIdRef.current = null;
+    submitLockRef.current = false;
     if (!stay) navigate({ to: "/invoices" });
   };
 

@@ -31,11 +31,11 @@ export function QuickAddPayment({ invoices }: { invoices: Invoice[] }) {
   const inv = open_invoices.find((i) => i.id === invoiceId);
   const max = inv ? inv.total - inv.paid : 0;
 
-  const submit = () => {
+  const submit = async () => {
     if (!invoiceId) return toast.error("اختر فاتورة");
     const n = Number(amount);
     if (!n || n <= 0) return toast.error("أدخل مبلغ صحيح");
-    db.recordPayment(invoiceId, Math.min(n, max));
+    await db.recordPayment(invoiceId, Math.min(n, max));
     toast.success("تم تسجيل الدفعة");
     setOpen(false);
     setInvoiceId("");

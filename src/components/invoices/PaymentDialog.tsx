@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import { db, fmt, type Invoice } from "@/lib/store";
-import { getTreasuryAccounts, addManualTransaction } from "@/lib/cashbox-system";
+import { db, fmt } from "@/lib/store";
+import { getTreasuryAccounts } from "@/lib/cashbox-system";
 
 import { useDB } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
@@ -17,7 +17,6 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
 import { Wallet } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,6 +49,7 @@ export function PaymentDialog({
   };
 
   const [amount, setAmount] = useState(initialAmount ? String(initialAmount) : "");
+  const [saving, setSaving] = useState(false);
   const accounts = useMemo(() => getTreasuryAccounts().filter((a) => a.active), [open]);
   const [accountId, setAccountId] = useState(accounts[0]?.id || "acc-cash-main");
 
@@ -65,21 +65,17 @@ export function PaymentDialog({
       toast.error("أدخل مبلغاً صحيحاً");
       return;
     }
-    const payAmount = Math.min(n, max);
-    await db.recordPayment(invoiceId, payAmount);
-
     const selectedAcc = accounts.find((a) => a.id === accountId);
-    if (selectedAcc) {
-      addManualTransaction({
-        accountId: selectedAcc.id,
-        type: "in",
-        category: "سداد فاتورة",
-        amount: payAmount,
-        title: `تحصيل قسط فاتورة #${invoiceNo || invoiceId.slice(0, 6)} - ${customerName || "عميل"}`,
-        date: format(new Date(), "yyyy-MM-dd"),
-        notes: `دفعة محصلة للفاتورة #${invoiceNo || invoiceId.slice(0, 6)}`,
-        performedBy: "النظام",
+    const payAmount = Math.min(n, max);
+    setSaving(true);
+    try {
+      await db.recordPayment(invoiceId, payAmount, {
+        accountId: selectedAcc?.id ?? accountId,
+        paymentMethod: selectedAcc?.type === "ewallet" ? "electronic" : selectedAcc?.type ?? "cash",
+        referenceNumber: invoiceNo ? `invoice:${invoiceNo}` : `invoice:${invoiceId}`,
       });
+    } finally {
+      setSaving(false);
     }
 
     toast.success(`تم تسجيل تحصيل ${fmt(payAmount)} ج.م وإيداعها في «${selectedAcc?.name || "الخزينة"}»`);
@@ -135,7 +131,7 @@ export function PaymentDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button className="w-full bg-success hover:bg-success/90 text-success-foreground font-bold" onClick={handleConfirm}>
+          <Button disabled={saving} className="w-full bg-success hover:bg-success/90 text-success-foreground font-bold" onClick={handleConfirm}>
             تأكيد استلام الدفعة
           </Button>
         </DialogFooter>

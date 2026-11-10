@@ -209,9 +209,18 @@ async function fetchAllInner() {
       taxPct: Number(r.tax_pct ?? 0), taxAmount: Number(r.tax_amount ?? 0) / 100,
       status: (r.status ?? "pending") as InvoiceStatus, invoiceNumber: r.invoice_number, date: r.date || r.created_at,
       receiptToken: r.receipt_token,
+      downPaymentMethod: (r as any).down_payment_method ?? "cash",
+      downPaymentAccountId: (r as any).down_payment_account_id ?? null,
+      downPaymentReference: (r as any).down_payment_reference ?? null,
+      splitCashAmount: (r as any).split_cash_amount == null ? undefined : Number((r as any).split_cash_amount) / 100,
+      splitElectronicAmount: (r as any).split_electronic_amount == null ? undefined : Number((r as any).split_electronic_amount) / 100,
+      splitElectronicMethod: (r as any).split_electronic_method ?? null,
     })),
     payments: (p.data ?? []).map((r: TableRow<"payments">) => ({
       id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
+      paymentMethod: (r as any).payment_method ?? "cash",
+      accountId: (r as any).account_id ?? null,
+      referenceNumber: (r as any).reference_number ?? null,
     })),
     expenses: (e.data ?? []).map((r: TableRow<"expenses">) => ({
       id: r.id, amount: Number(r.amount) / 100, category: r.category as ExpenseCategory,
@@ -663,8 +672,19 @@ export const db = {
     if (error) throw error;
     await fetchAll();
   },
-  async addInvoice(inv: Omit<Invoice, "id" | "createdAt" | "paid" | "receiptToken"> & { paid?: number; items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }> }): Promise<string | undefined> {
-    const user_id = await uid();
+  async addInvoice(inv: Omit<Invoice, "id" | "createdAt" | "paid" | "receiptToken"> & {
+    paid?: number;
+    items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }>;
+    downPaymentMethod?: string;
+    downPaymentAccountId?: string | null;
+    downPaymentReference?: string | null;
+    splitCashAmount?: number;
+    splitElectronicAmount?: number;
+    splitElectronicMethod?: string | null;
+    workflowInvoiceId?: string;
+    shipment?: { carrierId: string; zoneId?: string; trackingNumber?: string; recipientName?: string; recipientPhone?: string; deliveryAddress?: string };
+  }): Promise<string | undefined> {
+    await uid();
     await assertInvoiceAllowed(inv);
 
     const items = (inv.items ?? []).map((it) => ({
@@ -678,7 +698,8 @@ export const db = {
       stock_item_id: it.stockId ?? null,
     }));
 
-    const { data, error } = await (supabase.rpc as any)("create_sale", {
+    const invoiceId = inv.workflowInvoiceId ?? crypto.randomUUID();
+    const { data, error } = await (supabase.rpc as any)("create_sale_with_workflow", {
       p_customer_id: inv.customerId,
       p_total: (inv.total ?? 0) * 100,
       p_down_payment: (inv.downPayment ?? 0) * 100,
@@ -691,6 +712,21 @@ export const db = {
       p_tax_amount: (inv.taxAmount ?? 0) * 100,
       p_status: inv.status ?? "pending",
       p_paid: (inv.paid ?? inv.downPayment ?? 0) * 100,
+      p_invoice_id: invoiceId,
+      p_down_payment_method: inv.downPaymentMethod ?? "cash",
+      p_down_payment_account_id: inv.downPaymentAccountId ?? null,
+      p_down_payment_reference: inv.downPaymentReference ?? null,
+      p_split_cash_amount: (inv.splitCashAmount ?? inv.downPayment ?? 0) * 100,
+      p_split_electronic_amount: (inv.splitElectronicAmount ?? 0) * 100,
+      p_split_electronic_method: inv.splitElectronicMethod ?? null,
+      p_shipment: inv.shipment ? {
+        carrier_id: inv.shipment.carrierId,
+        zone_id: inv.shipment.zoneId ?? null,
+        tracking_number: inv.shipment.trackingNumber ?? null,
+        recipient_name: inv.shipment.recipientName ?? null,
+        recipient_phone: inv.shipment.recipientPhone ?? null,
+        delivery_address: inv.shipment.deliveryAddress ?? null,
+      } : null,
       p_items: items.map((it) => ({
         ...it,
         cost: (it.cost ?? 0) * 100,
@@ -701,68 +737,59 @@ export const db = {
     await fetchAll();
     return (data as string | undefined) ?? undefined;
   },
+  async getInvoiceNumber(invoiceId: string): Promise<string | null> {
+    const { data, error } = await supabase.from("invoices").select("invoice_number").eq("id", invoiceId).maybeSingle();
+    if (error) throw error;
+    return (data as any)?.invoice_number ?? null;
+  },
   async addInvoiceItem(invoiceId: string, item: { name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }) {
-    const user_id = await uid();
-    const qty = Math.max(1, Math.floor(item.quantity ?? 1));
-    const { error } = await supabase.from("invoice_items").insert({
-      user_id, invoice_id: invoiceId, name: item.name, cost: (item.cost ?? 0) * 100, price: (item.price ?? 0) * 100,
-      quantity: qty, ...invoiceItemFinancials(item),
-      stock_item_id: item.stockId ?? null,
+    const current = cache.invoiceItems.filter((row) => row.invoiceId === invoiceId).map((row) => ({
+      name: row.name, cost: row.cost, price: row.price, quantity: row.quantity,
+      discountPct: row.discountPct, taxPct: row.taxPct, serialNumbers: row.serialNumbers, stockId: row.stockItemId,
+    }));
+    current.push(item);
+    const total = current.reduce((sum, row) => sum + calculateLineFinancials({ price: row.price, quantity: row.quantity, discountPct: row.discountPct, taxPct: row.taxPct }).lineTotal, 0);
+    await db.replaceInvoiceItems(invoiceId, total, current);
+  },
+  async replaceInvoiceItems(invoiceId: string, total: number, items: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }>) {
+    const { error } = await (supabase.rpc as any)("replace_invoice_items", {
+      p_invoice_id: invoiceId,
+      p_total: (total ?? 0) * 100,
+      p_items: items.map((item) => ({
+        name: item.name,
+        cost: (item.cost ?? 0) * 100,
+        price: (item.price ?? 0) * 100,
+        quantity: Math.max(1, Math.floor(item.quantity ?? 1)),
+        discount_pct: item.discountPct ?? 0,
+        tax_pct: item.taxPct ?? 0,
+        serial_numbers: item.serialNumbers ?? [],
+        stock_item_id: item.stockId ?? null,
+      })),
     });
     if (error) throw error;
-    // deduct stock (quantity only — the insert trigger logs the 'sale' movement)
-    if (item.stockId && qty > 0) {
-      const { data: existing } = await supabase
-        .from("stock_items").select("quantity").eq("id", item.stockId).maybeSingle();
-      const next = Math.max(0, Number(existing?.quantity ?? 0) - qty);
-      await supabase.from("stock_items").update({ quantity: next }).eq("id", item.stockId);
-    }
     await fetchAll();
   },
   async updateInvoiceItem(id: string, patch: Partial<{ name: string; cost: number; price: number; quantity: number; discountPct: number; taxPct: number; serialNumbers: string[] }>) {
-    const upd: any = {};
-    if (patch.name !== undefined) upd.name = patch.name;
-    if (patch.cost !== undefined) upd.cost = (patch.cost ?? 0) * 100;
-    if (patch.price !== undefined) upd.price = (patch.price ?? 0) * 100;
-    if (patch.quantity !== undefined) upd.quantity = Math.max(1, Math.floor(patch.quantity));
-    if (patch.discountPct !== undefined) upd.discount_pct = patch.discountPct;
-    if (patch.taxPct !== undefined) upd.tax_pct = patch.taxPct;
-    if (patch.serialNumbers !== undefined) upd.serial_numbers = patch.serialNumbers;
-    if (patch.price !== undefined || patch.quantity !== undefined || patch.discountPct !== undefined || patch.taxPct !== undefined) {
-      const { data: current, error: currentError } = await supabase.from("invoice_items").select("price,quantity,discount_pct,tax_pct,serial_numbers").eq("id", id).single();
-      if (currentError) throw currentError;
-      Object.assign(upd, invoiceItemFinancials({
-        price: patch.price ?? Number(current.price),
-        quantity: patch.quantity ?? Number(current.quantity),
-        discountPct: patch.discountPct ?? Number(current.discount_pct),
-        taxPct: patch.taxPct ?? Number(current.tax_pct),
-        serialNumbers: patch.serialNumbers ?? current.serial_numbers,
-      }));
-    }
-    const { error } = await supabase.from("invoice_items").update(upd).eq("id", id);
-    if (error) throw error;
-    await fetchAll();
+    const existing = cache.invoiceItems.find((row) => row.id === id);
+    if (!existing) throw new Error("بند الفاتورة غير موجود");
+    const rows = cache.invoiceItems.filter((row) => row.invoiceId === existing.invoiceId).map((row) => row.id === id ? {
+      name: patch.name ?? row.name, cost: patch.cost ?? row.cost, price: patch.price ?? row.price,
+      quantity: patch.quantity ?? row.quantity, discountPct: patch.discountPct ?? row.discountPct,
+      taxPct: patch.taxPct ?? row.taxPct, serialNumbers: patch.serialNumbers ?? row.serialNumbers, stockId: row.stockItemId,
+    } : { name: row.name, cost: row.cost, price: row.price, quantity: row.quantity, discountPct: row.discountPct, taxPct: row.taxPct, serialNumbers: row.serialNumbers, stockId: row.stockItemId });
+    const total = rows.reduce((sum, row) => sum + calculateLineFinancials({ price: row.price, quantity: row.quantity, discountPct: row.discountPct, taxPct: row.taxPct }).lineTotal, 0);
+    await db.replaceInvoiceItems(existing.invoiceId, total, rows);
   },
   async removeInvoiceItem(id: string) {
-    // read first so we can restore stock + log a movement
-    const { data: row } = await supabase
-      .from("invoice_items").select("name, quantity, stock_item_id, cost, invoice_id, user_id").eq("id", id).maybeSingle();
-    const { error } = await supabase.from("invoice_items").delete().eq("id", id);
-    if (error) throw error;
-    if (row?.stock_item_id && row.quantity > 0) {
-      const sid = row.stock_item_id as string;
-      const { data: existing } = await supabase
-        .from("stock_items").select("quantity").eq("id", sid).maybeSingle();
-      const next = Number(existing?.quantity ?? 0) + Number(row.quantity);
-      await supabase.from("stock_items").update({ quantity: next }).eq("id", sid);
-      const user_id = row.user_id;
-      await supabase.from("stock_movements").insert({
-        user_id, stock_item_id: sid, movement_type: "return",
-        quantity: Number(row.quantity), unit_cost: Number(row.cost ?? 0),
-        reference_id: row.invoice_id, notes: "حذف بند فاتورة",
-      });
-    }
-    await fetchAll();
+    const existing = cache.invoiceItems.find((row) => row.id === id);
+    if (!existing) throw new Error("بند الفاتورة غير موجود");
+    const rows = cache.invoiceItems.filter((row) => row.invoiceId === existing.invoiceId && row.id !== id).map((row) => ({
+      name: row.name, cost: row.cost, price: row.price, quantity: row.quantity,
+      discountPct: row.discountPct, taxPct: row.taxPct, serialNumbers: row.serialNumbers, stockId: row.stockItemId,
+    }));
+    if (rows.length === 0) throw new Error("لا يمكن حذف كل أصناف الفاتورة");
+    const total = rows.reduce((sum, row) => sum + calculateLineFinancials({ price: row.price, quantity: row.quantity, discountPct: row.discountPct, taxPct: row.taxPct }).lineTotal, 0);
+    await db.replaceInvoiceItems(existing.invoiceId, total, rows);
   },
 
   async addBranch(b: Omit<Branch, "id" | "createdAt">) {
@@ -860,11 +887,14 @@ export const db = {
     if (error) throw error;
     await fetchAll();
   },
-  async recordPayment(invoiceId: string, amount: number) {
+  async recordPayment(invoiceId: string, amount: number, details?: { paymentMethod?: string; accountId?: string | null; referenceNumber?: string | null }) {
     const { error } = await supabase.rpc("record_invoice_payment", {
       p_invoice_id: invoiceId,
       p_amount: (amount ?? 0) * 100,
       p_payment_id: crypto.randomUUID(),
+      p_payment_method: details?.paymentMethod ?? "cash",
+      p_account_id: details?.accountId ?? null,
+      p_reference_number: details?.referenceNumber ?? null,
     });
     if (error) throw error;
     await fetchAll();
@@ -1558,12 +1588,18 @@ export const db = {
     reason: string | null;
     notes: string | null;
     items: Array<{ name: string; unitPrice: number; quantity: number }>;
+    refundPaymentMethod?: string;
+    refundAccountId?: string | null;
+    refundReferenceNumber?: string | null;
   }) {
     if (r.type === "sale" && r.invoiceId) {
-      const { error } = await supabase.rpc("create_sale_return", {
+      const { error } = await (supabase.rpc as any)("create_sale_return_with_refund", {
         p_invoice_id: r.invoiceId,
         p_reason: r.reason?.trim() || "مرتجع بيع",
         p_items: r.items.map((item) => ({ name: item.name, unit_price: (item.unitPrice ?? 0) * 100, quantity: item.quantity })),
+        p_payment_method: r.refundPaymentMethod ?? "cash",
+        p_account_id: r.refundAccountId ?? null,
+        p_reference_number: r.refundReferenceNumber ?? null,
       });
       if (error) throw error;
       await fetchAll();

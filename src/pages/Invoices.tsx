@@ -387,7 +387,11 @@ function InvoicesPage() {
       .filter((i) => {
         if (!q) return true;
         const c = data.customers.find((c) => c.id === i.customerId);
-        return c?.name.includes(q) || c?.phone.includes(q);
+        const invoiceNo = invoiceNumber(data.invoices, i.id, shopSettings.invoicePrefix);
+        const needle = q.trim().toLowerCase();
+        return c?.name.toLowerCase().includes(needle)
+          || c?.phone.includes(needle)
+          || invoiceNo.toLowerCase().includes(needle);
       })
       .filter((i) => {
         if (!fromTs && !toTs) return true;

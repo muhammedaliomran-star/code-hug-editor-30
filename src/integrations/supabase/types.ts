@@ -907,6 +907,12 @@ export type Database = {
           discount_amount: number
           discount_pct: number
           down_payment: number
+          down_payment_method: string
+          down_payment_account_id: string | null
+          down_payment_reference: string | null
+          split_cash_amount: number
+          split_electronic_amount: number
+          split_electronic_method: string | null
           first_due_date: string | null
           id: string
           installment_count: number
@@ -930,6 +936,12 @@ export type Database = {
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
+          down_payment_method?: string
+          down_payment_account_id?: string | null
+          down_payment_reference?: string | null
+          split_cash_amount?: number
+          split_electronic_amount?: number
+          split_electronic_method?: string | null
           first_due_date?: string | null
           id?: string
           installment_count?: number
@@ -953,6 +965,12 @@ export type Database = {
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
+          down_payment_method?: string
+          down_payment_account_id?: string | null
+          down_payment_reference?: string | null
+          split_cash_amount?: number
+          split_electronic_amount?: number
+          split_electronic_method?: string | null
           first_due_date?: string | null
           id?: string
           installment_count?: number
@@ -1162,25 +1180,34 @@ export type Database = {
       payments: {
         Row: {
           amount: number
+          account_id: string | null
           id: string
           invoice_id: string
           paid_at: string
+          payment_method: string
+          reference_number: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           amount?: number
+          account_id?: string | null
           id?: string
           invoice_id: string
           paid_at?: string
+          payment_method?: string
+          reference_number?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           amount?: number
+          account_id?: string | null
           id?: string
           invoice_id?: string
           paid_at?: string
+          payment_method?: string
+          reference_number?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -2921,6 +2948,40 @@ export type Database = {
         }
         Returns: string
       }
+      create_sale_with_workflow: {
+        Args: {
+          p_customer_id: string
+          p_discount_amount: number
+          p_discount_pct: number
+          p_down_payment: number
+          p_down_payment_account_id?: string
+          p_down_payment_method?: string
+          p_down_payment_reference?: string
+          p_first_due_date: string
+          p_invoice_id: string
+          p_items: Json
+          p_monthly_installment: number
+          p_notes: string
+          p_paid: number
+          p_shipment?: Json
+          p_split_cash_amount?: number
+          p_split_electronic_amount?: number
+          p_split_electronic_method?: string
+          p_status: string
+          p_tax_amount: number
+          p_tax_pct: number
+          p_total: number
+        }
+        Returns: string
+      }
+      replace_invoice_items: {
+        Args: { p_invoice_id: string; p_items: Json; p_total: number }
+        Returns: undefined
+      }
+      create_sale_return_with_refund: {
+        Args: { p_account_id?: string; p_invoice_id: string; p_items: Json; p_payment_method?: string; p_reason: string; p_reference_number?: string }
+        Returns: string
+      }
       create_sale_return: {
         Args: { p_invoice_id: string; p_items: Json; p_reason: string }
         Returns: string
@@ -3014,6 +3075,9 @@ export type Database = {
           p_invoice_id: string
           p_paid_at?: string
           p_payment_id?: string
+          p_payment_method?: string
+          p_account_id?: string
+          p_reference_number?: string
         }
         Returns: Json
       }
