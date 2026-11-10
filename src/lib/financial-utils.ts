@@ -29,10 +29,10 @@ export function supplierBalance(
   openingBalance = 0,
 ) {
   const credit = purchases
-    .filter((p) => p.supplierId === supplierId && p.paymentType === "credit" && !p.deleted)
+    .filter((p) => p.supplierId === supplierId && p.paymentType === "credit" && !p.deleted && !p.archived)
     .reduce((s, p) => s + p.total, 0);
   const paid = payments
-    .filter((p) => p.supplierId === supplierId)
+    .filter((p) => p.supplierId === supplierId && !p.voided && (!p.purchaseId || purchases.some((purchase) => purchase.id === p.purchaseId && !purchase.deleted && !purchase.archived)))
     .reduce((s, p) => s + p.amount, 0);
   return openingBalance + credit - paid;
 }

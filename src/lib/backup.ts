@@ -11,6 +11,7 @@ const TABLES = [
   "purchases",
   "purchase_items",
   "supplier_payments",
+  "purchase_attachments",
   "stock_items",
   "stock_adjustments",
   "expenses",
@@ -91,6 +92,7 @@ const DELETE_ORDER = [
   "shop_settings",
   "expenses",
   "supplier_payments",
+  "purchase_attachments",
   "purchase_items",
   "purchases",
   "stock_adjustments",
@@ -104,7 +106,7 @@ const DELETE_ORDER = [
 
 const USER_SCOPED_TABLES = new Set([
   "customers", "suppliers", "invoices", "invoice_items", "payments", "purchases", "purchase_items",
-  "supplier_payments", "stock_items", "stock_adjustments", "expenses", "shop_settings", "branches",
+  "supplier_payments", "purchase_attachments", "stock_items", "stock_adjustments", "expenses", "shop_settings", "branches",
   "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments", "stock_movements",
   "audit_events", "audit_logs", "return_records", "return_items", "invoice_installments",
   "carrier_settlements", "delivery_attempts",

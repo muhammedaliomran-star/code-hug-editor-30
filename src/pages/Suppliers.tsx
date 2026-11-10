@@ -86,10 +86,11 @@ function SuppliersPage() {
 
   const totals = useMemo(() => {
     const totalDebt = enriched.reduce((sum, x) => sum + Math.max(0, x.balance), 0);
-    const activePurchases = data.purchases.filter((p) => !p.deleted);
+    const activePurchases = data.purchases.filter((p) => !p.deleted && !p.archived);
     const totalPurchases = activePurchases.reduce((sum, p) => sum + p.total, 0);
     const cashPurchases = activePurchases.filter((p) => p.paymentType === "cash").reduce((sum, p) => sum + p.total, 0);
-    const supplierPayments = data.supplierPayments.reduce((sum, p) => sum + p.amount, 0);
+    const activePurchaseIds = new Set(activePurchases.map((p) => p.id));
+    const supplierPayments = data.supplierPayments.filter((p) => !p.voided && (!p.purchaseId || activePurchaseIds.has(p.purchaseId))).reduce((sum, p) => sum + p.amount, 0);
     const totalPaid = cashPurchases + supplierPayments;
     const creditPurchases = activePurchases.filter((p) => p.paymentType === "credit").reduce((sum, p) => sum + p.total, 0);
     const owing = enriched.filter((x) => x.balance > 0).length;
@@ -986,10 +987,10 @@ type PurchaseRow = Purchase & { paid: number; remaining: number; status: Purchas
 
 function buildPurchaseRows(purchases: Purchase[], payments: SupplierPayment[], itemCounts: Map<string, number>): PurchaseRow[] {
   const paidBySupplier = new Map<string, number>();
-  payments.forEach((payment) => paidBySupplier.set(payment.supplierId, (paidBySupplier.get(payment.supplierId) ?? 0) + payment.amount));
+  payments.filter((payment) => !payment.voided).forEach((payment) => paidBySupplier.set(payment.supplierId, (paidBySupplier.get(payment.supplierId) ?? 0) + payment.amount));
   const allocations = new Map<string, number>();
   const bySupplier = new Map<string, Purchase[]>();
-  purchases.filter((p) => p.paymentType === "credit" && !p.deleted).forEach((p) => {
+  purchases.filter((p) => p.paymentType === "credit" && !p.deleted && !p.archived).forEach((p) => {
     const group = bySupplier.get(p.supplierId) ?? [];
     group.push(p);
     bySupplier.set(p.supplierId, group);
@@ -1002,7 +1003,7 @@ function buildPurchaseRows(purchases: Purchase[], payments: SupplierPayment[], i
       available -= paid;
     });
   });
-  return purchases.filter((p) => !p.deleted).map((p) => {
+  return purchases.filter((p) => !p.deleted && !p.archived).map((p) => {
     const paid = p.paymentType === "cash" ? p.total : allocations.get(p.id) ?? 0;
     const remaining = Math.max(0, p.total - paid);
     const status: PurchaseStatus = p.paymentType === "cash" || remaining <= 0.005 ? "paid" : paid > 0 ? "partial" : "credit";

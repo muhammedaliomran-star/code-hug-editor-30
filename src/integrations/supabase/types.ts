@@ -1283,31 +1283,40 @@ export type Database = {
       }
       purchase_items: {
         Row: {
+          batch_number: string | null
           created_at: string
+          expiry_date: string | null
           id: string
           name: string
           purchase_id: string
           quantity: number
+          unit: string
           unit_cost: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          batch_number?: string | null
           created_at?: string
+          expiry_date?: string | null
           id?: string
           name: string
           purchase_id: string
           quantity?: number
+          unit?: string
           unit_cost?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          batch_number?: string | null
           created_at?: string
+          expiry_date?: string | null
           id?: string
           name?: string
           purchase_id?: string
           quantity?: number
+          unit?: string
           unit_cost?: number
           updated_at?: string
           user_id?: string
@@ -1324,34 +1333,82 @@ export type Database = {
       }
       purchases: {
         Row: {
+          archived: boolean
+          archived_at: string | null
+          archive_reason: string | null
           created_at: string
+          deleted: boolean
+          deleted_at: string | null
+          deleted_by: string | null
+          delete_reason: string | null
+          discount_amount: number
+          due_date: string | null
           id: string
           notes: string | null
+          paid_amount: number
           payment_type: string
           purchase_date: string
+          purchase_number: number
+          shipping_amount: number
+          status: string
+          subtotal: number
           supplier_id: string
+          supplier_invoice_number: string | null
+          tax_amount: number
           total: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
+          archive_reason?: string | null
           created_at?: string
+          deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+          delete_reason?: string | null
+          discount_amount?: number
+          due_date?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number
           payment_type?: string
           purchase_date?: string
+          purchase_number?: number
+          shipping_amount?: number
+          status?: string
+          subtotal?: number
           supplier_id: string
+          supplier_invoice_number?: string | null
+          tax_amount?: number
           total?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
+          archive_reason?: string | null
           created_at?: string
+          deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+          delete_reason?: string | null
+          discount_amount?: number
+          due_date?: string | null
           id?: string
           notes?: string | null
+          paid_amount?: number
           payment_type?: string
           purchase_date?: string
+          purchase_number?: number
+          shipping_amount?: number
+          status?: string
+          subtotal?: number
           supplier_id?: string
+          supplier_invoice_number?: string | null
+          tax_amount?: number
           total?: number
           updated_at?: string
           user_id?: string
@@ -1362,6 +1419,47 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_attachments: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          original_name: string | null
+          purchase_id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          original_name?: string | null
+          purchase_id: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          original_name?: string | null
+          purchase_id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_attachments_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -2302,25 +2400,43 @@ export type Database = {
           amount: number
           id: string
           paid_at: string
+          payment_method: string | null
+          notes: string | null
+          purchase_id: string | null
           supplier_id: string
           updated_at: string
           user_id: string
+          voided: boolean
+          voided_at: string | null
+          voided_reason: string | null
         }
         Insert: {
           amount?: number
           id?: string
           paid_at?: string
+          payment_method?: string | null
+          notes?: string | null
+          purchase_id?: string | null
           supplier_id: string
           updated_at?: string
           user_id: string
+          voided?: boolean
+          voided_at?: string | null
+          voided_reason?: string | null
         }
         Update: {
           amount?: number
           id?: string
           paid_at?: string
+          payment_method?: string | null
+          notes?: string | null
+          purchase_id?: string | null
           supplier_id?: string
           updated_at?: string
           user_id?: string
+          voided?: boolean
+          voided_at?: string | null
+          voided_reason?: string | null
         }
         Relationships: [
           {

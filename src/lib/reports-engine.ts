@@ -200,8 +200,9 @@ export function computeComprehensiveReports(
   const filteredInvoices = db.invoices.filter((i) => i.status !== "cancelled" && inRange(i.createdAt));
   const filteredPayments = db.payments.filter((p) => inRange(p.paidAt));
   const filteredExpenses = db.expenses.filter((e) => inRange(e.expenseDate));
-  const filteredPurchases = db.purchases.filter((p) => !p.deleted && inRange(p.purchaseDate));
-  const filteredSupplierPayments = db.supplierPayments.filter((sp) => inRange(sp.paidAt));
+  const filteredPurchases = db.purchases.filter((p) => !p.deleted && !p.archived && inRange(p.purchaseDate));
+  const activePurchaseIds = new Set(filteredPurchases.map((p) => p.id));
+  const filteredSupplierPayments = db.supplierPayments.filter((sp) => !sp.voided && (!sp.purchaseId || activePurchaseIds.has(sp.purchaseId)) && inRange(sp.paidAt));
   const filteredReturns = db.returns.filter((r) => inRange(r.createdAt));
 
   // 1. Invoices Profit & COGS mapping
@@ -469,8 +470,8 @@ export function computeComprehensiveReports(
       const pData = supplierPurchaseMap.get(sup.id) || { purchasesCount: 0, totalPurchases: 0 };
       const paid = supplierPaidMap.get(sup.id) || 0;
       // calculate total historical due
-      const allSupPurchases = db.purchases.filter((p) => p.supplierId === sup.id && !p.deleted);
-      const allSupPayments = db.supplierPayments.filter((sp) => sp.supplierId === sup.id);
+      const allSupPurchases = db.purchases.filter((p) => p.supplierId === sup.id && !p.deleted && !p.archived);
+      const allSupPayments = db.supplierPayments.filter((sp) => sp.supplierId === sup.id && !sp.voided && (!sp.purchaseId || allSupPurchases.some((p) => p.id === sp.purchaseId)));
       const histPurchases = allSupPurchases.reduce((s, p) => s + p.total, 0);
       const histPaid = allSupPayments.reduce((s, p) => s + p.amount, 0);
       const outstandingDue = (sup.openingBalance || 0) + histPurchases - histPaid;

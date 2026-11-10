@@ -262,6 +262,17 @@ export interface Purchase {
   purchaseDate: string;
   notes: string | null;
   attachmentPath?: string | null;
+  attachments?: PurchaseAttachment[];
+  createdAt: string;
+}
+
+export interface PurchaseAttachment {
+  id: string;
+  purchaseId: string;
+  storagePath: string;
+  originalName?: string | null;
+  mimeType?: string | null;
+  fileSize?: number | null;
   createdAt: string;
 }
 
@@ -285,6 +296,9 @@ export interface SupplierPayment {
   paidAt: string;
   paymentMethod?: string | null;
   notes?: string | null;
+  voided?: boolean;
+  voidedAt?: string | null;
+  voidedReason?: string | null;
 }
 
 export interface ReturnRecord {

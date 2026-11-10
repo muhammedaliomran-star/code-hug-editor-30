@@ -33,6 +33,7 @@ import type {
   Purchase,
   PurchaseItem,
   SupplierPayment,
+  PurchaseAttachment,
   StockItem,
   WarehouseItem,
   WarehouseSeason,
@@ -146,7 +147,7 @@ async function fetchAllInner() {
     notify();
     return;
   }
-  const [c, i, p, e, ii, s, pu, pi, sp, st, wh, rr, ri, br, pv, sc, sz, sh] = await Promise.all([
+  const [c, i, p, e, ii, s, pu, pi, sp, pa, st, wh, rr, ri, br, pv, sc, sz, sh] = await Promise.all([
     supabase.from("customers").select("*").order("name"),
     supabase.from("invoices").select("*").order("created_at", { ascending: false }),
     supabase.from("payments").select("*"),
@@ -156,6 +157,7 @@ async function fetchAllInner() {
     supabase.from("purchases").select("*").order("created_at", { ascending: false }),
     supabase.from("purchase_items").select("*").order("created_at"),
     supabase.from("supplier_payments").select("*"),
+    (supabase as any).from("purchase_attachments").select("*").order("created_at"),
     supabase.from("stock_items").select("*").order("name"),
     supabase.from("warehouse_items").select("*").order("name"),
     supabase.from("return_records").select("*").order("created_at", { ascending: false }),
@@ -167,8 +169,8 @@ async function fetchAllInner() {
     supabase.from("shipments").select("*").order("created_at", { ascending: false }),
   ]);
 
-  const tableNames = ["customers", "invoices", "payments", "expenses", "invoice_items", "suppliers", "purchases", "purchase_items", "supplier_payments", "stock_items", "warehouse_items", "return_records", "return_items", "branches", "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments"];
-  const results = [c, i, p, e, ii, s, pu, pi, sp, st, wh, rr, ri, br, pv, sc, sz, sh];
+  const tableNames = ["customers", "invoices", "payments", "expenses", "invoice_items", "suppliers", "purchases", "purchase_items", "supplier_payments", "purchase_attachments", "stock_items", "warehouse_items", "return_records", "return_items", "branches", "payment_vouchers", "shipping_carriers", "shipping_zones", "shipments"];
+  const results = [c, i, p, e, ii, s, pu, pi, sp, pa, st, wh, rr, ri, br, pv, sc, sz, sh];
   const failedTables: string[] = [];
   results.forEach((r, idx) => {
     if (r.error) {
@@ -257,6 +259,11 @@ async function fetchAllInner() {
       deletedAt: (r as any).deleted_at ?? null,
       deleteReason: (r as any).delete_reason ?? null,
       paymentType: r.payment_type as PurchasePaymentType,
+      attachments: ((pa.data ?? []) as any[]).filter((a) => a.purchase_id === r.id).map((a): PurchaseAttachment => ({
+        id: a.id, purchaseId: a.purchase_id, storagePath: a.storage_path,
+        originalName: a.original_name ?? null, mimeType: a.mime_type ?? null,
+        fileSize: a.file_size == null ? null : Number(a.file_size), createdAt: a.created_at,
+      })),
       purchaseDate: r.purchase_date, notes: r.notes, attachmentPath: (r as any).attachment_path ?? null, createdAt: r.created_at,
     })),
     purchaseItems: (pi.data ?? []).map((r: TableRow<"purchase_items">) => ({
@@ -267,6 +274,7 @@ async function fetchAllInner() {
     supplierPayments: (sp.data ?? []).map((r: TableRow<"supplier_payments">) => ({
       id: r.id, supplierId: r.supplier_id, purchaseId: (r as any).purchase_id ?? null, amount: Number(r.amount) / 100, paidAt: r.paid_at,
       paymentMethod: (r as any).payment_method ?? null, notes: (r as any).notes ?? null,
+      voided: Boolean((r as any).voided), voidedAt: (r as any).voided_at ?? null, voidedReason: (r as any).voided_reason ?? null,
     })),
     stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
        id: r.id, productCode: Number(r.product_code ?? 0), name: r.name,
@@ -1099,6 +1107,17 @@ export const db = {
       if (latest.data?.id) {
         const attached = await supabase.from("purchases").update({ attachment_path: p.attachmentPath }).eq("id", latest.data.id);
         if (attached.error && !isSchemaCacheError(attached.error)) throw attached.error;
+        const paths = p.attachmentPath.split("|").map((path) => path.trim()).filter(Boolean);
+        if (paths.length) {
+          const currentUserId = await uid();
+          const { error: attachmentError } = await (supabase as any).from("purchase_attachments").insert(paths.map((storagePath) => ({
+            user_id: currentUserId, purchase_id: latest.data.id, storage_path: storagePath,
+            original_name: storagePath.split("/").pop() ?? storagePath,
+          })));
+          // The table is introduced by a later migration; legacy clients may still save
+          // through attachment_path until that migration has reached the project.
+          if (attachmentError && !isSchemaCacheError(attachmentError)) throw attachmentError;
+        }
       }
     }
     if (p.paymentType === "cash" && typeof purchaseId === "string") {
@@ -1157,10 +1176,13 @@ export const db = {
   },
   async permanentlyDeletePurchase(id: string) {
     const { data: purchase } = await supabase.from("purchases").select("attachment_path").eq("id", id).maybeSingle();
+    const { data: normalizedAttachments } = await (supabase as any).from("purchase_attachments").select("storage_path").eq("purchase_id", id);
     const { error } = await (supabase as any).rpc("permanently_delete_purchase", { p_purchase_id: id });
     if (error) throw error;
-    const paths = String((purchase as any)?.attachment_path ?? "")
-      .split("|").map((path) => path.trim()).filter(Boolean);
+    const paths = Array.from(new Set([
+      ...((normalizedAttachments ?? []) as any[]).map((a) => String(a.storage_path ?? "").trim()),
+      ...String((purchase as any)?.attachment_path ?? "").split("|").map((path) => path.trim()),
+    ].filter(Boolean)));
     if (paths.length > 0) {
       const { error: storageError } = await supabase.storage.from("purchase-invoices").remove(paths);
       if (storageError) toast.warning("تم حذف الفاتورة، لكن تعذر حذف أحد المرفقات من التخزين.");
@@ -1188,7 +1210,7 @@ export const db = {
     
     const [sales, purchases, expenses, returns, saleItems] = await Promise.all([
       supabase.from("invoices").select("id, total, tax_amount, status").gte("created_at", s).lte("created_at", e),
-      supabase.from("purchases").select("total, payment_type").eq("deleted", false).gte("purchase_date", s).lte("purchase_date", e),
+      supabase.from("purchases").select("total, payment_type").eq("deleted", false).eq("archived", false).gte("purchase_date", s).lte("purchase_date", e),
       supabase.from("expenses").select("amount, category").gte("expense_date", s).lte("expense_date", e),
       supabase.from("return_records").select("total_amount").gte("created_at", s).lte("created_at", e),
       supabase.from("invoice_items").select("invoice_id, cost"),

@@ -870,7 +870,7 @@ function PurchaseDetailModal({
             </div>
           )}
 
-          <PurchaseAttachments attachmentPath={purchase.attachmentPath} />
+          <PurchaseAttachments attachmentPath={purchase.attachmentPath} attachments={purchase.attachments} />
         </div>
 
         <DialogFooter className="flex-row items-center justify-between gap-2 pt-3 border-t border-border/40 mt-3">
@@ -909,14 +909,15 @@ function PurchaseDetailModal({
   );
 }
 
-function PurchaseAttachments({ attachmentPath }: { attachmentPath?: string | null }) {
+function PurchaseAttachments({ attachmentPath, attachments }: { attachmentPath?: string | null; attachments?: Purchase["attachments"] }) {
   const [urls, setUrls] = useState<Array<{ path: string; url: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     let active = true;
-    const paths = (attachmentPath || "").split("|").map((path) => path.trim()).filter(Boolean);
+    const normalizedPaths = (attachments ?? []).map((attachment) => attachment.storagePath).filter(Boolean);
+    const paths = normalizedPaths.length ? normalizedPaths : (attachmentPath || "").split("|").map((path) => path.trim()).filter(Boolean);
     setUrls([]);
     setError(false);
     if (!paths.length) return () => { active = false; };
@@ -933,16 +934,16 @@ function PurchaseAttachments({ attachmentPath }: { attachmentPath?: string | nul
       if (active) setLoading(false);
     });
     return () => { active = false; };
-  }, [attachmentPath]);
+  }, [attachmentPath, attachments]);
 
-  if (!attachmentPath) return null;
+  if (!attachmentPath && !(attachments?.length)) return null;
   const isPdf = (path: string) => /\.pdf$/i.test(path);
 
   return (
     <div className="space-y-3 border-t border-border/40 pt-3 text-right">
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm font-bold inline-flex items-center gap-2"><FileImage className="h-4 w-4 text-info" /> صورة / ملف الفاتورة الورقية</span>
-        <span className="text-[11px] text-muted-foreground">{urls.length || attachmentPath.split("|").filter(Boolean).length} مرفق</span>
+        <span className="text-[11px] text-muted-foreground">{urls.length || attachments?.length || attachmentPath?.split("|").filter(Boolean).length || 0} مرفق</span>
       </div>
       {loading && <div className="flex items-center justify-center gap-2 rounded-xl border border-info/20 bg-info/5 px-3 py-5 text-xs text-info"><Loader2 className="h-4 w-4 animate-spin" /> جارٍ تجهيز المعاينة...</div>}
       {error && <div className="rounded-xl border border-danger/30 bg-danger/5 px-3 py-3 text-xs text-danger">تعذر فتح المرفق. تأكد من تطبيق سياسات Storage الخاصة بفواتير الشراء.</div>}
