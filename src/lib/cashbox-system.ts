@@ -275,15 +275,23 @@ export function syncPurchaseCashOutflow(params: {
     paymentMethod: "cash",
     performedBy: "system",
   };
-  if (existing) updateManualTransaction(existing.id, patch);
-  else addManualTransaction(patch);
+  // Purchase and supplier-payment movements are written by PostgreSQL triggers
+  // in the same transaction as the invoice. Update local storage only here so
+  // the UI is immediate without creating a second cloud movement.
+  const txs = getManualTransactions();
+  if (existing) {
+    const index = txs.findIndex((tx) => tx.id === existing.id);
+    if (index >= 0) txs[index] = { ...txs[index], ...patch };
+  } else {
+    txs.unshift({ ...patch, id: crypto.randomUUID(), createdAt: new Date().toISOString() });
+  }
+  saveManualTransactions(txs);
 }
 
 export function removePurchaseCashOutflow(purchaseId: string): void {
   const referencePrefix = `purchase:${purchaseId}`;
-  getManualTransactions()
-    .filter((tx) => tx.referenceNumber?.startsWith(referencePrefix))
-    .forEach((tx) => deleteManualTransaction(tx.id));
+  const next = getManualTransactions().filter((tx) => !tx.referenceNumber?.startsWith(referencePrefix));
+  saveManualTransactions(next);
 }
 
 // ==================== 3. التحويلات الداخلية بين الحسابات ====================

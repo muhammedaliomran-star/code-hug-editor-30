@@ -2448,6 +2448,48 @@ export type Database = {
           },
         ]
       }
+      treasury_transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          description: string | null
+          fee: number
+          from_account_id: string | null
+          id: string
+          reference_number: string | null
+          to_account_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number
+          from_account_id?: string | null
+          id?: string
+          reference_number?: string | null
+          to_account_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number
+          from_account_id?: string | null
+          id?: string
+          reference_number?: string | null
+          to_account_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       suppliers: {
         Row: {
           contact: string
@@ -2894,6 +2936,38 @@ export type Database = {
         Returns: undefined
       }
       delete_purchase_with_inventory: {
+        Args: { p_purchase_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      permanently_delete_purchase: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
+      post_purchase_draft: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
+      record_purchase_payment: {
+        Args: { p_amount: number; p_paid_at?: string; p_notes?: string; p_payment_method?: string; p_purchase_id: string }
+        Returns: string
+      }
+      record_supplier_payment_fifo: {
+        Args: { p_amount: number; p_paid_at?: string; p_notes?: string; p_payment_method?: string; p_supplier_id: string }
+        Returns: number
+      }
+      restore_purchase_from_trash: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
+      assert_purchase_totals: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
+      archive_purchase: {
+        Args: { p_purchase_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      unarchive_purchase: {
         Args: { p_purchase_id: string }
         Returns: undefined
       }
@@ -2945,12 +3019,19 @@ export type Database = {
       }
       record_purchase_with_inventory: {
         Args: {
+          p_discount_amount?: number
           p_items: Json
           p_notes: string
           p_payment_type: string
           p_purchase_date: string
           p_purchase_id?: string
+          p_paid_amount?: number
+          p_shipping_amount?: number
+          p_status?: string
+          p_subtotal?: number
           p_supplier_id: string
+          p_supplier_invoice_number?: string
+          p_tax_amount?: number
           p_total: number
         }
         Returns: string
@@ -2985,12 +3066,18 @@ export type Database = {
       }
       update_purchase_with_inventory: {
         Args: {
+          p_discount_amount?: number
           p_items: Json
           p_notes: string
           p_payment_type: string
           p_purchase_date: string
           p_purchase_id: string
+          p_paid_amount?: number
+          p_shipping_amount?: number
+          p_subtotal?: number
           p_supplier_id: string
+          p_supplier_invoice_number?: string
+          p_tax_amount?: number
           p_total: number
         }
         Returns: undefined
