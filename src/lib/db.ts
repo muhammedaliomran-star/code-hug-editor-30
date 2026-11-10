@@ -1069,7 +1069,8 @@ export const db = {
       p_status: p.status ?? "posted",
       p_items: items,
     };
-    let { error } = await (supabase as any).rpc("record_purchase_with_inventory", workflowPayload);
+    let rpcResult = await (supabase as any).rpc("record_purchase_with_inventory", workflowPayload);
+    let { data: purchaseId, error } = rpcResult;
     if (error && isMissingPurchaseWorkflowRpc(error)) {
       if (p.status === "draft") {
         throw new Error("لا يمكن حفظ المسودة قبل تطبيق تحديث قاعدة البيانات. طبّق Migration الخاصة بفواتير الشراء أولاً.");
@@ -1080,12 +1081,14 @@ export const db = {
         p_supplier_id: p.supplierId, p_total: (p.total ?? 0) * 100, p_payment_type: p.paymentType,
         p_purchase_date: p.purchaseDate, p_notes: legacyNotes, p_items: legacyItems,
       });
+      purchaseId = legacy.data;
       error = legacy.error;
       if (!error) toast.info("تم حفظ الفاتورة بالوضع المتوافق. طبّق Migration فواتير الشراء لتفعيل الكود والتفاصيل الإضافية.");
     }
     if (error) throw error;
     if (p.attachmentPath) {
-      const latest = await supabase.from("purchases").select("id").eq("supplier_id", p.supplierId).eq("purchase_date", p.purchaseDate).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      const savedPurchaseId = typeof purchaseId === "string" ? purchaseId : null;
+      const latest = savedPurchaseId ? { data: { id: savedPurchaseId } } : await supabase.from("purchases").select("id").eq("supplier_id", p.supplierId).eq("purchase_date", p.purchaseDate).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (latest.data?.id) {
         const attached = await supabase.from("purchases").update({ attachment_path: p.attachmentPath }).eq("id", latest.data.id);
         if (attached.error && !isSchemaCacheError(attached.error)) throw attached.error;
