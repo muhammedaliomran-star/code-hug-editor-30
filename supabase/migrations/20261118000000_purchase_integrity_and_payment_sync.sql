@@ -1,5 +1,15 @@
 -- Purchase integrity: keep invoice payments synchronized and protect supplier ownership.
 
+-- This migration is intentionally self-contained so it can be pasted directly
+-- into Supabase even when the previous payment migration was skipped.
+alter table public.supplier_payments
+  add column if not exists purchase_id uuid references public.purchases(id) on delete set null,
+  add column if not exists payment_method text,
+  add column if not exists notes text;
+
+create index if not exists supplier_payments_purchase_idx
+  on public.supplier_payments(user_id, purchase_id, paid_at desc);
+
 -- The WAC migration introduced a legacy seven-argument overload. The application
 -- uses the extended workflow function; removing the overload prevents an older
 -- fallback from silently bypassing invoice metadata and numbering.
