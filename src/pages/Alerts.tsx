@@ -358,6 +358,7 @@ function AlertsPage() {
           criticalCount={stats.criticalCount}
           criticalAmount={stats.criticalAmount}
           masked={privacy}
+          onSelect={(tab) => setActiveTab(tab)}
         />
 
         {/* Tab Selection Navigation */}
@@ -418,6 +419,9 @@ function AlertsPage() {
               </h3>
               <Link to="/inventory" className="text-xs text-primary hover:underline font-bold">
                 إدارة المخزن بالكامل ←
+              </Link>
+              <Link to="/purchases/new" className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-bold text-primary transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-primary/20">
+                إضافة للمشتريات
               </Link>
             </div>
 
@@ -683,6 +687,17 @@ function AlertsPage() {
                           onClick={() => setPromiseModalTarget({ inv, customer })}
                         >
                           <PhoneCall className="w-3.5 h-3.5" /> تسجيل مكالمة / وعد
+                        </Button>
+
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          asChild
+                          className="gap-1.5 text-muted-foreground hover:text-primary h-8 text-xs"
+                        >
+                          <Link to={`/customers?id=${customer.id}`}>
+                            <Eye className="w-3.5 h-3.5" /> عرض التفاصيل
+                          </Link>
                         </Button>
 
                         {/* 4. Print Official Demand Letter */}
