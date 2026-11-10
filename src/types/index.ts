@@ -52,6 +52,7 @@ export type ProductRow = {
   taxPct?: string;
   serialNumbers?: string;
   notes?: string;
+  unit?: string;
 };
 
 // ─── Interfaces ───────────────────────────────────────────
@@ -141,6 +142,8 @@ export interface Invoice {
   splitCashAmount?: number;
   splitElectronicAmount?: number;
   splitElectronicMethod?: string | null;
+  externalOrderNumber?: string | null;
+  attachmentPath?: string | null;
 }
 
 export interface Payment {

@@ -913,6 +913,8 @@ export type Database = {
           deleted_at: string | null
           deleted_by: string | null
           delete_reason: string | null
+          external_order_number: string | null
+          invoice_attachment_path: string | null
           discount_amount: number
           discount_pct: number
           down_payment: number
@@ -952,6 +954,8 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           delete_reason?: string | null
+          external_order_number?: string | null
+          invoice_attachment_path?: string | null
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
@@ -991,6 +995,8 @@ export type Database = {
           deleted_at?: string | null
           deleted_by?: string | null
           delete_reason?: string | null
+          external_order_number?: string | null
+          invoice_attachment_path?: string | null
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
@@ -3015,6 +3021,36 @@ export type Database = {
           p_down_payment_account_id?: string
           p_down_payment_method?: string
           p_down_payment_reference?: string
+          p_first_due_date: string
+          p_invoice_id: string
+          p_items: Json
+          p_monthly_installment: number
+          p_notes: string
+          p_paid: number
+          p_shipment?: Json
+          p_source?: string
+          p_split_cash_amount?: number
+          p_split_electronic_amount?: number
+          p_split_electronic_method?: string
+          p_status: string
+          p_tax_amount: number
+          p_tax_pct: number
+          p_total: number
+        }
+        Returns: string
+      }
+      create_sale_with_workflow_v3: {
+        Args: {
+          p_branch_id?: string
+          p_cashier_id?: string
+          p_customer_id: string
+          p_discount_amount: number
+          p_discount_pct: number
+          p_down_payment: number
+          p_down_payment_account_id?: string
+          p_down_payment_method?: string
+          p_down_payment_reference?: string
+          p_external_order_number?: string
           p_first_due_date: string
           p_invoice_id: string
           p_items: Json

@@ -73,6 +73,7 @@ import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfi
 import { ManagerPinModal } from "@/components/ManagerPinModal";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
 import { calculateLineFinancials } from "@/lib/financial-engine";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Page() {
   return (
@@ -98,6 +99,7 @@ function NewInvoicePage() {
   const blurCls = hideProfits ? "privacy-blur" : "privacy-clear";
 
   const [customerId, setCustomerId] = useState("");
+  const [customerSearch, setCustomerSearch] = useState("");
   const [products, setProducts] = useState<ProductRow[]>([
     { id: crypto.randomUUID(), name: "", cost: "", price: "", quantity: "1" },
   ]);
@@ -120,6 +122,9 @@ function NewInvoicePage() {
   const [shippingZoneId, setShippingZoneId] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
+  const [externalOrderNumber, setExternalOrderNumber] = useState("");
+  const [invoiceAttachmentFiles, setInvoiceAttachmentFiles] = useState<File[]>([]);
+  const [priceOverrideUnlocked, setPriceOverrideUnlocked] = useState(!isCashierMode);
 
   // Commercial POS Features
   const [quickBarcodeInput, setQuickBarcodeInput] = useState("");
@@ -135,6 +140,7 @@ function NewInvoicePage() {
   const [splitRef, setSplitRef] = useState("");
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
+  const invoiceAttachmentInputRef = useRef<HTMLInputElement>(null);
   const submitLockRef = useRef(false);
   const workflowInvoiceIdRef = useRef<string | null>(null);
 
@@ -153,6 +159,15 @@ function NewInvoicePage() {
   const invoiceCode = `#${String((data.invoices?.length ?? 0) + 1).padStart(4, "0")}`;
 
   const customer = data.customers.find((c) => c.id === customerId);
+  const filteredCustomers = useMemo(() => {
+    const query = customerSearch.trim().toLocaleLowerCase();
+    if (!query) return data.customers;
+    return data.customers.filter((c) =>
+      [c.name, c.phone, c.customerCode, c.paperLedgerNumber]
+        .filter((value) => value !== undefined && value !== null)
+        .some((value) => String(value).toLocaleLowerCase().includes(query)),
+    );
+  }, [customerSearch, data.customers]);
   const blocked = customer && (customer.frozen || customer.status === "defaulter");
 
   const totalCost = products.reduce((s, p) => s + Number(p.cost || 0) * Number(p.quantity || 1), 0);
@@ -303,6 +318,12 @@ function NewInvoicePage() {
   const updateProduct = (id: string, patch: Partial<ProductRow>) =>
     setProducts((p) => p.map((x) => (x.id === id ? { ...x, ...patch } : x)));
 
+  const requestPriceOverride = () => {
+    if (!isCashierMode || priceOverrideUnlocked) return;
+    setPendingSubmitAction(() => () => setPriceOverrideUnlocked(true));
+    setPinModalOpen(true);
+  };
+
   const selectDefaultCashCustomer = () => {
     const cashCust =
       data.customers.find((c) => c.customerType === "cash" || c.name.includes("نقدي")) ||
@@ -366,6 +387,10 @@ function NewInvoicePage() {
     setShippingZoneId("");
     setShippingAddress("");
     setTrackingNumber("");
+    setExternalOrderNumber("");
+    setInvoiceAttachmentFiles([]);
+    setCustomerSearch("");
+    setPriceOverrideUnlocked(!isCashierMode);
     setShowOptionalSections(false);
     setEnableSplitPayment(false);
     setSplitCash("");
@@ -423,6 +448,22 @@ function NewInvoicePage() {
     try {
       const workflowInvoiceId = workflowInvoiceIdRef.current ?? crypto.randomUUID();
       workflowInvoiceIdRef.current = workflowInvoiceId;
+      let attachmentPath: string | null = null;
+      if (invoiceAttachmentFiles.length > 0) {
+        if (!user?.id) throw new Error("تعذر تحديد المستخدم لرفع مرفق الفاتورة");
+        const paths: string[] = [];
+        for (const file of invoiceAttachmentFiles) {
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+          const path = `${user.id}/${workflowInvoiceId}/${crypto.randomUUID()}-${safeName}`;
+          const { error: uploadError } = await supabase.storage.from("sales-invoices").upload(path, file, {
+            upsert: false,
+            contentType: file.type || undefined,
+          });
+          if (uploadError) throw uploadError;
+          paths.push(path);
+        }
+        attachmentPath = paths.join("|");
+      }
       const invId = await db.addInvoice({
         customerId,
         total: t,
@@ -445,6 +486,8 @@ function NewInvoicePage() {
         branchId: activeBranchId,
         cashierId: user?.id ?? null,
         source: "pos",
+        externalOrderNumber: externalOrderNumber.trim() || null,
+        attachmentPath,
         shipment: shippingCarrierId ? {
           carrierId: shippingCarrierId,
           zoneId: shippingZoneId || undefined,
@@ -734,6 +777,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     العميل
                   </Label>
                 </div>
+                <Input
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                  placeholder="ابحث بالاسم أو الهاتف أو كود العميل..."
+                  className="mb-2 h-10"
+                />
                 <Select
                   value={customerId}
                   onValueChange={(v) => {
@@ -754,11 +803,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     <SelectValue placeholder="اختر العميل" />
                   </SelectTrigger>
                   <SelectContent>
-                    {data.customers.map((c) => (
+                    {filteredCustomers.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
-                        {c.name} — {c.customerType === "cash" ? "فوري" : "قسط"}
+                        {c.name} — {c.customerCode ? `#${c.customerCode}` : c.phone || "بدون هاتف"} — {c.customerType === "cash" ? "فوري" : "قسط"}
                       </SelectItem>
                     ))}
+                    {filteredCustomers.length === 0 && <div className="p-3 text-center text-xs text-muted-foreground">لا يوجد عميل مطابق</div>}
                   </SelectContent>
                 </Select>
 
@@ -947,6 +997,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                                 updateProduct(p.id, {
                                   stockId: item.id,
                                   name: item.name,
+                                  unit: "وحدة",
                                   cost: String(item.lastUnitCost || 0),
                                   price: p.price || (item.salePrice ? String(item.salePrice) : ""),
                                 })
@@ -995,8 +1046,11 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                               type="number"
                               value={p.price}
                               onChange={(e) => updateProduct(p.id, { price: e.target.value })}
+                              onFocus={requestPriceOverride}
+                              disabled={isCashierMode && !priceOverrideUnlocked}
                               className="h-9 bg-white/5 border-white/10 text-center font-bold"
                             />
+                            {isCashierMode && !priceOverrideUnlocked && <p className="mt-1 text-[9px] text-warning">يتطلب تعديل السعر موافقة المدير</p>}
                           </div>
                           <div className="flex justify-end">
                             <Button
@@ -1068,14 +1122,17 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                             {(metrics.discount > 0 || metrics.tax > 0) && <span className="mr-2 font-normal">(خصم {fmt(metrics.discount)} • ضريبة {fmt(metrics.tax)})</span>}
                           </span>
                           {s && (
-                            <span
-                              className={cn(
-                                "flex items-center gap-1",
-                                s.quantity >= qty && qty > 0 ? "text-success" : "text-danger",
-                              )}
-                            >
-                              <Package className="h-3 w-3" /> المتوفر: {s.quantity}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                              <span className="rounded-md bg-info/10 px-2 py-1 text-info">كود: {s.productCode || "—"}</span>
+                              <span className="rounded-md bg-info/10 px-2 py-1 text-info">باركود: {s.barcode || "—"}</span>
+                              <span className="rounded-md bg-foreground/[0.06] px-2 py-1 text-muted-foreground">الوحدة: {p.unit || "وحدة"}</span>
+                              <span className={cn("rounded-md px-2 py-1", s.quantity >= qty && qty > 0 ? "bg-success/10 text-success" : "bg-danger/10 text-danger")}>
+                                بعد البيع: {Math.max(0, s.quantity - qty)}
+                              </span>
+                              <span className={cn("flex items-center gap-1", s.quantity >= qty && qty > 0 ? "text-success" : "text-danger")}>
+                                <Package className="h-3 w-3" /> المتوفر: {s.quantity}
+                              </span>
+                            </div>
                           )}
                         </div>
                       </motion.div>
@@ -1216,6 +1273,37 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                   <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     اختياري
                   </Label>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">رقم الطلب الخارجي (إن وجد)</Label>
+                  <Input
+                    value={externalOrderNumber}
+                    onChange={(e) => setExternalOrderNumber(e.target.value)}
+                    placeholder="رقم طلب أونلاين أو مرجع خارجي"
+                    className="h-11 rounded-2xl border-info/20 bg-info/[0.04]"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">مرفق الفاتورة أو المستند (اختياري)</Label>
+                  <input
+                    ref={invoiceAttachmentInputRef}
+                    type="file"
+                    accept="image/*,.pdf"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => setInvoiceAttachmentFiles(Array.from(e.target.files ?? []))}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => invoiceAttachmentInputRef.current?.click()}
+                    className="h-11 w-full justify-between rounded-2xl border-info/30 text-info hover:bg-info/10"
+                  >
+                    <span>{invoiceAttachmentFiles.length ? `${invoiceAttachmentFiles.length} مرفق محدد` : "إرفاق صورة أو PDF"}</span>
+                    <span className="text-xs text-muted-foreground">اختياري</span>
+                  </Button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

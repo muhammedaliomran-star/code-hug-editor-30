@@ -219,6 +219,8 @@ async function fetchAllInner() {
       splitCashAmount: (r as any).split_cash_amount == null ? undefined : Number((r as any).split_cash_amount) / 100,
       splitElectronicAmount: (r as any).split_electronic_amount == null ? undefined : Number((r as any).split_electronic_amount) / 100,
       splitElectronicMethod: (r as any).split_electronic_method ?? null,
+      externalOrderNumber: (r as any).external_order_number ?? null,
+      attachmentPath: (r as any).invoice_attachment_path ?? null,
     })),
     payments: (p.data ?? []).map((r: TableRow<"payments">) => ({
       id: r.id, invoiceId: r.invoice_id, amount: Number(r.amount) / 100, paidAt: r.paid_at,
@@ -392,6 +394,8 @@ export async function invalidateCache(table?: string) {
         archiveReason: (r as any).archive_reason ?? null, deleted: Boolean((r as any).deleted),
         deletedAt: (r as any).deleted_at ?? null, deleteReason: (r as any).delete_reason ?? null,
         branchId: (r as any).branch_id ?? null, cashierId: (r as any).cashier_id ?? null, source: (r as any).source ?? "pos",
+        externalOrderNumber: (r as any).external_order_number ?? null,
+        attachmentPath: (r as any).invoice_attachment_path ?? null,
       }),
     },
     payments: {
@@ -692,6 +696,8 @@ export const db = {
     branchId?: string | null;
     cashierId?: string | null;
     source?: string | null;
+    externalOrderNumber?: string | null;
+    attachmentPath?: string | null;
     workflowInvoiceId?: string;
     shipment?: { carrierId: string; zoneId?: string; trackingNumber?: string; recipientName?: string; recipientPhone?: string; deliveryAddress?: string };
   }): Promise<string | undefined> {
@@ -710,7 +716,7 @@ export const db = {
     }));
 
     const invoiceId = inv.workflowInvoiceId ?? crypto.randomUUID();
-    const { data, error } = await (supabase.rpc as any)("create_sale_with_workflow_v2", {
+    const { data, error } = await (supabase.rpc as any)("create_sale_with_workflow_v3", {
       p_customer_id: inv.customerId,
       p_total: (inv.total ?? 0) * 100,
       p_down_payment: (inv.downPayment ?? 0) * 100,
@@ -733,6 +739,7 @@ export const db = {
       p_branch_id: inv.branchId ?? null,
       p_cashier_id: inv.cashierId ?? null,
       p_source: inv.source ?? "pos",
+      p_external_order_number: inv.externalOrderNumber ?? null,
       p_shipment: inv.shipment ? {
         carrier_id: inv.shipment.carrierId,
         zone_id: inv.shipment.zoneId ?? null,
@@ -748,6 +755,12 @@ export const db = {
       })),
     });
     if (error) throw error;
+    if (inv.attachmentPath) {
+      const { error: attachmentError } = await (supabase.from("invoices") as any)
+        .update({ invoice_attachment_path: inv.attachmentPath })
+        .eq("id", data as string);
+      if (attachmentError) throw attachmentError;
+    }
     await fetchAll();
     return (data as string | undefined) ?? undefined;
   },
