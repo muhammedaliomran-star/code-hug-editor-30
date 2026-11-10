@@ -901,9 +901,18 @@ export type Database = {
       }
       invoices: {
         Row: {
+          archived: boolean
+          archived_at: string | null
+          archive_reason: string | null
+          branch_id: string | null
+          cashier_id: string | null
           created_at: string
           customer_id: string
           date: string | null
+          deleted: boolean
+          deleted_at: string | null
+          deleted_by: string | null
+          delete_reason: string | null
           discount_amount: number
           discount_pct: number
           down_payment: number
@@ -913,6 +922,7 @@ export type Database = {
           split_cash_amount: number
           split_electronic_amount: number
           split_electronic_method: string | null
+          source: string
           first_due_date: string | null
           id: string
           installment_count: number
@@ -930,9 +940,18 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived?: boolean
+          archived_at?: string | null
+          archive_reason?: string | null
+          branch_id?: string | null
+          cashier_id?: string | null
           created_at?: string
           customer_id: string
           date?: string | null
+          deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+          delete_reason?: string | null
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
@@ -942,6 +961,7 @@ export type Database = {
           split_cash_amount?: number
           split_electronic_amount?: number
           split_electronic_method?: string | null
+          source?: string
           first_due_date?: string | null
           id?: string
           installment_count?: number
@@ -959,9 +979,18 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived?: boolean
+          archived_at?: string | null
+          archive_reason?: string | null
+          branch_id?: string | null
+          cashier_id?: string | null
           created_at?: string
           customer_id?: string
           date?: string | null
+          deleted?: boolean
+          deleted_at?: string | null
+          deleted_by?: string | null
+          delete_reason?: string | null
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
@@ -971,6 +1000,7 @@ export type Database = {
           split_cash_amount?: number
           split_electronic_amount?: number
           split_electronic_method?: string | null
+          source?: string
           first_due_date?: string | null
           id?: string
           installment_count?: number
@@ -2964,6 +2994,35 @@ export type Database = {
           p_notes: string
           p_paid: number
           p_shipment?: Json
+          p_split_cash_amount?: number
+          p_split_electronic_amount?: number
+          p_split_electronic_method?: string
+          p_status: string
+          p_tax_amount: number
+          p_tax_pct: number
+          p_total: number
+        }
+        Returns: string
+      }
+      create_sale_with_workflow_v2: {
+        Args: {
+          p_branch_id?: string
+          p_cashier_id?: string
+          p_customer_id: string
+          p_discount_amount: number
+          p_discount_pct: number
+          p_down_payment: number
+          p_down_payment_account_id?: string
+          p_down_payment_method?: string
+          p_down_payment_reference?: string
+          p_first_due_date: string
+          p_invoice_id: string
+          p_items: Json
+          p_monthly_installment: number
+          p_notes: string
+          p_paid: number
+          p_shipment?: Json
+          p_source?: string
           p_split_cash_amount?: number
           p_split_electronic_amount?: number
           p_split_electronic_method?: string

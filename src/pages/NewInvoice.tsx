@@ -14,10 +14,12 @@ import {
   fmt,
   customerBalance,
   useShopSettings,
+  useAuth,
   type ProductVariant,
   type SplitPaymentDetail,
 } from "@/lib/store";
 import { linkInvoiceToBranch, resolveStampBranchId } from "@/lib/branch-system";
+import { useActiveBranch } from "@/hooks/use-active-branch";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,6 +87,8 @@ export default function Page() {
 function NewInvoicePage() {
   const data = useDB();
   const { settings: shop } = useShopSettings();
+  const { activeBranchId } = useActiveBranch();
+  const { user } = useAuth();
   const { privacy, toggle } = usePrivacy();
   const { isCashierMode } = useSecurity();
   const { parkedBills, parkBill } = useParkedBills();
@@ -107,6 +111,7 @@ function NewInvoicePage() {
   const [cashPaid, setCashPaid] = useState("");
   const [step, setStep] = useState(1);
   const [saleMode, setSaleMode] = useState<"quick" | "advanced">("quick");
+  const [showOptionalSections, setShowOptionalSections] = useState(false);
   const [discountPct, setDiscountPct] = useState("");
   const [discountAmt, setDiscountAmt] = useState("");
   const [taxPct, setTaxPct] = useState("");
@@ -361,6 +366,7 @@ function NewInvoicePage() {
     setShippingZoneId("");
     setShippingAddress("");
     setTrackingNumber("");
+    setShowOptionalSections(false);
     setEnableSplitPayment(false);
     setSplitCash("");
     setSplitElectronic("");
@@ -436,6 +442,9 @@ function NewInvoicePage() {
         splitCashAmount: enableSplitPayment ? splitCashNum : (isCash ? t : d),
         splitElectronicAmount: enableSplitPayment ? splitElecNum : 0,
         splitElectronicMethod: enableSplitPayment ? splitMethod : null,
+        branchId: activeBranchId,
+        cashierId: user?.id ?? null,
+        source: "pos",
         shipment: shippingCarrierId ? {
           carrierId: shippingCarrierId,
           zoneId: shippingZoneId || undefined,
@@ -1186,7 +1195,18 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             </div>
           )}
 
-          {(saleMode === "quick" || step === 3) && (
+          {saleMode === "quick" && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowOptionalSections((visible) => !visible)}
+              className="h-11 w-full rounded-2xl border-primary/30 text-primary hover:bg-primary/10"
+            >
+              {showOptionalSections ? "إخفاء الخيارات الإضافية" : "إظهار الشحن والخيارات الإضافية"}
+            </Button>
+          )}
+
+          {((saleMode === "advanced" && step === 3) || (saleMode === "quick" && showOptionalSections)) && (
             <div className="space-y-4">
               <div className="rounded-[1.75rem] border border-border/30 p-5 space-y-6">
                 <div className="flex items-center justify-between gap-3">

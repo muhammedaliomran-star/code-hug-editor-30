@@ -129,6 +129,9 @@ export interface Invoice {
   deleted?: boolean;
   deletedAt?: string | null;
   deleteReason?: string | null;
+  branchId?: string | null;
+  cashierId?: string | null;
+  source?: "pos" | "online" | "return" | "other" | string | null;
   invoiceNumber?: string;
   date?: string;
   receiptToken?: string;
