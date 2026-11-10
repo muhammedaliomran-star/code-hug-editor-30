@@ -240,6 +240,7 @@ export function NewPurchasePage() {
     try {
       let attachmentPath: string | null = null;
       if (invoiceFiles.length) {
+        const uploadedPaths: string[] = [];
         try {
           const ownerId = await uid();
           const paths: string[] = [];
@@ -249,9 +250,13 @@ export function NewPurchasePage() {
             const uploaded = await supabase.storage.from("purchase-invoices").upload(path, file, { upsert: false, contentType: file.type || undefined });
             if (uploaded.error) throw uploaded.error;
             paths.push(path);
+            uploadedPaths.push(path);
           }
           attachmentPath = paths.join("|");
         } catch (attachmentError) {
+          try {
+            if (uploadedPaths.length) await supabase.storage.from("purchase-invoices").remove(uploadedPaths);
+          } catch { /* best-effort cleanup */ }
           toast.warning("تمت قراءة الفاتورة، لكن تعذر حفظ المرفق. يمكنك حفظ الفاتورة والمتابعة.");
         }
       }
