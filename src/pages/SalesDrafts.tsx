@@ -82,7 +82,7 @@ function SalesDraftsPage() {
         title="مسودات فواتير البيع"
         subtitle="راجع الفواتير المحجوزة، استكمل البيع، أو حرّر الكميات بأمان."
         icon={<FileClock className="h-7 w-7" />}
-        action={<div className="flex items-center gap-2"><Button asChild variant="outline" className="rounded-full"><Link to="/invoices"><ArrowRight className="ml-2 h-4 w-4" />الفواتير</Link></Button><Button asChild className="rounded-full"><Link to="/invoices/new"><Plus className="ml-2 h-4 w-4" />فاتورة جديدة</Link></Button></div>}
+        action={<div className="flex items-center gap-2"><Button asChild variant="outline" className="rounded-full"><Link to="/invoices"><ArrowRight className="ml-2 h-4 w-4" />الفواتير</Link></Button><Button asChild className="rounded-full"><Link to="/invoices/new?mode=draft"><Plus className="ml-2 h-4 w-4" />مسودة جديدة</Link></Button></div>}
       />
 
       <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">

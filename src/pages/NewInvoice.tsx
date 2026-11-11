@@ -71,6 +71,7 @@ import {
   Search,
   Check,
   ChevronsUpDown,
+  FileClock,
 } from "lucide-react";
 import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
@@ -490,7 +491,9 @@ function NewInvoicePage() {
 
   useEffect(() => {
     if (queryDraftLoadedRef.current || typeof window === "undefined") return;
-    const draftId = new URLSearchParams(window.location.search).get("draft");
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("mode") === "draft") setSaveMode("draft");
+    const draftId = params.get("draft");
     if (!draftId) return;
     queryDraftLoadedRef.current = true;
     void db.listSalesDrafts().then((drafts) => {
@@ -798,7 +801,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
     <>
       <PageHeader
         eyebrow="نظام الكاشير ونقاط البيع (POS & Billing)"
-        title="شاشة الكاشير وإصدار الفواتير"
+        title={saveMode === "draft" ? (activeDraftId ? "استكمال مسودة البيع" : "مسودة بيع جديدة") : "شاشة الكاشير وإصدار الفواتير"}
         subtitle="مسح باركود متتالي سريع، تعليق فواتير، ودفع مجزأ نقدياً وإلكترونياً."
         icon={<Receipt className="h-7 w-7" />}
         action={
@@ -839,6 +842,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
               <Link to="/invoices">
                 <ArrowRight className="me-1.5 h-4 w-4" />
                 رجوع للفواتير
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="rounded-full border-primary/30 text-primary hover:bg-primary/10">
+              <Link to="/invoices/drafts">
+                <FileClock className="me-1.5 h-4 w-4" />
+                رجوع للمسودات
               </Link>
             </Button>
           </div>
