@@ -113,6 +113,7 @@ function NewInvoicePage() {
   const [cashPaid, setCashPaid] = useState("");
   const [step, setStep] = useState(1);
   const [saleMode, setSaleMode] = useState<"quick" | "advanced">("quick");
+  const [saveMode, setSaveMode] = useState<"complete" | "draft" | "held">("complete");
   const [showOptionalSections, setShowOptionalSections] = useState(false);
   const [discountPct, setDiscountPct] = useState("");
   const [discountAmt, setDiscountAmt] = useState("");
@@ -143,6 +144,7 @@ function NewInvoicePage() {
   const invoiceAttachmentInputRef = useRef<HTMLInputElement>(null);
   const submitLockRef = useRef(false);
   const workflowInvoiceIdRef = useRef<string | null>(null);
+  const draftLoadedRef = useRef(false);
 
   const defaultFirstDue = () => {
     const day = Math.min(28, Math.max(1, shop.defaultDueDay || 1));
@@ -155,6 +157,32 @@ function NewInvoicePage() {
     setDate((d) => d ?? defaultFirstDue());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shop.defaultInstallmentMonths, shop.defaultDueDay]);
+
+  useEffect(() => {
+    if (draftLoadedRef.current || typeof window === "undefined") return;
+    draftLoadedRef.current = true;
+    try {
+      const raw = localStorage.getItem("segilly:invoice_draft");
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (draft.customerId) setCustomerId(draft.customerId);
+      if (Array.isArray(draft.products) && draft.products.length) setProducts(draft.products);
+      if (draft.notes) setNotes(draft.notes);
+      if (draft.saleType) setSaleType(draft.saleType);
+      if (draft.down !== undefined) setDown(draft.down);
+      if (draft.monthly !== undefined) setMonthly(draft.monthly);
+      if (draft.count !== undefined) setCount(draft.count);
+      if (draft.date) setDate(new Date(draft.date));
+      if (draft.discountPct !== undefined) setDiscountPct(draft.discountPct);
+      if (draft.discountAmt !== undefined) setDiscountAmt(draft.discountAmt);
+      if (draft.taxPct !== undefined) setTaxPct(draft.taxPct);
+      if (draft.externalOrderNumber !== undefined) setExternalOrderNumber(draft.externalOrderNumber);
+      toast.info("تم استرجاع المسودة المحفوظة تلقائيًا");
+      localStorage.removeItem("segilly:invoice_draft");
+    } catch {
+      localStorage.removeItem("segilly:invoice_draft");
+    }
+  }, []);
 
   const invoiceCode = `#${String((data.invoices?.length ?? 0) + 1).padStart(4, "0")}`;
 
@@ -356,6 +384,22 @@ function NewInvoicePage() {
     });
     toast.success("تم تعليق الفاتورة بنجاح (Parked Bill)");
     reset();
+  };
+
+  const saveDraft = () => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("segilly:invoice_draft", JSON.stringify({
+      customerId, products, down, monthly, count, date: date?.toISOString() ?? null,
+      notes, saleType, discountPct, discountAmt, taxPct, externalOrderNumber,
+      savedAt: new Date().toISOString(),
+    }));
+    toast.success("تم حفظ المسودة بدون خصم المخزون أو تسجيل حركة مالية");
+  };
+
+  const handlePrimarySave = () => {
+    if (saveMode === "draft") return saveDraft();
+    if (saveMode === "held") return handleParkCurrentBill();
+    submit(saleMode === "quick", false);
   };
 
   const handleResumeParkedBill = (bill: any) => {
@@ -608,7 +652,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         addProduct();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "s" || e.key === "س")) {
         e.preventDefault();
-        if (!blockReason) submit(saleMode === "quick");
+        if (saveMode !== "complete" || !blockReason) handlePrimarySave();
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "h" || e.key === "ا")) {
         e.preventDefault();
         toggle();
@@ -1807,6 +1851,19 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
               </span>
             </div>
 
+            <div className="space-y-2 rounded-2xl border border-border/30 bg-foreground/[0.03] p-3">
+              <Label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">طريقة الحفظ</Label>
+              <Select value={saveMode} onValueChange={(value) => setSaveMode(value as typeof saveMode)}>
+                <SelectTrigger className="h-11 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="complete">اعتماد وإكمال الفاتورة</SelectItem>
+                  <SelectItem value="draft">حفظ كمسودة</SelectItem>
+                  <SelectItem value="held">تعليق الفاتورة</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">المسودة لا تخصم المخزون ولا تسجل حركة في الصندوق.</p>
+            </div>
+
             <div className="space-y-2 text-sm">
               <Row
                 label="عدد الأصناف"
@@ -1857,12 +1914,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
             </Button>
 
             <Button
-              onClick={() => submit(saleMode === "quick", false)}
-              disabled={!!blockReason}
+              onClick={handlePrimarySave}
+              disabled={saveMode === "complete" && !!blockReason}
               className="h-12 w-full rounded-2xl bg-primary text-primary-foreground font-black text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
               <Plus className="w-4 h-4" />
-              <span>حفظ الفاتورة (Ctrl+S)</span>
+              <span>{saveMode === "draft" ? "حفظ المسودة" : saveMode === "held" ? "تعليق الفاتورة" : "اعتماد الفاتورة (Ctrl+S)"}</span>
             </Button>
 
             <div className="grid grid-cols-2 gap-2">
@@ -1897,11 +1954,11 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-foreground/10 bg-background/80 px-4 py-3 backdrop-blur-xl lg:hidden">
         <div className="flex items-center gap-3">
           <Button
-            onClick={() => (saleMode === "quick" ? submit(true) : step < 4 ? setStep(step + 1) : submit(false))}
-            disabled={saleMode === "quick" ? !!blockReason : step === 4 && !!blockReason}
+            onClick={() => (saleMode === "quick" ? handlePrimarySave() : step < 4 ? setStep(step + 1) : handlePrimarySave())}
+            disabled={saleMode === "quick" ? saveMode === "complete" && !!blockReason : step === 4 && saveMode === "complete" && !!blockReason}
             className="h-12 flex-1 rounded-2xl font-black"
           >
-            {saleMode === "quick" || step === 4 ? "حفظ الفاتورة" : "التالي"}
+            {saleMode === "quick" || step === 4 ? (saveMode === "draft" ? "حفظ المسودة" : saveMode === "held" ? "تعليق الفاتورة" : "اعتماد الفاتورة") : "التالي"}
           </Button>
           <Button
             onClick={() => submit(true, true)}
