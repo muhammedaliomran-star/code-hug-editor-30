@@ -7,6 +7,7 @@ import { getPublicReceipt } from "@/lib/public-receipt.functions";
 import { Button } from "@/components/ui/button";
 import { fmt } from "@/lib/store";
 import { toast } from "sonner";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 type ReceiptData = NonNullable<Awaited<ReturnType<typeof getPublicReceipt>>>;
 
@@ -47,7 +48,7 @@ export default function PublicReceipt() {
         </div>
       </header>
       <section className="space-y-6 p-6 sm:p-8">
-        <div className="grid grid-cols-2 gap-4 text-sm"><div><p className="text-muted-foreground">التاريخ</p><p className="font-bold" dir="ltr">{new Date(receipt.invoice.createdAt).toLocaleDateString("ar-EG")}</p></div><div><p className="text-muted-foreground">العميل</p><p className="font-bold">{receipt.customer.name}</p></div></div>
+        <div className="grid grid-cols-2 gap-4 text-sm"><div><p className="text-muted-foreground">التاريخ</p><p className="font-bold" dir="ltr">{new Date(receipt.invoice.createdAt).toLocaleDateString("ar-EG")}</p></div><div><p className="text-muted-foreground">العميل</p><p className="font-bold">{receipt.customer.name}</p><p className="text-xs text-muted-foreground">كود العميل: {getCustomerCode(receipt.customer)}</p></div></div>
         <div className="overflow-x-auto rounded-lg border border-border"><table className="w-full min-w-[540px] text-sm"><thead className="bg-muted/60 text-muted-foreground"><tr><th className="p-3 text-right">الصنف</th><th className="p-3">الكمية</th><th className="p-3">السعر</th><th className="p-3">الصافي</th></tr></thead><tbody className="divide-y divide-border">{receipt.items.map((item, index) => <tr key={`${item.name}-${index}`}><td className="p-3 font-semibold">{item.name}{item.serialNumbers.length > 0 && <p className="mt-1 font-mono text-[10px] text-muted-foreground" dir="ltr">IMEI/SN: {item.serialNumbers.join(" • ")}</p>}{(item.discountPct > 0 || item.taxPct > 0) && <p className="mt-1 text-[10px] text-muted-foreground">خصم {fmt(item.discountPct)}% • ضريبة {fmt(item.taxPct)}%</p>}</td><td className="p-3 text-center">{item.quantity}</td><td className="p-3 text-center">{fmt(item.price)}</td><td className="p-3 text-center font-bold">{fmt(item.lineTotal)}</td></tr>)}</tbody></table></div>
         <div className="mr-auto grid max-w-sm gap-2 text-sm"><div className="flex justify-between gap-8"><span className="font-bold">{fmt(receipt.invoice.total)} {receipt.shop.currency}</span><span className="text-muted-foreground">الإجمالي</span></div><div className="flex justify-between gap-8"><span className="font-bold text-success">{fmt(receipt.invoice.paid)} {receipt.shop.currency}</span><span className="text-muted-foreground">المدفوع</span></div><div className="flex justify-between gap-8 border-t border-border pt-3 text-base"><span className="font-black text-danger">{fmt(remaining)} {receipt.shop.currency}</span><span className="font-bold">المتبقي</span></div></div>
         <footer className="border-t border-dashed border-border pt-5 text-center text-xs text-muted-foreground">{receipt.shop.footerNote || "شكرًا لتعاملكم معنا"}{receipt.shop.phone && <span className="block mt-1" dir="ltr">{receipt.shop.phone}</span>}</footer>

@@ -11,6 +11,7 @@ import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { DatePickerField } from "@/components/DatePickerField";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 interface PromiseModalProps {
   open: boolean;
@@ -129,7 +130,7 @@ export function PromiseModal({
             تسجيل متابعة اتصال ووعد سداد
           </DialogTitle>
           <DialogDescription className="text-right">
-            العميل: <b className="text-foreground">{customer.name}</b> · المتبقي على الفاتورة: <b className="text-rose-600 dark:text-rose-400">{fmt(remaining)} ج.م</b>
+            العميل: <b className="text-foreground">{customer.name}</b> <span className="text-muted-foreground">(كود {getCustomerCode(customer)})</span> · المتبقي على الفاتورة: <b className="text-rose-600 dark:text-rose-400">{fmt(remaining)} ج.م</b>
           </DialogDescription>
         </DialogHeader>
 

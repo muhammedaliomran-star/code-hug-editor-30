@@ -1,4 +1,5 @@
 import { fmt, type Invoice, type Customer, type InvoiceItem } from "@/lib/store";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { isoToDDMMYYYY } from "@/lib/date-utils";
 import { toArabicDigits } from "@/lib/arabic-digits";
 import { Button } from "@/components/ui/button";
@@ -45,7 +46,7 @@ export function ShareInvoiceDialog({
   const message =
     `🧾 *فاتورة مبيعات رقم #${invNo}*\n` +
     `🏢 *${shopName}*\n` +
-    `👤 *العميل:* ${customer.name}\n` +
+    `👤 *العميل:* ${customer.name} — كود ${getCustomerCode(customer)}\n` +
     `📅 *التاريخ:* ${format(new Date(inv.createdAt), "dd/MM/yyyy")}\n` +
     `──────────────────\n` +
     `📦 *المنتجات:*\n` +
@@ -73,7 +74,7 @@ export function ShareInvoiceDialog({
             <MessageCircle className="w-5 h-5 text-success" />
           </DialogTitle>
           <DialogDescription className="text-right">
-            إيصال رقمي منسق جاهز للمشاركة مع العميل {customer.name} عبر واتساب أو الرسائل.
+            إيصال رقمي منسق جاهز للمشاركة مع العميل {customer.name} — كود {getCustomerCode(customer)} عبر واتساب أو الرسائل.
           </DialogDescription>
         </DialogHeader>
 

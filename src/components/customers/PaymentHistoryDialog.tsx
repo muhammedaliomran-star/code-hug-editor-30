@@ -12,6 +12,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { customerMetrics } from "./customer-helpers";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 interface PaymentHistoryDialogProps {
   customer: Customer | null;
@@ -39,7 +40,7 @@ export function PaymentHistoryDialog({
             <History className="w-5 h-5 text-primary" />
           </DialogTitle>
           <DialogDescription className="text-right">
-            {customer ? `كل عمليات السداد المسجلة للعميل ${customer.name}` : ""}
+            {customer ? `كل عمليات السداد المسجلة للعميل ${customer.name} — كود ${getCustomerCode(customer)}` : ""}
           </DialogDescription>
         </DialogHeader>
         {customer &&

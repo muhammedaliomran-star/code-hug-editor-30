@@ -14,6 +14,7 @@ import { useDB, db, fmt } from "@/lib/store";
 import type { SalesDraft } from "@/types";
 import { FileClock, Search, ArrowRight, Play, Trash2, Plus, WalletCards, PackageCheck, Clock3, MoreHorizontal, Eye, CalendarClock, CircleAlert, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 export default function SalesDrafts() {
   return <AppShell><PageTransition><SalesDraftsPage /></PageTransition></AppShell>;
@@ -117,7 +118,7 @@ function SalesDraftsPage() {
         </BezelCard>
       ) : (
         <div className="space-y-3">
-          {visible.map((draft) => <DraftCard key={draft.id} draft={draft} now={now} customer={data.customers.find((item) => item.id === draft.customerId)?.name ?? "عميل نقدي"} onContinue={continueDraft} onCancel={cancel} onOpen={setSelectedDraft} />)}
+          {visible.map((draft) => { const customerRecord = data.customers.find((item) => item.id === draft.customerId); return <DraftCard key={draft.id} draft={draft} now={now} customer={customerRecord?.name ?? "عميل نقدي"} customerCode={customerRecord ? getCustomerCode(customerRecord) : "—"} onContinue={continueDraft} onCancel={cancel} onOpen={setSelectedDraft} />; })}
         </div>
       )}
 
@@ -159,7 +160,7 @@ function DraftStatus({ draft }: { draft: SalesDraft }) {
   return <Badge className="gap-1 rounded-full bg-warning/10 text-warning"><FileClock className="h-3.5 w-3.5" />مسودة محفوظة</Badge>;
 }
 
-function DraftCard({ draft, customer, now, onContinue, onCancel, onOpen }: { draft: SalesDraft; customer: string; now: number; onContinue: (draft: SalesDraft) => void; onCancel: (draft: SalesDraft) => Promise<void>; onOpen: (draft: SalesDraft) => void }) {
+function DraftCard({ draft, customer, customerCode, now, onContinue, onCancel, onOpen }: { draft: SalesDraft; customer: string; customerCode: string; now: number; onContinue: (draft: SalesDraft) => void; onCancel: (draft: SalesDraft) => Promise<void>; onOpen: (draft: SalesDraft) => void }) {
   const expiry = draftExpiry(draft);
   const reserved = reservationQuantity(draft);
   const remaining = Math.max(0, draft.total - draft.depositTotal);
@@ -178,7 +179,7 @@ function DraftCard({ draft, customer, now, onContinue, onCancel, onOpen }: { dra
             </DropdownMenu>
           </div>
           <div className="min-w-0 flex-1 text-right">
-            <div className="flex flex-wrap items-center justify-end gap-2"><DraftStatus draft={draft} /><Badge className="rounded-full bg-primary/10 text-primary">D-{String(draft.draftNumber).padStart(4, "0")}</Badge><h2 className="text-xl font-black text-foreground">{customer}</h2></div>
+            <div className="flex flex-wrap items-center justify-end gap-2"><DraftStatus draft={draft} /><Badge className="rounded-full bg-primary/10 text-primary">D-{String(draft.draftNumber).padStart(4, "0")}</Badge><h2 className="text-xl font-black text-foreground">{customer}</h2><span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold text-primary">كود {customerCode}</span></div>
             <div className="mt-2 grid grid-cols-2 gap-x-5 gap-y-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:justify-end"><span>{draft.items.length} أصناف / {reserved} وحدة</span><span>{fmt(draft.total)} ج.م إجمالي</span><span className={draft.depositTotal > 0 ? "text-success" : ""}>عربون {fmt(draft.depositTotal)} ج.م</span><span>متبقي {fmt(remaining)} ج.م</span></div>
             <div className={`mt-3 flex items-center justify-end gap-1.5 text-xs font-bold ${expiry.tone === "danger" ? "text-danger" : expiry.tone === "warning" ? "text-warning" : "text-muted-foreground"}`}><Clock3 className="h-3.5 w-3.5" />{expiry.label}</div>
             <div className="mt-2 flex items-center justify-end gap-1.5 text-xs font-bold text-info"><Clock3 className="h-3.5 w-3.5" />مدة الاحتفاظ بالحجز: {elapsedSince(draft, now)}</div>

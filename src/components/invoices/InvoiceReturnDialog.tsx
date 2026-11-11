@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { db, fmt, type Invoice, type Customer, type InvoiceItem } from "@/lib/store";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,7 +83,7 @@ export function InvoiceReturnDialog({
             <Undo2 className="w-5 h-5 text-warning" />
           </DialogTitle>
           <DialogDescription className="text-right">
-            حدد الأصناف والكميات المراد إرجاعها إلى المخزن وتسوية حساب الفاتورة مع العميل {customer?.name}.
+            حدد الأصناف والكميات المراد إرجاعها إلى المخزن وتسوية حساب العميل {customer?.name}{customer ? ` — كود ${getCustomerCode(customer)}` : ""}.
           </DialogDescription>
         </DialogHeader>
 

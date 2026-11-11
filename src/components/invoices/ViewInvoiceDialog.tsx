@@ -1,4 +1,5 @@
 import { fmt, daysLate, type Invoice, type Customer, type InvoiceItem, type Payment } from "@/lib/store";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { usePrivacy } from "@/lib/privacy";
 import { useShopSettings } from "@/lib/store";
 import { isoToDDMMYYYY } from "@/lib/date-utils";
@@ -84,7 +85,7 @@ export function ViewInvoiceDialog({
             </div>
             <div className="text-right">
               <DialogTitle className="text-lg font-bold">فاتورة #{invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—"}</DialogTitle>
-              <DialogDescription className="text-xs">{customer?.name ?? "عميل محذوف"} {customer?.phone ? `• ${customer.phone}` : ""}</DialogDescription>
+              <DialogDescription className="text-xs">{customer?.name ?? "عميل محذوف"}{customer ? ` • كود ${getCustomerCode(customer)}` : ""} {customer?.phone ? `• ${customer.phone}` : ""}</DialogDescription>
             </div>
           </div>
         </DialogHeader>

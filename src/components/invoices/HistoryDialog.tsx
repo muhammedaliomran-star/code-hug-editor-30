@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Pencil, Wallet, Eye } from "lucide-react";
 import { EditInvoiceItemDialog } from "./EditInvoiceItemDialog";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 export function HistoryDialog({ customer, onClose, invoices, payments, items, blurCls, onEditInvoice, onViewInvoice }: {
   customer: Customer | null;
@@ -41,7 +42,7 @@ export function HistoryDialog({ customer, onClose, invoices, payments, items, bl
             سجل الحركات الكامل
             <span className="w-5 h-5 text-primary">📋</span>
           </DialogTitle>
-          <DialogDescription className="text-right">كل فواتير ومنتجات ومدفوعات العميل {customer.name}</DialogDescription>
+          <DialogDescription className="text-right">كل فواتير ومنتجات ومدفوعات العميل {customer.name} — كود {getCustomerCode(customer)}</DialogDescription>
         </DialogHeader>
         <div className="space-y-3 text-right">
           <div className="grid grid-cols-3 gap-2 divide-x divide-x-reverse divide-border/40">

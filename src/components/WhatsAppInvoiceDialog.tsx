@@ -20,6 +20,7 @@ import {
 } from "@/lib/whatsapp";
 import { fmt, type Invoice, type Customer, useShopSettings } from "@/lib/store";
 import { toast } from "sonner";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 interface WhatsAppInvoiceDialogProps {
   open: boolean;
@@ -52,6 +53,7 @@ export function WhatsAppInvoiceDialog({
 
   const receiptTemplate = `مرحباً بك يا ${customer.name} 🌸
 شكراً لتعاملك مع *${storeName}*!
+🔖 كود العميل: ${getCustomerCode(customer)}
 
 🧾 *تفاصيل الفاتورة:*
 • رقم الفاتورة: #${invoiceNo ?? invoice.invoiceNumber?.replace(/^#/, "") ?? "—"}
@@ -62,7 +64,7 @@ ${invoice.notes ? `• تفاصيل الأصناف: ${invoice.notes}` : ""}
 
 نسعد دائماً بخدمتكم ورضاكم غايتنا! 🌟`;
 
-  const reminderTemplate = `عناية العميل المحترم ${customer.name} ⏳
+  const reminderTemplate = `عناية العميل المحترم ${customer.name} (كود ${getCustomerCode(customer)}) ⏳
 تحية طيبة من *${storeName}*،
 
 نود تذكيركم بموعد استحقاق القسط الشهري الخاص بالفاتورة #${invoiceNo ?? invoice.invoiceNumber?.replace(/^#/, "") ?? "—"}:
@@ -72,7 +74,7 @@ ${invoice.notes ? `• تفاصيل الأصناف: ${invoice.notes}` : ""}
 
 شاكرين لسيادتكم حسن تعاونكم وحرصكم الدائم على السداد في الموعد 🤝`;
 
-  const generalTemplate = `أهلاً بك يا ${customer.name}،
+  const generalTemplate = `أهلاً بك يا ${customer.name} (كود ${getCustomerCode(customer)})،
 تحية طيبة من *${storeName}*!
 
 نحن في خدمتكم دائماً لأي استفسار بخصوص فواتيركم ومشترياتكم.

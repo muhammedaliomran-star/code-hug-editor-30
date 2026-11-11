@@ -1,4 +1,5 @@
 import { fmt, type Invoice, type Customer } from "@/lib/store";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { isoToDDMMYYYY } from "@/lib/date-utils";
 import { daysLate } from "@/lib/store";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,7 @@ export function ReminderDialog({ inv, invoiceNo, customer, onClose }: { inv: Inv
   const late = daysLate(inv);
   const overdueAmount = Math.min(inv.monthlyInstallment, remaining);
   const message =
-    `مرحباً ${customer.name}،\n` +
+    `مرحباً ${customer.name} — كود العميل ${getCustomerCode(customer)}،\n` +
     `نود تذكيرك بقسط الفاتورة رقم #${invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—"} المستحق منذ ${late} يوم.\n\n` +
     `• قيمة القسط المتأخر: ${fmt(overdueAmount)} ج.م\n` +
     `• إجمالي المتبقي على الفاتورة: ${fmt(remaining)} ج.م\n` +
@@ -38,7 +39,7 @@ export function ReminderDialog({ inv, invoiceNo, customer, onClose }: { inv: Inv
             رسالة تذكير
             <Bell className="w-5 h-5 text-warning" />
           </DialogTitle>
-          <DialogDescription className="text-right">رسالة جاهزة للإرسال للعميل {customer.name}</DialogDescription>
+          <DialogDescription className="text-right">رسالة جاهزة للإرسال للعميل {customer.name} — كود {getCustomerCode(customer)}</DialogDescription>
         </DialogHeader>
         <div className="rounded-2xl hairline bg-foreground/[0.035] p-3 text-right whitespace-pre-line text-sm leading-relaxed">
           {message}

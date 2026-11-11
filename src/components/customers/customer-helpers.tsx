@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 import { toArabicDigits } from "@/lib/arabic-digits";
+import { getCustomerCode } from "@/lib/customer-utils";
 
 export type SortKey = "name" | "balance";
 export type SortDir = "asc" | "desc";
@@ -185,6 +186,7 @@ export function exportStatementPDF(
   const body = `
 <div class="info">
   <div class="box"><b>اسم العميل</b> ${escapeHtml(c.name)}</div>
+  <div class="box"><b>كود العميل</b> ${escapeHtml(getCustomerCode(c))}</div>
   <div class="box"><b>رقم الهاتف</b> <span dir="ltr">${escapeHtml(c.phone)}</span></div>
   <div class="box"><b>العنوان</b> ${escapeHtml(c.address || "—")}</div>
   <div class="box"><b>تاريخ الانضمام</b> <span dir="ltr">${escapeHtml(joining)}</span></div>
@@ -242,6 +244,7 @@ export function shareStatement(
 ) {
   const lines: string[] = [];
   lines.push(`📋 كشف حساب — ${c.name}`);
+  lines.push(`🔖 كود العميل: ${getCustomerCode(c)}`);
   lines.push(`📞 ${c.phone}`);
   lines.push(`📅 ${new Date().toLocaleDateString("en-US")}`);
   lines.push("―――――――――――――");

@@ -25,6 +25,7 @@ export function PaymentDialog({
   max,
   invoiceNo,
   customerName,
+  customerCode,
   controlledOpen,
   onControlledClose,
   initialAmount,
@@ -33,6 +34,7 @@ export function PaymentDialog({
   max: number;
   invoiceNo?: string;
   customerName?: string;
+  customerCode?: string;
   controlledOpen?: boolean;
   onControlledClose?: () => void;
   initialAmount?: number;
@@ -96,7 +98,7 @@ export function PaymentDialog({
         <DialogHeader>
           <DialogTitle className="text-right">تسجيل دفعة للفاتورة</DialogTitle>
           <DialogDescription className="text-right">
-            المتبقي على الفاتورة: <span className="font-bold text-danger">{fmt(max)} ج.م</span> {customerName ? `— العميل: ${customerName}` : ""}
+            المتبقي على الفاتورة: <span className="font-bold text-danger">{fmt(max)} ج.م</span> {customerName ? `— العميل: ${customerName} — كود ${customerCode || "—"}` : ""}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-right">

@@ -50,6 +50,7 @@ import { usePrivacy } from "@/lib/privacy";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { toArabicDigits } from "@/lib/arabic-digits";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { cn } from "@/lib/utils";
 import { getInvoicePaymentStatus, getInvoiceStatusMeta, getPaymentStatusMeta, type InvoicePaymentStatus } from "@/lib/invoice-status";
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
@@ -113,6 +114,7 @@ function InvoicesPage() {
     max: number;
     invoiceNo?: string;
     customerName?: string;
+    customerCode?: string;
     initialAmount?: number;
   } | null>(null);
   const [salesDraftSummary, setSalesDraftSummary] = useState({ count: 0, total: 0 });
@@ -167,6 +169,7 @@ function InvoicesPage() {
             </div>
             <div style="text-align: left;">
               <b style="font-size: 14px; color: #0f172a;">${escapeHtml(cust?.name || "عميل")}</b>
+              <span style="font-size: 11px; color: #475569; display: block;">كود العميل: ${escapeHtml(cust ? getCustomerCode(cust) : "—")}</span>
               <span style="font-size: 11px; color: #64748b; display: block;" dir="ltr">${escapeHtml(cust?.phone || "—")}</span>
             </div>
           </div>
@@ -230,7 +233,7 @@ function InvoicesPage() {
   const handleBulkExportCSV = () => {
     if (selectedIds.size === 0) return toast.error("حدد فواتير للتصدير أولاً");
     const targetInvoices = list.filter((i) => selectedIds.has(i.id));
-    const headers = ["رقم الفاتورة", "العميل", "الهاتف", "العنوان", "الإجمالي", "المسدد", "المتبقي", "القسط الشهري", "تاريخ الاستحقاق", "تاريخ الإنشاء", "الحالة"];
+    const headers = ["رقم الفاتورة", "العميل", "كود العميل", "الهاتف", "العنوان", "الإجمالي", "المسدد", "المتبقي", "القسط الشهري", "تاريخ الاستحقاق", "تاريخ الإنشاء", "الحالة"];
     const rows = targetInvoices.map((inv) => {
       const c = findCustomer(inv.customerId);
       const remaining = inv.total - inv.paid;
@@ -239,6 +242,7 @@ function InvoicesPage() {
       return [
         invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix),
         c?.name ?? "—",
+        c ? getCustomerCode(c) : "—",
         c?.phone ?? "—",
         c?.address ?? "—",
         inv.total,
@@ -453,13 +457,13 @@ function InvoicesPage() {
   const findCustomer = (id: string) => data.customers.find((c) => c.id === id);
 
   const exportCSV = () => {
-    const headers = ["رقم الفاتورة", "العميل", "الهاتف", "الإجمالي", "المسدد", "المتبقي", "القسط الشهري", "تاريخ أول قسط", "تاريخ الإنشاء", "الحالة"];
+    const headers = ["رقم الفاتورة", "العميل", "كود العميل", "الهاتف", "الإجمالي", "المسدد", "المتبقي", "القسط الشهري", "تاريخ أول قسط", "تاريخ الإنشاء", "الحالة"];
     const rows = list.map((inv) => {
       const c = findCustomer(inv.customerId);
       const remaining = inv.total - inv.paid;
       const late = daysLate(inv);
       const status = inv.deleted ? "في سلة المحذوفات" : inv.archived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
-      return [invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix), c?.name ?? "—", c?.phone ?? "—", inv.total, inv.paid, remaining, inv.monthlyInstallment, isoToDDMMYYYY(inv.firstDueDate), format(new Date(inv.createdAt), "dd/MM/yyyy"), status];
+      return [invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix), c?.name ?? "—", c ? getCustomerCode(c) : "—", c?.phone ?? "—", inv.total, inv.paid, remaining, inv.monthlyInstallment, isoToDDMMYYYY(inv.firstDueDate), format(new Date(inv.createdAt), "dd/MM/yyyy"), status];
     });
     const csv = "\uFEFF" + [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -481,12 +485,12 @@ function InvoicesPage() {
       if (remaining > 0 && late > 0) lateCount++;
       const status = inv.deleted ? "في سلة المحذوفات" : inv.archived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
       const tag = remaining === 0 ? "payment" : late > 0 ? "purchase" : "opening";
-      return `<tr><td>#${escapeHtml(invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)}</td><td class="num ok">${fmt(inv.paid)}</td><td class="num ${remaining > 0 ? "due" : ""}">${fmt(remaining)}</td><td dir="ltr">${escapeHtml(isoToDDMMYYYY(inv.firstDueDate))}</td><td><span class="tag ${tag}">${escapeHtml(status)}</span></td></tr>`;
+      return `<tr><td>#${escapeHtml(invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td>${escapeHtml(c ? getCustomerCode(c) : "—")}</td><td class="num">${fmt(inv.total)}</td><td class="num ok">${fmt(inv.paid)}</td><td class="num ${remaining > 0 ? "due" : ""}">${fmt(remaining)}</td><td dir="ltr">${escapeHtml(isoToDDMMYYYY(inv.firstDueDate))}</td><td><span class="tag ${tag}">${escapeHtml(status)}</span></td></tr>`;
     }).join("");
     const body = `
 <h2 class="sec">قائمة الفواتير</h2>
-<div class="t-wrap"><table><thead><tr><th>رقم</th><th>العميل</th><th class="num">الإجمالي</th><th class="num">المسدد</th><th class="num">المتبقي</th><th>الاستحقاق</th><th>الحالة</th></tr></thead>
-<tbody>${rowsHtml || `<tr><td colspan="7" class="empty">لا توجد فواتير</td></tr>`}</tbody>
+<div class="t-wrap"><table><thead><tr><th>رقم</th><th>العميل</th><th>كود العميل</th><th class="num">الإجمالي</th><th class="num">المسدد</th><th class="num">المتبقي</th><th>الاستحقاق</th><th>الحالة</th></tr></thead>
+<tbody>${rowsHtml || `<tr><td colspan="8" class="empty">لا توجد فواتير</td></tr>`}</tbody>
 <tfoot><tr><td colspan="2">الإجماليات</td><td class="num">${fmt(sumTotal)}</td><td class="num">${fmt(sumPaid)}</td><td class="num">${fmt(sumRemaining)}</td><td colspan="2">—</td></tr></tfoot></table></div>`;
     const html = pdfDocument({
       docTitle: "تقرير الفواتير — سِجلّي",
@@ -886,6 +890,7 @@ function InvoicesPage() {
                           max={remaining}
                           invoiceNo={invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix)}
                           customerName={cust?.name}
+                          customerCode={cust ? getCustomerCode(cust) : undefined}
                         />
                       )}
 
@@ -1021,6 +1026,7 @@ function InvoicesPage() {
             max: remaining,
             invoiceNo: invoiceNumber(data.invoices, i.id, shopSettings.invoicePrefix),
             customerName: cust?.name,
+            customerCode: cust ? getCustomerCode(cust) : undefined,
             initialAmount: Math.min(amount, remaining),
           });
         }}
@@ -1064,6 +1070,7 @@ function InvoicesPage() {
           max={directPayState.max}
           invoiceNo={directPayState.invoiceNo}
           customerName={directPayState.customerName}
+          customerCode={directPayState.customerCode}
           initialAmount={directPayState.initialAmount}
           controlledOpen={true}
           onControlledClose={() => setDirectPayState(null)}
@@ -1098,6 +1105,7 @@ function printReceipt(
   customerName: string,
   phone: string,
   allInvoices: import("@/lib/store").Invoice[] = [],
+  customerCode = "—",
 ) {
   const shop = getShopSettings();
   const cur = shop.currency || "ج.م";
@@ -1107,6 +1115,7 @@ function printReceipt(
   const body = `
 <div class="info">
   <div class="box"><b>اسم العميل</b> ${escapeHtml(customerName)}</div>
+  <div class="box"><b>كود العميل</b> ${escapeHtml(customerCode)}</div>
   <div class="box"><b>الهاتف</b> <span dir="ltr">${escapeHtml(phone || "—")}</span></div>
   <div class="box" style="grid-column:1/-1"><b>وصف السلعة</b> ${escapeHtml(inv.notes || "—")}</div>
 </div>

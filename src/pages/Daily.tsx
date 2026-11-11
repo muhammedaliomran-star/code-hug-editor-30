@@ -42,6 +42,7 @@ import {
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
 import { decodeExpenseNotes } from "@/lib/expenses-system";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { getManualTransactions, getInternalTransfers, calculateAccountBalance, getTreasuryAccounts } from "@/lib/cashbox-system";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -162,7 +163,7 @@ function DailyPage() {
   const [shareInvoice, setShareInvoice] = useState<Invoice | null>(null);
   const [customPrintInvoice, setCustomPrintInvoice] = useState<Invoice | null>(null);
   const [shipmentInvoice, setShipmentInvoice] = useState<Invoice | null>(null);
-  const [directPayState, setDirectPayState] = useState<{ invoiceId: string; max: number; invoiceNo: string; customerName: string; initialAmount: number } | null>(null);
+  const [directPayState, setDirectPayState] = useState<{ invoiceId: string; max: number; invoiceNo: string; customerName: string; customerCode: string; initialAmount: number } | null>(null);
   const { privacy, toggle } = usePrivacy();
   const { settings: shopSettings } = useShopSettings();
   const masked = privacy;
@@ -403,7 +404,7 @@ function DailyPage() {
         if (typeFilter !== "all" && (c?.customerType ?? "installment") !== typeFilter) return false;
         if (statusFilter !== "all" && invStatus(inv) !== statusFilter) return false;
         if (q) {
-          const txt = `${c?.name ?? ""} ${c?.phone ?? ""} ${invoiceNumber(invoices, inv.id)}`.toLowerCase();
+          const txt = `${c?.name ?? ""} ${c?.phone ?? ""} ${c ? getCustomerCode(c) : ""} ${invoiceNumber(invoices, inv.id)}`.toLowerCase();
           if (!txt.includes(q)) return false;
         }
         return true;
@@ -695,7 +696,7 @@ function DailyPage() {
     let filename = `daily-${from}_${to}.csv`;
 
     if (activeTab === "invoices") {
-      headers = ["رقم", "التاريخ", "الوقت", "العميل", "الإجمالي", "مدفوع", "متبقي", "نوع", "الحالة"];
+      headers = ["رقم", "التاريخ", "الوقت", "العميل", "كود العميل", "الإجمالي", "مدفوع", "متبقي", "نوع", "الحالة"];
       body = rows.map((inv) => {
         const c = customerById.get(inv.customerId);
         const isCash = (c?.customerType ?? "installment") === "cash";
@@ -704,20 +705,20 @@ function DailyPage() {
           invoiceNumber(invoices, inv.id),
           d.toLocaleDateString("en-CA"),
           d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-          c?.name ?? "—",
+          c?.name ?? "—", c ? getCustomerCode(c) : "—",
           inv.total, inv.paid, Math.max(0, inv.total - inv.paid),
           isCash ? "فوري" : "قسط",
           statusMeta[invStatus(inv)].label,
         ];
       });
     } else if (activeTab === "payments") {
-      headers = ["التاريخ", "الوقت", "العميل", "الفاتورة", "المبلغ"];
+      headers = ["التاريخ", "الوقت", "العميل", "كود العميل", "الفاتورة", "المبلغ"];
       body = periodPayments.map((p) => {
         const d = new Date(p.paidAt);
         return [
           d.toLocaleDateString("en-CA"),
           d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-          p.customer?.name ?? "—",
+          p.customer?.name ?? "—", p.customer ? getCustomerCode(p.customer) : "—",
           p.invoice ? invoiceNumber(invoices, p.invoice.id) : "—",
           p.amount,
         ];
@@ -731,10 +732,10 @@ function DailyPage() {
         decodeExpenseNotes(e.notes).cleanNotes,
       ]);
     } else if (activeTab === "returns") {
-      headers = ["التاريخ", "العميل", "الفاتورة", "المبلغ", "البنود", "السبب"];
+      headers = ["التاريخ", "العميل", "كود العميل", "الفاتورة", "المبلغ", "البنود", "السبب"];
       body = periodReturnsList.map((r) => [
         new Date(r.createdAt).toLocaleDateString("en-CA"),
-        r.customer?.name ?? "—",
+        r.customer?.name ?? "—", r.customer ? getCustomerCode(r.customer) : "—",
         r.invoice ? invoiceNumber(invoices, r.invoice.id) : "—",
         r.totalAmount,
         (returnItemsByReturn.get(r.id) ?? []).map((it) => `${it.name} ×${it.quantity}`).join(" · "),
@@ -768,13 +769,13 @@ function DailyPage() {
 
     sections.push({
       title: "فواتير الفترة",
-      headers: ["رقم الفاتورة", "التاريخ", "العميل", "الإجمالي", "المدفوع", "المتبقي", "الحالة"],
+      headers: ["رقم الفاتورة", "التاريخ", "العميل", "كود العميل", "الإجمالي", "المدفوع", "المتبقي", "الحالة"],
       rows: rows.map((inv) => {
         const c = customerById.get(inv.customerId);
         return [
           invoiceNumber(invoices, inv.id),
           new Date(inv.createdAt).toLocaleDateString("en-CA"),
-          c?.name ?? "—",
+          c?.name ?? "—", c ? getCustomerCode(c) : "—",
           inv.total, inv.paid, Math.max(0, inv.total - inv.paid),
           statusMeta[invStatus(inv)].label,
         ];
@@ -783,10 +784,10 @@ function DailyPage() {
 
     sections.push({
       title: "التحصيلات والأقساط المستلمة",
-      headers: ["التاريخ", "العميل", "الفاتورة", "المبلغ"],
+      headers: ["التاريخ", "العميل", "كود العميل", "الفاتورة", "المبلغ"],
       rows: periodPayments.map((p) => [
         new Date(p.paidAt).toLocaleDateString("en-CA"),
-        p.customer?.name ?? "—",
+        p.customer?.name ?? "—", p.customer ? getCustomerCode(p.customer) : "—",
         p.invoice ? invoiceNumber(invoices, p.invoice.id) : "—",
         p.amount,
       ]),
@@ -805,10 +806,10 @@ function DailyPage() {
 
     sections.push({
       title: "المرتجعات",
-      headers: ["التاريخ", "العميل", "الفاتورة", "المبلغ", "البنود", "السبب"],
+      headers: ["التاريخ", "العميل", "كود العميل", "الفاتورة", "المبلغ", "البنود", "السبب"],
       rows: periodReturnsList.map((r) => [
         new Date(r.createdAt).toLocaleDateString("en-CA"),
-        r.customer?.name ?? "—",
+        r.customer?.name ?? "—", r.customer ? getCustomerCode(r.customer) : "—",
         r.invoice ? invoiceNumber(invoices, r.invoice.id) : "—",
         r.totalAmount,
         (returnItemsByReturn.get(r.id) ?? []).map((it) => `${it.name} ×${it.quantity}`).join(" · "),
@@ -924,14 +925,14 @@ function DailyPage() {
       tbody = rows.map((inv, i) => {
         const c = customerById.get(inv.customerId);
         const isCash = (c?.customerType ?? "installment") === "cash";
-        return `<tr><td>${i + 1}</td><td>${escapeHtml(invoiceNumber(invoices, inv.id))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)} ج.م</td><td class="num">${fmt(inv.paid)} ج.م</td><td class="num due">${fmt(Math.max(0, inv.total - inv.paid))} ج.م</td><td>${isCash ? "فوري" : "قسط"}</td><td>${escapeHtml(statusMeta[invStatus(inv)].label)}</td></tr>`;
+        return `<tr><td>${i + 1}</td><td>${escapeHtml(invoiceNumber(invoices, inv.id))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td>${escapeHtml(c ? getCustomerCode(c) : "—")}</td><td class="num">${fmt(inv.total)} ج.م</td><td class="num">${fmt(inv.paid)} ج.م</td><td class="num due">${fmt(Math.max(0, inv.total - inv.paid))} ج.م</td><td>${isCash ? "فوري" : "قسط"}</td><td>${escapeHtml(statusMeta[invStatus(inv)].label)}</td></tr>`;
       }).join("");
       colspan = 8;
     } else if (activeTab === "payments") {
       thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th></tr>";
       tbody = periodPayments.map((p, i) => {
         const d = new Date(p.paidAt);
-        return `<tr><td>${i + 1}</td><td>${d.toLocaleDateString("en-CA")} ${d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</td><td>${escapeHtml(p.customer?.name ?? "—")}</td><td>${p.invoice ? escapeHtml(invoiceNumber(invoices, p.invoice.id)) : "—"}</td><td class="num">${fmt(p.amount)} ج.م</td></tr>`;
+        return `<tr><td>${i + 1}</td><td>${d.toLocaleDateString("en-CA")} ${d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</td><td>${escapeHtml(p.customer?.name ?? "—")}</td><td>${escapeHtml(p.customer ? getCustomerCode(p.customer) : "—")}</td><td>${p.invoice ? escapeHtml(invoiceNumber(invoices, p.invoice.id)) : "—"}</td><td class="num">${fmt(p.amount)} ج.م</td></tr>`;
       }).join("");
       colspan = 5;
     } else if (activeTab === "expenses") {
@@ -944,7 +945,7 @@ function DailyPage() {
       thead = "<tr><th>م</th><th>التاريخ</th><th>العميل</th><th>الفاتورة</th><th>المبلغ</th><th>البنود</th><th>السبب</th></tr>";
       tbody = periodReturnsList.map((r, i) => {
         const items = (returnItemsByReturn.get(r.id) ?? []).map((it) => `${it.name} ×${it.quantity}`).join(" · ");
-        return `<tr><td>${i + 1}</td><td>${new Date(r.createdAt).toLocaleDateString("en-CA")}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(items || "—")}</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`;
+        return `<tr><td>${i + 1}</td><td>${new Date(r.createdAt).toLocaleDateString("en-CA")}</td><td>${escapeHtml(r.customer?.name ?? "—")}</td><td>${escapeHtml(r.customer ? getCustomerCode(r.customer) : "—")}</td><td>${r.invoice ? escapeHtml(invoiceNumber(invoices, r.invoice.id)) : "—"}</td><td class="num">${fmt(r.totalAmount)} ج.م</td><td>${escapeHtml(items || "—")}</td><td>${escapeHtml(r.reason ?? "—")}</td></tr>`;
       }).join("");
       colspan = 7;
     } else if (activeTab === "vouchers") {
@@ -1269,7 +1270,7 @@ function DailyPage() {
                 <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold ring-1", st.cls)}>{st.label}</span>
                 <div className="text-right">
                   <p className="font-mono text-sm font-black text-foreground">#{invoiceNumber(invoices, inv.id)}</p>
-                  <p className="mt-1 text-[11px] text-muted-foreground">{new Date(inv.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })} · {c?.name ?? "—"}</p>
+                  <p className="mt-1 text-[11px] text-muted-foreground">{new Date(inv.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })} · {c?.name ?? "—"} · كود {c ? getCustomerCode(c) : "—"}</p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
@@ -1315,7 +1316,7 @@ function DailyPage() {
                               <td className="p-3 text-muted-foreground font-mono">
                                 {new Date(inv.createdAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}
                               </td>
-                              <td className="p-3 font-semibold text-foreground">{c?.name ?? "—"}</td>
+                              <td className="p-3 font-semibold text-foreground">{c?.name ?? "—"}<span className="block text-[10px] text-muted-foreground">كود {c ? getCustomerCode(c) : "—"}</span></td>
                               <td className={cn("p-3 font-mono font-bold", masked && "privacy-blur")}>{money(inv.total)}</td>
                               <td className={cn("p-3 font-mono font-bold text-success", masked && "privacy-blur")}>{money(inv.paid)}</td>
                               <td className={cn("p-3 font-mono font-bold", rem > 0 ? "text-danger" : "text-muted-foreground", masked && "privacy-blur")}>
@@ -1366,7 +1367,7 @@ function DailyPage() {
                               {new Date(p.paidAt).toLocaleDateString("ar-EG")} {new Date(p.paidAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}
                             </td>
                             <td className="p-3 font-semibold text-foreground">
-                              {p.customer?.name || "عميل غير محدد"}
+                              {p.customer?.name || "عميل غير محدد"}{p.customer && <span className="block text-[10px] text-muted-foreground">كود {getCustomerCode(p.customer)}</span>}
                             </td>
                             <td className="p-3 font-mono font-semibold" dir="ltr">
                               {p.invoice ? invoiceNumber(invoices, p.invoice.id) : "—"}
@@ -1486,7 +1487,7 @@ function DailyPage() {
                               {new Date(ret.createdAt).toLocaleDateString("ar-EG")}
                             </td>
                             <td className="p-3 font-semibold text-foreground">
-                              {ret.customer?.name || (ret.invoice ? invoiceNumber(invoices, ret.invoice.id) : "مرتجع بيع")}
+                              {ret.customer?.name || (ret.invoice ? invoiceNumber(invoices, ret.invoice.id) : "مرتجع بيع")}{ret.customer && <span className="block text-[10px] text-muted-foreground">كود {getCustomerCode(ret.customer)}</span>}
                             </td>
                             <td className={cn("p-3 font-mono font-bold text-danger", masked && "privacy-blur")}>
                               -{money(ret.totalAmount)}
@@ -1748,6 +1749,7 @@ function DailyPage() {
             max: Math.max(0, invoice.total - invoice.paid),
             invoiceNo: invoiceNumber(invoices, invoice.id),
             customerName: customer?.name ?? "",
+            customerCode: customer ? getCustomerCode(customer) : "—",
             initialAmount: amount,
           });
         }}
@@ -1791,6 +1793,7 @@ function DailyPage() {
           max={directPayState.max}
           invoiceNo={directPayState.invoiceNo}
           customerName={directPayState.customerName}
+          customerCode={directPayState.customerCode}
           initialAmount={directPayState.initialAmount}
           controlledOpen={true}
           onControlledClose={() => setDirectPayState(null)}

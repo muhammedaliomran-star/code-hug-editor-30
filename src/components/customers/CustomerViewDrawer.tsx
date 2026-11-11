@@ -1,5 +1,6 @@
 import { type Customer, type Invoice, type Payment, fmt } from "@/lib/store";
 import { isoToDDMMYYYY } from "@/lib/date-utils";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -86,7 +87,7 @@ export function CustomerViewDrawer({
                     <div className="text-right flex-1">
                       <DrawerTitle className="text-lg">{c.name}</DrawerTitle>
                       <DrawerDescription dir="ltr" className="text-right">
-                        {c.phone}
+                        {c.phone} · كود {getCustomerCode(c)}
                       </DrawerDescription>
                     </div>
                   </div>

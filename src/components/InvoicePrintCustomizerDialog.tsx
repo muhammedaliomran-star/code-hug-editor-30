@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { type Invoice, type Customer, type InvoiceItem, type ShopSettings, fmt, invoiceNumber } from "@/lib/store";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -178,6 +179,7 @@ export function InvoicePrintCustomizerDialog({
       ${branchBar}
       <div class="info" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
         <div class="box" style="border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; background:#fff;"><b>اسم العميل</b> ${esc(customer.name)}</div>
+        <div class="box" style="border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; background:#fff;"><b>كود العميل</b> ${esc(getCustomerCode(customer))}</div>
         <div class="box" style="border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; background:#fff;"><b>الهاتف</b> <span dir="ltr">${esc(customer.phone || "—")}</span></div>
         ${customer.address ? `<div class="box" style="grid-column:1/-1; border:1px solid #e2e8f0; border-radius:10px; padding:8px 10px; background:#fff;"><b>العنوان</b> ${esc(customer.address)}</div>` : ""}
       </div>

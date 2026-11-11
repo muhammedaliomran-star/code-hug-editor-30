@@ -40,6 +40,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { findStockByBarcode } from "@/lib/store";
+import { getCustomerCode } from "@/lib/customer-utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePrivacy } from "@/lib/privacy";
 import { toast } from "sonner";
@@ -199,7 +200,7 @@ function NewInvoicePage() {
     const query = customerSearch.trim().toLocaleLowerCase();
     if (!query) return data.customers;
     return data.customers.filter((c) =>
-      [c.name, c.phone, c.customerCode, c.paperLedgerNumber]
+      [c.name, c.phone, getCustomerCode(c), c.paperLedgerNumber]
         .filter((value) => value !== undefined && value !== null)
         .some((value) => String(value).toLocaleLowerCase().includes(query)),
     );
@@ -698,7 +699,7 @@ function NewInvoicePage() {
         const cur = shop.currency || "ج.م";
         const body = `
 <div class="info">
-  <div class="box"><b>العميل:</b> ${customer?.name || "عميل نقدي"}</div>
+  <div class="box"><b>العميل:</b> ${customer?.name || "عميل نقدي"}${customer ? ` — <b>كود العميل:</b> ${getCustomerCode(customer)}` : ""}</div>
   <div class="box"><b>الهاتف:</b> ${customer?.phone || "—"}</div>
 </div>
 <div class="t-wrap"><table>
@@ -965,7 +966,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     <Button type="button" variant="outline" className="h-11 w-full justify-between rounded-xl text-right font-normal">
                       <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-60" />
                       <span className={cn("truncate", !customer && "text-muted-foreground")}>
-                        {customer ? `${customer.name} — ${customer.customerCode ? `#${customer.customerCode}` : customer.phone || "بدون هاتف"}` : "ابحث واختر العميل بالاسم أو الهاتف أو الكود..."}
+                        {customer ? `${customer.name} — #${getCustomerCode(customer)}` : "ابحث واختر العميل بالاسم أو الهاتف أو الكود..."}
                       </span>
                     </Button>
                   </PopoverTrigger>
@@ -978,14 +979,14 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                           {filteredCustomers.map((c) => (
                             <CommandItem
                               key={c.id}
-                              value={`${c.name} ${c.phone} ${c.customerCode ?? ""} ${c.paperLedgerNumber ?? ""}`}
+                              value={`${c.name} ${c.phone} ${getCustomerCode(c)} ${c.paperLedgerNumber ?? ""}`}
                               onSelect={() => selectCustomer(c.id)}
                               className="flex items-center justify-between gap-2"
                             >
                               <span className="text-xs text-muted-foreground">{c.customerType === "cash" ? "فوري" : "أقساط"}</span>
                               <span className="flex items-center gap-2">
                                 {customerId === c.id && <Check className="h-4 w-4 text-success" />}
-                                <span>{c.name} — {c.customerCode ? `#${c.customerCode}` : c.phone || "بدون هاتف"}</span>
+                                <span>{c.name} — #{getCustomerCode(c)}</span>
                               </span>
                             </CommandItem>
                           ))}
