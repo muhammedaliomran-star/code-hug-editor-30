@@ -1002,6 +1002,7 @@ function InvoicesPage() {
       <HistoryDialog customer={historyFor} onClose={() => setHistoryFor(null)} invoices={data.invoices} payments={data.payments} items={data.invoiceItems} blurCls={blurCls} onEditInvoice={(i) => { setHistoryFor(null); setEditInv(i); }} />
       <ViewInvoiceDialog
         inv={viewInv}
+        invoiceNo={viewInv ? invoiceNumber(data.invoices, viewInv.id, shopSettings.invoicePrefix) : undefined}
         customer={viewInv ? findCustomer(viewInv.customerId) ?? null : null}
         items={data.invoiceItems}
         payments={data.payments}

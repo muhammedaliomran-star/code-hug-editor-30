@@ -21,6 +21,7 @@ import { getInvoicePaymentStatus, getInvoiceStatusMeta, getPaymentStatusMeta } f
 
 export function ViewInvoiceDialog({
   inv,
+  invoiceNo,
   customer,
   items,
   payments,
@@ -34,6 +35,7 @@ export function ViewInvoiceDialog({
   onDirectPay,
 }: {
   inv: Invoice | null;
+  invoiceNo?: string;
   customer: Customer | null;
   items: InvoiceItem[];
   payments: Payment[];
@@ -76,7 +78,7 @@ export function ViewInvoiceDialog({
               </div>
             </div>
             <div className="text-right">
-              <DialogTitle className="text-lg font-bold">فاتورة #{inv.id.slice(0, 6)}</DialogTitle>
+              <DialogTitle className="text-lg font-bold">فاتورة #{invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—"}</DialogTitle>
               <DialogDescription className="text-xs">{customer?.name ?? "عميل محذوف"} {customer?.phone ? `• ${customer.phone}` : ""}</DialogDescription>
             </div>
           </div>
