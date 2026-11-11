@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 
 export type DashboardSectionId =
   | "quick_actions"
-  | "drafts"
   | "bento_kpis"
   | "top_products"
   | "insights"
@@ -44,12 +43,6 @@ const DEFAULT_SECTIONS: SectionConfig[] = [
     id: "quick_actions",
     label: "شريط الإجراءات السريعة",
     description: "أزرار فورية لإنشاء فاتورة، سند تحصيل، ومصروف",
-    visible: true,
-  },
-  {
-    id: "drafts",
-    label: "المسودات والحجوزات",
-    description: "المسودات النشطة والوحدات والعربون والحجوزات القريبة من الانتهاء",
     visible: true,
   },
   {
@@ -117,16 +110,7 @@ export function useDashboardLayout() {
         });
         const savedIds = new Set(ordered.map((section) => section.id));
         const newlyAdded = DEFAULT_SECTIONS.filter((section) => !savedIds.has(section.id));
-        const merged = [...ordered, ...newlyAdded];
-        // Keep newly introduced operational sections near the top even for
-        // users who already have a saved dashboard order from an older build.
-        const draftsIndex = merged.findIndex((section) => section.id === "drafts");
-        const quickActionsIndex = merged.findIndex((section) => section.id === "quick_actions");
-        if (draftsIndex >= 0 && quickActionsIndex >= 0 && draftsIndex > quickActionsIndex + 1) {
-          const [draftsSection] = merged.splice(draftsIndex, 1);
-          merged.splice(quickActionsIndex + 1, 0, draftsSection);
-        }
-        return merged;
+        return [...ordered, ...newlyAdded];
       }
     } catch {
       // fallback

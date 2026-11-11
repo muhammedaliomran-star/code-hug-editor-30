@@ -13,6 +13,7 @@ import { FilterChips } from "@/components/FilterChips";
 import { StatTabs } from "@/components/StatTabs";
 import { CountUp } from "@/components/CountUp";
 import { DatePickerField } from "@/components/DatePickerField";
+import { DailyDraftsSection } from "@/components/daily/DailyDraftsSection";
 
 import { Reveal } from "@/components/Reveal";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
@@ -1182,6 +1183,8 @@ function DailyPage() {
         />
       </div>
       )}
+
+      <DailyDraftsSection />
 
       {/* تبويبات تفصيل حركة اليومية */}
       <div className="mt-8 space-y-4 pb-24 lg:pb-8">
