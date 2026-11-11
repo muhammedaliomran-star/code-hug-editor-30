@@ -117,7 +117,16 @@ export function useDashboardLayout() {
         });
         const savedIds = new Set(ordered.map((section) => section.id));
         const newlyAdded = DEFAULT_SECTIONS.filter((section) => !savedIds.has(section.id));
-        return [...ordered, ...newlyAdded];
+        const merged = [...ordered, ...newlyAdded];
+        // Keep newly introduced operational sections near the top even for
+        // users who already have a saved dashboard order from an older build.
+        const draftsIndex = merged.findIndex((section) => section.id === "drafts");
+        const quickActionsIndex = merged.findIndex((section) => section.id === "quick_actions");
+        if (draftsIndex >= 0 && quickActionsIndex >= 0 && draftsIndex > quickActionsIndex + 1) {
+          const [draftsSection] = merged.splice(draftsIndex, 1);
+          merged.splice(quickActionsIndex + 1, 0, draftsSection);
+        }
+        return merged;
       }
     } catch {
       // fallback
