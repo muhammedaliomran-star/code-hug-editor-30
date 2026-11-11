@@ -118,6 +118,10 @@ function InvoicesPage() {
     initialAmount?: number;
   } | null>(null);
   const [salesDraftSummary, setSalesDraftSummary] = useState({ count: 0, total: 0 });
+  const [invoicePage, setInvoicePage] = useState(1);
+  const INVOICE_PAGE_SIZE = 25;
+  const [serverPageRows, setServerPageRows] = useState<Invoice[] | null>(null);
+  const [serverPageTotal, setServerPageTotal] = useState(0);
 
   useEffect(() => {
     void db.listSalesDrafts().then((drafts) => {
@@ -451,6 +455,45 @@ function InvoicesPage() {
       })
       .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
   }, [data, q, tab, dateFrom, dateTo, customerFilter, paymentFilter, invoicePaymentStatusFilter, branchFilter, isAllBranches, activeBranchId, mainBranchId, shopSettings.invoicePrefix]);
+
+  const serverPagingEligible = tab === "all"
+    && !q.trim()
+    && !dateFrom
+    && !dateTo
+    && customerFilter === "all"
+    && paymentFilter === "all"
+    && invoicePaymentStatusFilter === "all"
+    && branchFilter === "all"
+    && isAllBranches;
+  useEffect(() => {
+    if (!serverPagingEligible) {
+      setServerPageRows(null);
+      setServerPageTotal(0);
+      return;
+    }
+    let cancelled = false;
+    setServerPageRows(null);
+    db.listInvoicesPage(invoicePage, INVOICE_PAGE_SIZE)
+      .then((result) => {
+        if (cancelled) return;
+        setServerPageRows(result.rows);
+        setServerPageTotal(result.total);
+      })
+      .catch(() => {
+        if (!cancelled) setServerPageRows(null);
+      });
+    return () => { cancelled = true; };
+  }, [serverPagingEligible, invoicePage]);
+  const pagedList = serverPagingEligible && serverPageRows
+    ? serverPageRows
+    : list.slice((invoicePage - 1) * INVOICE_PAGE_SIZE, invoicePage * INVOICE_PAGE_SIZE);
+  const invoicePageCount = Math.max(1, Math.ceil((serverPagingEligible ? serverPageTotal : list.length) / INVOICE_PAGE_SIZE));
+  useEffect(() => {
+    setInvoicePage(1);
+  }, [q, tab, dateFrom, dateTo, customerFilter, paymentFilter, invoicePaymentStatusFilter, branchFilter]);
+  useEffect(() => {
+    setInvoicePage((page) => Math.min(Math.max(1, page), invoicePageCount));
+  }, [invoicePageCount]);
 
   if (data.loading) return <PageLoadingSkeleton type="table" />;
 
@@ -790,7 +833,7 @@ function InvoicesPage() {
                 />
             </BezelCard>
           ) : (
-            list.map((inv, idx) => {
+            pagedList.map((inv, idx) => {
               const remaining = inv.total - inv.paid;
               const late = daysLate(inv);
               const isDeleted = Boolean(inv.deleted);
@@ -1001,6 +1044,13 @@ function InvoicesPage() {
                 </div>
               );
             })
+          )}
+          {(serverPagingEligible ? serverPageTotal : list.length) > INVOICE_PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/50 p-3 text-xs">
+              <Button type="button" variant="outline" size="sm" disabled={invoicePage <= 1} onClick={() => setInvoicePage((page) => page - 1)}>السابق</Button>
+              <span className="font-bold text-muted-foreground">صفحة {invoicePage} من {invoicePageCount} · {list.length} فاتورة</span>
+              <Button type="button" variant="outline" size="sm" disabled={invoicePage >= invoicePageCount} onClick={() => setInvoicePage((page) => page + 1)}>التالي</Button>
+            </div>
           )}
         </div>
       </Reveal>

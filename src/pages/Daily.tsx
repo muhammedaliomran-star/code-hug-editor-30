@@ -212,6 +212,7 @@ function DailyPage() {
   const [noteStatus, setNoteStatus] = useState<"saved" | "local">("saved");
   const [treasuryTick, setTreasuryTick] = useState(0);
   const [quickPreset, setQuickPreset] = useState<QuickPreset>(urlSearch.quickPreset ?? "today");
+  const [serverDailySummary, setServerDailySummary] = useState<Awaited<ReturnType<typeof db.getDailySalesSummary>> | null>(null);
 
   const [openExpense, setOpenExpense] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any>(null);
@@ -396,6 +397,7 @@ function DailyPage() {
     const q = search.trim().toLowerCase();
     return invoices
       .filter((inv) => {
+        if (inv.deleted || inv.archived || inv.status === "cancelled") return false;
         const day = new Date(inv.createdAt).toLocaleDateString("en-CA");
         if (from && day < from) return false;
         if (to && day > to) return false;
@@ -411,6 +413,14 @@ function DailyPage() {
       })
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [invoices, customerById, from, to, customerId, typeFilter, statusFilter, search]);
+
+  useEffect(() => {
+    let cancelled = false;
+    db.getDailySalesSummary(from, to, customerId, typeFilter)
+      .then((summary) => { if (!cancelled) setServerDailySummary(summary); })
+      .catch(() => { if (!cancelled) setServerDailySummary(null); });
+    return () => { cancelled = true; };
+  }, [from, to, customerId, typeFilter]);
 
   // Actual Payments collected during period (including old invoice installment collections)
   const periodPayments = useMemo(() => {
@@ -605,14 +615,17 @@ function DailyPage() {
     // صافي الخزينة / الدرج الحقيقي اليوم: كل المحصل الفعلي - المصروفات - المرتجعات
     const netCashDrawer = totalCollectedActual - periodExpenses - periodReturnsTotal + manualIn - manualOut;
 
+    const useServerSummary = !search.trim() && statusFilter === "all" && categoryFilter === "all" && serverDailySummary !== null;
     return {
-      count: rows.length,
-      sales, cashSales, instSales,
+      count: useServerSummary ? serverDailySummary.invoiceCount : rows.length,
+      sales: useServerSummary ? serverDailySummary.salesTotal : sales,
+      cashSales: useServerSummary ? serverDailySummary.cashSalesTotal : cashSales,
+      instSales: useServerSummary ? serverDailySummary.installmentSalesTotal : instSales,
       paid: paidFromNewInvoices,
       totalCollectedActual,
       periodDownPayments,
       cashPaid, instPaid,
-      remaining: Math.max(0, sales - paidFromNewInvoices),
+      remaining: useServerSummary ? serverDailySummary.remainingTotal : Math.max(0, sales - paidFromNewInvoices),
       periodExpenses,
       periodReturnsTotal,
       periodVoucherReceipts,
@@ -627,7 +640,7 @@ function DailyPage() {
         collected: sCollected,
       },
     };
-  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, periodVouchersList, payments, invoices, expenses, from, to, treasuryTick]);
+  }, [rows, customerById, periodPayments, periodExpensesList, periodReturnsList, periodVouchersList, payments, invoices, expenses, from, to, treasuryTick, search, statusFilter, categoryFilter, serverDailySummary]);
 
   const pagedRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const pagedPayments = periodPayments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

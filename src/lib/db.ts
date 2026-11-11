@@ -620,6 +620,21 @@ function isMissingColumnError(err: any): boolean {
   return /column .* does not exist|schema cache|Could not find the '[^']+' column/i.test(msg);
 }
 
+function isOfflineMutationError(error: unknown): boolean {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return true;
+  const message = String((error as { message?: string } | null)?.message ?? error ?? "").toLowerCase();
+  return /failed to fetch|network|offline|timed out|timeout|fetch failed|load failed/.test(message);
+}
+
+async function enqueueFinancialRpc(name: string, args: Record<string, unknown>): Promise<void> {
+  const { enqueueOffline } = await import("@/lib/offline-queue");
+  enqueueOffline({
+    tableName: "__rpc__",
+    operation: "rpc",
+    payload: { name, args },
+  });
+}
+
 export const db = {
 
   invalidate: fetchAll,
@@ -862,8 +877,11 @@ export const db = {
     workflowInvoiceId?: string;
     shipment?: { carrierId: string; zoneId?: string; trackingNumber?: string; recipientName?: string; recipientPhone?: string; deliveryAddress?: string };
   }): Promise<string | undefined> {
-    await uid();
-    await assertInvoiceAllowed(inv);
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+    if (!offline) {
+      await uid();
+      await assertInvoiceAllowed(inv);
+    }
 
     const items = (inv.items ?? []).map((it) => ({
       name: it.name,
@@ -877,7 +895,7 @@ export const db = {
     }));
 
     const invoiceId = inv.workflowInvoiceId ?? crypto.randomUUID();
-    const { data, error } = await (supabase.rpc as any)("create_sale_with_workflow_v3", {
+    const rpcArgs = {
       p_customer_id: inv.customerId,
       p_total: (inv.total ?? 0) * 100,
       p_down_payment: (inv.downPayment ?? 0) * 100,
@@ -914,7 +932,17 @@ export const db = {
         cost: (it.cost ?? 0) * 100,
         price: (it.price ?? 0) * 100,
       })),
-    });
+    };
+    let data: unknown;
+    try {
+      const result = await (supabase.rpc as any)("create_sale_with_workflow_v3", rpcArgs);
+      data = result.data;
+      if (result.error) throw result.error;
+    } catch (error) {
+      if (!isOfflineMutationError(error)) throw error;
+      await enqueueFinancialRpc("create_sale_with_workflow_v3", rpcArgs);
+      return invoiceId;
+    }
     if (error) throw error;
     if (inv.attachmentPath) {
       const { error: attachmentError } = await (supabase.from("invoices") as any)
@@ -929,6 +957,77 @@ export const db = {
     const { data, error } = await supabase.from("invoices").select("invoice_number").eq("id", invoiceId).maybeSingle();
     if (error) throw error;
     return (data as any)?.invoice_number ?? null;
+  },
+  async getDailySalesSummary(from: string, to: string, customerId?: string, type: "all" | "cash" | "installment" = "all") {
+    const { data, error } = await (supabase.rpc as any)("get_daily_sales_summary", {
+      p_from: from,
+      p_to: to,
+      p_customer_id: customerId && customerId !== "all" ? customerId : null,
+      p_type: type,
+    });
+    if (error) throw error;
+    const row = (data ?? {}) as Record<string, unknown>;
+    const money = (key: string) => Number(row[key] ?? 0) / 100;
+    return {
+      invoiceCount: Number(row.invoice_count ?? 0),
+      salesTotal: money("sales_total"),
+      paidTotal: money("paid_total"),
+      downPayments: money("down_payments"),
+      cashSalesTotal: money("cash_sales_total"),
+      installmentSalesTotal: money("installment_sales_total"),
+      paymentsTotal: money("payments_total"),
+      returnsTotal: money("returns_total"),
+      remainingTotal: money("remaining_total"),
+    };
+  },
+  async listInvoicesPage(page: number, pageSize: number): Promise<{ rows: Invoice[]; total: number }> {
+    const from = Math.max(0, page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    const { data, count, error } = await supabase
+      .from("invoices")
+      .select("*", { count: "exact" })
+      .eq("deleted", false)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    const rows = ((data ?? []) as Array<any>).map((r) => ({
+      id: r.id,
+      customerId: r.customer_id,
+      total: Number(r.total) / 100,
+      downPayment: Number(r.down_payment) / 100,
+      monthlyInstallment: Number(r.monthly_installment) / 100,
+      firstDueDate: r.first_due_date,
+      paid: Number(r.paid) / 100,
+      notes: r.notes,
+      createdAt: r.created_at,
+      discountPct: Number(r.discount_pct ?? 0),
+      discountAmount: Number(r.discount_amount ?? 0) / 100,
+      taxPct: Number(r.tax_pct ?? 0),
+      taxAmount: Number(r.tax_amount ?? 0) / 100,
+      status: (r.status ?? "pending") as InvoiceStatus,
+      invoiceNumber: r.invoice_number,
+      date: r.date || r.created_at,
+      receiptToken: r.receipt_token,
+      archived: Boolean(r.archived),
+      archivedAt: r.archived_at ?? null,
+      archiveReason: r.archive_reason ?? null,
+      deleted: Boolean(r.deleted),
+      deletedAt: r.deleted_at ?? null,
+      deleteReason: r.delete_reason ?? null,
+      branchId: r.branch_id ?? null,
+      cashierId: r.cashier_id ?? null,
+      source: r.source ?? "pos",
+      downPaymentMethod: r.down_payment_method ?? "cash",
+      downPaymentAccountId: r.down_payment_account_id ?? null,
+      downPaymentReference: r.down_payment_reference ?? null,
+      splitCashAmount: r.split_cash_amount == null ? undefined : Number(r.split_cash_amount) / 100,
+      splitElectronicAmount: r.split_electronic_amount == null ? undefined : Number(r.split_electronic_amount) / 100,
+      splitElectronicMethod: r.split_electronic_method ?? null,
+      externalOrderNumber: r.external_order_number ?? null,
+      attachmentPath: r.invoice_attachment_path ?? null,
+    } as Invoice));
+    return { rows, total: count ?? rows.length };
   },
   async addInvoiceItem(invoiceId: string, item: { name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }) {
     const current = cache.invoiceItems.filter((row) => row.invoiceId === invoiceId).map((row) => ({
@@ -966,7 +1065,7 @@ export const db = {
     items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }>;
     status?: string | null;
   }) {
-    const { error } = await (supabase.rpc as any)("update_sale_invoice_workflow", {
+    const rpcArgs = {
       p_invoice_id: invoiceId,
       p_total: (input.total ?? 0) * 100,
       p_down_payment: (input.downPayment ?? 0) * 100,
@@ -984,8 +1083,15 @@ export const db = {
         serial_numbers: item.serialNumbers ?? [],
         stock_item_id: item.stockId ?? null,
       })),
-    });
-    if (error) throw error;
+    };
+    try {
+      const { error } = await (supabase.rpc as any)("update_sale_invoice_workflow", rpcArgs);
+      if (error) throw error;
+    } catch (error) {
+      if (!isOfflineMutationError(error)) throw error;
+      await enqueueFinancialRpc("update_sale_invoice_workflow", rpcArgs);
+      return;
+    }
     await fetchAll();
   },
   async updateInvoiceItem(id: string, patch: Partial<{ name: string; cost: number; price: number; quantity: number; discountPct: number; taxPct: number; serialNumbers: string[] }>) {
@@ -1118,15 +1224,22 @@ export const db = {
     await fetchAll();
   },
   async recordPayment(invoiceId: string, amount: number, details?: { paymentMethod?: string; accountId?: string | null; referenceNumber?: string | null }) {
-    const { error } = await supabase.rpc("record_invoice_payment", {
+    const rpcArgs = {
       p_invoice_id: invoiceId,
       p_amount: (amount ?? 0) * 100,
       p_payment_id: crypto.randomUUID(),
       p_payment_method: details?.paymentMethod ?? "cash",
       p_account_id: details?.accountId ?? null,
       p_reference_number: details?.referenceNumber ?? null,
-    });
-    if (error) throw error;
+    };
+    try {
+      const { error } = await supabase.rpc("record_invoice_payment", rpcArgs);
+      if (error) throw error;
+    } catch (error) {
+      if (!isOfflineMutationError(error)) throw error;
+      await enqueueFinancialRpc("record_invoice_payment", rpcArgs);
+      return;
+    }
     await fetchAll();
   },
   async addExpense(exp: Omit<Expense, "id" | "createdAt">): Promise<string | undefined> {
@@ -1823,15 +1936,23 @@ export const db = {
     refundReferenceNumber?: string | null;
   }) {
     if (r.type === "sale" && r.invoiceId) {
-      const { error } = await (supabase.rpc as any)("create_sale_return_with_refund", {
+      const rpcArgs = {
         p_invoice_id: r.invoiceId,
         p_reason: r.reason?.trim() || "مرتجع بيع",
         p_items: r.items.map((item) => ({ name: item.name, unit_price: (item.unitPrice ?? 0) * 100, quantity: item.quantity })),
         p_payment_method: r.refundPaymentMethod ?? "cash",
         p_account_id: r.refundAccountId ?? null,
         p_reference_number: r.refundReferenceNumber ?? null,
-      });
-      if (error) throw error;
+        p_return_id: crypto.randomUUID(),
+      };
+      try {
+        const { error } = await (supabase.rpc as any)("create_sale_return_with_refund", rpcArgs);
+        if (error) throw error;
+      } catch (error) {
+        if (!isOfflineMutationError(error)) throw error;
+        await enqueueFinancialRpc("create_sale_return_with_refund", rpcArgs);
+        return;
+      }
       await fetchAll();
       return;
     }

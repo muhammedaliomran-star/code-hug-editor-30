@@ -10,7 +10,7 @@ import { safeGetItem, safeSetItem } from "@/lib/safe-storage";
 export interface OfflineQueueItem {
   id: string;
   tableName: string;
-  operation: "upsert" | "delete" | "update";
+  operation: "upsert" | "delete" | "update" | "rpc";
   payload: unknown;
   createdAt: string;
   retries: number;
@@ -35,6 +35,13 @@ const CONFLICT_TARGETS: Record<string, string> = {
   loyalty_config: "user_id",
   daily_notes: "user_id,date_from,date_to",
 };
+
+const ALLOWED_OFFLINE_RPCS = new Set([
+  "create_sale_with_workflow_v3",
+  "record_invoice_payment",
+  "create_sale_return_with_refund",
+  "update_sale_invoice_workflow",
+]);
 
 
 function readQueue(): OfflineQueueItem[] {
@@ -130,6 +137,16 @@ const table = (name: string) => (supabase.from as any)(name);
  */
 export async function applyQueuedItem(item: OfflineQueueItem): Promise<void> {
   if (!item.tableName) throw new Error("queue item without table name");
+
+  if (item.operation === "rpc") {
+    const payload = (item.payload ?? {}) as { name?: string; args?: Record<string, unknown> };
+    if (!payload.name || !ALLOWED_OFFLINE_RPCS.has(payload.name)) {
+      throw new Error("RPC is not allowed in offline queue");
+    }
+    const { error } = await (supabase.rpc as any)(payload.name, payload.args ?? {});
+    if (error) throw error;
+    return;
+  }
 
   if (item.operation === "upsert") {
     const options = item.onConflict ?? CONFLICT_TARGETS[item.tableName];
