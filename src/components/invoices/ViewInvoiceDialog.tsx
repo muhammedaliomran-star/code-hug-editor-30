@@ -61,6 +61,11 @@ export function ViewInvoiceDialog({
   const paymentStatusMeta = getPaymentStatusMeta(getInvoicePaymentStatus(inv));
   const invItems = items.filter((it) => it.invoiceId === inv.id);
   const invPayments = payments.filter((p) => p.invoiceId === inv.id);
+  const createdAt = new Date(inv.createdAt);
+  const createdTime = createdAt
+    .toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
+    .replace("AM", "صباحًا")
+    .replace("PM", "مساءً");
 
   const totalCost = invItems.reduce((acc, it) => acc + ((it.cost || 0) * (it.quantity || 1)), 0);
   const totalProfit = inv.total - totalCost;
@@ -210,6 +215,10 @@ export function ViewInvoiceDialog({
             <div className="flex justify-between py-0.5">
               <span className="font-bold tabular-nums" dir="ltr">{format(new Date(inv.createdAt), "dd/MM/yyyy")}</span>
               <span className="text-muted-foreground">تاريخ إنشاء الفاتورة:</span>
+            </div>
+            <div className="flex justify-between py-0.5">
+              <span className="font-bold tabular-nums" dir="ltr">{createdTime}</span>
+              <span className="text-muted-foreground">وقت إنشاء الفاتورة:</span>
             </div>
           </div>
 
