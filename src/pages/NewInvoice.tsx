@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { DatePickerField } from "@/components/DatePickerField";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -1998,7 +1999,11 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     <Badge variant="outline" className="rounded-full border-warning/30 bg-warning/10 text-warning">مدة الاحتفاظ بالحجز</Badge>
                   </div>
                   <p className="text-[10px] text-muted-foreground">يبدأ المؤقت لحظة حفظ المسودة، وتُحرر الكمية تلقائيًا بعد انتهاء المدة.</p>
-                  <Select value={draftExpiryPreset} onValueChange={(value) => setDraftExpiryPreset(value as typeof draftExpiryPreset)}>
+                  <Select value={draftExpiryPreset} onValueChange={(value) => {
+                    const next = value as typeof draftExpiryPreset;
+                    setDraftExpiryPreset(next);
+                    if (next === "custom" && !draftCustomExpiry) setDraftCustomExpiry(toDateTimeLocal(new Date().toISOString()));
+                  }}>
                     <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="مدة الحجز" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">بدون موعد انتهاء</SelectItem>
@@ -2008,7 +2013,29 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                       <SelectItem value="custom">موعد مخصص</SelectItem>
                     </SelectContent>
                   </Select>
-                  {draftExpiryPreset === "custom" && <Input type="datetime-local" value={draftCustomExpiry} onChange={(event) => setDraftCustomExpiry(event.target.value)} className="h-10 rounded-xl" />}
+                  {draftExpiryPreset === "custom" && (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_9rem]">
+                      <DatePickerField
+                        value={draftCustomExpiry.slice(0, 10)}
+                        onChange={(value) => {
+                          const time = draftCustomExpiry.slice(11, 16) || "23:59";
+                          setDraftCustomExpiry(`${value}T${time}`);
+                        }}
+                        placeholder="اختار تاريخ انتهاء الحجز"
+                        className="h-10 rounded-xl"
+                      />
+                      <Input
+                        type="time"
+                        value={draftCustomExpiry.slice(11, 16)}
+                        onChange={(event) => {
+                          const date = draftCustomExpiry.slice(0, 10) || toDateTimeLocal(new Date().toISOString()).slice(0, 10);
+                          setDraftCustomExpiry(`${date}T${event.target.value}`);
+                        }}
+                        className="h-10 rounded-xl text-center"
+                        aria-label="وقت انتهاء الحجز"
+                      />
+                    </div>
+                  )}
                   <Label className="text-xs">عربون الحجز (اختياري)</Label>
                   <Input type="number" min="0" value={draftDeposit} onChange={(e) => setDraftDeposit(e.target.value)} placeholder="0" className="h-10 rounded-xl" />
                   <div className="grid grid-cols-2 gap-2">
