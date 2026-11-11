@@ -1963,6 +1963,15 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                   <SelectItem value="held">تعليق الفاتورة</SelectItem>
                 </SelectContent>
               </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSalesDraftsModalOpen(true)}
+                className="h-10 w-full rounded-xl border-primary/30 text-primary hover:bg-primary/10"
+              >
+                <FileClock className="ml-2 h-4 w-4" />
+                فتح المسودات المحفوظة
+              </Button>
               <p className="text-[10px] text-muted-foreground">المسودة تحجز المخزون مؤقتًا فقط؛ العربون وحده يُسجل في الصندوق عند استلامه.</p>
               {saveMode === "draft" && (
                 <div className="space-y-2 border-t border-border/20 pt-3">
