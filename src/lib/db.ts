@@ -832,6 +832,17 @@ export const db = {
     await fetchAll();
     return data as string;
   },
+  async revertInvoiceToSalesDraft(invoiceId: string) {
+    const draftId = crypto.randomUUID();
+    const { data, error } = await (supabase.rpc as any)("revert_sale_invoice_to_draft", {
+      p_invoice_id: invoiceId,
+      p_draft_id: draftId,
+    });
+    if (error) throw error;
+    await fetchAll();
+    const result = data as { id: string; draft_number: number };
+    return { id: result.id, draftNumber: Number(result.draft_number) };
+  },
   async addInvoice(inv: Omit<Invoice, "id" | "createdAt" | "paid" | "receiptToken"> & {
     paid?: number;
     items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }>;

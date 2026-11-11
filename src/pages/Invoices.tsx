@@ -934,6 +934,24 @@ function InvoicesPage() {
                               <History className="w-4 h-4 text-indigo-500" />
                             </DropdownMenuItem>
                           )}
+                          {!isDeleted && !isArchived && inv.paid <= 0 && inv.downPayment <= 0 && (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                if (!confirm("سيتم إلغاء الفاتورة وإعادتها كمسودة مع حجز أصنافها مرة أخرى. هل تريد المتابعة؟")) return;
+                                try {
+                                  const result = await db.revertInvoiceToSalesDraft(inv.id);
+                                  toast.success(`تمت إعادة الفاتورة إلى المسودة D-${String(result.draftNumber).padStart(4, "0")}`);
+                                  window.location.assign("/invoices/drafts");
+                                } catch (err: any) {
+                                  toast.error(err?.message || "تعذرت إعادة الفاتورة إلى المسودة");
+                                }
+                              }}
+                              className="gap-2 justify-end text-primary focus:text-primary focus:bg-primary/10"
+                            >
+                              <span>إعادة الفاتورة إلى المسودة</span>
+                              <Undo2 className="w-4 h-4" />
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           {isDeleted ? (
                             <DropdownMenuItem
