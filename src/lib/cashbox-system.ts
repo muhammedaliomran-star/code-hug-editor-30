@@ -9,7 +9,7 @@
  */
 
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
-import { fmt, Invoice, Expense, Payment } from "@/lib/store";
+import { fmt, invoiceNumber, Invoice, Expense, Payment } from "@/lib/store";
 
 export type AccountType = "cash" | "ewallet" | "bank" | "pos" | "petty";
 
@@ -506,7 +506,7 @@ export function getUnifiedCashLedger(
         date: inv.createdAt,
         type: "in",
         category: "مقدم فاتورة / مبيعات كاش",
-        title: `مقدم فاتورة رقم #${inv.id.slice(0, 6)}`,
+        title: `مقدم فاتورة رقم #${invoiceNumber(invoices, inv.id)}`,
         amount: cashDown,
         source: "invoice_downpayment",
         accountId: "acc-cash-main",

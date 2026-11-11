@@ -1,4 +1,4 @@
-import { fmt, daysLate, type Customer, type Invoice, type Payment } from "@/lib/store";
+import { fmt, daysLate, invoiceNumber, type Customer, type Invoice, type Payment } from "@/lib/store";
 import { isoToDDMMYYYY } from "@/lib/date-utils";
 import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -134,7 +134,7 @@ export function buildTimeline(c: Customer, invoices: Invoice[], payments: Paymen
       id: `pay-${p.id}`,
       date: p.paidAt,
       kind: "payment",
-      description: `سداد على فاتورة ${inv?.notes ? `«${inv.notes}»` : `#${p.invoiceId.slice(0, 6)}`}`,
+      description: `سداد على فاتورة ${inv?.notes ? `«${inv.notes}»` : inv ? `#${invoiceNumber(invoices, inv.id)}` : "—"}`,
       amount: p.amount,
     });
   }

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MetricCard } from "@/components/MetricCard";
 import { FilterChips } from "@/components/FilterChips";
-import { db, useDB, type ShipmentStatus } from "@/lib/store";
+import { db, useDB, invoiceNumber, type ShipmentStatus } from "@/lib/store";
 import { AlertTriangle, CheckCircle2, ChevronLeft, MessageCircle, Phone, RefreshCw, RotateCcw, Search, ShieldAlert, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { renderRescuePending, waLink, trackUrlFor } from "@/lib/whatsapp-templates";
@@ -20,7 +20,7 @@ const labels: Record<string, string> = { pending: "الشحنة لم تبدأ", 
 const ageInDays = (date: string) => Math.max(0, Math.floor((Date.now() - new Date(date).getTime()) / 86400000));
 
 export default function RescueOrders() {
-  const { shipments } = useDB();
+  const { shipments, invoices } = useDB();
   const { settings } = useShopSettings();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<"all" | "urgent" | "shipment">("all");
@@ -32,10 +32,10 @@ export default function RescueOrders() {
       const risk = shipment.status === "pending" && age >= 1 || shipment.status === "processing" && age >= 1 || shipment.status === "shipped" && age >= 3 || shipment.status === "returned" || shipment.status === "cancelled" || !shipment.trackingNumber && age >= 1;
       if (!risk) continue;
       const reason = !shipment.trackingNumber ? "لم يتم تسجيل رقم تتبع" : `الشحنة في الحالة ${labels[shipment.status] ?? shipment.status} منذ ${age} يوم`;
-      result.push({ id: shipment.id, invoiceId: shipment.invoiceId, number: shipment.invoiceId?.slice(0, 8) ?? shipment.id.slice(0, 8), customer: shipment.recipientName ?? "عميل غير معروف", phone: shipment.recipientPhone ?? "", address: shipment.deliveryAddress ?? "", status: shipment.status, reason, createdAt: shipment.createdAt, shipmentId: shipment.id, priority: shipment.status === "returned" || shipment.status === "cancelled" || age >= 3 ? "urgent" : age >= 1 ? "high" : "normal" });
+      result.push({ id: shipment.id, invoiceId: shipment.invoiceId, number: shipment.invoiceId ? invoiceNumber(invoices, shipment.invoiceId) : shipment.id.slice(0, 8), customer: shipment.recipientName ?? "عميل غير معروف", phone: shipment.recipientPhone ?? "", address: shipment.deliveryAddress ?? "", status: shipment.status, reason, createdAt: shipment.createdAt, shipmentId: shipment.id, priority: shipment.status === "returned" || shipment.status === "cancelled" || age >= 3 ? "urgent" : age >= 1 ? "high" : "normal" });
     }
     return result.sort((a, b) => (a.priority === "urgent" ? -1 : b.priority === "urgent" ? 1 : 0));
-  }, [shipments]);
+  }, [shipments, invoices]);
 
   const filtered = useMemo(() => rows.filter((r) => (filter === "all" || r.priority === (filter === "urgent" ? "urgent" : "high")) && `${r.number} ${r.customer} ${r.phone}`.toLowerCase().includes(query.trim().toLowerCase())), [rows, filter, query]);
 

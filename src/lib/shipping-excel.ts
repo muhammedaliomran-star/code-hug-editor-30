@@ -1,5 +1,5 @@
 import * as XLSX from "xlsx";
-import { Shipment, ShipmentCarrier, ShippingZone, Invoice, InvoiceItem } from "./store";
+import { Shipment, ShipmentCarrier, ShippingZone, Invoice, InvoiceItem, invoiceNumber } from "./store";
 
 export type ExcelCarrierFormat = "bosta" | "jt" | "mylerz" | "aramex" | "generic";
 
@@ -15,7 +15,8 @@ export interface ShipmentExportRow {
 export function exportShipmentsToExcel(
   rows: ShipmentExportRow[],
   format: ExcelCarrierFormat = "generic",
-  fileName?: string
+  fileName?: string,
+  allInvoices: Invoice[] = [],
 ) {
   let data: Record<string, any>[] = [];
 
@@ -25,7 +26,7 @@ export function exportShipmentsToExcel(
       const itemsSummary = (r.items ?? []).map(item => `${item.name} (${item.quantity})`).join(" + ") || "طرد تجاري";
       return {
         "Serial": i + 1,
-        "Business Reference": s.trackingNumber || s.invoiceId || `SHP-${s.id.slice(0, 6)}`,
+        "Business Reference": s.trackingNumber || (r.invoice ? invoiceNumber(allInvoices, r.invoice.id) : undefined) || `SHP-${s.id.slice(0, 6)}`,
         "Receiver Name": s.recipientName || "عميل",
         "Receiver Phone": s.recipientPhone || "",
         "Receiver Phone 2": "",

@@ -14,14 +14,14 @@ import { Bell, MessageCircle } from "lucide-react";
 import { toArabicDigits } from "@/lib/arabic-digits";
 import { toast } from "sonner";
 
-export function ReminderDialog({ inv, customer, onClose }: { inv: Invoice | null; customer: Customer | null; onClose: () => void }) {
+export function ReminderDialog({ inv, invoiceNo, customer, onClose }: { inv: Invoice | null; invoiceNo?: string; customer: Customer | null; onClose: () => void }) {
   if (!inv || !customer) return null;
   const remaining = inv.total - inv.paid;
   const late = daysLate(inv);
   const overdueAmount = Math.min(inv.monthlyInstallment, remaining);
   const message =
     `مرحباً ${customer.name}،\n` +
-    `نود تذكيرك بقسط الفاتورة رقم #${inv.id.slice(0, 6)} المستحق منذ ${late} يوم.\n\n` +
+    `نود تذكيرك بقسط الفاتورة رقم #${invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—"} المستحق منذ ${late} يوم.\n\n` +
     `• قيمة القسط المتأخر: ${fmt(overdueAmount)} ج.م\n` +
     `• إجمالي المتبقي على الفاتورة: ${fmt(remaining)} ج.م\n` +
     `• تاريخ الاستحقاق: ${isoToDDMMYYYY(inv.firstDueDate)}\n\n` +

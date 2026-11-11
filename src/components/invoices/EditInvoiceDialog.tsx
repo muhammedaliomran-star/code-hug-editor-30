@@ -25,7 +25,7 @@ import { ar } from "date-fns/locale";
 import { toast } from "sonner";
 import { usePrivacy } from "@/lib/privacy";
 
-export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClose: () => void }) {
+export function EditInvoiceDialog({ inv, invoiceNo, onClose }: { inv: Invoice | null; invoiceNo?: string; onClose: () => void }) {
   const data = useDB();
   const { privacy } = usePrivacy();
   const blurCls = privacy ? "privacy-blur" : "privacy-clear";
@@ -97,7 +97,7 @@ export function EditInvoiceDialog({ inv, onClose }: { inv: Invoice | null; onClo
     <Dialog open={!!inv} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-right">تعديل الفاتورة #{inv.id.slice(0, 6)}</DialogTitle>
+      <DialogTitle className="text-right">تعديل الفاتورة #{invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—"}</DialogTitle>
           <DialogDescription className="text-right">تحديث بيانات الفاتورة والمنتجات.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-right">

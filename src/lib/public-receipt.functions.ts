@@ -7,7 +7,7 @@ export const getPublicReceipt = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: invoice, error } = await supabaseAdmin
       .from("invoices")
-      .select("id,created_at,total,paid,down_payment,monthly_installment,first_due_date,discount_amount,tax_amount,status,user_id,customer_id,invoice_items(name,price,quantity,discount_pct,discount_amount,tax_pct,tax_amount,line_total,serial_numbers),customers(name)")
+      .select("id,invoice_number,created_at,total,paid,down_payment,monthly_installment,first_due_date,discount_amount,tax_amount,status,user_id,customer_id,invoice_items(name,price,quantity,discount_pct,discount_amount,tax_pct,tax_amount,line_total,serial_numbers),customers(name)")
       .eq("receipt_token", data.token)
       .maybeSingle();
     if (error) throw error;
@@ -19,9 +19,18 @@ export const getPublicReceipt = createServerFn({ method: "GET" })
       .eq("user_id", invoice.user_id)
       .maybeSingle();
 
+    let displayNumber = invoice.invoice_number?.replace(/^#/, "") || "";
+    if (!displayNumber) {
+      const { count } = await supabaseAdmin
+        .from("invoices")
+        .select("id", { count: "exact", head: true })
+        .lt("created_at", invoice.created_at);
+      displayNumber = String((count ?? 0) + 1).padStart(4, "0");
+    }
+
     return {
       invoice: {
-        number: invoice.id.slice(0, 6).toUpperCase(),
+        number: displayNumber,
         createdAt: invoice.created_at,
         total: Number(invoice.total) / 100, paid: Number(invoice.paid) / 100,
         downPayment: Number(invoice.down_payment) / 100, monthlyInstallment: Number(invoice.monthly_installment) / 100,

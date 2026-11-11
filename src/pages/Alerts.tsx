@@ -9,6 +9,7 @@ import {
   fmt,
   customerBalance,
   useShopSettings,
+  invoiceNumber,
   isDueSoonOrOverdue,
   daysUntilDue,
   type Customer,
@@ -222,7 +223,7 @@ function AlertsPage() {
           const q = searchQuery.toLowerCase().trim();
           const matchName = item.customer.name.toLowerCase().includes(q);
           const matchPhone = item.customer.phone?.includes(q);
-          const matchInv = (item.inv.invoiceNumber || item.inv.id).toLowerCase().includes(q);
+          const matchInv = invoiceNumber(data.invoices, item.inv.id, settings.invoicePrefix).toLowerCase().includes(q);
           if (!matchName && !matchPhone && !matchInv) return false;
         }
 
@@ -270,7 +271,7 @@ function AlertsPage() {
     const customerInvoices = data.invoices
       .filter((i) => i.customerId === item.customer.id && i.total - i.paid > 0.01)
       .map((i) => ({
-        invoiceNo: i.invoiceNumber || i.id.slice(0, 6),
+      invoiceNo: invoiceNumber(data.invoices, i.id, settings.invoicePrefix),
         date: new Date(i.date || i.createdAt).toLocaleDateString("ar-EG"),
         dueDate: i.firstDueDate ? new Date(i.firstDueDate).toLocaleDateString("ar-EG") : undefined,
         total: i.total,
@@ -302,7 +303,7 @@ function AlertsPage() {
       customerName: it.customer.name,
       customerPhone: it.customer.phone || "-",
       customerAddress: it.customer.address || "غير مسجل",
-      invoiceNo: it.inv.invoiceNumber || it.inv.id.slice(0, 6),
+      invoiceNo: invoiceNumber(data.invoices, it.inv.id, settings.invoicePrefix),
       dueDate: it.inv.firstDueDate ? new Date(it.inv.firstDueDate).toLocaleDateString("ar-EG") : "-",
       daysLate: it.late,
       remainingAmount: it.remaining,
@@ -768,6 +769,7 @@ function AlertsPage() {
           open={!!smartReminderTarget}
           onOpenChange={(o) => !o && setSmartReminderTarget(null)}
           invoice={smartReminderTarget.inv}
+          invoiceNo={invoiceNumber(data.invoices, smartReminderTarget.inv.id, settings.invoicePrefix)}
           customer={smartReminderTarget.customer}
           daysLate={smartReminderTarget.daysLate}
           totalBalance={smartReminderTarget.totalBalance}

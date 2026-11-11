@@ -1754,12 +1754,14 @@ function DailyPage() {
       />
       <InvoiceReturnDialog
         inv={returnInvoice}
+        invoiceNo={returnInvoice ? invoiceNumber(invoices, returnInvoice.id) : undefined}
         customer={returnInvoice ? customerById.get(returnInvoice.customerId) ?? null : null}
         items={invoiceItems}
         onClose={() => setReturnInvoice(null)}
       />
       <ShareInvoiceDialog
         inv={shareInvoice}
+        invoiceNo={shareInvoice ? invoiceNumber(invoices, shareInvoice.id) : undefined}
         customer={shareInvoice ? customerById.get(shareInvoice.customerId) ?? null : null}
         items={invoiceItems}
         shopSettings={shopSettings}
@@ -1767,6 +1769,7 @@ function DailyPage() {
       />
       <CreateInvoiceShipmentDialog
         inv={shipmentInvoice}
+        allInvoices={invoices}
         customer={shipmentInvoice ? customerById.get(shipmentInvoice.customerId) ?? null : null}
         items={shipmentInvoice ? invoiceItems.filter((item) => item.invoiceId === shipmentInvoice.id) : []}
         carriers={carriers}
@@ -1793,7 +1796,7 @@ function DailyPage() {
           onControlledClose={() => setDirectPayState(null)}
         />
       )}
-      <EditInvoiceDialog inv={editInvoice} onClose={() => setEditInvoice(null)} />
+      <EditInvoiceDialog inv={editInvoice} invoiceNo={editInvoice ? invoiceNumber(invoices, editInvoice.id) : undefined} onClose={() => setEditInvoice(null)} />
       <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
     </>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fmt, daysLate, customerBalance, type Invoice, type Customer, type InvoiceItem, type Payment } from "@/lib/store";
+import { fmt, daysLate, customerBalance, invoiceNumber, type Invoice, type Customer, type InvoiceItem, type Payment } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,7 +90,7 @@ export function HistoryDialog({ customer, onClose, invoices, payments, items, bl
                           <div className="flex items-center justify-end gap-2">
                             <div>
                               <div className="text-sm font-bold">{inv.notes || "فاتورة مبيعات"}</div>
-                              <div className="text-[11px] text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString("ar-EG")} • #{inv.id.slice(0, 6)}</div>
+                              <div className="text-[11px] text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString("ar-EG")} • #{invoiceNumber(invoices, inv.id)}</div>
                             </div>
                             <Badge variant="outline" className={cn(
                               "text-[10px] px-2 py-0.5 shrink-0",

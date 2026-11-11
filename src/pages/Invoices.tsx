@@ -459,7 +459,7 @@ function InvoicesPage() {
       const remaining = inv.total - inv.paid;
       const late = daysLate(inv);
       const status = inv.deleted ? "في سلة المحذوفات" : inv.archived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
-      return [inv.id.slice(0, 6), c?.name ?? "—", c?.phone ?? "—", inv.total, inv.paid, remaining, inv.monthlyInstallment, isoToDDMMYYYY(inv.firstDueDate), format(new Date(inv.createdAt), "dd/MM/yyyy"), status];
+      return [invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix), c?.name ?? "—", c?.phone ?? "—", inv.total, inv.paid, remaining, inv.monthlyInstallment, isoToDDMMYYYY(inv.firstDueDate), format(new Date(inv.createdAt), "dd/MM/yyyy"), status];
     });
     const csv = "\uFEFF" + [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
@@ -481,7 +481,7 @@ function InvoicesPage() {
       if (remaining > 0 && late > 0) lateCount++;
       const status = inv.deleted ? "في سلة المحذوفات" : inv.archived ? "مؤرشفة" : inv.status === "cancelled" ? "ملغاة" : remaining === 0 ? "مسددة" : late > 0 ? `متأخرة ${late} يوم` : "نشطة";
       const tag = remaining === 0 ? "payment" : late > 0 ? "purchase" : "opening";
-      return `<tr><td>#${escapeHtml(inv.id.slice(0,6))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)}</td><td class="num ok">${fmt(inv.paid)}</td><td class="num ${remaining > 0 ? "due" : ""}">${fmt(remaining)}</td><td dir="ltr">${escapeHtml(isoToDDMMYYYY(inv.firstDueDate))}</td><td><span class="tag ${tag}">${escapeHtml(status)}</span></td></tr>`;
+      return `<tr><td>#${escapeHtml(invoiceNumber(data.invoices, inv.id, shopSettings.invoicePrefix))}</td><td>${escapeHtml(c?.name ?? "—")}</td><td class="num">${fmt(inv.total)}</td><td class="num ok">${fmt(inv.paid)}</td><td class="num ${remaining > 0 ? "due" : ""}">${fmt(remaining)}</td><td dir="ltr">${escapeHtml(isoToDDMMYYYY(inv.firstDueDate))}</td><td><span class="tag ${tag}">${escapeHtml(status)}</span></td></tr>`;
     }).join("");
     const body = `
 <h2 class="sec">قائمة الفواتير</h2>
@@ -1027,12 +1027,14 @@ function InvoicesPage() {
       />
       <InvoiceReturnDialog
         inv={returnInv}
+        invoiceNo={returnInv ? invoiceNumber(data.invoices, returnInv.id, shopSettings.invoicePrefix) : undefined}
         customer={returnInv ? findCustomer(returnInv.customerId) ?? null : null}
         items={data.invoiceItems}
         onClose={() => setReturnInv(null)}
       />
       <ShareInvoiceDialog
         inv={shareInv}
+        invoiceNo={shareInv ? invoiceNumber(data.invoices, shareInv.id, shopSettings.invoicePrefix) : undefined}
         customer={shareInv ? findCustomer(shareInv.customerId) ?? null : null}
         items={data.invoiceItems}
         shopSettings={shopSettings}
@@ -1040,6 +1042,7 @@ function InvoicesPage() {
       />
       <CreateInvoiceShipmentDialog
         inv={shipmentInv}
+        allInvoices={data.invoices}
         customer={shipmentInv ? findCustomer(shipmentInv.customerId) ?? null : null}
         items={shipmentInv ? data.invoiceItems.filter((it) => it.invoiceId === shipmentInv.id) : []}
         carriers={data.carriers}
@@ -1066,8 +1069,8 @@ function InvoicesPage() {
           onControlledClose={() => setDirectPayState(null)}
         />
       )}
-      <EditInvoiceDialog inv={editInv} onClose={() => setEditInv(null)} />
-      <ReminderDialog inv={reminderInv} customer={reminderInv ? findCustomer(reminderInv.customerId) ?? null : null} onClose={() => setReminderInv(null)} />
+      <EditInvoiceDialog inv={editInv} invoiceNo={editInv ? invoiceNumber(data.invoices, editInv.id, shopSettings.invoicePrefix) : undefined} onClose={() => setEditInv(null)} />
+      <ReminderDialog inv={reminderInv} invoiceNo={reminderInv ? invoiceNumber(data.invoices, reminderInv.id, shopSettings.invoicePrefix) : undefined} customer={reminderInv ? findCustomer(reminderInv.customerId) ?? null : null} onClose={() => setReminderInv(null)} />
       <BarcodeScanner
         open={searchScanOpen}
         onClose={() => setSearchScanOpen(false)}

@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useDB, db, fmt, useShopSettings } from "@/lib/store";
+import { useDB, db, fmt, invoiceNumber, useShopSettings } from "@/lib/store";
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -185,7 +185,7 @@ export function PosQuickRefundModal({
       meta: [
         { label: "المحل", value: esc(shop.shopName || "سِجلّي") },
         { label: "رقم المرتجع", value: esc(opts.refundId) },
-        { label: "الفاتورة الأصلية", value: opts.invoiceId ? esc(opts.invoiceId.slice(-8)) : "مباشر" },
+        { label: "الفاتورة الأصلية", value: opts.invoiceId ? esc(invoiceNumber(data.invoices, opts.invoiceId)) : "مباشر" },
         { label: "طريقة الرد", value: opts.refundType === "cash" ? "نقداً من الدرج (كاش)" : "حساب العميل" },
         ...(opts.customerName ? [{ label: "العميل", value: esc(opts.customerName) }] : []),
       ],
@@ -286,7 +286,7 @@ export function PosQuickRefundModal({
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="font-mono text-[10px]">
-                            #{inv.id.slice(-6)}
+                            #{invoiceNumber(data.invoices, inv.id)}
                           </Badge>
                           <span className="font-bold text-foreground">{cust?.name || "عميل نقدي"}</span>
                           <span className="text-[11px] text-muted-foreground font-mono">

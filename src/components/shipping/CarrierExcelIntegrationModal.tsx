@@ -84,7 +84,7 @@ export function CarrierExcelIntegrationModal({
       toast.error("لا توجد شحنات مطابقة للفلاتر لتصديرها");
       return;
     }
-    exportShipmentsToExcel(shipmentsToExport, exportFormat);
+    exportShipmentsToExcel(shipmentsToExport, exportFormat, undefined, invoices);
     toast.success(`تم تصدير ${shipmentsToExport.length} شحنة بصيغة ${exportFormat.toUpperCase()} بنجاح!`);
   };
 

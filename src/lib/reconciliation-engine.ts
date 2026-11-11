@@ -1,4 +1,4 @@
-import { DBState, Invoice, Customer, Supplier, StockItem, Shipment, ReturnRecord, fmt, db } from "@/lib/store";
+import { DBState, Invoice, Customer, Supplier, StockItem, Shipment, ReturnRecord, fmt, db, invoiceNumber } from "@/lib/store";
 import { supabase } from "@/integrations/supabase/client";
 import { pdfDocument, openPdfDocument, esc } from "@/lib/pdf-doc";
 import * as XLSX from "xlsx";
@@ -157,7 +157,8 @@ export function runComprehensiveReconciliation(
   for (const invoice of data.invoices) {
     const customer = customerMap.get(invoice.customerId);
     const customerName = customer?.name || "عميل غير معروف";
-    const invoiceLabel = `فاتورة #${invoice.id.slice(0, 8)} (${customerName})`;
+    const displayInvoiceNo = invoiceNumber(data.invoices, invoice.id);
+    const invoiceLabel = `فاتورة #${displayInvoiceNo} (${customerName})`;
 
     const downPayment = Number(invoice.downPayment || 0);
     const recordedPaid = Number(invoice.paid || 0);
@@ -172,7 +173,7 @@ export function runComprehensiveReconciliation(
         id: `inv-paid-mismatch-${invoice.id}`,
         category: "invoices",
         severity: "critical",
-        title: `فرق تحصيل مسجل في الفاتورة #${invoice.id.slice(0, 8)}`,
+        title: `فرق تحصيل مسجل في الفاتورة #${displayInvoiceNo}`,
         description: `المبلغ المسدد المسجل على الفاتورة (${fmt(recordedPaid)} ج.م) لا يطابق مجموع الدفعات الفعلية + المقدم (${fmt(expectedPaid)} ج.م).`,
         impact: `تشويه صافي أرباح الفاتورة والمديونية الحقيقية بفارق ${fmt(diff)} ج.م.`,
         differenceAmount: diff,
@@ -245,7 +246,7 @@ export function runComprehensiveReconciliation(
         id: `inv-overpaid-${invoice.id}`,
         category: "invoices",
         severity: "warning",
-        title: `تحصيل زائد في الفاتورة #${invoice.id.slice(0, 8)}`,
+          title: `تحصيل زائد في الفاتورة #${displayInvoiceNo}`,
         description: `إجمالي التحصيلات (${fmt(recordedPaid)} ج.م) يتجاوز إجمالي الفاتورة (${fmt(invoiceTotal)} ج.م) بمقدار ${fmt(overpaid)} ج.م.`,
         impact: "رصيد معلق للعميل يحتاج مراجعة أو تسوية سند قبض.",
         differenceAmount: overpaid,
@@ -265,7 +266,7 @@ export function runComprehensiveReconciliation(
           id: `inv-no-items-${invoice.id}`,
           category: "invoices",
           severity: "warning",
-          title: `فاتورة بدون تفاصيل أصناف #${invoice.id.slice(0, 8)}`,
+          title: `فاتورة بدون تفاصيل أصناف #${displayInvoiceNo}`,
           description: "الفاتورة مسجلة بدون بنود أصناف تفصيلية، مما يمنع احتساب تكلفة البضاعة المباعة بدقة.",
           impact: "استبعاد الفاتورة جزئياً من تحليلات الربحية والمخزون.",
           targetId: invoice.id,
@@ -281,7 +282,7 @@ export function runComprehensiveReconciliation(
             id: `inv-zero-cost-${invoice.id}`,
             category: "invoices",
             severity: "warning",
-            title: `أصناف بتكلفة صفرية في الفاتورة #${invoice.id.slice(0, 8)}`,
+            title: `أصناف بتكلفة صفرية في الفاتورة #${displayInvoiceNo}`,
             description: `يوجد ${zeroCostItems.length} صنف مسجل بتكلفة 0 ج.م (${zeroCostItems.map((i) => i.name).join("، ")}).`,
             impact: "تضخيم نسبة الربح المحاسبية بصورة غير واقعية.",
             targetId: invoice.id,

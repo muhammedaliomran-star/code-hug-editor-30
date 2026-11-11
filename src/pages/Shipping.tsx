@@ -11,7 +11,7 @@ import {
   Link2, RefreshCw, Undo2, Eye, EyeOff,
 } from "lucide-react";
 import { buildCourierLink, freshCourierToken } from "@/lib/courier-token";
-import { useDB, db, useShopSettings, ShipmentStatus, type Shipment, type ShipmentCarrier, type ShippingZone } from "@/lib/store";
+import { useDB, db, useShopSettings, invoiceNumber, ShipmentStatus, type Shipment, type ShipmentCarrier, type ShippingZone } from "@/lib/store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -513,7 +513,7 @@ export default function Shipping() {
     weightKg: s.weightKg,
     pieces: s.pieces,
     trackUrl: trackingIdentifierFor(s) ? trackUrlFor(trackingIdentifierFor(s), s.recipientPhone ?? undefined) : undefined,
-    invoiceRef: s.invoiceId ? orderNumbers[s.invoiceId] ?? s.invoiceId.slice(0, 8) : undefined,
+    invoiceRef: s.invoiceId ? invoiceNumber(invoices, s.invoiceId) : undefined,
   });
 
   const bulkLabels = () => {
@@ -537,7 +537,7 @@ export default function Shipping() {
       weightKg: s.weightKg,
       pieces: s.pieces,
       trackUrl: trackingIdentifierFor(s) ? trackUrlFor(trackingIdentifierFor(s), s.recipientPhone ?? undefined) : undefined,
-      invoiceRef: s.invoiceId ? orderNumbers[s.invoiceId] ?? s.invoiceId.slice(0, 8) : undefined,
+    invoiceRef: s.invoiceId ? invoiceNumber(invoices, s.invoiceId) : undefined,
     });
 
   const manifestFor = (carrier: ShipmentCarrier) => {

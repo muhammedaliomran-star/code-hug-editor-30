@@ -3,7 +3,7 @@ import { Reveal } from "@/components/Reveal";
 import { BezelCard } from "@/components/BezelCard";
 import { AppShell } from "@/components/AppShell";
 import { PageHeader } from "@/components/PageHeader";
-import { useDB, db, fmt } from "@/lib/store";
+import { useDB, db, fmt, invoiceNumber } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -177,7 +177,7 @@ function ReturnsPage() {
                       <SelectContent>
                         {(returnType === "sale" ? data.invoices : data.purchases).map((source: any) => (
                           <SelectItem key={source.id} value={source.id}>
-                            {returnType === "sale" ? `فاتورة ${source.invoiceNumber || source.id.slice(0, 8)}` : `شراء ${source.id.slice(0, 8)}`} — {fmt(Number(source.total || 0))} ج.م
+                            {returnType === "sale" ? `فاتورة ${invoiceNumber(data.invoices, source.id)}` : `شراء ${source.id.slice(0, 8)}`} — {fmt(Number(source.total || 0))} ج.م
                           </SelectItem>
                         ))}
                       </SelectContent>

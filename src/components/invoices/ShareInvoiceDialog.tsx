@@ -16,12 +16,14 @@ import { format } from "date-fns";
 
 export function ShareInvoiceDialog({
   inv,
+  invoiceNo,
   customer,
   items,
   shopSettings,
   onClose,
 }: {
   inv: Invoice | null;
+  invoiceNo?: string;
   customer: Customer | null;
   items: InvoiceItem[];
   shopSettings: any;
@@ -31,7 +33,7 @@ export function ShareInvoiceDialog({
 
   const invItems = items.filter((it) => it.invoiceId === inv.id);
   const remaining = inv.total - inv.paid;
-  const invNo = inv.id.slice(0, 6);
+  const invNo = invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—";
   const shopName = shopSettings?.shopName || "المتجر";
   const cur = shopSettings?.currency || "ج.م";
 

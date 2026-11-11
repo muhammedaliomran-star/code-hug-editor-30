@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from "react";
-import { useDB, type Shipment, type ShipmentCarrier, type ShipmentStatus } from "@/lib/store";
+import { useDB, invoiceNumber, type Shipment, type ShipmentCarrier, type ShipmentStatus } from "@/lib/store";
 import { getPortalToken, useCourierBoard } from "@/lib/courier-token";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -628,7 +628,7 @@ _تم الإنشاء عبر بوابة المندوب - سِجلّي_`;
                           #{s.trackingNumber || s.id.slice(0, 8)}
                         </span>
                         {inv?.id && (
-                          <span>· فاتورة #{inv.id.slice(0, 8)}</span>
+                          <span>· فاتورة #{invoiceNumber(invoices, inv.id)}</span>
                         )}
                         {zone && <span>· منطقة: {zone.name}</span>}
                       </div>

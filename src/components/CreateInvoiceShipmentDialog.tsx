@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
-import { type Invoice, type Customer, type InvoiceItem, type ShipmentCarrier, type ShippingZone, db, fmt } from "@/lib/store";
+import { type Invoice, type Customer, type InvoiceItem, type ShipmentCarrier, type ShippingZone, db, fmt, invoiceNumber } from "@/lib/store";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { DatePickerField } from "@/components/DatePickerField";
 
 export function CreateInvoiceShipmentDialog({
   inv,
+  allInvoices,
   customer,
   items,
   carriers,
@@ -22,6 +23,7 @@ export function CreateInvoiceShipmentDialog({
   onClose,
 }: {
   inv: Invoice | null;
+  allInvoices: Invoice[];
   customer: Customer | null;
   items: InvoiceItem[];
   carriers: ShipmentCarrier[];
@@ -64,9 +66,9 @@ export function CreateInvoiceShipmentDialog({
       setTrackingNumber(randTracking);
 
       const itemsSummary = invItems.map((i) => `${i.name} (×${i.quantity || 1})`).join("، ");
-      setNotes(`فاتورة مبيعات #${inv.id.slice(0, 6)}: ${itemsSummary || inv.notes || "بضاعة"}`);
+      setNotes(`فاتورة مبيعات #${invoiceNumber(allInvoices, inv.id)}: ${itemsSummary || inv.notes || "بضاعة"}`);
     }
-  }, [inv, customer, carriers, invItems]);
+  }, [inv, customer, carriers, invItems, allInvoices]);
 
   const carrierZones = useMemo(() => {
     if (!carrierId) return [];
@@ -160,7 +162,7 @@ export function CreateInvoiceShipmentDialog({
             <Truck className="w-5 h-5 text-primary" />
           </DialogTitle>
           <DialogDescription className="text-right">
-            إنشاء بوليصة شحن سريعة للفاتورة #{inv.id.slice(0, 6)} وربطها بشركة الشحن ومتابعة التحصيل.
+            إنشاء بوليصة شحن سريعة للفاتورة #{invoiceNumber(allInvoices, inv.id)} وربطها بشركة الشحن ومتابعة التحصيل.
           </DialogDescription>
         </DialogHeader>
 

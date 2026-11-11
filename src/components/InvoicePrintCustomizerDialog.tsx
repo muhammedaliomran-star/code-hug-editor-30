@@ -253,7 +253,7 @@ export function InvoicePrintCustomizerDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 justify-end text-right">
-            تخصيص وطباعة الفاتورة #{inv.id.slice(0, 6)}
+            تخصيص وطباعة الفاتورة #{invoiceNumber(allInvoices, inv.id, shopSettings.invoicePrefix)}
             <Printer className="w-5 h-5 text-primary" />
           </DialogTitle>
           <DialogDescription className="text-right">

@@ -15,6 +15,7 @@ interface SmartReminderModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoice: Invoice | null;
+  invoiceNo?: string;
   customer: Customer | null;
   daysLate: number;
   totalBalance: number;
@@ -40,6 +41,7 @@ export function SmartReminderModal({
   open,
   onOpenChange,
   invoice,
+  invoiceNo,
   customer,
   daysLate,
   totalBalance,
@@ -62,7 +64,7 @@ export function SmartReminderModal({
         amount: dueAmount,
         totalBalance,
         daysLate,
-        invoiceNo: invoice.invoiceNumber || invoice.id.slice(0, 6),
+        invoiceNo: invoiceNo ?? invoice.invoiceNumber?.replace(/^#/, "") ?? "—",
         shopName: settings.shopName || "سِجلّي",
         paymentChannels: {
           instaPay: channels.instaPay || settings.phone || undefined,

@@ -18,11 +18,13 @@ import { toast } from "sonner";
 
 export function InvoiceReturnDialog({
   inv,
+  invoiceNo,
   customer,
   items,
   onClose,
 }: {
   inv: Invoice | null;
+  invoiceNo?: string;
   customer: Customer | null;
   items: InvoiceItem[];
   onClose: () => void;
@@ -76,7 +78,7 @@ export function InvoiceReturnDialog({
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 justify-end text-right">
-            مرتجع بضاعة — فاتورة #{inv.id.slice(0, 6)}
+            مرتجع بضاعة — فاتورة #{invoiceNo ?? inv.invoiceNumber?.replace(/^#/, "") ?? "—"}
             <Undo2 className="w-5 h-5 text-warning" />
           </DialogTitle>
           <DialogDescription className="text-right">

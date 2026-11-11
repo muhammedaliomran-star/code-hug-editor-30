@@ -25,6 +25,7 @@ interface WhatsAppInvoiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoice: Invoice | null;
+  invoiceNo?: string;
   customer: Customer | null;
   type?: "receipt" | "reminder" | "general";
 }
@@ -33,6 +34,7 @@ export function WhatsAppInvoiceDialog({
   open,
   onOpenChange,
   invoice,
+  invoiceNo,
   customer,
   type = "receipt",
 }: WhatsAppInvoiceDialogProps) {
@@ -52,7 +54,7 @@ export function WhatsAppInvoiceDialog({
 شكراً لتعاملك مع *${storeName}*!
 
 🧾 *تفاصيل الفاتورة:*
-• رقم الفاتورة: #${invoice.id.slice(-5)}
+• رقم الفاتورة: #${invoiceNo ?? invoice.invoiceNumber?.replace(/^#/, "") ?? "—"}
 • الإجمالي: ${fmt(invoice.total)} ${currency}
 • المدفوع: ${fmt(invoice.paid)} ${currency}
 ${remaining > 0 ? `• المتبقي: ${fmt(remaining)} ${currency}` : "• الحالة: مسددة بالكامل بنجاح ✓"}
@@ -63,7 +65,7 @@ ${invoice.notes ? `• تفاصيل الأصناف: ${invoice.notes}` : ""}
   const reminderTemplate = `عناية العميل المحترم ${customer.name} ⏳
 تحية طيبة من *${storeName}*،
 
-نود تذكيركم بموعد استحقاق القسط الشهري الخاص بالفاتورة #${invoice.id.slice(-5)}:
+نود تذكيركم بموعد استحقاق القسط الشهري الخاص بالفاتورة #${invoiceNo ?? invoice.invoiceNumber?.replace(/^#/, "") ?? "—"}:
 • قيمة القسط الشهري: ${fmt(invoice.monthlyInstallment)} ${currency}
 • تاريخ الاستحقاق: ${invoice.firstDueDate || "هذا الشهر"}
 • إجمالي المتبقي على الفاتورة: ${fmt(remaining)} ${currency}
