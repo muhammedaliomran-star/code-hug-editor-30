@@ -899,41 +899,111 @@ export type Database = {
           },
         ]
       }
+      invoice_number_sequences: {
+        Row: {
+          created_at: string
+          next_number: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          next_number?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          next_number?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      invoice_refunds: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          payment_method: string
+          reference_number: string | null
+          return_id: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          payment_method?: string
+          reference_number?: string | null
+          return_id: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          payment_method?: string
+          reference_number?: string | null
+          return_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_refunds_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_refunds_return_id_fkey"
+            columns: ["return_id"]
+            isOneToOne: false
+            referencedRelation: "return_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoices: {
         Row: {
+          archive_reason: string | null
           archived: boolean
           archived_at: string | null
-          archive_reason: string | null
+          archived_by: string | null
           branch_id: string | null
           cashier_id: string | null
           created_at: string
           customer_id: string
           date: string | null
+          delete_reason: string | null
           deleted: boolean
           deleted_at: string | null
           deleted_by: string | null
-          delete_reason: string | null
-          external_order_number: string | null
-          invoice_attachment_path: string | null
           discount_amount: number
           discount_pct: number
           down_payment: number
-          down_payment_method: string
           down_payment_account_id: string | null
+          down_payment_method: string
           down_payment_reference: string | null
-          split_cash_amount: number
-          split_electronic_amount: number
-          split_electronic_method: string | null
-          source: string
+          external_order_number: string | null
           first_due_date: string | null
           id: string
           installment_count: number
+          invoice_attachment_path: string | null
           invoice_number: string | null
           last_installment_amount: number
           monthly_installment: number
           notes: string | null
           paid: number
           receipt_token: string
+          source: string
+          split_cash_amount: number
+          split_electronic_amount: number
+          split_electronic_method: string | null
           status: string
           tax_amount: number
           tax_pct: number
@@ -942,39 +1012,40 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archive_reason?: string | null
           archived?: boolean
           archived_at?: string | null
-          archive_reason?: string | null
+          archived_by?: string | null
           branch_id?: string | null
           cashier_id?: string | null
           created_at?: string
           customer_id: string
           date?: string | null
+          delete_reason?: string | null
           deleted?: boolean
           deleted_at?: string | null
           deleted_by?: string | null
-          delete_reason?: string | null
-          external_order_number?: string | null
-          invoice_attachment_path?: string | null
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
-          down_payment_method?: string
           down_payment_account_id?: string | null
+          down_payment_method?: string
           down_payment_reference?: string | null
-          split_cash_amount?: number
-          split_electronic_amount?: number
-          split_electronic_method?: string | null
-          source?: string
+          external_order_number?: string | null
           first_due_date?: string | null
           id?: string
           installment_count?: number
+          invoice_attachment_path?: string | null
           invoice_number?: string | null
           last_installment_amount?: number
           monthly_installment?: number
           notes?: string | null
           paid?: number
           receipt_token?: string
+          source?: string
+          split_cash_amount?: number
+          split_electronic_amount?: number
+          split_electronic_method?: string | null
           status?: string
           tax_amount?: number
           tax_pct?: number
@@ -983,39 +1054,40 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archive_reason?: string | null
           archived?: boolean
           archived_at?: string | null
-          archive_reason?: string | null
+          archived_by?: string | null
           branch_id?: string | null
           cashier_id?: string | null
           created_at?: string
           customer_id?: string
           date?: string | null
+          delete_reason?: string | null
           deleted?: boolean
           deleted_at?: string | null
           deleted_by?: string | null
-          delete_reason?: string | null
-          external_order_number?: string | null
-          invoice_attachment_path?: string | null
           discount_amount?: number
           discount_pct?: number
           down_payment?: number
-          down_payment_method?: string
           down_payment_account_id?: string | null
+          down_payment_method?: string
           down_payment_reference?: string | null
-          split_cash_amount?: number
-          split_electronic_amount?: number
-          split_electronic_method?: string | null
-          source?: string
+          external_order_number?: string | null
           first_due_date?: string | null
           id?: string
           installment_count?: number
+          invoice_attachment_path?: string | null
           invoice_number?: string | null
           last_installment_amount?: number
           monthly_installment?: number
           notes?: string | null
           paid?: number
           receipt_token?: string
+          source?: string
+          split_cash_amount?: number
+          split_electronic_amount?: number
+          split_electronic_method?: string | null
           status?: string
           tax_amount?: number
           tax_pct?: number
@@ -1024,6 +1096,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "invoices_customer_id_fkey"
             columns: ["customer_id"]
@@ -1215,8 +1294,8 @@ export type Database = {
       }
       payments: {
         Row: {
-          amount: number
           account_id: string | null
+          amount: number
           id: string
           invoice_id: string
           paid_at: string
@@ -1226,8 +1305,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          amount?: number
           account_id?: string | null
+          amount?: number
           id?: string
           invoice_id: string
           paid_at?: string
@@ -1237,8 +1316,8 @@ export type Database = {
           user_id: string
         }
         Update: {
-          amount?: number
           account_id?: string | null
+          amount?: number
           id?: string
           invoice_id?: string
           paid_at?: string
@@ -1344,6 +1423,47 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_attachments: {
+        Row: {
+          created_at: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          original_name: string | null
+          purchase_id: string
+          storage_path: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          original_name?: string | null
+          purchase_id: string
+          storage_path: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          original_name?: string | null
+          purchase_id?: string
+          storage_path?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_attachments_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchase_items: {
         Row: {
           batch_number: string | null
@@ -1394,16 +1514,33 @@ export type Database = {
           },
         ]
       }
+      purchase_number_counters: {
+        Row: {
+          next_number: number
+          user_id: string
+        }
+        Insert: {
+          next_number?: number
+          user_id: string
+        }
+        Update: {
+          next_number?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
+          archive_reason: string | null
           archived: boolean
           archived_at: string | null
-          archive_reason: string | null
+          archived_by: string | null
+          attachment_path: string | null
           created_at: string
+          delete_reason: string | null
           deleted: boolean
           deleted_at: string | null
           deleted_by: string | null
-          delete_reason: string | null
           discount_amount: number
           due_date: string | null
           id: string
@@ -1423,14 +1560,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archive_reason?: string | null
           archived?: boolean
           archived_at?: string | null
-          archive_reason?: string | null
+          archived_by?: string | null
+          attachment_path?: string | null
           created_at?: string
+          delete_reason?: string | null
           deleted?: boolean
           deleted_at?: string | null
           deleted_by?: string | null
-          delete_reason?: string | null
           discount_amount?: number
           due_date?: string | null
           id?: string
@@ -1438,7 +1577,7 @@ export type Database = {
           paid_amount?: number
           payment_type?: string
           purchase_date?: string
-          purchase_number?: number
+          purchase_number: number
           shipping_amount?: number
           status?: string
           subtotal?: number
@@ -1450,14 +1589,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archive_reason?: string | null
           archived?: boolean
           archived_at?: string | null
-          archive_reason?: string | null
+          archived_by?: string | null
+          attachment_path?: string | null
           created_at?: string
+          delete_reason?: string | null
           deleted?: boolean
           deleted_at?: string | null
           deleted_by?: string | null
-          delete_reason?: string | null
           discount_amount?: number
           due_date?: string | null
           id?: string
@@ -1482,47 +1623,6 @@ export type Database = {
             columns: ["supplier_id"]
             isOneToOne: false
             referencedRelation: "suppliers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      purchase_attachments: {
-        Row: {
-          created_at: string
-          file_size: number | null
-          id: string
-          mime_type: string | null
-          original_name: string | null
-          purchase_id: string
-          storage_path: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          original_name?: string | null
-          purchase_id: string
-          storage_path: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          original_name?: string | null
-          purchase_id?: string
-          storage_path?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "purchase_attachments_purchase_id_fkey"
-            columns: ["purchase_id"]
-            isOneToOne: false
-            referencedRelation: "purchases"
             referencedColumns: ["id"]
           },
         ]
@@ -2462,9 +2562,9 @@ export type Database = {
         Row: {
           amount: number
           id: string
+          notes: string | null
           paid_at: string
           payment_method: string | null
-          notes: string | null
           purchase_id: string | null
           supplier_id: string
           updated_at: string
@@ -2476,9 +2576,9 @@ export type Database = {
         Insert: {
           amount?: number
           id?: string
+          notes?: string | null
           paid_at?: string
           payment_method?: string | null
-          notes?: string | null
           purchase_id?: string | null
           supplier_id: string
           updated_at?: string
@@ -2490,9 +2590,9 @@ export type Database = {
         Update: {
           amount?: number
           id?: string
+          notes?: string | null
           paid_at?: string
           payment_method?: string | null
-          notes?: string | null
           purchase_id?: string | null
           supplier_id?: string
           updated_at?: string
@@ -2503,6 +2603,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "supplier_payments_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "supplier_payments_supplier_id_fkey"
             columns: ["supplier_id"]
             isOneToOne: false
@@ -2510,48 +2617,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      treasury_transactions: {
-        Row: {
-          amount: number
-          category: string | null
-          created_at: string
-          description: string | null
-          fee: number
-          from_account_id: string | null
-          id: string
-          reference_number: string | null
-          to_account_id: string | null
-          type: string
-          user_id: string
-        }
-        Insert: {
-          amount?: number
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          fee?: number
-          from_account_id?: string | null
-          id?: string
-          reference_number?: string | null
-          to_account_id?: string | null
-          type: string
-          user_id: string
-        }
-        Update: {
-          amount?: number
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          fee?: number
-          from_account_id?: string | null
-          id?: string
-          reference_number?: string | null
-          to_account_id?: string | null
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       suppliers: {
         Row: {
@@ -2775,6 +2840,48 @@ export type Database = {
         }
         Relationships: []
       }
+      treasury_transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string
+          description: string | null
+          fee: number
+          from_account_id: string | null
+          id: string
+          reference_number: string | null
+          to_account_id: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number
+          from_account_id?: string | null
+          id?: string
+          reference_number?: string | null
+          to_account_id?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          fee?: number
+          from_account_id?: string | null
+          id?: string
+          reference_number?: string | null
+          to_account_id?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       treasury_transfers: {
         Row: {
           amount: number
@@ -2903,7 +3010,19 @@ export type Database = {
         }
         Returns: number
       }
+      archive_purchase: {
+        Args: { p_purchase_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      archive_sale_invoice: {
+        Args: { p_invoice_id: string; p_reason?: string }
+        Returns: undefined
+      }
       assert_backup_manager: { Args: never; Returns: undefined }
+      assert_purchase_totals: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
       assign_storefront_shipment: {
         Args: {
           p_carrier_id: string
@@ -2981,6 +3100,21 @@ export type Database = {
           p_tax_amount: number
           p_tax_pct: number
           p_total: number
+        }
+        Returns: string
+      }
+      create_sale_return: {
+        Args: { p_invoice_id: string; p_items: Json; p_reason: string }
+        Returns: string
+      }
+      create_sale_return_with_refund: {
+        Args: {
+          p_account_id?: string
+          p_invoice_id: string
+          p_items: Json
+          p_payment_method?: string
+          p_reason: string
+          p_reference_number?: string
         }
         Returns: string
       }
@@ -3069,18 +3203,6 @@ export type Database = {
         }
         Returns: string
       }
-      replace_invoice_items: {
-        Args: { p_invoice_id: string; p_items: Json; p_total: number }
-        Returns: undefined
-      }
-      create_sale_return_with_refund: {
-        Args: { p_account_id?: string; p_invoice_id: string; p_items: Json; p_payment_method?: string; p_reason: string; p_reference_number?: string }
-        Returns: string
-      }
-      create_sale_return: {
-        Args: { p_invoice_id: string; p_items: Json; p_reason: string }
-        Returns: string
-      }
       create_supplier_return: {
         Args: { p_items: Json; p_purchase_id: string; p_reason: string }
         Returns: string
@@ -3095,39 +3217,8 @@ export type Database = {
         Args: { p_purchase_id: string; p_reason?: string }
         Returns: undefined
       }
-      permanently_delete_purchase: {
-        Args: { p_purchase_id: string }
-        Returns: undefined
-      }
-      post_purchase_draft: {
-        Args: { p_purchase_id: string }
-        Returns: undefined
-      }
-      record_purchase_payment: {
-        Args: { p_amount: number; p_paid_at?: string; p_notes?: string; p_payment_method?: string; p_purchase_id: string }
-        Returns: string
-      }
-      record_supplier_payment_fifo: {
-        Args: { p_amount: number; p_paid_at?: string; p_notes?: string; p_payment_method?: string; p_supplier_id: string }
-        Returns: number
-      }
-      restore_purchase_from_trash: {
-        Args: { p_purchase_id: string }
-        Returns: undefined
-      }
-      assert_purchase_totals: {
-        Args: { p_purchase_id: string }
-        Returns: undefined
-      }
-      archive_purchase: {
-        Args: { p_purchase_id: string; p_reason?: string }
-        Returns: undefined
-      }
-      unarchive_purchase: {
-        Args: { p_purchase_id: string }
-        Returns: undefined
-      }
       get_courier_board: { Args: { p_token: string }; Returns: Json }
+      get_next_purchase_number: { Args: never; Returns: number }
       get_storefront_analytics_summary: {
         Args: { p_from?: string; p_storefront_id: string }
         Returns: Json
@@ -3160,31 +3251,54 @@ export type Database = {
             Returns: Json
           }
       no_owner_exists: { Args: never; Returns: boolean }
+      permanently_delete_purchase: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
+      post_purchase_draft: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
       recalculate_invoice_paid: {
         Args: { p_invoice_id: string }
         Returns: number
       }
+      recalculate_stock_average_cost: {
+        Args: { p_stock_item_id: string }
+        Returns: undefined
+      }
       record_invoice_payment: {
         Args: {
+          p_account_id?: string
           p_amount: number
           p_invoice_id: string
           p_paid_at?: string
           p_payment_id?: string
           p_payment_method?: string
-          p_account_id?: string
           p_reference_number?: string
         }
         Returns: Json
       }
+      record_purchase_payment: {
+        Args: {
+          p_amount: number
+          p_notes?: string
+          p_paid_at?: string
+          p_payment_method?: string
+          p_purchase_id: string
+        }
+        Returns: string
+      }
       record_purchase_with_inventory: {
         Args: {
           p_discount_amount?: number
+          p_due_date?: string
           p_items: Json
           p_notes: string
+          p_paid_amount?: number
           p_payment_type: string
           p_purchase_date: string
           p_purchase_id?: string
-          p_paid_amount?: number
           p_shipping_amount?: number
           p_status?: string
           p_subtotal?: number
@@ -3204,13 +3318,40 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_supplier_payment_fifo: {
+        Args: {
+          p_amount: number
+          p_notes?: string
+          p_paid_at?: string
+          p_payment_method?: string
+          p_supplier_id: string
+        }
+        Returns: number
+      }
       redeem_storefront_coupon: {
         Args: { p_coupon_id: string; p_order_id: string }
         Returns: number
       }
+      replace_invoice_items: {
+        Args: { p_invoice_id: string; p_items: Json; p_total: number }
+        Returns: undefined
+      }
+      reserve_invoice_number: { Args: never; Returns: number }
       restore_backup: {
         Args: { p_dry_run?: boolean; p_exported_by?: string; p_tables: Json }
         Returns: Json
+      }
+      restore_deleted_sale_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      restore_purchase_from_trash: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
+      restore_sale_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
       }
       set_admin_pin: { Args: { _new_pin: string }; Returns: undefined }
       set_manager_pin: { Args: { _new_pin: string }; Returns: undefined }
@@ -3218,29 +3359,51 @@ export type Database = {
         Args: { p_carrier_id: string }
         Returns: number
       }
+      soft_delete_sale_invoice: {
+        Args: { p_invoice_id: string; p_reason?: string }
+        Returns: undefined
+      }
       sync_late_shipment_notifications: { Args: never; Returns: number }
+      unarchive_purchase: {
+        Args: { p_purchase_id: string }
+        Returns: undefined
+      }
       update_invoice_payment: {
         Args: { p_amount: number; p_payment_id: string }
         Returns: Json
       }
-      update_purchase_with_inventory: {
-        Args: {
-          p_discount_amount?: number
-          p_items: Json
-          p_notes: string
-          p_payment_type: string
-          p_purchase_date: string
-          p_purchase_id: string
-          p_paid_amount?: number
-          p_shipping_amount?: number
-          p_subtotal?: number
-          p_supplier_id: string
-          p_supplier_invoice_number?: string
-          p_tax_amount?: number
-          p_total: number
-        }
-        Returns: undefined
-      }
+      update_purchase_with_inventory:
+        | {
+            Args: {
+              p_items: Json
+              p_notes: string
+              p_payment_type: string
+              p_purchase_date: string
+              p_purchase_id: string
+              p_supplier_id: string
+              p_total: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_discount_amount?: number
+              p_due_date?: string
+              p_items: Json
+              p_notes: string
+              p_paid_amount?: number
+              p_payment_type: string
+              p_purchase_date: string
+              p_purchase_id: string
+              p_shipping_amount?: number
+              p_subtotal?: number
+              p_supplier_id: string
+              p_supplier_invoice_number?: string
+              p_tax_amount?: number
+              p_total: number
+            }
+            Returns: undefined
+          }
       update_storefront_shipment_status: {
         Args: {
           p_reason?: string
