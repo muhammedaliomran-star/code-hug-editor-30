@@ -178,7 +178,7 @@ function dueOrOverdueCount(
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { invoices, stockItems } = useDB();
+  const { invoices, stockItems, fetchErrors } = useDB();
   const { settings } = useShopSettings();
   useEffect(() => { applyTheme(settings.theme); }, [settings.theme]);
   const overdueCount = settings.alertsEnabled
@@ -404,6 +404,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               >
                 <RefreshCw className="h-3.5 w-3.5" /> إعادة الفحص
               </button>
+            </div>
+          </div>
+        )}
+        {fetchErrors.length > 0 && (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-danger/40 bg-danger/10 p-4 text-right" role="alert">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-danger" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-foreground">تعذر تحميل بعض بيانات المبيعات</p>
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">قد تظهر أرقام ناقصة أو قديمة. تحقق من اتصال Supabase ثم أعد تحميل الصفحة.</p>
+              <p className="mt-1 max-w-full truncate font-mono text-[10px] text-muted-foreground" dir="ltr" title={fetchErrors.join(" • ")}>{fetchErrors.slice(0, 2).join(" • ")}</p>
             </div>
           </div>
         )}

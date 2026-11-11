@@ -75,22 +75,26 @@ export function EditInvoiceDialog({ inv, invoiceNo, onClose }: { inv: Invoice | 
     if (!isCash && (!Number(monthly) || !date)) return toast.error("املأ بيانات الأقساط");
     const iso = isCash ? format(new Date(), "yyyy-MM-dd") : format(date as Date, "yyyy-MM-dd");
 
-    await db.replaceInvoiceItems(inv.id, totalPrice, valid.map((p) => ({
-      name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0),
-      quantity: Math.max(1, Math.floor(Number(p.quantity || 1))),
-      discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0),
-      serialNumbers: (p.serialNumbers || "").split(/[,\n]+/).map((value) => value.trim()).filter(Boolean),
-      stockId: p.stockId ?? null,
-    })));
-    await db.updateInvoice(inv.id, {
-      downPayment: isCash ? totalPrice : Number(down || 0),
-      monthlyInstallment: isCash ? 0 : Number(monthly),
-      firstDueDate: iso,
-      notes,
-    });
-
-    toast.success("تم تحديث الفاتورة");
-    onClose();
+    try {
+      await db.updateInvoiceWorkflow(inv.id, {
+        total: totalPrice,
+        downPayment: isCash ? totalPrice : Number(down || 0),
+        monthlyInstallment: isCash ? 0 : Number(monthly),
+        firstDueDate: iso,
+        notes,
+        items: valid.map((p) => ({
+          name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0),
+          quantity: Math.max(1, Math.floor(Number(p.quantity || 1))),
+          discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0),
+          serialNumbers: (p.serialNumbers || "").split(/[,\n]+/).map((value) => value.trim()).filter(Boolean),
+          stockId: p.stockId ?? null,
+        })),
+      });
+      toast.success("تم تحديث الفاتورة");
+      onClose();
+    } catch (error: any) {
+      toast.error(error?.message || "تعذر تحديث الفاتورة");
+    }
   };
 
   return (

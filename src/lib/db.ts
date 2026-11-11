@@ -957,6 +957,37 @@ export const db = {
     if (error) throw error;
     await fetchAll();
   },
+  async updateInvoiceWorkflow(invoiceId: string, input: {
+    total: number;
+    downPayment: number;
+    monthlyInstallment: number;
+    firstDueDate: string;
+    notes: string | null;
+    items?: Array<{ name: string; cost: number; price: number; quantity?: number; discountPct?: number; taxPct?: number; serialNumbers?: string[]; stockId?: string | null }>;
+    status?: string | null;
+  }) {
+    const { error } = await (supabase.rpc as any)("update_sale_invoice_workflow", {
+      p_invoice_id: invoiceId,
+      p_total: (input.total ?? 0) * 100,
+      p_down_payment: (input.downPayment ?? 0) * 100,
+      p_monthly_installment: (input.monthlyInstallment ?? 0) * 100,
+      p_first_due_date: input.firstDueDate,
+      p_notes: input.notes ?? null,
+      p_status: input.status ?? null,
+      p_items: input.items === undefined ? null : input.items.map((item) => ({
+        name: item.name,
+        cost: (item.cost ?? 0) * 100,
+        price: (item.price ?? 0) * 100,
+        quantity: Math.max(1, Math.floor(item.quantity ?? 1)),
+        discount_pct: item.discountPct ?? 0,
+        tax_pct: item.taxPct ?? 0,
+        serial_numbers: item.serialNumbers ?? [],
+        stock_item_id: item.stockId ?? null,
+      })),
+    });
+    if (error) throw error;
+    await fetchAll();
+  },
   async updateInvoiceItem(id: string, patch: Partial<{ name: string; cost: number; price: number; quantity: number; discountPct: number; taxPct: number; serialNumbers: string[] }>) {
     const existing = cache.invoiceItems.find((row) => row.id === id);
     if (!existing) throw new Error("بند الفاتورة غير موجود");
@@ -1044,32 +1075,28 @@ export const db = {
   },
 
   async updateInvoice(id: string, patch: Partial<Pick<Invoice, "total" | "downPayment" | "monthlyInstallment" | "firstDueDate" | "notes" | "status" | "paid">>) {
-    const upd: any = {};
-    if (patch.total !== undefined) upd.total = (patch.total ?? 0) * 100;
-    if (patch.downPayment !== undefined) upd.down_payment = (patch.downPayment ?? 0) * 100;
-    if (patch.monthlyInstallment !== undefined) upd.monthly_installment = (patch.monthlyInstallment ?? 0) * 100;
-    if (patch.firstDueDate !== undefined) upd.first_due_date = patch.firstDueDate;
-    if (patch.notes !== undefined) upd.notes = patch.notes;
-    if (patch.status !== undefined) upd.status = patch.status;
-    if (patch.paid !== undefined) upd.paid = (patch.paid ?? 0) * 100;
-    const { error } = await supabase.from("invoices").update(upd).eq("id", id);
-    if (error) throw error;
-    if (patch.paid === undefined && patch.downPayment !== undefined) {
-      await recomputeInvoicePaid(id);
-    }
-    await fetchAll();
+    const current = cache.invoices.find((invoice) => invoice.id === id);
+    if (!current) throw new Error("الفاتورة غير موجودة");
+    await db.updateInvoiceWorkflow(id, {
+      total: patch.total ?? current.total,
+      downPayment: patch.downPayment ?? current.downPayment,
+      monthlyInstallment: patch.monthlyInstallment ?? current.monthlyInstallment,
+      firstDueDate: patch.firstDueDate ?? current.firstDueDate,
+      notes: patch.notes === undefined ? current.notes : patch.notes,
+      status: patch.status ?? null,
+    });
   },
   async reconcileInvoicePaid(invoiceId: string) {
     await recomputeInvoicePaid(invoiceId);
     await fetchAll();
   },
   async updateInvoiceStatus(invoiceId: string, status: InvoiceStatus) {
-    const { error } = await supabase.from("invoices").update({ status }).eq("id", invoiceId);
+    const { error } = await (supabase.rpc as any)("set_sale_invoice_status", { p_invoice_id: invoiceId, p_status: status });
     if (error) throw error;
     await fetchAll();
   },
   async setInvoicePaidAndStatus(invoiceId: string, paid: number, status?: InvoiceStatus) {
-    const upd: any = { paid };
+    const upd: any = { paid: (paid ?? 0) * 100 };
     if (status) upd.status = status;
     const { error } = await supabase.from("invoices").update(upd).eq("id", invoiceId);
     if (error) throw error;
@@ -1845,7 +1872,10 @@ export const db = {
     await fetchAll();
   },
   async removeReturn(id: string) {
-    const { error } = await supabase.from("return_records").delete().eq("id", id);
+    const current = cache.returns.find((item) => item.id === id);
+    const { error } = current?.type === "sale"
+      ? await (supabase.rpc as any)("delete_sale_return_with_reversal", { p_return_id: id })
+      : await supabase.from("return_records").delete().eq("id", id);
     if (error) throw error;
     await fetchAll();
   },
