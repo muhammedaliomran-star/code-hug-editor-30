@@ -21,6 +21,7 @@ import { useAuth } from "@/lib/store";
 import { useHydrated } from "@/lib/hydrated";
 import { useSyncFromCloud } from "@/lib/use-sync-from-cloud";
 import { ArabicNumerals } from "@/lib/arabic-digits";
+import { ConfirmDialogProvider } from "@/components/ConfirmDialogProvider";
 import { registerSW } from "virtual:pwa-register";
 
 
@@ -206,7 +207,8 @@ function RootComponent() {
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
+      <ConfirmDialogProvider>
+        <TooltipProvider>
         <ArabicNumerals />
         <Toaster />
         <Sonner richColors position="top-center" dir="rtl" />
@@ -221,7 +223,8 @@ function RootComponent() {
           )}
           <FabIfAuthed />
         </PrivacyProvider>
-      </TooltipProvider>
+        </TooltipProvider>
+      </ConfirmDialogProvider>
     </QueryClientProvider>
   );
 }
