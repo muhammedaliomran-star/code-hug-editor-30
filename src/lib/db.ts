@@ -46,6 +46,7 @@ import type {
   ShipmentStatus,
   ShipmentCollectionStatus,
   Shipment,
+  SalesDraft,
   DBState,
 } from "@/types";
 
@@ -294,6 +295,7 @@ async function fetchAllInner() {
     stockItems: (st.data ?? []).map((r: TableRow<"stock_items">) => ({
        id: r.id, productCode: Number(r.product_code ?? 0), name: r.name,
       quantity: Number(r.quantity ?? 0),
+      reservedQuantity: Number((r as any).reserved_quantity ?? 0),
       lastUnitCost: Number(r.last_unit_cost ?? 0) / 100,
       salePrice: Number(r.sale_price ?? 0) / 100,
       barcode: r.barcode ?? null,
@@ -683,6 +685,152 @@ export const db = {
     const { error } = await supabase.from("customers").delete().eq("id", id);
     if (error) throw error;
     await fetchAll();
+  },
+  async listSalesDrafts(): Promise<SalesDraft[]> {
+    const [{ data: drafts, error }, { data: items, error: itemsError }, { data: deposits, error: depositsError }] = await Promise.all([
+      (supabase.from as any)("sales_drafts").select("*").in("status", ["draft", "held"]).order("created_at", { ascending: false }),
+      (supabase.from as any)("sales_draft_items").select("*").order("created_at", { ascending: true }),
+      (supabase.from as any)("sales_draft_deposits").select("*").in("status", ["held", "applied"]).order("created_at", { ascending: true }),
+    ]);
+    if (error) throw error;
+    if (itemsError) throw itemsError;
+    if (depositsError) throw depositsError;
+    return ((drafts ?? []) as any[]).map((row) => ({
+      id: row.id,
+      draftNumber: Number(row.draft_number),
+      customerId: row.customer_id,
+      total: Number(row.total ?? 0) / 100,
+      discountPct: Number(row.discount_pct ?? 0),
+      discountAmount: Number(row.discount_amount ?? 0) / 100,
+      taxPct: Number(row.tax_pct ?? 0),
+      taxAmount: Number(row.tax_amount ?? 0) / 100,
+      notes: row.notes,
+      status: row.status,
+      depositTotal: Number(row.deposit_total ?? 0) / 100,
+      depositMethod: ((deposits ?? []) as any[]).find((deposit) => deposit.draft_id === row.id)?.payment_method ?? "cash",
+      depositAccountId: ((deposits ?? []) as any[]).find((deposit) => deposit.draft_id === row.id)?.account_id ?? null,
+      depositReference: ((deposits ?? []) as any[]).find((deposit) => deposit.draft_id === row.id)?.reference_number ?? null,
+      expiresAt: row.expires_at,
+      createdAt: row.created_at,
+      items: ((items ?? []) as any[]).filter((item) => item.draft_id === row.id).map((item) => ({
+        id: item.id,
+        stockId: item.stock_item_id,
+        name: item.name,
+        cost: Number(item.cost ?? 0) / 100,
+        price: Number(item.price ?? 0) / 100,
+        discountPct: Number(item.discount_pct ?? 0),
+        taxPct: Number(item.tax_pct ?? 0),
+        quantity: Number(item.quantity ?? 1),
+      })),
+    })) as SalesDraft[];
+  },
+  async saveSalesDraft(input: {
+    id?: string;
+    customerId?: string | null;
+    total: number;
+    discountPct?: number;
+    discountAmount?: number;
+    taxPct?: number;
+    taxAmount?: number;
+    notes?: string | null;
+    items: Array<{ name: string; cost: number; price: number; quantity: number; discountPct?: number; taxPct?: number; stockId?: string | null }>;
+    deposit?: number;
+    depositMethod?: string;
+    depositAccountId?: string | null;
+    depositReference?: string | null;
+  }): Promise<{ id: string; draftNumber: number }> {
+    const id = input.id ?? crypto.randomUUID();
+    const { data, error } = await (supabase.rpc as any)("create_sales_draft", {
+      p_draft_id: id,
+      p_customer_id: input.customerId ?? null,
+      p_total: input.total * 100,
+      p_discount_pct: input.discountPct ?? 0,
+      p_discount_amount: (input.discountAmount ?? 0) * 100,
+      p_tax_pct: input.taxPct ?? 0,
+      p_tax_amount: (input.taxAmount ?? 0) * 100,
+      p_notes: input.notes ?? null,
+      p_items: input.items.map((item) => ({
+        stock_item_id: item.stockId ?? null,
+        name: item.name,
+        cost: item.cost * 100,
+        price: item.price * 100,
+        discount_pct: item.discountPct ?? 0,
+        tax_pct: item.taxPct ?? 0,
+        quantity: item.quantity,
+      })),
+      p_deposit: (input.deposit ?? 0) * 100,
+      p_deposit_method: input.depositMethod ?? "cash",
+      p_deposit_account_id: input.depositAccountId ?? null,
+      p_deposit_reference: input.depositReference ?? null,
+    });
+    if (error) throw error;
+    await fetchAll();
+    const result = data as { id: string; draft_number: number };
+    return { id: result.id, draftNumber: Number(result.draft_number) };
+  },
+  async cancelSalesDraft(id: string, refund = true) {
+    const { error } = await (supabase.rpc as any)("cancel_sales_draft", { p_draft_id: id, p_refund: refund });
+    if (error) throw error;
+    await fetchAll();
+  },
+  async expireSalesDrafts() {
+    const { data, error } = await (supabase.rpc as any)("expire_sales_drafts");
+    if (error) throw error;
+    await fetchAll();
+    return Number(data ?? 0);
+  },
+  async convertSalesDraft(id: string, input: {
+    invoiceId: string;
+    downPayment: number;
+    monthlyInstallment: number;
+    firstDueDate: string;
+    notes?: string | null;
+    discountPct?: number;
+    discountAmount?: number;
+    taxPct?: number;
+    taxAmount?: number;
+    status: string;
+    paid: number;
+    downPaymentMethod?: string;
+    downPaymentAccountId?: string | null;
+    downPaymentReference?: string | null;
+    splitCashAmount?: number;
+    splitElectronicAmount?: number;
+    splitElectronicMethod?: string | null;
+    shipment?: Record<string, unknown> | null;
+    branchId?: string | null;
+    cashierId?: string | null;
+    source?: string | null;
+    externalOrderNumber?: string | null;
+  }) {
+    const { data, error } = await (supabase.rpc as any)("convert_sales_draft", {
+      p_draft_id: id,
+      p_invoice_id: input.invoiceId,
+      p_down_payment: input.downPayment * 100,
+      p_monthly_installment: input.monthlyInstallment * 100,
+      p_first_due_date: input.firstDueDate,
+      p_notes: input.notes ?? null,
+      p_discount_pct: input.discountPct ?? 0,
+      p_discount_amount: (input.discountAmount ?? 0) * 100,
+      p_tax_pct: input.taxPct ?? 0,
+      p_tax_amount: (input.taxAmount ?? 0) * 100,
+      p_status: input.status,
+      p_paid: input.paid * 100,
+      p_down_payment_method: input.downPaymentMethod ?? "cash",
+      p_down_payment_account_id: input.downPaymentAccountId ?? null,
+      p_down_payment_reference: input.downPaymentReference ?? null,
+      p_split_cash_amount: (input.splitCashAmount ?? 0) * 100,
+      p_split_electronic_amount: (input.splitElectronicAmount ?? 0) * 100,
+      p_split_electronic_method: input.splitElectronicMethod ?? null,
+      p_shipment: input.shipment ?? null,
+      p_branch_id: input.branchId ?? null,
+      p_cashier_id: input.cashierId ?? null,
+      p_source: input.source ?? "pos",
+      p_external_order_number: input.externalOrderNumber ?? null,
+    });
+    if (error) throw error;
+    await fetchAll();
+    return data as string;
   },
   async addInvoice(inv: Omit<Invoice, "id" | "createdAt" | "paid" | "receiptToken"> & {
     paid?: number;

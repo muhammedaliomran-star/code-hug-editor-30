@@ -43,8 +43,8 @@ export function StockProductPicker({ value, name, stockItems, onPick, onClear }:
                   onSelect={() => { onPick(s); setOpen(false); }}
                   className="flex items-center justify-between gap-2"
                 >
-                  <span className={cn("text-xs", s.quantity > 0 ? "text-muted-foreground" : "text-danger font-bold")}>
-                    {s.quantity > 0 ? `متوفر: ${s.quantity}` : "نفد"}
+                  <span className={cn("text-xs", (s.quantity - (s.reservedQuantity ?? 0)) > 0 ? "text-muted-foreground" : "text-danger font-bold")}>
+                    {(s.quantity - (s.reservedQuantity ?? 0)) > 0 ? `متوفر: ${Math.max(0, s.quantity - (s.reservedQuantity ?? 0))}` : "محجوز/نافد"}
                   </span>
                   <span className="flex items-center gap-2">
                     {value === s.id && <Check className="w-4 h-4 text-success" />}

@@ -70,11 +70,13 @@ import {
   Search,
   Check,
   ChevronsUpDown,
+  FileClock,
 } from "lucide-react";
 import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
+import { SalesDraftsModal } from "@/components/SalesDraftsModal";
 import { calculateLineFinancials } from "@/lib/financial-engine";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -134,6 +136,11 @@ function NewInvoicePage() {
   // Commercial POS Features
   const [quickBarcodeInput, setQuickBarcodeInput] = useState("");
   const [parkedModalOpen, setParkedModalOpen] = useState(false);
+  const [salesDraftsModalOpen, setSalesDraftsModalOpen] = useState(false);
+  const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
+  const [draftDeposit, setDraftDeposit] = useState("");
+  const [draftDepositMethod, setDraftDepositMethod] = useState("cash");
+  const [draftDepositReference, setDraftDepositReference] = useState("");
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pendingSubmitAction, setPendingSubmitAction] = useState<(() => void) | null>(null);
 
@@ -148,7 +155,6 @@ function NewInvoicePage() {
   const invoiceAttachmentInputRef = useRef<HTMLInputElement>(null);
   const submitLockRef = useRef(false);
   const workflowInvoiceIdRef = useRef<string | null>(null);
-  const draftLoadedRef = useRef(false);
 
   const defaultFirstDue = () => {
     const day = Math.min(28, Math.max(1, shop.defaultDueDay || 1));
@@ -163,29 +169,7 @@ function NewInvoicePage() {
   }, [shop.defaultInstallmentMonths, shop.defaultDueDay]);
 
   useEffect(() => {
-    if (draftLoadedRef.current || typeof window === "undefined") return;
-    draftLoadedRef.current = true;
-    try {
-      const raw = localStorage.getItem("segilly:invoice_draft");
-      if (!raw) return;
-      const draft = JSON.parse(raw);
-      if (draft.customerId) setCustomerId(draft.customerId);
-      if (Array.isArray(draft.products) && draft.products.length) setProducts(draft.products);
-      if (draft.notes) setNotes(draft.notes);
-      if (draft.saleType) setSaleType(draft.saleType);
-      if (draft.down !== undefined) setDown(draft.down);
-      if (draft.monthly !== undefined) setMonthly(draft.monthly);
-      if (draft.count !== undefined) setCount(draft.count);
-      if (draft.date) setDate(new Date(draft.date));
-      if (draft.discountPct !== undefined) setDiscountPct(draft.discountPct);
-      if (draft.discountAmt !== undefined) setDiscountAmt(draft.discountAmt);
-      if (draft.taxPct !== undefined) setTaxPct(draft.taxPct);
-      if (draft.externalOrderNumber !== undefined) setExternalOrderNumber(draft.externalOrderNumber);
-      toast.info("تم استرجاع المسودة المحفوظة تلقائيًا");
-      localStorage.removeItem("segilly:invoice_draft");
-    } catch {
-      localStorage.removeItem("segilly:invoice_draft");
-    }
+    void db.expireSalesDrafts().catch(() => undefined);
   }, []);
 
   const invoiceCode = `#${String((data.invoices?.length ?? 0) + 1).padStart(4, "0")}`;
@@ -406,18 +390,39 @@ function NewInvoicePage() {
     reset();
   };
 
-  const saveDraft = () => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem("segilly:invoice_draft", JSON.stringify({
-      customerId, products, down, monthly, count, date: date?.toISOString() ?? null,
-      notes, saleType, discountPct, discountAmt, taxPct, externalOrderNumber,
-      savedAt: new Date().toISOString(),
-    }));
-    toast.success("تم حفظ المسودة بدون خصم المخزون أو تسجيل حركة مالية");
+  const saveDraft = async () => {
+    const validProducts = products.filter((p) => p.name.trim() && Number(p.price) >= 0 && Number(p.quantity) > 0);
+    if (!customerId) return toast.error("اختر العميل قبل حفظ المسودة");
+    if (validProducts.length === 0) return toast.error("أضف صنفًا واحدًا على الأقل للمسودة");
+    const deposit = Math.max(0, Number(draftDeposit || 0));
+    if (deposit > totalPrice) return toast.error("العربون لا يمكن أن يتجاوز إجمالي الفاتورة");
+    try {
+      const result = await db.saveSalesDraft({
+        id: activeDraftId ?? undefined,
+        customerId,
+        total: totalPrice,
+        discountPct: Number(discountPct || 0),
+        discountAmount: discountValue,
+        taxPct: Number(taxPct || 0),
+        taxAmount: taxValue,
+        notes,
+        deposit,
+        depositMethod: draftDepositMethod,
+        depositReference: draftDepositReference || null,
+        items: validProducts.map((p) => ({
+          name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0),
+          quantity: Math.max(1, Number(p.quantity || 1)), discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0), stockId: p.stockId ?? null,
+        })),
+      });
+      toast.success(`تم حفظ المسودة D-${String(result.draftNumber).padStart(4, "0")} وحجز الكمية مؤقتًا`);
+      reset();
+    } catch (error: any) {
+      toast.error(error?.message ?? "تعذر حفظ المسودة");
+    }
   };
 
   const handlePrimarySave = () => {
-    if (saveMode === "draft") return saveDraft();
+    if (saveMode === "draft") return void saveDraft();
     if (saveMode === "held") return handleParkCurrentBill();
     submit(saleMode === "quick", false);
   };
@@ -433,7 +438,34 @@ function NewInvoicePage() {
     toast.success(`تم استرجاع الفاتورة المعلقة للعميل: ${bill.customerName}`);
   };
 
+  const handleResumeSalesDraft = (draft: import("@/types").SalesDraft) => {
+    setActiveDraftId(draft.id);
+    setCustomerId(draft.customerId ?? "");
+    setProducts(draft.items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      cost: String(item.cost),
+      price: String(item.price),
+      discount: String(item.discountPct || ""),
+      taxPct: String(item.taxPct || ""),
+      quantity: String(item.quantity),
+      stockId: item.stockId ?? undefined,
+    })));
+    setNotes(draft.notes ?? "");
+    setDiscountAmt(String(draft.discountAmount || ""));
+    setDiscountPct(String(draft.discountPct || ""));
+    setTaxPct(String(draft.taxPct || ""));
+    setDraftDeposit(String(draft.depositTotal || ""));
+    setDraftDepositMethod(draft.depositMethod ?? "cash");
+    setDraftDepositReference(draft.depositReference ?? "");
+    setDown(String(draft.depositTotal || ""));
+    setSaleType(draft.depositTotal >= draft.total ? "cash" : "installments");
+    setStep(2);
+    toast.success(`تم استرجاع المسودة D-${String(draft.draftNumber).padStart(4, "0")}`);
+  };
+
   const reset = () => {
+    setSaveMode("complete");
     setCustomerId("");
     setProducts([{ id: crypto.randomUUID(), name: "", cost: "", price: "", quantity: "1" }]);
     setDown("");
@@ -460,6 +492,10 @@ function NewInvoicePage() {
     setSplitCash("");
     setSplitElectronic("");
     setSplitRef("");
+    setActiveDraftId(null);
+    setDraftDeposit("");
+    setDraftDepositMethod("cash");
+    setDraftDepositReference("");
   };
 
   const executeSubmit = async (stay = false, printDirectThermal = false) => {
@@ -482,9 +518,13 @@ function NewInvoicePage() {
       const stock = data.stockItems.find((s) => s.id === p.stockId);
       const qty = Number(p.quantity || 0);
       if (!stock) return toast.error(`المنتج "${p.name}" غير موجود في المخزون`);
-      if (stock.quantity <= 0) return toast.error(`المنتج "${stock.name}" نفد من المخزون`);
-      if (stock.quantity < qty)
-        return toast.error(`الكمية المتاحة من "${stock.name}" هي ${stock.quantity} فقط`);
+      const ownReservation = activeDraftId
+        ? products.filter((item) => item.stockId === p.stockId).reduce((sum, item) => sum + Number(item.quantity || 0), 0)
+        : 0;
+      const available = Math.max(0, stock.quantity - (stock.reservedQuantity ?? 0) + ownReservation);
+      if (available <= 0) return toast.error(`المنتج "${stock.name}" محجوز بالكامل أو نفد من المخزون`);
+      if (available < qty)
+        return toast.error(`الكمية المتاحة من "${stock.name}" هي ${available} فقط`);
     }
     const t = totalPrice;
     const d = Number(down);
@@ -528,7 +568,7 @@ function NewInvoicePage() {
         }
         attachmentPath = paths.join("|");
       }
-      const invId = await db.addInvoice({
+      const invoiceInput = {
         customerId,
         total: t,
         downPayment: isCash ? t : d,
@@ -570,7 +610,40 @@ function NewInvoicePage() {
           serialNumbers: (p.serialNumbers || "").split(/[\\n,]+/).map((value) => value.trim()).filter(Boolean),
           stockId: p.stockId,
         })),
-      });
+      };
+      const invId = activeDraftId
+        ? await db.convertSalesDraft(activeDraftId, {
+          invoiceId: workflowInvoiceId,
+          downPayment: isCash ? t : d,
+          monthlyInstallment: m,
+          firstDueDate: iso,
+          notes: productNotes,
+          discountPct: Number(discountPct || 0),
+          discountAmount: discountValue,
+          taxPct: Number(taxPct || 0),
+          taxAmount: taxValue,
+          status: isCash ? "paid" : status,
+          paid: isCash ? t : d,
+          downPaymentMethod: draftDepositMethod,
+          downPaymentAccountId: null,
+          downPaymentReference: draftDepositReference || invoiceInput.downPaymentReference,
+          splitCashAmount: enableSplitPayment ? invoiceInput.splitCashAmount : (draftDepositMethod === "cash" ? (isCash ? t : d) : 0),
+          splitElectronicAmount: enableSplitPayment ? invoiceInput.splitElectronicAmount : (draftDepositMethod === "cash" ? 0 : (isCash ? t : d)),
+          splitElectronicMethod: enableSplitPayment ? invoiceInput.splitElectronicMethod : (draftDepositMethod === "cash" ? null : draftDepositMethod),
+          shipment: shippingCarrierId ? {
+            carrier_id: shippingCarrierId,
+            zone_id: shippingZoneId || null,
+            tracking_number: trackingNumber || null,
+            recipient_name: customer?.name || null,
+            recipient_phone: customer?.phone || null,
+            delivery_address: shippingAddress || customer?.address || null,
+          } : null,
+          branchId: activeBranchId,
+          cashierId: user?.id ?? null,
+          source: "pos",
+          externalOrderNumber: externalOrderNumber.trim() || null,
+        })
+        : await db.addInvoice(invoiceInput);
       if (!invId) throw new Error("تعذر إنشاء الفاتورة");
       const savedInvoiceCode = (await db.getInvoiceNumber(invId)) || invoiceCode;
 
@@ -706,6 +779,15 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                   {parkedBills.length}
                 </span>
               )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setSalesDraftsModalOpen(true)}
+              className="relative rounded-full gap-1.5 h-10 px-3.5 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
+              title="مسودات الفواتير المحفوظة"
+            >
+              <FileClock className="h-4 w-4" />
+              <span className="hidden sm:inline">المسودات</span>
             </Button>
 
             <Button
@@ -1881,7 +1963,26 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                   <SelectItem value="held">تعليق الفاتورة</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-[10px] text-muted-foreground">المسودة لا تخصم المخزون ولا تسجل حركة في الصندوق.</p>
+              <p className="text-[10px] text-muted-foreground">المسودة تحجز المخزون مؤقتًا فقط؛ العربون وحده يُسجل في الصندوق عند استلامه.</p>
+              {saveMode === "draft" && (
+                <div className="space-y-2 border-t border-border/20 pt-3">
+                  <Label className="text-xs">عربون الحجز (اختياري)</Label>
+                  <Input type="number" min="0" value={draftDeposit} onChange={(e) => setDraftDeposit(e.target.value)} placeholder="0" className="h-10 rounded-xl" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Select value={draftDepositMethod} onValueChange={setDraftDepositMethod}>
+                      <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="طريقة العربون" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">كاش</SelectItem>
+                        <SelectItem value="instapay">إنستاباي</SelectItem>
+                        <SelectItem value="vodafone_cash">فودافون كاش</SelectItem>
+                        <SelectItem value="visa">بطاقة</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input value={draftDepositReference} onChange={(e) => setDraftDepositReference(e.target.value)} placeholder="رقم المرجع" className="h-10 rounded-xl" />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">العربون يزيد الصندوق الآن، ويُحتسب على الفاتورة عند تحويل المسودة فقط.</p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 text-sm">
@@ -2013,6 +2114,12 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         open={parkedModalOpen}
         onOpenChange={setParkedModalOpen}
         onSelectBill={handleResumeParkedBill}
+      />
+
+      <SalesDraftsModal
+        open={salesDraftsModalOpen}
+        onOpenChange={setSalesDraftsModalOpen}
+        onSelect={handleResumeSalesDraft}
       />
 
       {/* موافقة المدير بالرقم السري للخصومات العالية */}

@@ -380,6 +380,7 @@ export interface StockItem {
   productCode?: number;
   name: string;
   quantity: number;
+  reservedQuantity?: number;
   lastUnitCost: number;
   salePrice: number;
   barcode: string | null;
@@ -396,6 +397,37 @@ export interface StockItem {
   lowStockAlert?: number;
   season?: string | null;
   notes?: string | null;
+}
+
+export interface SalesDraftItem {
+  id: string;
+  stockId?: string | null;
+  name: string;
+  cost: number;
+  price: number;
+  discountPct: number;
+  taxPct: number;
+  quantity: number;
+}
+
+export interface SalesDraft {
+  id: string;
+  draftNumber: number;
+  customerId?: string | null;
+  total: number;
+  discountPct: number;
+  discountAmount: number;
+  taxPct: number;
+  taxAmount: number;
+  notes?: string | null;
+  status: "draft" | "held" | "cancelled" | "expired" | "converted";
+  depositTotal: number;
+  depositMethod?: string;
+  depositAccountId?: string | null;
+  depositReference?: string | null;
+  expiresAt?: string | null;
+  createdAt: string;
+  items: SalesDraftItem[];
 }
 
 export interface StockHistoryEntry {
