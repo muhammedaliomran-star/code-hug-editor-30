@@ -14,6 +14,7 @@ import { useActiveBranch } from "@/hooks/use-active-branch";
 import { getInvoicesForBranch, getInvoiceBranchId } from "@/lib/branch-system";
 import { format, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { AppShell } from "@/components/AppShell";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { useDB, db, daysLate, fmt, customerBalance, getShopSettings, invoiceNumber, useShopSettings, type Invoice, type Customer, type InvoiceItem } from "@/lib/store";
 import { getTreasuryAccounts, addManualTransaction } from "@/lib/cashbox-system";
@@ -81,6 +82,7 @@ function escapeHtml(s: string): string {
 }
 
 function InvoicesPage() {
+  const confirm = useConfirm();
   const data = useDB();
   const { activeBranchId, activeBranch, mainBranchId, isAllBranches } = useActiveBranch();
   const navigate = useNavigate();
@@ -937,7 +939,7 @@ function InvoicesPage() {
                           {!isDeleted && !isArchived && inv.paid <= 0 && inv.downPayment <= 0 && (
                             <DropdownMenuItem
                               onClick={async () => {
-                                if (!confirm("سيتم إلغاء الفاتورة وإعادتها كمسودة مع حجز أصنافها مرة أخرى. هل تريد المتابعة؟")) return;
+                                if (!(await confirm({ description: "سيتم إلغاء الفاتورة وإعادتها كمسودة مع حجز أصنافها مرة أخرى. هل تريد المتابعة؟", tone: "warning", confirmLabel: "إعادة إلى المسودة" }))) return;
                                 try {
                                   const result = await db.revertInvoiceToSalesDraft(inv.id);
                                   toast.success(`تمت إعادة الفاتورة إلى المسودة D-${String(result.draftNumber).padStart(4, "0")}`);
@@ -979,7 +981,7 @@ function InvoicesPage() {
                                 <Archive className="w-4 h-4" />
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={async () => { if (!confirm("سيتم نقل الفاتورة إلى سلة المحذوفات دون حذف المخزون أو سجل الدفعات. هل تريد المتابعة؟")) return; try { await db.removeInvoice(inv.id); toast.success("تم نقل الفاتورة إلى سلة المحذوفات"); } catch (err: any) { toast.error(err?.message || "تعذر نقل الفاتورة إلى السلة"); } }}
+                                onClick={async () => { if (!(await confirm({ description: "سيتم نقل الفاتورة إلى سلة المحذوفات دون حذف المخزون أو سجل الدفعات. هل تريد المتابعة؟", tone: "danger", confirmLabel: "نقل إلى السلة" }))) return; try { await db.removeInvoice(inv.id); toast.success("تم نقل الفاتورة إلى سلة المحذوفات"); } catch (err: any) { toast.error(err?.message || "تعذر نقل الفاتورة إلى السلة"); } }}
                                 className="gap-2 justify-end text-danger focus:text-danger focus:bg-danger/10"
                               >
                                 <span>نقل إلى سلة المحذوفات</span>

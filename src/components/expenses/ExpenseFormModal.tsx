@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { z } from "zod";
 import {
   Dialog,
@@ -79,6 +80,7 @@ export function ExpenseFormModal({
   defaultBranchId,
   defaultDate,
 }: ExpenseFormModalProps) {
+  const confirm = useConfirm();
   const { branches, invoices, payments, expenses } = useDB();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -214,9 +216,11 @@ export function ExpenseFormModal({
       return;
     }
     if (insufficient) {
-      const proceed = confirm(
-        `رصيد "${selectedAcc.name}" الحالي ${fmt(accountBalance || 0)} ج.م وهو أقل من المبلغ المطلوب (${fmt(numericAmount)} ج.م).\nهل تريد المتابعة وتسجيل الخزينة بالسالب؟`
-      );
+      const proceed = await confirm({
+        description: `رصيد "${selectedAcc.name}" الحالي ${fmt(accountBalance || 0)} ج.م وهو أقل من المبلغ المطلوب (${fmt(numericAmount)} ج.م). هل تريد المتابعة وتسجيل الخزينة بالسالب؟`,
+        tone: "warning",
+        confirmLabel: "متابعة",
+      });
       if (!proceed) return;
     }
     const selectedBranch = branches.find((b) => b.id === branchId);

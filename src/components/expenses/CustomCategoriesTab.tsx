@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +63,7 @@ const COLOR_OPTIONS = [
 ];
 
 export function CustomCategoriesTab() {
+  const confirm = useConfirm();
   const { expenses } = useDB();
   const [categories, setCategories] = useState<CustomExpenseCategory[]>(() => getAllExpenseCategories());
   const [openModal, setOpenModal] = useState(false);
@@ -133,14 +135,14 @@ export function CustomCategoriesTab() {
     refresh();
   };
 
-  const handleDelete = (cat: CustomExpenseCategory) => {
+  const handleDelete = async (cat: CustomExpenseCategory) => {
     if (cat.isSystem) {
       toast.error("لا يمكن حذف التصنيفات الأساسية للنظام");
       return;
     }
     const hasExpenses = (categoryStats[cat.name]?.count || 0) > 0;
     if (hasExpenses) {
-      if (!confirm(`هذا التصنيف مرتبط بـ ${categoryStats[cat.name].count} قيد مصروف مسجل. هل تريد حذفه؟`)) {
+      if (!(await confirm({ description: `هذا التصنيف مرتبط بـ ${categoryStats[cat.name].count} قيد مصروف مسجل. هل تريد حذفه؟`, tone: "danger", confirmLabel: "حذف" }))) {
         return;
       }
     }

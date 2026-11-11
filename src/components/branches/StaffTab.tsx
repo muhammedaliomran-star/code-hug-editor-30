@@ -1,4 +1,5 @@
 import { useBranches } from "./context";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/select";
 
 export default function StaffTab() {
+  const confirm = useConfirm();
   const {
     branches, staffList, cur,
     setEditingStaff, setIsStaffDialogOpen,
@@ -136,8 +138,8 @@ export default function StaffTab() {
                         variant="ghost"
                         size="icon"
                         className="h-10 w-10 rounded-full text-danger hover:bg-danger/10"
-                        onClick={() => {
-                          if (confirm(`هل أنت متأكد من حذف ${staff.name}؟`)) {
+                        onClick={async () => {
+                          if (await confirm({ description: `هل أنت متأكد من حذف ${staff.name}؟`, tone: "danger", confirmLabel: "حذف" })) {
                             removeBranchStaffMember(staff.id);
                             refreshBranchData();
                           }

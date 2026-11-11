@@ -1,4 +1,5 @@
 import { useBranches } from "./context";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { fmt } from "@/lib/store";
@@ -8,6 +9,7 @@ import { setActiveBranchId } from "@/lib/branch-system";
 import { toast } from "sonner";
 
 export default function BranchesListTab() {
+  const confirm = useConfirm();
   const {
     branches, stockItems, staffList, loading, cur,
     setSelectedBranchId, setActiveTab,
@@ -69,8 +71,8 @@ export default function BranchesListTab() {
                   variant="ghost"
                   size="icon"
                   className="h-10 w-10 rounded-full text-danger hover:bg-danger/10"
-                  onClick={() => {
-                    if (confirm(`هل أنت متأكد من حذف ${branch.name}؟`)) {
+                  onClick={async () => {
+                    if (await confirm({ description: `هل أنت متأكد من حذف ${branch.name}؟`, tone: "danger", confirmLabel: "حذف" })) {
                       removeBranch(branch.id);
                     }
                   }}

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { useState, useMemo, useEffect } from "react";
 import { BezelCard } from "@/components/BezelCard";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export function CarrierReconciliationView({
   shipments,
   onRefresh,
 }: CarrierReconciliationViewProps) {
+  const confirm = useConfirm();
   const [selectedCarrierId, setSelectedCarrierId] = useState<string>(carriers[0]?.id || "");
   const [transactions, setTransactions] = useState<CarrierSettlementTransaction[]>([]);
   const [settlementModalOpen, setSettlementModalOpen] = useState(false);
@@ -179,7 +181,7 @@ export function CarrierReconciliationView({
   };
 
   const handleDeleteTx = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الحركة من كشف الحساب؟")) return;
+    if (!(await confirm({ description: "هل أنت متأكد من حذف هذه الحركة من كشف الحساب؟", tone: "danger", confirmLabel: "حذف" }))) return;
     try {
       await deleteCarrierTransaction(id);
       await refreshTransactions();

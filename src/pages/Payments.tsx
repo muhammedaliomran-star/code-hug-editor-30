@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/AppShell";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Banknote, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft, Calendar, User, Truck, Receipt, Trash2, Wallet, Eye, EyeOff } from "lucide-react";
@@ -25,6 +26,7 @@ import { DatePickerField } from "@/components/DatePickerField";
 
 
 export default function PaymentsPage() {
+  const confirm = useConfirm();
   const location = useLocation();
   const { paymentVouchers, customers, suppliers, addPaymentVoucher, removePaymentVoucher, loading } = useDB();
   const { privacy, toggle } = usePrivacy();
@@ -271,7 +273,7 @@ export default function PaymentsPage() {
                         variant="ghost" 
                         size="icon" 
                         onClick={async () => {
-                          if (!confirm("هل أنت متأكد من حذف هذا السند؟")) return;
+                          if (!(await confirm({ description: "هل أنت متأكد من حذف هذا السند؟", tone: "danger", confirmLabel: "حذف" }))) return;
                           try {
                             await removePaymentVoucher(voucher.id);
                             toast.success("تم حذف السند بنجاح");

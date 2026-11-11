@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef, type ReactNode } from "react";
 import { useSearch, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/AppShell";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { ExpenseFormModal } from "@/components/expenses/ExpenseFormModal";
 import { ViewInvoiceDialog } from "@/components/invoices/ViewInvoiceDialog";
@@ -43,6 +44,7 @@ import {
 import { pdfDocument, openPdfDocument } from "@/lib/pdf-doc";
 
 export default function Page() {
+  const confirm = useConfirm();
   return (
     <AppShell>
       <PageTransition>
@@ -1361,7 +1363,7 @@ function DailyPage() {
                                 <button
                                   type="button"
                                   onClick={async () => {
-                                    if (!confirm("حذف هذا المصروف؟")) return;
+                                    if (!(await confirm({ description: "حذف هذا المصروف؟", tone: "danger", confirmLabel: "حذف" }))) return;
                                     try {
                                       await db.removeExpense(exp.id);
                                       toast.success("تم حذف المصروف");

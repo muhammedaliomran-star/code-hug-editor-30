@@ -24,6 +24,7 @@ import {
   type NavGroup,
   type NavItem,
 } from "@/lib/nav-groups";
+import { ConfirmDialogProvider } from "@/components/ConfirmDialogProvider";
 
 // Phase 1 (mobile): 5 core tabs on the bottom bar — everything else lives in "المزيد".
 function MobileBottomBar({
@@ -231,6 +232,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // server function fails — show a guided banner instead of cryptic errors.
   const { linked: serverLinked, refresh: refreshHealth } = useDeploymentHealth();
   return (
+    <ConfirmDialogProvider>
     <div dir="rtl" className="relative min-h-screen text-foreground flex overflow-hidden selection:bg-primary selection:text-black">
       {/* Ambient background layer */}
       <div className="fixed inset-0 z-[-1] ambient-mesh opacity-80" />
@@ -410,5 +412,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         {children}
       </main>
     </div>
+    </ConfirmDialogProvider>
   );
 }

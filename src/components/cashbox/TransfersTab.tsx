@@ -4,8 +4,10 @@ import { useCashbox } from "./context";
 import { fmt } from "@/lib/store";
 import { deleteInternalTransfer } from "@/lib/cashbox-system";
 import { Plus, Trash2 } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 
 export function TransfersTab() {
+  const confirm = useConfirm();
   const {
     cur,
     accounts,
@@ -14,8 +16,8 @@ export function TransfersTab() {
     refreshAll,
   } = useCashbox();
 
-  const handleDeleteTransfer = (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا التحويل واسترداد الأرصدة؟")) return;
+  const handleDeleteTransfer = async (id: string) => {
+    if (!(await confirm({ description: "هل أنت متأكد من حذف هذا التحويل واسترداد الأرصدة؟", tone: "danger", confirmLabel: "حذف" }))) return;
     deleteInternalTransfer(id);
     toast.success("تم حذف سجل التحويل");
     refreshAll();

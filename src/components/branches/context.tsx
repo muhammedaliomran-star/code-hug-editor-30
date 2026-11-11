@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useMemo, useEffect, type ReactNode } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { toast } from "sonner";
 import {
   useDB,
@@ -159,6 +160,7 @@ export function useBranches() {
 }
 
 export function BranchesProvider({ children }: { children: ReactNode }) {
+  const confirm = useConfirm();
   const {
     branches,
     addBranch,
@@ -395,8 +397,8 @@ export function BranchesProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const handleCancelTransfer = (id: string) => {
-    if (confirm("هل أنت متأكد من إلغاء أمر التحويل؟ سيتم إرجاع أي كميات مخصومة لفرع المصدر.")) {
+  const handleCancelTransfer = async (id: string) => {
+    if (await confirm({ description: "هل أنت متأكد من إلغاء أمر التحويل؟ سيتم إرجاع أي كميات مخصومة لفرع المصدر.", tone: "warning", confirmLabel: "إلغاء أمر التحويل" })) {
       cancelBranchTransfer(id);
       toast.success("تم إلغاء أمر التحويل");
       refreshBranchData();

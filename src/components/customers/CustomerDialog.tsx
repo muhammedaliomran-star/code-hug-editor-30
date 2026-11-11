@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   db,
@@ -105,6 +106,7 @@ export function CustomerDialog({
   trigger: React.ReactNode;
   onCreated?: (created: Customer) => void | Promise<void>;
 }) {
+  const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(customer?.name ?? "");
@@ -275,8 +277,8 @@ export function CustomerDialog({
   const tip = RATING_TIPS[rating];
 
   return (
-    <Dialog open={open} onOpenChange={(next) => {
-      if (!next && !customer && hasDraft && !window.confirm("لديك بيانات غير محفوظة. هل تريد الخروج؟")) return;
+    <Dialog open={open} onOpenChange={async (next) => {
+      if (!next && !customer && hasDraft && !(await confirm({ description: "لديك بيانات غير محفوظة. هل تريد الخروج؟", tone: "warning", confirmLabel: "خروج بدون حفظ" }))) return;
       setOpen(next);
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>

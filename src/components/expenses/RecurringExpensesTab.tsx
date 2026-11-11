@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +54,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export function RecurringExpensesTab() {
+  const confirm = useConfirm();
   const { branches } = useDB();
   const [items, setItems] = useState<RecurringExpense[]>(() => getRecurringExpenses());
   const [openModal, setOpenModal] = useState(false);
@@ -160,8 +162,8 @@ export function RecurringExpensesTab() {
     refresh();
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("هل تريد بالتأكيد حذف هذا القالب الدوري؟")) {
+  const handleDelete = async (id: string) => {
+    if (await confirm({ description: "هل تريد بالتأكيد حذف هذا القالب الدوري؟", tone: "danger", confirmLabel: "حذف" })) {
       deleteRecurringExpense(id);
       toast.success("تم حذف المصروف الدوري");
       refresh();

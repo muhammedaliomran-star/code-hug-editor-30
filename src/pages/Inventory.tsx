@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useActiveBranch } from "@/hooks/use-active-branch";
 import { getProductStockInBranch, calculateBranchStockValuation } from "@/lib/branch-system";
 import { AppShell } from "@/components/AppShell";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
@@ -118,6 +119,7 @@ const REASONS = [
 ];
 
 export default function Page() {
+  const confirm = useConfirm();
   return (
     <AppShell>
       <PageTransition>
@@ -562,7 +564,7 @@ ${
           <span className="text-xs font-bold">{selectedIds.size} محدد</span>
           <Button size="sm" variant="outline" className="h-8 rounded-xl text-xs" onClick={() => setSelectedIds(new Set())}>إلغاء التحديد</Button>
           <Button size="sm" variant="destructive" className="h-8 rounded-xl text-xs" onClick={async () => {
-            if (!confirm(`أرشفة ${selectedIds.size} منتج؟`)) return;
+            if (!(await confirm({ description: `أرشفة ${selectedIds.size} منتج؟`, tone: "warning", confirmLabel: "أرشفة" }))) return;
             for (const id of selectedIds) { try { await db.archiveStockItem(id); } catch {} }
             setSelectedIds(new Set());
             toast.success("تمت الأرشفة");

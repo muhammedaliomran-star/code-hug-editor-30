@@ -15,8 +15,10 @@ import {
   Pencil,
   Calendar,
 } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 
 export function LedgerTab() {
+  const confirm = useConfirm();
   const {
     cur,
     accounts,
@@ -32,8 +34,8 @@ export function LedgerTab() {
     refreshAll,
   } = useCashbox();
 
-  const handleDeleteManual = (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذه الحركة اليدوية؟")) return;
+  const handleDeleteManual = async (id: string) => {
+    if (!(await confirm({ description: "هل أنت متأكد من حذف هذه الحركة اليدوية؟", tone: "danger", confirmLabel: "حذف" }))) return;
     deleteManualTransaction(id.replace("man-", ""));
     toast.success("تم حذف المعاملة اليدوية");
     refreshAll();

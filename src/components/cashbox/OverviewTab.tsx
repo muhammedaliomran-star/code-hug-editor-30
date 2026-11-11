@@ -14,8 +14,10 @@ import {
   Banknote,
   Sparkles,
 } from "lucide-react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 
 export function OverviewTab() {
+  const confirm = useConfirm();
   const {
     cur,
     accounts,
@@ -155,8 +157,8 @@ export function OverviewTab() {
                     variant="ghost"
                     size="icon"
                     className="h-10 w-10 rounded-xl text-danger hover:bg-danger/10"
-                    onClick={() => {
-                      if (confirm(`هل أنت متأكد من حذف الحساب "${acc.name}"؟`)) {
+                    onClick={async () => {
+                      if (await confirm({ description: `هل أنت متأكد من حذف الحساب "${acc.name}"؟`, tone: "danger", confirmLabel: "حذف" })) {
                         deleteTreasuryAccount(acc.id);
                         refreshAll();
                       }

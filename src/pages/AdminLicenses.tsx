@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { AppShell } from "@/components/AppShell";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,6 +102,7 @@ import { fmt } from "@/lib/store";
 import { toast } from "sonner";
 
 export default function AdminLicensesPage() {
+  const confirm = useConfirm();
   const [pin, setPin] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [changePinOpen, setChangePinOpen] = useState(false);
@@ -454,8 +456,8 @@ export default function AdminLicensesPage() {
   };
 
   // Delete License
-  const handleDeleteLicense = (licId: string) => {
-    if (confirm("هل أنت متأكد من حذف هذا الترخيص نهائياً من سجلات الإدارة؟")) {
+  const handleDeleteLicense = async (licId: string) => {
+    if (await confirm({ description: "هل أنت متأكد من حذف هذا الترخيص نهائياً من سجلات الإدارة؟", tone: "danger", confirmLabel: "حذف نهائي" })) {
       const updated = licenses.filter((l) => l.id !== licId);
       setLicenses(updated);
       saveLicenses(updated);

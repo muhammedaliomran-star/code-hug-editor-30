@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { BezelCard } from "@/components/BezelCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -89,6 +90,7 @@ function allowedShipmentStatuses(status: ShipmentStatus): ShipmentStatus[] {
 const daysBetween = (a: string, b: string) => Math.max(0, (new Date(b).getTime() - new Date(a).getTime()) / 86400000);
 
 export default function Shipping() {
+  const confirm = useConfirm();
   const { shipments, carriers, zones, invoices, customers, loading, refresh } = useDB();
   const { settings: shopSettings } = useShopSettings();
   const navigate = useNavigate();
@@ -357,7 +359,7 @@ export default function Shipping() {
   };
 
   const handleRemoveZone = async (zone: ShippingZone) => {
-    if (!window.confirm(`حذف منطقة «${zone.name}»؟`)) return;
+    if (!(await confirm({ description: `حذف منطقة «${zone.name}»؟`, tone: "danger", confirmLabel: "حذف" }))) return;
     try { await db.removeZone(zone.id); toast.success("تم حذف المنطقة"); }
     catch (e: any) { toast.error(e.message || "تعذر الحذف"); }
   };
@@ -414,7 +416,7 @@ export default function Shipping() {
     let reason: string | undefined;
     if (status === "cancelled") {
       const label = statusMap[status]?.label ?? status;
-      if (!window.confirm(`تأكيد تغيير الحالة إلى «${label}»؟`)) return;
+      if (!(await confirm({ description: `تأكيد تغيير الحالة إلى «${label}»؟`, tone: "warning", confirmLabel: "متابعة" }))) return;
       reason = window.prompt(`اكتب سبب ${label}`)?.trim() || undefined;
       if (!reason) return toast.error("سبب تغيير الحالة مطلوب");
     }
@@ -462,7 +464,7 @@ export default function Shipping() {
   };
 
   const handleSettle = async (carrierId: string, amount: number) => {
-    if (!window.confirm(`تأكيد تسوية ${egp(amount)} مع المندوب؟`)) return;
+    if (!(await confirm({ description: `تأكيد تسوية ${egp(amount)} مع المندوب؟`, tone: "warning", confirmLabel: "تسوية" }))) return;
     const carrier = carrierById.get(carrierId);
     const fees = shipments
       .filter((s) => s.carrierId === carrierId && s.collectionStatus === "collected")

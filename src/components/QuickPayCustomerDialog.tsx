@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import {
   Dialog,
   DialogContent,
@@ -47,6 +48,7 @@ export function QuickPayCustomerDialog({
   open,
   onOpenChange,
 }: QuickPayCustomerDialogProps) {
+  const confirm = useConfirm();
   const customerId = customer?.id;
 
   const openInvoices = useMemo(
@@ -139,9 +141,11 @@ export function QuickPayCustomerDialog({
 شكراً لك يا ${customer.name} على التزامك، متبقي على حسابك: ${fmt(newBalance)} ج.م.
 — تحياتنا وتمنياتنا لك بالتوفيق`;
 
-      const shouldSendWa = window.confirm(
-        `تم حفظ الدفعة بنجاح! الرصيد المتبقي: ${fmt(newBalance)} ج.م.\n\nهل ترغب في فتح واتساب لإرسال إيصال وتأكيد الاستلام للعميل؟`,
-      );
+      const shouldSendWa = await confirm({
+        title: "تم حفظ الدفعة",
+        description: `الرصيد المتبقي: ${fmt(newBalance)} ج.م. هل ترغب في فتح واتساب لإرسال إيصال وتأكيد الاستلام للعميل؟`,
+        confirmLabel: "فتح واتساب",
+      });
 
       if (shouldSendWa) {
         window.open(

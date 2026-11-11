@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,6 +50,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export function BudgetsTab() {
+  const confirm = useConfirm();
   const { expenses, branches } = useDB();
   const [budgets, setBudgets] = useState<CategoryBudget[]>(() => getCategoryBudgets());
   const [openModal, setOpenModal] = useState(false);
@@ -130,8 +132,8 @@ export function BudgetsTab() {
     refresh();
   };
 
-  const handleDelete = (key: string) => {
-    if (confirm("هل تريد بالتأكيد حذف سقف الميزانية لهذا التصنيف؟")) {
+  const handleDelete = async (key: string) => {
+    if (await confirm({ description: "هل تريد بالتأكيد حذف سقف الميزانية لهذا التصنيف؟", tone: "danger", confirmLabel: "حذف" })) {
       const filtered = budgets.filter((b) => budgetKey(b) !== key);
       saveCategoryBudgets(filtered);
       toast.success("تم حذف الميزانية");
