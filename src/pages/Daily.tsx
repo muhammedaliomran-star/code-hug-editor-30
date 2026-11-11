@@ -4,7 +4,15 @@ import { AppShell } from "@/components/AppShell";
 import { useConfirm } from "@/components/ConfirmDialogProvider";
 import { PageHeader } from "@/components/PageHeader";
 import { ExpenseFormModal } from "@/components/expenses/ExpenseFormModal";
-import { ViewInvoiceDialog } from "@/components/invoices/ViewInvoiceDialog";
+import {
+  EditInvoiceDialog,
+  InvoiceReturnDialog,
+  PaymentDialog,
+  ShareInvoiceDialog,
+  ViewInvoiceDialog,
+} from "@/components/invoices";
+import { CreateInvoiceShipmentDialog } from "@/components/CreateInvoiceShipmentDialog";
+import { InvoicePrintCustomizerDialog } from "@/components/InvoicePrintCustomizerDialog";
 import { PageTransition } from "@/components/PageTransition";
 import { BezelCard } from "@/components/BezelCard";
 import { MetricCard, MetricLabel } from "@/components/MetricCard";
@@ -30,7 +38,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, EXPENSE_CATEGORIES, invalidateCache, type Invoice,
+  db, useDB, fmt, invoiceNumber, expenseCategoryLabel, EXPENSE_CATEGORIES, invalidateCache, useShopSettings, type Invoice,
 } from "@/lib/store";
 import { usePrivacy } from "@/lib/privacy";
 import { decodeExpenseNotes } from "@/lib/expenses-system";
@@ -147,13 +155,47 @@ function EmptyState({
 }
 
 function DailyPage() {
-  const { invoices, customers, expenses, payments, returns, returnItems, paymentVouchers, invoiceItems, loading: dbLoading, fetchErrors, refresh } = useDB();
+  const { invoices, customers, expenses, payments, returns, returnItems, paymentVouchers, invoiceItems, carriers, zones, loading: dbLoading, fetchErrors, refresh } = useDB();
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
+  const [editInvoice, setEditInvoice] = useState<Invoice | null>(null);
+  const [returnInvoice, setReturnInvoice] = useState<Invoice | null>(null);
+  const [shareInvoice, setShareInvoice] = useState<Invoice | null>(null);
+  const [customPrintInvoice, setCustomPrintInvoice] = useState<Invoice | null>(null);
+  const [shipmentInvoice, setShipmentInvoice] = useState<Invoice | null>(null);
+  const [directPayState, setDirectPayState] = useState<{ invoiceId: string; max: number; invoiceNo: string; customerName: string; initialAmount: number } | null>(null);
   const { privacy, toggle } = usePrivacy();
+  const { settings: shopSettings } = useShopSettings();
   const masked = privacy;
 
   const urlSearch = useSearch({ from: "/daily" });
   const navigate = useNavigate();
+
+  const handleCloneInvoice = (inv: Invoice) => {
+    const invItems = invoiceItems.filter((item) => item.invoiceId === inv.id);
+    const monthsCount = inv.monthlyInstallment > 0
+      ? Math.max(1, Math.round((inv.total - inv.downPayment) / Math.max(1, inv.monthlyInstallment)))
+      : 6;
+    sessionStorage.setItem("segilly_clone_invoice", JSON.stringify({
+      customerId: inv.customerId,
+      products: invItems.map((item) => ({
+        name: item.name,
+        cost: item.cost,
+        price: item.price,
+        quantity: item.quantity || 1,
+        discount: item.discountPct,
+        taxPct: item.taxPct,
+        serialNumbers: item.serialNumbers.join(", "),
+      })),
+      notes: inv.notes,
+      saleType: inv.monthlyInstallment > 0 ? "installments" : "cash",
+      down: inv.downPayment,
+      monthly: inv.monthlyInstallment,
+      count: monthsCount,
+      discountPct: inv.discountPct,
+      taxPct: inv.taxPct,
+    }));
+    navigate({ to: "/invoices/new" });
+  };
 
   const [from, setFrom] = useState(urlSearch.from ?? todayISO());
   const [to, setTo] = useState(urlSearch.to ?? todayISO());
@@ -1692,7 +1734,66 @@ function DailyPage() {
         items={invoiceItems}
         payments={payments}
         onClose={() => setViewingInvoice(null)}
+        onOpenReturn={(invoice) => { setViewingInvoice(null); setReturnInvoice(invoice); }}
+        onOpenShare={(invoice) => { setViewingInvoice(null); setShareInvoice(invoice); }}
+        onOpenCustomPrint={(invoice) => { setViewingInvoice(null); setCustomPrintInvoice(invoice); }}
+        onOpenShipment={(invoice) => { setViewingInvoice(null); setShipmentInvoice(invoice); }}
+        onClone={(invoice) => { setViewingInvoice(null); handleCloneInvoice(invoice); }}
+        onEdit={(invoice) => { setViewingInvoice(null); setEditInvoice(invoice); }}
+        onDirectPay={(invoice, amount) => {
+          const customer = customerById.get(invoice.customerId);
+          setViewingInvoice(null);
+          setDirectPayState({
+            invoiceId: invoice.id,
+            max: Math.max(0, invoice.total - invoice.paid),
+            invoiceNo: invoiceNumber(invoices, invoice.id),
+            customerName: customer?.name ?? "",
+            initialAmount: amount,
+          });
+        }}
       />
+      <InvoiceReturnDialog
+        inv={returnInvoice}
+        customer={returnInvoice ? customerById.get(returnInvoice.customerId) ?? null : null}
+        items={invoiceItems}
+        onClose={() => setReturnInvoice(null)}
+      />
+      <ShareInvoiceDialog
+        inv={shareInvoice}
+        customer={shareInvoice ? customerById.get(shareInvoice.customerId) ?? null : null}
+        items={invoiceItems}
+        shopSettings={shopSettings}
+        onClose={() => setShareInvoice(null)}
+      />
+      <CreateInvoiceShipmentDialog
+        inv={shipmentInvoice}
+        customer={shipmentInvoice ? customerById.get(shipmentInvoice.customerId) ?? null : null}
+        items={shipmentInvoice ? invoiceItems.filter((item) => item.invoiceId === shipmentInvoice.id) : []}
+        carriers={carriers}
+        zones={zones}
+        onClose={() => setShipmentInvoice(null)}
+      />
+      <InvoicePrintCustomizerDialog
+        inv={customPrintInvoice}
+        customer={customPrintInvoice ? customerById.get(customPrintInvoice.customerId) ?? null : null}
+        items={customPrintInvoice ? invoiceItems.filter((item) => item.invoiceId === customPrintInvoice.id) : []}
+        payments={payments}
+        allInvoices={invoices}
+        shopSettings={shopSettings}
+        onClose={() => setCustomPrintInvoice(null)}
+      />
+      {directPayState && (
+        <PaymentDialog
+          invoiceId={directPayState.invoiceId}
+          max={directPayState.max}
+          invoiceNo={directPayState.invoiceNo}
+          customerName={directPayState.customerName}
+          initialAmount={directPayState.initialAmount}
+          controlledOpen={true}
+          onControlledClose={() => setDirectPayState(null)}
+        />
+      )}
+      <EditInvoiceDialog inv={editInvoice} onClose={() => setEditInvoice(null)} />
       <ExpenseFormModal open={openExpense} onOpenChange={(v) => { setOpenExpense(v); if (!v) setEditingExpense(null); }} editing={editingExpense} defaultDate={from || todayISO()} defaultAccountId="acc-cash-main" />
     </>
   );
