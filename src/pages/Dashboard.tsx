@@ -17,6 +17,7 @@ import {
   DashboardProvider,
   useDashboard,
   QuickActionsSection,
+  DraftsSection,
   BentoKPIsSection,
   TopProductsSection,
   InsightsSection,
@@ -165,6 +166,8 @@ function DashboardInner() {
         switch (section.id) {
           case "quick_actions":
             return <QuickActionsSection key={section.id} />;
+          case "drafts":
+            return <DraftsSection key={section.id} />;
           case "bento_kpis":
             return <BentoKPIsSection key={section.id} />;
           case "top_products":

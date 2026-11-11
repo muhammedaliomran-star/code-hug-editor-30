@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { usePrivacy } from "@/lib/privacy";
 import {
   useDB,
+  db,
   daysLate,
   isDueDay,
   fmt,
@@ -10,6 +11,7 @@ import {
   expenseCategoryLabel,
   supplierBalance,
 } from "@/lib/store";
+import type { SalesDraft } from "@/types";
 import { roundCurrency } from "@/lib/financial-engine";
 import {
   getTreasuryAccounts,
@@ -102,6 +104,16 @@ export interface DashboardContextValue {
   atRiskCustomers: { customer: any; balance: number; maxLate: number; overdueCount: number }[];
   insights: { text: string; tone: "success" | "warning" | "danger" | "info" }[];
   totalSupplierDebt: number;
+  salesDrafts: SalesDraft[];
+  draftsLoading: boolean;
+  draftsStats: {
+    activeCount: number;
+    reservedUnits: number;
+    totalValue: number;
+    deposits: number;
+    expiringSoonCount: number;
+    expiredCount: number;
+  };
 
   m: (s: string) => string;
   money: (n: number) => string;
@@ -131,6 +143,34 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
   const [topProductsSort, setTopProductsSort] = useState<TopProductsSort>("quantity");
   const [customizationOpen, setCustomizationOpen] = useState(false);
   const { sections, isVisible, toggleSection, moveSection, resetToDefault } = useDashboardLayout();
+  const [salesDrafts, setSalesDrafts] = useState<SalesDraft[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    setDraftsLoading(true);
+    db.listSalesDrafts()
+      .then((drafts) => { if (active) setSalesDrafts(drafts); })
+      .catch((error) => console.warn("تعذر تحميل ملخص المسودات", error))
+      .finally(() => { if (active) setDraftsLoading(false); });
+    return () => { active = false; };
+  }, [data.loading]);
+
+  const draftsStats = useMemo(() => {
+    const now = Date.now();
+    const day = 24 * 60 * 60 * 1000;
+    return {
+      activeCount: salesDrafts.length,
+      reservedUnits: salesDrafts.reduce((sum, draft) => sum + draft.items.reduce((itemSum, item) => itemSum + Math.max(0, Number(item.quantity) || 0), 0), 0),
+      totalValue: roundCurrency(salesDrafts.reduce((sum, draft) => sum + draft.total, 0)),
+      deposits: roundCurrency(salesDrafts.reduce((sum, draft) => sum + draft.depositTotal, 0)),
+      expiringSoonCount: salesDrafts.filter((draft) => {
+        const diff = draft.expiresAt ? new Date(draft.expiresAt).getTime() - now : Number.POSITIVE_INFINITY;
+        return diff > 0 && diff <= day;
+      }).length,
+      expiredCount: salesDrafts.filter((draft) => draft.expiresAt && new Date(draft.expiresAt).getTime() <= now).length,
+    };
+  }, [salesDrafts]);
 
   const m = (s: string) => (privacy ? "•••••" : s);
 
@@ -778,6 +818,9 @@ export function DashboardProvider({ children }: { children: React.ReactNode }) {
     atRiskCustomers,
     insights,
     totalSupplierDebt,
+    salesDrafts,
+    draftsLoading,
+    draftsStats,
     m,
     money,
     plain,

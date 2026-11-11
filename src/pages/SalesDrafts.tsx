@@ -24,6 +24,7 @@ function SalesDraftsPage() {
   const confirm = useConfirm();
   const [drafts, setDrafts] = useState<SalesDraft[]>([]);
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState(() => new URLSearchParams(window.location.search).get("filter") ?? "");
   const [loading, setLoading] = useState(true);
   const [selectedDraft, setSelectedDraft] = useState<SalesDraft | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -43,13 +44,22 @@ function SalesDraftsPage() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLocaleLowerCase();
-    if (!q) return drafts;
     return drafts.filter((draft) => {
+      const expiryDiff = draft.expiresAt ? new Date(draft.expiresAt).getTime() - Date.now() : Number.POSITIVE_INFINITY;
+      const reserved = reservationQuantity(draft);
+      const matchesFilter =
+        !filter ||
+        (filter === "reserved" && reserved > 0) ||
+        (filter === "value" && draft.total > 0) ||
+        (filter === "deposit" && draft.depositTotal > 0) ||
+        (filter === "expiring" && expiryDiff <= 24 * 60 * 60 * 1000);
+      if (!matchesFilter) return false;
+      if (!q) return true;
       const customer = data.customers.find((item) => item.id === draft.customerId)?.name ?? "";
       return [`D-${String(draft.draftNumber).padStart(4, "0")}`, customer, ...draft.items.map((item) => item.name)]
         .some((value) => value.toLocaleLowerCase().includes(q));
     });
-  }, [data.customers, drafts, query]);
+  }, [data.customers, drafts, filter, query]);
 
   const cancel = async (draft: SalesDraft) => {
     const approved = await confirm({
@@ -93,7 +103,10 @@ function SalesDraftsPage() {
 
       <div className="mb-5 flex flex-col gap-3 rounded-[1.75rem] border border-border/30 bg-foreground/[0.02] p-3 sm:flex-row sm:items-center">
         <div className="relative min-w-0 flex-1"><Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="ابحث برقم المسودة أو العميل أو الصنف..." className="h-11 rounded-2xl pr-10" /></div>
-        <Badge variant="outline" className="h-9 self-end rounded-full px-4 sm:self-auto">{visible.length} مسودة</Badge>
+        <div className="flex items-center justify-between gap-2 self-end sm:self-auto">
+          {filter && <Button variant="ghost" size="sm" onClick={() => { setFilter(""); window.history.replaceState({}, "", "/invoices/drafts"); }} className="rounded-full text-xs">إلغاء الفلتر</Button>}
+          <Badge variant="outline" className="h-9 rounded-full px-4">{visible.length} مسودة</Badge>
+        </div>
       </div>
 
       {loading ? <div className="py-20 text-center text-muted-foreground">جاري تحميل المسودات...</div> : visible.length === 0 ? (

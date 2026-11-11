@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 export type DashboardSectionId =
   | "quick_actions"
+  | "drafts"
   | "bento_kpis"
   | "top_products"
   | "insights"
@@ -43,6 +44,12 @@ const DEFAULT_SECTIONS: SectionConfig[] = [
     id: "quick_actions",
     label: "شريط الإجراءات السريعة",
     description: "أزرار فورية لإنشاء فاتورة، سند تحصيل، ومصروف",
+    visible: true,
+  },
+  {
+    id: "drafts",
+    label: "المسودات والحجوزات",
+    description: "المسودات النشطة والوحدات والعربون والحجوزات القريبة من الانتهاء",
     visible: true,
   },
   {
