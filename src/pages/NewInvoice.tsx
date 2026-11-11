@@ -1890,7 +1890,7 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                 value={String(products.filter((p) => p.name.trim()).length)}
               />
               <Row label="الإجمالي قبل الخصم" value={`${fmt(subtotal)} ج.م`} />
-              {discountValue > 0 && <Row label="الخصم" value={`− ${fmt(discountValue)} ج.م`} />}
+              <Row label="قيمة الخصم" value={`− ${fmt(discountValue)} ج.م`} />
               {taxValue > 0 && (
                 <Row label={`الضريبة (${Number(taxPct || 0)}%)`} value={`${fmt(taxValue)} ج.م`} />
               )}
