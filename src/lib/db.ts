@@ -738,6 +738,7 @@ export const db = {
     depositMethod?: string;
     depositAccountId?: string | null;
     depositReference?: string | null;
+    expiresAt?: string | null;
   }): Promise<{ id: string; draftNumber: number }> {
     const id = input.id ?? crypto.randomUUID();
     const { data, error } = await (supabase.rpc as any)("create_sales_draft", {
@@ -762,6 +763,7 @@ export const db = {
       p_deposit_method: input.depositMethod ?? "cash",
       p_deposit_account_id: input.depositAccountId ?? null,
       p_deposit_reference: input.depositReference ?? null,
+      p_expires_at: input.expiresAt ?? null,
     });
     if (error) throw error;
     await fetchAll();

@@ -78,6 +78,24 @@ import { ParkedBillsModal } from "@/components/ParkedBillsModal";
 import { calculateLineFinancials } from "@/lib/financial-engine";
 import { supabase } from "@/integrations/supabase/client";
 
+function getDraftExpiry(preset: "none" | "2h" | "6h" | "24h" | "custom", customValue: string) {
+  if (preset === "none") return null;
+  if (preset === "custom") {
+    const date = new Date(customValue);
+    return Number.isNaN(date.getTime()) ? null : date.toISOString();
+  }
+  const hours = preset === "2h" ? 2 : preset === "6h" ? 6 : 24;
+  return new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+}
+
+function toDateTimeLocal(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export default function Page() {
   return (
     <AppShell>
@@ -138,6 +156,8 @@ function NewInvoicePage() {
   const [draftDeposit, setDraftDeposit] = useState("");
   const [draftDepositMethod, setDraftDepositMethod] = useState("cash");
   const [draftDepositReference, setDraftDepositReference] = useState("");
+  const [draftExpiryPreset, setDraftExpiryPreset] = useState<"none" | "2h" | "6h" | "24h" | "custom">("24h");
+  const [draftCustomExpiry, setDraftCustomExpiry] = useState("");
   const [pinModalOpen, setPinModalOpen] = useState(false);
   const [pendingSubmitAction, setPendingSubmitAction] = useState<(() => void) | null>(null);
 
@@ -394,6 +414,8 @@ function NewInvoicePage() {
     if (validProducts.length === 0) return toast.error("أضف صنفًا واحدًا على الأقل للمسودة");
     const deposit = Math.max(0, Number(draftDeposit || 0));
     if (deposit > totalPrice) return toast.error("العربون لا يمكن أن يتجاوز إجمالي الفاتورة");
+    const expiresAt = getDraftExpiry(draftExpiryPreset, draftCustomExpiry);
+    if (draftExpiryPreset === "custom" && !expiresAt) return toast.error("اختر موعد انتهاء صحيح للحجز");
     try {
       const result = await db.saveSalesDraft({
         id: activeDraftId ?? undefined,
@@ -407,6 +429,7 @@ function NewInvoicePage() {
         deposit,
         depositMethod: draftDepositMethod,
         depositReference: draftDepositReference || null,
+        expiresAt,
         items: validProducts.map((p) => ({
           name: p.name.trim(), cost: Number(p.cost || 0), price: Number(p.price || 0),
           quantity: Math.max(1, Number(p.quantity || 1)), discountPct: Number(p.discount || 0), taxPct: Number(p.taxPct || 0), stockId: p.stockId ?? null,
@@ -456,6 +479,8 @@ function NewInvoicePage() {
     setDraftDeposit(String(draft.depositTotal || ""));
     setDraftDepositMethod(draft.depositMethod ?? "cash");
     setDraftDepositReference(draft.depositReference ?? "");
+    setDraftExpiryPreset(draft.expiresAt ? "custom" : "none");
+    setDraftCustomExpiry(toDateTimeLocal(draft.expiresAt));
     setDown(String(draft.depositTotal || ""));
     setSaleType(draft.depositTotal >= draft.total ? "cash" : "installments");
     setStep(2);
@@ -506,6 +531,8 @@ function NewInvoicePage() {
     setDraftDeposit("");
     setDraftDepositMethod("cash");
     setDraftDepositReference("");
+    setDraftExpiryPreset("24h");
+    setDraftCustomExpiry("");
   };
 
   const executeSubmit = async (stay = false, printDirectThermal = false) => {
@@ -1966,6 +1993,22 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
               <p className="text-[10px] text-muted-foreground">المسودة تحجز المخزون مؤقتًا فقط؛ العربون وحده يُسجل في الصندوق عند استلامه.</p>
               {saveMode === "draft" && (
                 <div className="space-y-2 border-t border-border/20 pt-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label className="text-xs">إعدادات الحجز</Label>
+                    <Badge variant="outline" className="rounded-full border-warning/30 bg-warning/10 text-warning">مدة الاحتفاظ بالحجز</Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">يبدأ المؤقت لحظة حفظ المسودة، وتُحرر الكمية تلقائيًا بعد انتهاء المدة.</p>
+                  <Select value={draftExpiryPreset} onValueChange={(value) => setDraftExpiryPreset(value as typeof draftExpiryPreset)}>
+                    <SelectTrigger className="h-10 rounded-xl"><SelectValue placeholder="مدة الحجز" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">بدون موعد انتهاء</SelectItem>
+                      <SelectItem value="2h">ساعتان</SelectItem>
+                      <SelectItem value="6h">6 ساعات</SelectItem>
+                      <SelectItem value="24h">24 ساعة</SelectItem>
+                      <SelectItem value="custom">موعد مخصص</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {draftExpiryPreset === "custom" && <Input type="datetime-local" value={draftCustomExpiry} onChange={(event) => setDraftCustomExpiry(event.target.value)} className="h-10 rounded-xl" />}
                   <Label className="text-xs">عربون الحجز (اختياري)</Label>
                   <Input type="number" min="0" value={draftDeposit} onChange={(e) => setDraftDeposit(e.target.value)} placeholder="0" className="h-10 rounded-xl" />
                   <div className="grid grid-cols-2 gap-2">

@@ -26,6 +26,7 @@ function SalesDraftsPage() {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedDraft, setSelectedDraft] = useState<SalesDraft | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   const load = async () => {
     setLoading(true);
@@ -35,6 +36,10 @@ function SalesDraftsPage() {
   };
 
   useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const visible = useMemo(() => {
     const q = query.trim().toLocaleLowerCase();
@@ -99,11 +104,11 @@ function SalesDraftsPage() {
         </BezelCard>
       ) : (
         <div className="space-y-3">
-          {visible.map((draft) => <DraftCard key={draft.id} draft={draft} customer={data.customers.find((item) => item.id === draft.customerId)?.name ?? "عميل نقدي"} onContinue={continueDraft} onCancel={cancel} onOpen={setSelectedDraft} />)}
+          {visible.map((draft) => <DraftCard key={draft.id} draft={draft} now={now} customer={data.customers.find((item) => item.id === draft.customerId)?.name ?? "عميل نقدي"} onContinue={continueDraft} onCancel={cancel} onOpen={setSelectedDraft} />)}
         </div>
       )}
 
-      <DraftDetailsDialog draft={selectedDraft} customer={selectedDraft ? data.customers.find((item) => item.id === selectedDraft.customerId)?.name ?? "عميل نقدي" : ""} onClose={() => setSelectedDraft(null)} onContinue={continueDraft} onCancel={cancel} />
+      <DraftDetailsDialog draft={selectedDraft} now={now} customer={selectedDraft ? data.customers.find((item) => item.id === selectedDraft.customerId)?.name ?? "عميل نقدي" : ""} onClose={() => setSelectedDraft(null)} onContinue={continueDraft} onCancel={cancel} />
     </>
   );
 }
@@ -121,13 +126,27 @@ function draftExpiry(draft: SalesDraft) {
   return { label: `تنتهي خلال ${Math.ceil(hours / 24)} يوم`, tone: "neutral" as const, expired: false };
 }
 
+function formatDuration(totalSeconds: number) {
+  const seconds = Math.max(0, Math.floor(totalSeconds));
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  const two = (value: number) => String(value).padStart(2, "0");
+  return days > 0 ? `${days} يوم ${two(hours)}:${two(minutes)}:${two(secs)}` : `${two(hours)}:${two(minutes)}:${two(secs)}`;
+}
+
+function elapsedSince(draft: SalesDraft, now: number) {
+  return formatDuration((now - new Date(draft.createdAt).getTime()) / 1000);
+}
+
 function DraftStatus({ draft }: { draft: SalesDraft }) {
   const expiry = draftExpiry(draft);
   if (expiry.expired) return <Badge className="gap-1 rounded-full bg-danger/10 text-danger"><CircleAlert className="h-3.5 w-3.5" />منتهية</Badge>;
   return <Badge className="gap-1 rounded-full bg-warning/10 text-warning"><FileClock className="h-3.5 w-3.5" />مسودة محفوظة</Badge>;
 }
 
-function DraftCard({ draft, customer, onContinue, onCancel, onOpen }: { draft: SalesDraft; customer: string; onContinue: (draft: SalesDraft) => void; onCancel: (draft: SalesDraft) => Promise<void>; onOpen: (draft: SalesDraft) => void }) {
+function DraftCard({ draft, customer, now, onContinue, onCancel, onOpen }: { draft: SalesDraft; customer: string; now: number; onContinue: (draft: SalesDraft) => void; onCancel: (draft: SalesDraft) => Promise<void>; onOpen: (draft: SalesDraft) => void }) {
   const expiry = draftExpiry(draft);
   const reserved = reservationQuantity(draft);
   const remaining = Math.max(0, draft.total - draft.depositTotal);
@@ -149,6 +168,7 @@ function DraftCard({ draft, customer, onContinue, onCancel, onOpen }: { draft: S
             <div className="flex flex-wrap items-center justify-end gap-2"><DraftStatus draft={draft} /><Badge className="rounded-full bg-primary/10 text-primary">D-{String(draft.draftNumber).padStart(4, "0")}</Badge><h2 className="text-xl font-black text-foreground">{customer}</h2></div>
             <div className="mt-2 grid grid-cols-2 gap-x-5 gap-y-2 text-xs text-muted-foreground sm:flex sm:flex-wrap sm:justify-end"><span>{draft.items.length} أصناف / {reserved} وحدة</span><span>{fmt(draft.total)} ج.م إجمالي</span><span className={draft.depositTotal > 0 ? "text-success" : ""}>عربون {fmt(draft.depositTotal)} ج.م</span><span>متبقي {fmt(remaining)} ج.م</span></div>
             <div className={`mt-3 flex items-center justify-end gap-1.5 text-xs font-bold ${expiry.tone === "danger" ? "text-danger" : expiry.tone === "warning" ? "text-warning" : "text-muted-foreground"}`}><Clock3 className="h-3.5 w-3.5" />{expiry.label}</div>
+            <div className="mt-2 flex items-center justify-end gap-1.5 text-xs font-bold text-info"><Clock3 className="h-3.5 w-3.5" />مدة الاحتفاظ بالحجز: {elapsedSince(draft, now)}</div>
             <div className="mt-3 flex flex-wrap justify-end gap-2">{draft.items.slice(0, 4).map((item) => <span key={item.id} className="rounded-full bg-foreground/[0.06] px-3 py-1 text-[11px] text-muted-foreground">{item.name} × {item.quantity}</span>)}{draft.items.length > 4 && <span className="rounded-full bg-foreground/[0.06] px-3 py-1 text-[11px] text-muted-foreground">+{draft.items.length - 4}</span>}</div>
           </div>
         </div>
@@ -157,7 +177,7 @@ function DraftCard({ draft, customer, onContinue, onCancel, onOpen }: { draft: S
   );
 }
 
-function DraftDetailsDialog({ draft, customer, onClose, onContinue, onCancel }: { draft: SalesDraft | null; customer: string; onClose: () => void; onContinue: (draft: SalesDraft) => void; onCancel: (draft: SalesDraft) => Promise<void> }) {
+function DraftDetailsDialog({ draft, customer, now, onClose, onContinue, onCancel }: { draft: SalesDraft | null; customer: string; now: number; onClose: () => void; onContinue: (draft: SalesDraft) => void; onCancel: (draft: SalesDraft) => Promise<void> }) {
   if (!draft) return null;
   const expiry = draftExpiry(draft);
   const remaining = Math.max(0, draft.total - draft.depositTotal);
@@ -168,6 +188,7 @@ function DraftDetailsDialog({ draft, customer, onClose, onContinue, onCancel }: 
         <div className="rounded-2xl border border-primary/20 bg-primary/[0.05] p-4"><div className="flex items-center justify-between gap-3"><span className="text-sm text-muted-foreground">العميل</span><strong>{customer}</strong></div><div className="mt-3 flex items-center justify-between gap-3 text-sm"><span className="text-muted-foreground">موعد انتهاء الحجز</span><span className={expiry.tone === "warning" ? "font-bold text-warning" : expiry.tone === "danger" ? "font-bold text-danger" : "font-bold text-foreground"}>{expiry.label}</span></div></div>
         <section className="rounded-2xl border border-border/30 bg-foreground/[0.02] p-4"><div className="mb-3 flex items-center justify-between"><h3 className="font-black">الأصناف المحجوزة</h3><span className="text-xs text-muted-foreground">{reservationQuantity(draft)} وحدة</span></div><div className="space-y-2">{draft.items.map((item) => <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl bg-foreground/[0.04] px-3 py-2.5 text-sm"><span className="font-semibold">{item.name}</span><span className="text-muted-foreground">{item.quantity} × {fmt(item.price)} ج.م</span></div>)}</div></section>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4"><Summary label="الإجمالي" value={draft.total} /><Summary label="العربون" value={draft.depositTotal} tone="text-success" /><Summary label="المتبقي" value={remaining} tone="text-warning" /><Summary label="عدد الأصناف" value={draft.items.length} money={false} /></div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2"><div className="rounded-2xl border border-info/20 bg-info/[0.06] p-4 text-right"><span className="block text-[11px] text-muted-foreground">مدة الاحتفاظ بالحجز</span><strong className="mt-1 block text-xl font-black text-info">{elapsedSince(draft, now)}</strong><span className="mt-1 block text-[11px] text-muted-foreground">منذ حفظ المسودة</span></div><div className={`rounded-2xl border p-4 text-right ${expiry.tone === "danger" ? "border-danger/20 bg-danger/[0.06]" : expiry.tone === "warning" ? "border-warning/20 bg-warning/[0.06]" : "border-border/30 bg-foreground/[0.03]"}`}><span className="block text-[11px] text-muted-foreground">موعد انتهاء الحجز</span><strong className={`mt-1 block text-xl font-black ${expiry.tone === "danger" ? "text-danger" : expiry.tone === "warning" ? "text-warning" : "text-foreground"}`}>{expiry.label}</strong><span className="mt-1 block text-[11px] text-muted-foreground">يحرر الحجز بعد الانتهاء حسب سياسة النظام</span></div></div>
         {draft.notes && <div className="rounded-2xl border border-border/30 p-4 text-sm text-muted-foreground"><span className="mb-1 block font-bold text-foreground">ملاحظات</span>{draft.notes}</div>}
       </div>
       <DialogFooter className="border-t border-border/30 px-5 py-4 sm:px-7"><Button onClick={() => onContinue(draft)} className="h-11 w-full rounded-full sm:w-auto"><Play className="ml-2 h-4 w-4" />استكمال البيع</Button><Button onClick={() => void onCancel(draft)} variant="outline" className="h-11 w-full rounded-full border-danger/30 text-danger hover:bg-danger/10 sm:w-auto"><Trash2 className="ml-2 h-4 w-4" />إلغاء وتحرير الحجز</Button></DialogFooter>
