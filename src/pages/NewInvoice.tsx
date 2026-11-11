@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CustomerTypeBadge } from "@/components/CustomerTypeBadge";
 import { findStockByBarcode } from "@/lib/store";
@@ -67,6 +68,8 @@ import {
   Printer,
   Layers,
   Search,
+  Check,
+  ChevronsUpDown,
 } from "lucide-react";
 import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
@@ -100,6 +103,7 @@ function NewInvoicePage() {
 
   const [customerId, setCustomerId] = useState("");
   const [customerSearch, setCustomerSearch] = useState("");
+  const [customerPickerOpen, setCustomerPickerOpen] = useState(false);
   const [products, setProducts] = useState<ProductRow[]>([
     { id: crypto.randomUUID(), name: "", cost: "", price: "", quantity: "1" },
   ]);
@@ -365,6 +369,22 @@ function NewInvoicePage() {
       toast.success(`تم اختيار العميل: ${cashCust.name} (بيع فوري)`);
     } else {
       toast.error("لا يوجد عملاء مسجلين. أضف عميل أولاً.");
+    }
+  };
+
+  const selectCustomer = (id: string) => {
+    setCustomerId(id);
+    setCustomerSearch("");
+    setCustomerPickerOpen(false);
+    const selected = data.customers.find((x) => x.id === id);
+    if (selected?.customerType === "cash") {
+      setSaleType("cash");
+      setDown("");
+      setMonthly("");
+      setCount("");
+    } else if (selected) {
+      setSaleType("installments");
+      if (!date) setDate(addMonths(new Date(), 1));
     }
   };
 
@@ -821,40 +841,40 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                     العميل
                   </Label>
                 </div>
-                <Input
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                  placeholder="ابحث بالاسم أو الهاتف أو كود العميل..."
-                  className="mb-2 h-10"
-                />
-                <Select
-                  value={customerId}
-                  onValueChange={(v) => {
-                    setCustomerId(v);
-                    const c = data.customers.find((x) => x.id === v);
-                    if (c?.customerType === "cash") {
-                      setSaleType("cash");
-                      setDown("");
-                      setMonthly("");
-                      setCount("");
-                    } else if (c) {
-                      setSaleType("installments");
-                      if (!date) setDate(addMonths(new Date(), 1));
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر العميل" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredCustomers.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name} — {c.customerCode ? `#${c.customerCode}` : c.phone || "بدون هاتف"} — {c.customerType === "cash" ? "فوري" : "قسط"}
-                      </SelectItem>
-                    ))}
-                    {filteredCustomers.length === 0 && <div className="p-3 text-center text-xs text-muted-foreground">لا يوجد عميل مطابق</div>}
-                  </SelectContent>
-                </Select>
+                <Popover open={customerPickerOpen} onOpenChange={setCustomerPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button type="button" variant="outline" className="h-11 w-full justify-between rounded-xl text-right font-normal">
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-60" />
+                      <span className={cn("truncate", !customer && "text-muted-foreground")}>
+                        {customer ? `${customer.name} — ${customer.customerCode ? `#${customer.customerCode}` : customer.phone || "بدون هاتف"}` : "ابحث واختر العميل بالاسم أو الهاتف أو الكود..."}
+                      </span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                    <Command>
+                      <CommandInput value={customerSearch} onValueChange={setCustomerSearch} placeholder="اكتب اسم العميل أو الهاتف أو الكود..." />
+                      <CommandList>
+                        <CommandEmpty>لا يوجد عميل مطابق</CommandEmpty>
+                        <CommandGroup>
+                          {filteredCustomers.map((c) => (
+                            <CommandItem
+                              key={c.id}
+                              value={`${c.name} ${c.phone} ${c.customerCode ?? ""} ${c.paperLedgerNumber ?? ""}`}
+                              onSelect={() => selectCustomer(c.id)}
+                              className="flex items-center justify-between gap-2"
+                            >
+                              <span className="text-xs text-muted-foreground">{c.customerType === "cash" ? "فوري" : "أقساط"}</span>
+                              <span className="flex items-center gap-2">
+                                {customerId === c.id && <Check className="h-4 w-4 text-success" />}
+                                <span>{c.name} — {c.customerCode ? `#${c.customerCode}` : c.phone || "بدون هاتف"}</span>
+                              </span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
 
                 {customer && customerInfo && (
                   <div className="flex flex-wrap items-center gap-2 animate-[fade-in_0.2s_ease-out]">
