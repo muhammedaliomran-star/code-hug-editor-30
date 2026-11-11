@@ -42,6 +42,7 @@ import { Route as WarehouseRouteImport } from './routes/warehouse'
 import { Route as InventoryIndexRouteImport } from './routes/inventory.index'
 import { Route as InventoryNewRouteImport } from './routes/inventory.new'
 import { Route as InvoicesIndexRouteImport } from './routes/invoices.index'
+import { Route as InvoicesDraftsRouteImport } from './routes/invoices.drafts'
 import { Route as InvoicesNewRouteImport } from './routes/invoices.new'
 import { Route as PurchasesIndexRouteImport } from './routes/purchases/index'
 import { Route as PurchasesNewRouteImport } from './routes/purchases/new'
@@ -215,6 +216,11 @@ const InvoicesIndexRoute = InvoicesIndexRouteImport.update({
   path: '/invoices/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InvoicesDraftsRoute = InvoicesDraftsRouteImport.update({
+  id: '/invoices/drafts',
+  path: '/invoices/drafts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvoicesNewRoute = InvoicesNewRouteImport.update({
   id: '/invoices/new',
   path: '/invoices/new',
@@ -284,6 +290,7 @@ export interface FileRoutesByFullPath {
   '/warehouse': typeof WarehouseRoute
   '/inventory/new': typeof InventoryNewRoute
   '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/drafts': typeof InvoicesDraftsRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/receipt/$token': typeof ReceiptTokenRoute
   '/shipping/day': typeof ShippingDayRoute
@@ -326,6 +333,7 @@ export interface FileRoutesByTo {
   '/warehouse': typeof WarehouseRoute
   '/inventory/new': typeof InventoryNewRoute
   '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/drafts': typeof InvoicesDraftsRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/receipt/$token': typeof ReceiptTokenRoute
   '/shipping/day': typeof ShippingDayRoute
@@ -369,6 +377,7 @@ export interface FileRoutesById {
   '/warehouse': typeof WarehouseRoute
   '/inventory/new': typeof InventoryNewRoute
   '/invoices/new': typeof InvoicesNewRoute
+  '/invoices/drafts': typeof InvoicesDraftsRoute
   '/purchases/new': typeof PurchasesNewRoute
   '/receipt/$token': typeof ReceiptTokenRoute
   '/shipping/day': typeof ShippingDayRoute
@@ -540,6 +549,7 @@ export interface RootRouteChildren {
   WarehouseRoute: typeof WarehouseRoute
   InventoryNewRoute: typeof InventoryNewRoute
   InvoicesNewRoute: typeof InvoicesNewRoute
+  InvoicesDraftsRoute: typeof InvoicesDraftsRoute
   PurchasesNewRoute: typeof PurchasesNewRoute
   ReceiptTokenRoute: typeof ReceiptTokenRoute
   ShippingDayRoute: typeof ShippingDayRoute
@@ -790,6 +800,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InvoicesNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/invoices/drafts': {
+      id: '/invoices/drafts'
+      path: '/invoices/drafts'
+      fullPath: '/invoices/drafts'
+      preLoaderRoute: typeof InvoicesDraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/purchases/': {
       id: '/purchases/'
       path: '/purchases'
@@ -868,6 +885,7 @@ const rootRouteChildren: RootRouteChildren = {
   WarehouseRoute: WarehouseRoute,
   InventoryNewRoute: InventoryNewRoute,
   InvoicesNewRoute: InvoicesNewRoute,
+  InvoicesDraftsRoute: InvoicesDraftsRoute,
   PurchasesNewRoute: PurchasesNewRoute,
   ReceiptTokenRoute: ReceiptTokenRoute,
   ShippingDayRoute: ShippingDayRoute,

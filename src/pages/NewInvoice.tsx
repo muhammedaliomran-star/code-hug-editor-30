@@ -70,13 +70,11 @@ import {
   Search,
   Check,
   ChevronsUpDown,
-  FileClock,
 } from "lucide-react";
 import { useParkedBills, playScanSound, playCashSound } from "@/lib/pos";
 import { useSecurity, shouldRequireManagerPinForDiscount, shouldHideCostAndProfits } from "@/lib/security";
 import { ManagerPinModal } from "@/components/ManagerPinModal";
 import { ParkedBillsModal } from "@/components/ParkedBillsModal";
-import { SalesDraftsModal } from "@/components/SalesDraftsModal";
 import { calculateLineFinancials } from "@/lib/financial-engine";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -136,7 +134,6 @@ function NewInvoicePage() {
   // Commercial POS Features
   const [quickBarcodeInput, setQuickBarcodeInput] = useState("");
   const [parkedModalOpen, setParkedModalOpen] = useState(false);
-  const [salesDraftsModalOpen, setSalesDraftsModalOpen] = useState(false);
   const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
   const [draftDeposit, setDraftDeposit] = useState("");
   const [draftDepositMethod, setDraftDepositMethod] = useState("cash");
@@ -155,6 +152,7 @@ function NewInvoicePage() {
   const invoiceAttachmentInputRef = useRef<HTMLInputElement>(null);
   const submitLockRef = useRef(false);
   const workflowInvoiceIdRef = useRef<string | null>(null);
+  const queryDraftLoadedRef = useRef(false);
 
   const defaultFirstDue = () => {
     const day = Math.min(28, Math.max(1, shop.defaultDueDay || 1));
@@ -463,6 +461,18 @@ function NewInvoicePage() {
     setStep(2);
     toast.success(`تم استرجاع المسودة D-${String(draft.draftNumber).padStart(4, "0")}`);
   };
+
+  useEffect(() => {
+    if (queryDraftLoadedRef.current || typeof window === "undefined") return;
+    const draftId = new URLSearchParams(window.location.search).get("draft");
+    if (!draftId) return;
+    queryDraftLoadedRef.current = true;
+    void db.listSalesDrafts().then((drafts) => {
+      const draft = drafts.find((item) => item.id === draftId);
+      if (draft) handleResumeSalesDraft(draft);
+      else toast.error("المسودة غير موجودة أو انتهت صلاحيتها");
+    }).catch((error: any) => toast.error(error?.message ?? "تعذر تحميل المسودة"));
+  }, []);
 
   const reset = () => {
     setSaveMode("complete");
@@ -780,16 +790,6 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                 </span>
               )}
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => setSalesDraftsModalOpen(true)}
-              className="relative rounded-full gap-1.5 h-10 px-3.5 border-primary/30 bg-primary/5 text-primary hover:bg-primary/10"
-              title="مسودات الفواتير المحفوظة"
-            >
-              <FileClock className="h-4 w-4" />
-              <span className="hidden sm:inline">المسودات</span>
-            </Button>
-
             <Button
               variant="ghost"
               size="icon"
@@ -1963,15 +1963,6 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
                   <SelectItem value="held">تعليق الفاتورة</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSalesDraftsModalOpen(true)}
-                className="h-10 w-full rounded-xl border-primary/30 text-primary hover:bg-primary/10"
-              >
-                <FileClock className="ml-2 h-4 w-4" />
-                فتح المسودات المحفوظة
-              </Button>
               <p className="text-[10px] text-muted-foreground">المسودة تحجز المخزون مؤقتًا فقط؛ العربون وحده يُسجل في الصندوق عند استلامه.</p>
               {saveMode === "draft" && (
                 <div className="space-y-2 border-t border-border/20 pt-3">
@@ -2125,11 +2116,6 @@ ${enableSplitPayment ? `<div style="font-size:11px;padding:4px 0;border-bottom:1
         onSelectBill={handleResumeParkedBill}
       />
 
-      <SalesDraftsModal
-        open={salesDraftsModalOpen}
-        onOpenChange={setSalesDraftsModalOpen}
-        onSelect={handleResumeSalesDraft}
-      />
 
       {/* موافقة المدير بالرقم السري للخصومات العالية */}
       <ManagerPinModal

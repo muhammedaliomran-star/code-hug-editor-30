@@ -34,7 +34,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { InstallmentScheduleMatrix } from "@/components/InstallmentScheduleMatrix";
 import { CreateInvoiceShipmentDialog } from "@/components/CreateInvoiceShipmentDialog";
 import { InvoicePrintCustomizerDialog } from "@/components/InvoicePrintCustomizerDialog";
-import { Plus, Search, Wallet, AlertTriangle, Printer, ShieldAlert, Eye, Pencil, Trash2, Bell, History, TrendingUp, CalendarDays, AlertCircle, MessageCircle, EyeOff, Download, FileSpreadsheet, FileText, X, ChevronsUpDown, Check, Package, ScanLine, Info, CreditCard, Receipt, Undo2, Copy, Share2, MoreVertical, Layers, CheckCircle2, Truck, CheckSquare, Square, GitBranch, Archive } from "lucide-react";
+import { Plus, Search, Wallet, AlertTriangle, Printer, ShieldAlert, Eye, Pencil, Trash2, Bell, History, TrendingUp, CalendarDays, AlertCircle, MessageCircle, EyeOff, Download, FileSpreadsheet, FileText, X, ChevronsUpDown, Check, Package, ScanLine, Info, CreditCard, Receipt, Undo2, Copy, Share2, MoreVertical, Layers, CheckCircle2, Truck, CheckSquare, Square, GitBranch, Archive, FileClock, ArrowRight } from "lucide-react";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoadingSkeleton } from "@/components/LoadingScreen";
@@ -113,6 +113,13 @@ function InvoicesPage() {
     customerName?: string;
     initialAmount?: number;
   } | null>(null);
+  const [salesDraftSummary, setSalesDraftSummary] = useState({ count: 0, total: 0 });
+
+  useEffect(() => {
+    void db.listSalesDrafts().then((drafts) => {
+      setSalesDraftSummary({ count: drafts.length, total: drafts.reduce((sum, draft) => sum + draft.total, 0) });
+    }).catch(() => undefined);
+  }, []);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -544,6 +551,17 @@ function InvoicesPage() {
           <MetricCard mini className="h-full" icon={FileText} label="متوسط الفاتورة" value={stats.avgInvoiceValue} format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
           <MetricCard mini className="h-full" icon={CalendarDays} label="مبيعات الشهر" value={stats.monthSales} tone="info" format={(n) => `${fmt(n)} ج.م`} masked={privacy} />
         </div>
+        <button
+          type="button"
+          onClick={() => window.location.assign("/invoices/drafts")}
+          className="group w-full rounded-[1.5rem] border border-primary/25 bg-primary/[0.06] p-1 text-right transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] hover:-translate-y-0.5 hover:border-primary/50 hover:bg-primary/10"
+        >
+          <div className="flex items-center justify-between gap-4 rounded-[1.25rem] bg-background/40 px-5 py-4 ring-1 ring-inset ring-primary/10">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105"><FileClock className="h-5 w-5" /></span>
+            <span className="min-w-0"><span className="block text-sm font-black text-foreground">مسودات فواتير البيع</span><span className="mt-1 block text-xs text-muted-foreground">{salesDraftSummary.count} مسودة · {fmt(salesDraftSummary.total)} ج.م · الكميات محجوزة مؤقتًا</span></span>
+            <ArrowRight className="h-5 w-5 shrink-0 text-primary transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:-translate-x-1" />
+          </div>
+        </button>
       </div>
 
       <div className="sticky-search-bar">
